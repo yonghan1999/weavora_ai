@@ -348,7 +348,7 @@ def check_installation() -> GateResult:
         "zhijie.py", "AGENTS.md", "README.md", "workflow/config/stages.json",
         "workflow/config/state_machine.json", "workflow/spec/WORKFLOW.md",
         "workflow/spec/ROLES.md", "workflow/spec/CONTRACTS.md", "workflow/spec/ADAPTERS.md",
-        "workflow/schemas/agent-task.schema.json", "workflow/schemas/agent-result.schema.json",
+        "workflow/spec/GIT.md", "workflow/schemas/agent-task.schema.json", "workflow/schemas/agent-result.schema.json",
     ]
     for relative in required:
         if not (SOURCE_ROOT / relative).is_file():

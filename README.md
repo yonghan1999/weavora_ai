@@ -114,6 +114,10 @@ python zhijie.py cancel my-app --actor operator --role workflow_operator --reaso
 
 新终端或新会话先运行 `status`，无需依赖旧对话。重试次数耗尽会阻塞并需要人工介入。
 
+## Git 提交与推送
+
+本地提交默认放在需求/设计批准、开发规划通过、单个任务验证通过、缺陷回归通过、自测/独立测试通过、发布批准和最终验收之后。待审批、测试失败、未验证或混入无关变更时不提交。本地 commit 与远程 push 分开授权，详细节点、提交前检查和提交说明格式见 `workflow/spec/GIT.md`。
+
 ## 质量检查与测试
 
 ```bash
