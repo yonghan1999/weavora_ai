@@ -545,7 +545,10 @@ class Engine:
     def revise(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
         with self.lock(project_id):
             state = self.load(project_id)
+            was_awaiting = state["status"] == "awaiting_approval"
             self.transition(project_id, state, "in_progress", actor, role, reason or "按审批意见修改")
+            if was_awaiting:
+                (self.project_dir(project_id) / "approvals/current.json").unlink(missing_ok=True)
             return state
 
     def pause(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:

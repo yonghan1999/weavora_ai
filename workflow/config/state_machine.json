@@ -18,7 +18,7 @@
   "transitions": {
     "pending": ["in_progress", "blocked", "cancelled"],
     "in_progress": ["awaiting_approval", "approved", "failed", "awaiting_retry", "blocked", "paused", "cancelled", "completed"],
-    "awaiting_approval": ["approved", "rejected", "paused", "cancelled"],
+    "awaiting_approval": ["approved", "rejected", "in_progress", "paused", "cancelled"],
     "approved": ["pending", "in_progress", "completed", "cancelled"],
     "rejected": ["in_progress", "cancelled"],
     "failed": ["awaiting_retry", "in_progress", "blocked", "cancelled"],

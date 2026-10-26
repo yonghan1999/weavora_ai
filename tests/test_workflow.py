@@ -287,6 +287,14 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(len(decisions), 1)
         self.assertIn("负数边界", decisions[0].read_text(encoding="utf-8"))
 
+    def test_withdraw_pending_approval_for_revision(self):
+        first = self.submit_requirements()
+        self.engine.revise(self.project_id, "analyst", "requirements_analyst", "用户补充原 IP 优先恢复规则")
+        self.assertEqual(self.engine.load(self.project_id)["status"], "in_progress")
+        self.assertIsNone(self.engine.current_approval_request(self.project_id, required=False))
+        second = self.engine.submit(self.project_id, "analyst", "requirements_analyst")["request"]
+        self.assertNotEqual(first["approval_id"], second["approval_id"])
+
     def test_explicit_failure_and_retry(self):
         self.engine.fail(self.project_id, "operator", "workflow_operator", "外部执行失败")
         self.assertEqual(self.engine.load(self.project_id)["status"], "failed")

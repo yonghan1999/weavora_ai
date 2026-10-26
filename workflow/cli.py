@@ -25,7 +25,7 @@ def parser() -> argparse.ArgumentParser:
 
     for name, help_text in [
         ("submit", "执行当前阶段门禁并提交"),
-        ("revise", "驳回后重新进入修改"),
+        ("revise", "撤回待审批或驳回后重新进入修改"),
         ("pause", "暂停并持久化状态"),
         ("resume", "恢复暂停的工作流"),
         ("fail", "记录执行失败"),
