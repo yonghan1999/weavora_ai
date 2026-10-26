@@ -70,11 +70,13 @@ python zhijie.py submit my-app --actor tech-lead --role tech_lead
 E 阶段真实执行命令并保存证据：
 
 ```bash
-python zhijie.py task-run my-app TASK-001 --actor developer --role developer --command "在此填写已审查的构建和测试命令"
+python zhijie.py task-run my-app TASK-001 --actor developer --role developer --command "项目测试命令"
 python zhijie.py submit my-app --actor developer --role developer
 ```
 
-命令在 `workspace/` 内运行。失败会保存输出并进入等待重试；不要把含秘密或高影响副作用的命令交给执行器。
+`--command` 必须与任务登记的 `--test` 完全一致，且只能由 `developer` 角色执行；运行前修改命令会被拒绝。任务只能在 D 阶段添加，检查只能在当前执行中的 F/G/H 阶段配置，用例只能在 G 阶段添加。
+
+命令在 `workspace/` 内运行，但这不是操作系统安全沙箱。失败会保存输出并进入等待重试；超时时间为 1–3600 秒，超时会终止进程树。标准输出和错误输出分别最多保留 1,000,000 字节，截断标志写入证据。不要把含秘密或高影响副作用的命令交给执行器。
 
 ## 自测与独立测试
 
@@ -95,7 +97,7 @@ python zhijie.py verify my-app --check-id independent-test --case TC-001 --actor
 python zhijie.py submit my-app --actor quality-reviewer --role quality_reviewer
 ```
 
-失败用例自动生成 DEF 缺陷和 FIX 修复任务。修复后须重跑失败用例和必要回归；代码变化会使旧 F/G/H 证据失效。
+失败用例自动生成 DEF 缺陷和 FIX 修复任务。修复后须重跑失败用例和必要回归；代码变化会使旧 F/G/H 证据失效。证据文件 SHA-256、登记命令和上下文也必须一致；旧格式证据缺少完整性字段时需要重跑。
 
 ## 发布准备、验收与归档
 
@@ -128,7 +130,7 @@ python zhijie.py retry my-app --actor operator --role workflow_operator --reason
 python zhijie.py cancel my-app --actor operator --role workflow_operator --reason "用户取消"
 ```
 
-新终端或新会话先运行 `status`，无需依赖旧对话。重试次数耗尽会阻塞并需要人工介入。
+新终端或新会话先运行 `status`，无需依赖旧对话。框架元数据由项目级回滚日志保护，异常或崩溃会在下次带锁访问时恢复；外部命令副作用和业务工作区文件不会自动回滚。重试次数耗尽会阻塞并需要人工介入。
 
 ## Git 提交与推送
 

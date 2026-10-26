@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
-from workflow.engine import Engine, HUMAN_CONFIRMATION, SOURCE_ROOT, WorkflowError
+from _support import temporary_project_directory
+from workflow.engine import Engine, HUMAN_CONFIRMATION, SOURCE_ROOT, WorkflowError, atomic_json, file_lock, sha256_file
 from workflow.gates import check_installation, check_stage
 
 
@@ -109,9 +113,67 @@ INTERACTIVE_HTML = """<!doctype html>
 """
 
 
+class CleanCheckoutTests(unittest.TestCase):
+    def test_missing_temporary_root_is_created(self):
+        with tempfile.TemporaryDirectory() as clean_checkout:
+            source_root = Path(clean_checkout)
+            temporary_root = source_root / "var" / "tmp"
+            self.assertFalse(temporary_root.exists())
+
+            with temporary_project_directory(source_root) as project_directory:
+                self.assertTrue(temporary_root.is_dir())
+                self.assertTrue(Path(project_directory).is_dir())
+                self.assertEqual(Path(project_directory).parent, temporary_root)
+
+
+class FileLockTests(unittest.TestCase):
+    def test_lock_excludes_other_processes_and_is_reusable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lock_path = Path(directory) / "project.lock"
+            code = """
+import sys
+from pathlib import Path
+from workflow.engine import WorkflowError, file_lock
+try:
+    with file_lock(Path(sys.argv[1]), timeout=0.1):
+        pass
+except WorkflowError:
+    sys.exit(23)
+"""
+            with file_lock(lock_path, timeout=0.1):
+                blocked = subprocess.run(
+                    [sys.executable, "-c", code, str(lock_path)], cwd=SOURCE_ROOT, timeout=10,
+                )
+                self.assertEqual(blocked.returncode, 23)
+
+            acquired = subprocess.run(
+                [sys.executable, "-c", code, str(lock_path)], cwd=SOURCE_ROOT, timeout=10,
+            )
+            self.assertEqual(acquired.returncode, 0)
+
+    def test_crashed_process_does_not_leave_stale_lock(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lock_path = Path(directory) / "project.lock"
+            crash_code = """
+import os
+import sys
+from pathlib import Path
+from workflow.engine import file_lock
+with file_lock(Path(sys.argv[1]), timeout=0.1):
+    os._exit(0)
+"""
+            crashed = subprocess.run(
+                [sys.executable, "-c", crash_code, str(lock_path)], cwd=SOURCE_ROOT, timeout=10,
+            )
+            self.assertEqual(crashed.returncode, 0)
+            self.assertTrue(lock_path.exists())
+            with file_lock(lock_path, timeout=0.1):
+                pass
+
+
 class WorkflowTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(dir=SOURCE_ROOT / "var/tmp")
+        self.temporary = temporary_project_directory(SOURCE_ROOT)
         self.root = Path(self.temporary.name)
         self.engine = Engine(self.root)
         self.project_id = "demo-project"
@@ -245,15 +307,238 @@ class WorkflowTests(unittest.TestCase):
             self.engine.transition(self.project_id, state, "approved", "agent", "developer", "尝试越权")
 
     def test_incomplete_dependency_blocks_execution(self):
-        base = {"requirement_ids": ["REQ-001"], "input": "输入", "output": "输出", "acceptance": "验收", "test": "测试", "rollback": "回退"}
+        state = self.engine.load(self.project_id)
+        state["stage"] = "D_PLANNING"
+        self.engine.save(self.project_id, state)
+        base = {"requirement_ids": ["REQ-001"], "input": "输入", "output": "输出", "acceptance": "验收", "test": "python --version", "rollback": "回退"}
         self.engine.add_task(self.project_id, {**base, "id": "TASK-001", "title": "前置", "depends_on": []})
         self.engine.add_task(self.project_id, {**base, "id": "TASK-002", "title": "后置", "depends_on": ["TASK-001"]})
-        state = self.engine.load(self.project_id)
         state["stage"] = "E_IMPLEMENTATION"
-        state["status"] = "in_progress"
         self.engine.save(self.project_id, state)
         with self.assertRaisesRegex(WorkflowError, "依赖任务尚未完成"):
             self.engine.run_task(self.project_id, "TASK-002", "developer", "developer", "python --version")
+
+    def test_task_execution_requires_developer_and_registered_command(self):
+        state = self.engine.load(self.project_id)
+        state["stage"] = "D_PLANNING"
+        self.engine.save(self.project_id, state)
+        self.engine.add_task(self.project_id, {
+            "id": "TASK-001", "title": "验证命令边界", "requirement_ids": ["REQ-001"], "depends_on": [],
+            "input": "输入", "output": "输出", "acceptance": "验收", "test": "python --version", "rollback": "回退",
+        })
+        state["stage"] = "E_IMPLEMENTATION"
+        self.engine.save(self.project_id, state)
+
+        with self.assertRaisesRegex(WorkflowError, "developer"):
+            self.engine.run_task(self.project_id, "TASK-001", "tester", "test_engineer", "python --version")
+        with self.assertRaisesRegex(WorkflowError, "预先登记"):
+            self.engine.run_task(self.project_id, "TASK-001", "developer", "developer", "python -c \"print('unreviewed')\"")
+        self.assertEqual(list((self.engine.project_dir(self.project_id) / "tests/evidence").glob("*.json")), [])
+
+        evidence = self.engine.run_task(self.project_id, "TASK-001", "developer", "developer", "python --version")
+        self.assertEqual(evidence["exit_code"], 0)
+        self.assertEqual(evidence["role"], "developer")
+
+    def test_configuration_and_checks_are_bound_to_stage_and_role(self):
+        with self.assertRaisesRegex(WorkflowError, "开发规划阶段"):
+            self.engine.add_task(self.project_id, {
+                "id": "TASK-001", "title": "越阶段任务", "requirement_ids": ["REQ-001"], "depends_on": [],
+                "input": "输入", "output": "输出", "acceptance": "验收", "test": "python --version", "rollback": "回退",
+            })
+        with self.assertRaisesRegex(WorkflowError, "当前执行中"):
+            self.engine.add_check(self.project_id, "self-test", "F_SELF_TEST", "python --version")
+        with self.assertRaisesRegex(WorkflowError, "独立测试阶段"):
+            self.engine.add_test(self.project_id, {"id": "TC-001", "requirement_ids": ["REQ-001"], "steps": "步骤", "expected": "结果"})
+
+        state = self.engine.load(self.project_id)
+        state["stage"] = "F_SELF_TEST"
+        self.engine.save(self.project_id, state)
+        self.engine.add_check(self.project_id, "self-test", "F_SELF_TEST", "python --version")
+        with self.assertRaisesRegex(WorkflowError, "self_tester"):
+            self.engine.verify(self.project_id, "self-test", "tester", "test_engineer", None)
+        with self.assertRaisesRegex(WorkflowError, "G/H"):
+            self.engine.verify(self.project_id, "self-test", "self-tester", "self_tester", "TC-001")
+        with self.assertRaisesRegex(WorkflowError, "1–3600"):
+            self.engine.verify(self.project_id, "self-test", "self-tester", "self_tester", None, timeout=0)
+
+    def test_evidence_hash_command_and_context_are_enforced(self):
+        state = self.engine.load(self.project_id)
+        state["stage"] = "D_PLANNING"
+        self.engine.save(self.project_id, state)
+        self.engine.add_task(self.project_id, {
+            "id": "TASK-001", "title": "证据完整性", "requirement_ids": ["REQ-001"], "depends_on": [],
+            "input": "输入", "output": "输出", "acceptance": "验收", "test": "python --version", "rollback": "回退",
+        })
+        state["stage"] = "E_IMPLEMENTATION"
+        self.engine.save(self.project_id, state)
+        evidence = self.engine.run_task(self.project_id, "TASK-001", "developer", "developer", "python --version")
+        evidence_path = self.engine.project_dir(self.project_id) / evidence["path"]
+        content = json.loads(evidence_path.read_text(encoding="utf-8"))
+        content["stdout"] = "tampered"
+        evidence_path.write_text(json.dumps(content), encoding="utf-8")
+
+        result = check_stage(self.engine, self.project_id, "E_IMPLEMENTATION")
+        self.assertTrue(any("SHA-256" in error for error in result.errors), result.errors)
+
+        content["command"] = "python -c \"print('replacement')\""
+        evidence_path.write_text(json.dumps(content), encoding="utf-8")
+        tasks_path = self.engine.project_dir(self.project_id) / "tasks/tasks.json"
+        tasks = json.loads(tasks_path.read_text(encoding="utf-8"))
+        tasks["tasks"][0]["last_evidence_sha256"] = sha256_file(evidence_path)
+        tasks_path.write_text(json.dumps(tasks), encoding="utf-8")
+        result = check_stage(self.engine, self.project_id, "E_IMPLEMENTATION")
+        self.assertTrue(any("命令与登记命令不一致" in error for error in result.errors), result.errors)
+
+    def test_case_evidence_must_come_from_required_stage(self):
+        state = self.engine.load(self.project_id)
+        state["stage"] = "G_INDEPENDENT_TEST"
+        self.engine.save(self.project_id, state)
+        self.engine.add_check(self.project_id, "independent-test", "G_INDEPENDENT_TEST", "python --version")
+        self.engine.add_test(self.project_id, {"id": "TC-001", "requirement_ids": ["REQ-001"], "steps": "步骤", "expected": "结果"})
+        self.engine.verify(self.project_id, "independent-test", "tester", "test_engineer", "TC-001")
+        state["stage"] = "H_RELEASE"
+        self.engine.save(self.project_id, state)
+
+        result = check_stage(self.engine, self.project_id, "H_RELEASE")
+        self.assertTrue(any("缺少 H_RELEASE 阶段证据" in error for error in result.errors), result.errors)
+
+    def test_approval_request_and_decision_files_are_cross_checked(self):
+        request = self.submit_requirements()
+        base = self.engine.project_dir(self.project_id)
+        archived_path = base / f"approvals/{request['approval_id']}.request.json"
+        archived = json.loads(archived_path.read_text(encoding="utf-8"))
+        archived["summary"] = "tampered"
+        archived_path.write_text(json.dumps(archived), encoding="utf-8")
+        with self.assertRaisesRegex(WorkflowError, "已归档请求不一致"):
+            self.engine.approve(self.project_id, request["approval_id"], "approved", "人类评审", HUMAN_CONFIRMATION)
+
+        archived_path.write_text(json.dumps(request), encoding="utf-8")
+        self.approve(request["approval_id"])
+        decision_path = base / f"approvals/{request['approval_id']}.decision.json"
+        decision = json.loads(decision_path.read_text(encoding="utf-8"))
+        decision["decided_by"] = "其他人"
+        decision_path.write_text(json.dumps(decision), encoding="utf-8")
+        result = check_stage(self.engine, self.project_id, "B1_PROTOTYPE")
+        self.assertTrue(any("独立决策文件不一致" in error for error in result.errors), result.errors)
+
+    def test_command_output_is_bounded_in_evidence(self):
+        state = self.engine.load(self.project_id)
+        state["stage"] = "D_PLANNING"
+        self.engine.save(self.project_id, state)
+        command = "python output.py"
+        workspace = self.engine.project_dir(self.project_id) / "workspace"
+        (workspace / "output.py").write_text("print('x' * 1100000)\n", encoding="utf-8")
+        self.engine.add_task(self.project_id, {
+            "id": "TASK-001", "title": "输出限制", "requirement_ids": ["REQ-001"], "depends_on": [],
+            "input": "输入", "output": "输出", "acceptance": "验收", "test": command, "rollback": "回退",
+        })
+        state["stage"] = "E_IMPLEMENTATION"
+        self.engine.save(self.project_id, state)
+
+        evidence = self.engine.run_task(self.project_id, "TASK-001", "developer", "developer", command)
+        self.assertEqual(evidence["exit_code"], 0)
+        self.assertTrue(evidence["stdout_truncated"])
+        self.assertEqual(evidence["capture_limit_bytes"], 1000000)
+        self.assertLessEqual(len(evidence["stdout"].encode("utf-8")), 1000000)
+
+    def test_timeout_terminates_child_process_tree(self):
+        state = self.engine.load(self.project_id)
+        state["stage"] = "D_PLANNING"
+        self.engine.save(self.project_id, state)
+        workspace = self.engine.project_dir(self.project_id) / "workspace"
+        (workspace / "child.py").write_text(
+            "import pathlib, time\ntime.sleep(3)\npathlib.Path('child-finished').write_text('finished')\n",
+            encoding="utf-8",
+        )
+        (workspace / "runner.py").write_text(
+            "import subprocess, sys, time\nsubprocess.Popen([sys.executable, 'child.py'])\ntime.sleep(30)\n",
+            encoding="utf-8",
+        )
+        self.engine.add_task(self.project_id, {
+            "id": "TASK-001", "title": "进程树超时", "requirement_ids": ["REQ-001"], "depends_on": [],
+            "input": "输入", "output": "输出", "acceptance": "验收", "test": "python runner.py", "rollback": "回退",
+        })
+        state["stage"] = "E_IMPLEMENTATION"
+        self.engine.save(self.project_id, state)
+
+        evidence = self.engine.run_task(self.project_id, "TASK-001", "developer", "developer", "python runner.py", timeout=1)
+        self.assertEqual(evidence["exit_code"], 124)
+        self.assertTrue(evidence["timed_out"])
+        time.sleep(4)
+        self.assertFalse((workspace / "child-finished").exists())
+
+    def test_exception_rolls_back_state_audit_and_tasks(self):
+        base = self.engine.project_dir(self.project_id)
+        tracked = [base / "state.json", base / "audit.jsonl", base / "tasks/tasks.json"]
+        before = {path: path.read_bytes() for path in tracked}
+        with self.assertRaisesRegex(RuntimeError, "模拟异常"):
+            with self.engine.lock(self.project_id):
+                state = self.engine.load(self.project_id)
+                self.engine.transition(self.project_id, state, "paused", "operator", "workflow_operator", "模拟部分写入")
+                tasks_path = base / "tasks/tasks.json"
+                tasks = json.loads(tasks_path.read_text(encoding="utf-8"))
+                tasks["tasks"].append({"id": "TASK-PARTIAL"})
+                atomic_json(tasks_path, tasks)
+                raise RuntimeError("模拟异常")
+
+        for path in tracked:
+            self.assertEqual(path.read_bytes(), before[path])
+        self.assertFalse(self.engine.transaction_path(self.project_id).exists())
+
+    def test_crashed_transaction_is_recovered_on_status(self):
+        base = self.engine.project_dir(self.project_id)
+        state_path = base / "state.json"
+        audit_path = base / "audit.jsonl"
+        before_state = state_path.read_bytes()
+        before_audit = audit_path.read_bytes()
+        code = """
+import os
+import sys
+from workflow.engine import Engine
+engine = Engine(sys.argv[1])
+with engine.lock(sys.argv[2]):
+    state = engine.load(sys.argv[2])
+    engine.transition(sys.argv[2], state, "paused", "operator", "workflow_operator", "crash")
+    os._exit(0)
+"""
+        crashed = subprocess.run(
+            [sys.executable, "-c", code, str(self.root), self.project_id], cwd=SOURCE_ROOT, timeout=10,
+        )
+        self.assertEqual(crashed.returncode, 0)
+        self.assertTrue(self.engine.transaction_path(self.project_id).exists())
+        self.assertNotEqual(state_path.read_bytes(), before_state)
+
+        status = self.engine.status(self.project_id)
+        self.assertEqual(status["state"]["status"], "in_progress")
+        self.assertEqual(state_path.read_bytes(), before_state)
+        self.assertEqual(audit_path.read_bytes(), before_audit)
+        self.assertFalse(self.engine.transaction_path(self.project_id).exists())
+
+    def test_crashed_project_creation_can_be_retried_safely(self):
+        project_id = "crash-create"
+        code = """
+import os
+import sys
+from workflow.engine import Engine
+engine = Engine(sys.argv[1])
+def crash(*args):
+    os._exit(0)
+engine._copy_templates = crash
+engine.new_project(sys.argv[2], "崩溃创建", "模拟创建中断")
+"""
+        crashed = subprocess.run(
+            [sys.executable, "-c", code, str(self.root), project_id], cwd=SOURCE_ROOT, timeout=10,
+        )
+        self.assertEqual(crashed.returncode, 0)
+        self.assertTrue(self.engine.project_dir(project_id).exists())
+        self.assertTrue(self.engine.transaction_path(project_id).exists())
+
+        state = self.engine.new_project(project_id, "崩溃创建", "模拟创建中断")
+        self.assertEqual(state["stage"], "B_REQUIREMENTS")
+        self.assertFalse(self.engine.transaction_path(project_id).exists())
+        with self.assertRaisesRegex(WorkflowError, "项目已存在"):
+            self.engine.new_project(project_id, "重复创建", "不得覆盖")
+        self.assertEqual(self.engine.load(project_id)["name"], "崩溃创建")
 
 
 if __name__ == "__main__":

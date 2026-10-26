@@ -159,7 +159,8 @@ def dispatch(args: argparse.Namespace) -> Any:
     if args.command == "release-set":
         return engine.set_release(args.project_id, args.version, args.artifact)
     if args.command == "validate":
-        return check_stage(engine, args.project_id, engine.load(args.project_id)["stage"]).to_dict()
+        with engine.lock(args.project_id):
+            return check_stage(engine, args.project_id, engine.load(args.project_id)["stage"]).to_dict()
     if args.command == "archive":
         return engine.archive(args.project_id, args.actor)
     raise WorkflowError(f"未知命令：{args.command}")

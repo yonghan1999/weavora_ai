@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
-import tempfile
 import unittest
 import zipfile
 from pathlib import Path
 
+from _support import temporary_project_directory
 from workflow.engine import Engine, HUMAN_CONFIRMATION, SOURCE_ROOT, WorkflowError, atomic_json
 
 
@@ -169,7 +169,7 @@ REQ-001 → TASK-001 → 执行证据。
 
 class EndToEndTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(dir=SOURCE_ROOT / "var/tmp")
+        self.temporary = temporary_project_directory(SOURCE_ROOT)
         self.root = Path(self.temporary.name)
         self.engine = Engine(self.root)
         self.project_id = "simulated-e2e"

@@ -217,33 +217,67 @@ def _check_task_trace(tasks: list[dict[str, Any]], requirements: list[str], resu
     result.checks.append("需求—任务追踪")
 
 
-def _validate_evidence(base: Path, relative: str, current_tree: str | None, role: str | None, result: GateResult) -> bool:
-    if not relative:
+def _validate_evidence(
+    base: Path,
+    relative: str,
+    current_tree: str | None,
+    role: str | None,
+    result: GateResult,
+    *,
+    project_id: str,
+    expected_sha256: str | None,
+    expected_command: str | None,
+    expected_context: dict[str, Any],
+) -> dict[str, Any] | None:
+    if not isinstance(relative, str) or not relative:
         result.errors.append("缺少执行证据路径")
-        return False
-    path = base / relative
+        return None
+    path = (base / relative).resolve()
+    evidence_root = (base / "tests/evidence").resolve()
+    if evidence_root not in path.parents:
+        result.errors.append(f"执行证据路径越出证据目录：{relative}")
+        return None
     if not path.is_file():
         result.errors.append(f"执行证据不存在：{relative}")
-        return False
+        return None
+    if not expected_sha256 or sha256_file(path) != expected_sha256:
+        result.errors.append(f"执行证据 SHA-256 缺失或不一致：{relative}")
+        return None
     try:
         evidence = read_json(path)
     except WorkflowError as exc:
         result.errors.append(str(exc))
-        return False
-    if evidence.get("exit_code") != 0 or evidence.get("timed_out"):
-        result.errors.append(f"执行证据未通过：{relative}")
-        return False
-    if "command" not in evidence or "started_at" not in evidence or "finished_at" not in evidence:
+        return None
+    required = {
+        "evidence_id", "project_id", "started_at", "finished_at", "actor", "role", "command",
+        "cwd", "shell_mode", "exit_code", "timed_out", "stdout", "stderr",
+        "stdout_truncated", "stderr_truncated", "capture_limit_bytes",
+        "tree_digest_before", "tree_digest_after",
+    }
+    if not required <= evidence.keys():
         result.errors.append(f"执行证据字段不完整：{relative}")
-        return False
+        return None
+    if evidence.get("evidence_id") != path.stem or evidence.get("project_id") != project_id:
+        result.errors.append(f"执行证据标识或项目不匹配：{relative}")
+        return None
+    if evidence.get("exit_code") != 0 or evidence.get("timed_out") is not False:
+        result.errors.append(f"执行证据未通过：{relative}")
+        return None
+    if expected_command is not None and evidence.get("command") != expected_command:
+        result.errors.append(f"执行证据命令与登记命令不一致：{relative}")
+        return None
+    for key, expected in expected_context.items():
+        if evidence.get(key) != expected:
+            result.errors.append(f"执行证据上下文 {key} 不匹配：{relative}")
+            return None
     if current_tree is not None and evidence.get("tree_digest_after") != current_tree:
         result.errors.append(f"执行证据已过期（代码在测试后变化）：{relative}")
-        return False
+        return None
     if role is not None and evidence.get("role") != role:
         result.errors.append(f"执行角色不符合要求（应为 {role}）：{relative}")
-        return False
+        return None
     result.evidence.append(relative)
-    return True
+    return evidence
 
 
 def _check_configured(engine, project_id: str, stage_id: str, role: str, result: GateResult, require_one: bool) -> None:
@@ -257,16 +291,24 @@ def _check_configured(engine, project_id: str, stage_id: str, role: str, result:
         if check.get("last_status") != "passed":
             result.errors.append(f"必需检查未通过：{check['id']}")
             continue
-        _validate_evidence(base, check.get("last_evidence", ""), current, role, result)
+        _validate_evidence(
+            base, check.get("last_evidence", ""), current, role, result,
+            project_id=project_id,
+            expected_sha256=check.get("last_evidence_sha256"),
+            expected_command=check.get("command"),
+            expected_context={"check_id": check["id"]},
+        )
     result.checks.append(f"{stage_id} 必需构建/自动化测试")
 
 
-def _check_cases(engine, project_id: str, requirements: list[str], result: GateResult) -> None:
+def _check_cases(engine, project_id: str, requirements: list[str], result: GateResult, evidence_stage: str) -> None:
     base = engine.project_dir(project_id)
     cases = read_json(base / "tests/cases.json")["cases"]
     if not cases:
         result.errors.append("独立测试用例为空")
         return
+    checks = read_json(base / "checks.json")["checks"]
+    checks_by_id = {item.get("id"): item for item in checks}
     ids = [item.get("id") for item in cases]
     if len(ids) != len(set(ids)):
         result.errors.append("测试用例标识重复")
@@ -283,8 +325,19 @@ def _check_cases(engine, project_id: str, requirements: list[str], result: GateR
                 result.errors.append(f"用例 {case.get('id')} 缺少 {key}")
         if case.get("status") != "passed":
             result.errors.append(f"测试用例未通过：{case.get('id')}")
-        else:
-            _validate_evidence(base, case.get("last_evidence", ""), current, "test_engineer", result)
+            continue
+        check_id = case.get("last_check_id")
+        check = checks_by_id.get(check_id)
+        if not check or case.get("last_check_stage") != evidence_stage or check.get("stage") != evidence_stage:
+            result.errors.append(f"用例 {case.get('id')} 缺少 {evidence_stage} 阶段证据：{case.get('id')}")
+            continue
+        _validate_evidence(
+            base, case.get("last_evidence", ""), current, "test_engineer", result,
+            project_id=project_id,
+            expected_sha256=case.get("last_evidence_sha256"),
+            expected_command=check.get("command"),
+            expected_context={"check_id": check_id, "case_id": case["id"]},
+        )
     missing = set(requirements) - covered
     if missing:
         result.errors.append(f"需求缺少独立测试覆盖：{sorted(missing)}")
@@ -311,6 +364,18 @@ def _check_previous_approvals(engine, project_id: str, stage_id: str, result: Ga
         latest = matching[-1]
         if latest.get("decision_source") != "explicit_human_cli" or not latest.get("decided_by"):
             result.errors.append(f"审批来源不是明确人工操作：{required_stage}")
+        if latest.get("project_id") != project_id or latest.get("workflow_id") != state.get("workflow_id"):
+            result.errors.append(f"审批记录与工作流不匹配：{required_stage}")
+        approval_id = latest.get("approval_id", "")
+        if not isinstance(approval_id, str) or not re.fullmatch(r"APR-[A-Z0-9]+-[a-f0-9]{12}", approval_id):
+            result.errors.append(f"审批标识格式无效：{required_stage}")
+        else:
+            try:
+                decision = read_json(engine.project_dir(project_id) / f"approvals/{approval_id}.decision.json")
+                if decision != latest:
+                    result.errors.append(f"审批状态与独立决策文件不一致：{required_stage}")
+            except WorkflowError as exc:
+                result.errors.append(str(exc))
         current = engine.baseline_digest(project_id, required_stage)
         if latest.get("verified_baseline_digest") != current:
             result.errors.append(f"批准后基线发生变化，审批失效：{required_stage}")
@@ -361,12 +426,18 @@ def check_stage(engine, project_id: str, stage_id: str, for_archive: bool = Fals
             elif not task.get("last_evidence"):
                 result.errors.append(f"完成任务没有真实证据：{task['id']}")
             else:
-                _validate_evidence(base, task["last_evidence"], None, "developer", result)
+                _validate_evidence(
+                    base, task["last_evidence"], None, "developer", result,
+                    project_id=project_id,
+                    expected_sha256=task.get("last_evidence_sha256"),
+                    expected_command=task.get("test"),
+                    expected_context={"task_id": task["id"]},
+                )
         result.checks.append("任务完成定义与开发证据")
     elif stage_id == "F_SELF_TEST":
         _check_configured(engine, project_id, stage_id, "self_tester", result, require_one=True)
     elif stage_id == "G_INDEPENDENT_TEST":
-        _check_cases(engine, project_id, requirements, result)
+        _check_cases(engine, project_id, requirements, result, "G_INDEPENDENT_TEST")
         _check_configured(engine, project_id, stage_id, "test_engineer", result, require_one=True)
         report = documents.get("docs/07-test-report.md", "")
         missing = [item for item in requirements if item not in report]
@@ -388,7 +459,7 @@ def check_stage(engine, project_id: str, stage_id: str, for_archive: bool = Fals
                 result.errors.append(f"发布制品不存在：{artifact.get('path')}")
             elif sha256_file(path) != artifact.get("sha256"):
                 result.errors.append(f"发布制品哈希不一致：{artifact.get('path')}")
-        _check_cases(engine, project_id, requirements, result)
+        _check_cases(engine, project_id, requirements, result, "H_RELEASE")
         _check_configured(engine, project_id, stage_id, "test_engineer", result, require_one=True)
         result.checks.append("发布制品、版本、最终回归及回滚材料")
     elif stage_id == "I_ACCEPTANCE":
@@ -400,7 +471,7 @@ def check_stage(engine, project_id: str, stage_id: str, for_archive: bool = Fals
             if version not in text or code_version not in text:
                 result.errors.append(f"{label}与发布清单版本不一致")
         _load_tasks(engine, project_id, result)
-        _check_cases(engine, project_id, requirements, result)
+        _check_cases(engine, project_id, requirements, result, "H_RELEASE")
         result.checks.append("归档版本一致性与交付完整性")
 
     _check_previous_approvals(engine, project_id, stage_id, result, include_current=for_archive)

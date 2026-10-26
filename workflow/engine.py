@@ -4,9 +4,10 @@ import hashlib
 import json
 import os
 import re
-import shlex
 import shutil
+import signal
 import subprocess
+import tempfile
 import time
 import uuid
 import zipfile
@@ -81,22 +82,82 @@ def tree_digest(root: Path) -> str:
 
 @contextmanager
 def file_lock(path: Path, timeout: float = 10.0):
+    """跨进程互斥锁；进程退出后由操作系统自动释放。"""
+    if timeout < 0:
+        raise WorkflowError("锁等待超时时间不能为负数。")
     path.parent.mkdir(parents=True, exist_ok=True)
-    started = time.monotonic()
-    handle = None
-    while handle is None:
-        try:
-            handle = path.open("x")
-            handle.write(str(os.getpid()))
-        except FileExistsError:
-            if time.monotonic() - started >= timeout:
-                raise WorkflowError(f"等待工作流锁超时：{path}")
-            time.sleep(0.05)
+    handle = path.open("a+b")
     try:
+        if os.name == "nt":
+            import msvcrt
+
+            handle.seek(0, os.SEEK_END)
+            if handle.tell() == 0:
+                handle.write(b"\0")
+                handle.flush()
+            handle.seek(0)
+        started = time.monotonic()
+        while True:
+            try:
+                if os.name == "nt":
+                    handle.seek(0)
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.monotonic() - started >= timeout:
+                    raise WorkflowError(f"等待工作流锁超时：{path}")
+                time.sleep(0.05)
         yield
     finally:
+        try:
+            if os.name == "nt":
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        except OSError:
+            pass
         handle.close()
-        path.unlink(missing_ok=True)
+
+
+MAX_CAPTURE_BYTES = 1_000_000
+
+
+def read_captured_output(path: Path) -> tuple[str, bool]:
+    with path.open("rb") as handle:
+        content = handle.read(MAX_CAPTURE_BYTES + 1)
+    truncated = len(content) > MAX_CAPTURE_BYTES
+    return content[:MAX_CAPTURE_BYTES].decode("utf-8", errors="replace"), truncated
+
+
+def terminate_process_tree(process: subprocess.Popen) -> None:
+    if process.poll() is not None:
+        return
+    try:
+        if os.name == "nt":
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                capture_output=True,
+                timeout=10,
+                check=False,
+            )
+        else:
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+    except (OSError, subprocess.SubprocessError):
+        pass
+    if process.poll() is None:
+        try:
+            process.kill()
+        except OSError:
+            pass
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        pass
 
 
 class Engine:
@@ -119,8 +180,78 @@ class Engine:
             raise WorkflowError("项目标识须为 3–64 位小写字母、数字或连字符。")
         return self.projects / project_id
 
-    def lock(self, project_id: str):
-        return file_lock(self.root / "var/locks" / f"{project_id}.lock")
+    def transaction_path(self, project_id: str) -> Path:
+        return self.root / "var" / "transactions" / f"{project_id}.json"
+
+    def _transaction_files(self, project_id: str) -> list[Path]:
+        base = self.project_dir(project_id)
+        files = [
+            base / relative
+            for relative in [
+                "state.json", "audit.jsonl", "checks.json", "release.json", "tasks/tasks.json",
+                "tests/cases.json", "tests/defects.json",
+            ]
+        ]
+        files.extend(sorted((base / "approvals").glob("*.json")))
+        return files
+
+    def _recover_transaction(self, project_id: str) -> None:
+        journal_path = self.transaction_path(project_id)
+        if not journal_path.exists():
+            return
+        journal = read_json(journal_path)
+        base = self.project_dir(project_id)
+        if journal.get("create_project"):
+            if base.exists():
+                shutil.rmtree(base)
+        else:
+            for entry in journal["files"]:
+                path = (base / entry["path"]).resolve()
+                if base.resolve() not in path.parents:
+                    raise WorkflowError("恢复日志包含越界路径，需要人工检查。")
+                if entry["content"] is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    atomic_text(path, entry["content"])
+        journal_path.unlink()
+
+    @contextmanager
+    def lock(self, project_id: str, create_project: bool = False):
+        with file_lock(self.root / "var/locks" / f"{project_id}.lock"):
+            self._recover_transaction(project_id)
+            base = self.project_dir(project_id)
+            if create_project:
+                create_project = not base.exists()
+            files = [] if create_project else self._transaction_files(project_id)
+            journal = {
+                "schema_version": 1,
+                "transaction_id": uuid.uuid4().hex,
+                "project_id": project_id,
+                "started_at": utc_now(),
+                "create_project": create_project,
+                "files": [
+                    {
+                        "path": path.relative_to(base).as_posix(),
+                        "content": path.read_text(encoding="utf-8") if path.exists() else None,
+                    }
+                    for path in files
+                ],
+            }
+            journal_path = self.transaction_path(project_id)
+            atomic_json(journal_path, journal)
+            try:
+                yield
+            except BaseException:
+                self._recover_transaction(project_id)
+                raise
+            else:
+                journal_path.unlink(missing_ok=True)
+
+    def _load_consistent(self, project_id: str) -> dict[str, Any]:
+        if self.transaction_path(project_id).exists():
+            with self.lock(project_id):
+                return self.load(project_id)
+        return self.load(project_id)
 
     def load(self, project_id: str) -> dict[str, Any]:
         return read_json(self.project_dir(project_id) / "state.json")
@@ -184,7 +315,7 @@ class Engine:
         if not name.strip() or not request.strip():
             raise WorkflowError("项目名称和初始需求不能为空。")
         directory = self.project_dir(project_id)
-        with self.lock(project_id):
+        with self.lock(project_id, create_project=True):
             if directory.exists():
                 raise WorkflowError(f"项目已存在，未覆盖：{directory}")
             for child in ["docs", "tasks", "tests/evidence", "approvals", "workspace", "deliverables"]:
@@ -249,14 +380,14 @@ class Engine:
 
     def status(self, project_id: str | None = None) -> Any:
         if project_id:
-            state = self.load(project_id)
+            state = self._load_consistent(project_id)
             current = self.current_approval_request(project_id, required=False)
             return {"state": state, "current_approval_request": current}
         if not self.projects.exists():
             return []
         result = []
         for path in sorted(self.projects.glob("*/state.json")):
-            state = read_json(path)
+            state = self._load_consistent(path.parent.name)
             result.append({key: state[key] for key in ["project_id", "name", "stage", "status", "updated_at"]})
         return result
 
@@ -384,6 +515,11 @@ class Engine:
             request = self.current_approval_request(project_id)
             if request["approval_id"] != approval_id or request["stage"] != state["stage"]:
                 raise WorkflowError("审批标识与当前请求不匹配。")
+            if not re.fullmatch(r"APR-[A-Z0-9]+-[a-f0-9]{12}", approval_id):
+                raise WorkflowError("审批标识格式无效。")
+            archived_request = read_json(self.project_dir(project_id) / f"approvals/{approval_id}.request.json")
+            if archived_request != request:
+                raise WorkflowError("当前审批请求与已归档请求不一致。")
             current_digest = self.baseline_digest(project_id, state["stage"])
             if current_digest != request["baseline_digest"]:
                 raise WorkflowError("审批基线已变化，旧审批请求失效；请重新提交审批。")
@@ -455,6 +591,9 @@ class Engine:
 
     def add_task(self, project_id: str, task: dict[str, Any]) -> dict[str, Any]:
         with self.lock(project_id):
+            state = self.load(project_id)
+            if state["stage"] != "D_PLANNING" or state["status"] != "in_progress":
+                raise WorkflowError("只有开发规划阶段可添加任务。")
             if not TASK_ID_RE.fullmatch(task["id"]):
                 raise WorkflowError("任务标识格式无效。")
             path = self.project_dir(project_id) / "tasks/tasks.json"
@@ -477,11 +616,15 @@ class Engine:
             state = self.load(project_id)
             if state["stage"] not in {"E_IMPLEMENTATION", "G_INDEPENDENT_TEST"} or state["status"] != "in_progress":
                 raise WorkflowError("当前阶段或状态不允许执行开发/修复任务。")
+            if role != "developer":
+                raise WorkflowError("开发/修复任务只能由 developer 角色执行。")
             tasks_path = self.project_dir(project_id) / "tasks/tasks.json"
             data = read_json(tasks_path)
             task = next((item for item in data["tasks"] if item["id"] == task_id), None)
             if not task:
                 raise WorkflowError("任务不存在。")
+            if command != task["test"]:
+                raise WorkflowError("执行命令必须与任务中预先登记的 test 完全一致。")
             incomplete = [dep for dep in task.get("depends_on", []) if not any(t["id"] == dep and t["status"] == "completed" for t in data["tasks"])]
             if incomplete:
                 raise WorkflowError(f"依赖任务尚未完成：{incomplete}")
@@ -494,9 +637,10 @@ class Engine:
             task["evidence"].append(relative)
             task["status"] = "completed" if evidence["exit_code"] == 0 else "failed"
             task["last_evidence"] = relative
+            task["last_evidence_sha256"] = sha256_file(self.project_dir(project_id) / relative)
             state["active_task_id"] = task_id
             atomic_json(tasks_path, data)
-            self.audit(project_id, {"event": "task_executed", "at": utc_now(), "task_id": task_id, "evidence": relative, "exit_code": evidence["exit_code"]})
+            self.audit(project_id, {"event": "task_executed", "at": utc_now(), "task_id": task_id, "evidence": relative, "evidence_sha256": task["last_evidence_sha256"], "exit_code": evidence["exit_code"]})
             if evidence["exit_code"] == 0:
                 state["active_task_id"] = None
                 self.save(project_id, state)
@@ -505,34 +649,50 @@ class Engine:
             return evidence
 
     def add_check(self, project_id: str, check_id: str, stage: str, command: str, required: bool = True) -> dict[str, Any]:
-        if not CHECK_ID_RE.fullmatch(check_id) or stage not in self.stages:
-            raise WorkflowError("检查标识或阶段无效。")
-        path = self.project_dir(project_id) / "checks.json"
-        data = read_json(path)
-        check = {"id": check_id, "stage": stage, "command": command, "required": required}
-        existing = next((item for item in data["checks"] if item["id"] == check_id), None)
-        if existing:
-            existing.update(check)
-            existing.pop("last_evidence", None)
-            existing.pop("last_status", None)
-        else:
-            data["checks"].append(check)
-        atomic_json(path, data)
-        return check
+        if not CHECK_ID_RE.fullmatch(check_id) or stage not in {"F_SELF_TEST", "G_INDEPENDENT_TEST", "H_RELEASE"}:
+            raise WorkflowError("检查标识或阶段无效；检查仅可用于 F/G/H 阶段。")
+        if not command.strip():
+            raise WorkflowError("检查命令不能为空。")
+        with self.lock(project_id):
+            state = self.load(project_id)
+            if state["stage"] != stage or state["status"] != "in_progress":
+                raise WorkflowError("只能在当前执行中的 F/G/H 阶段配置对应检查。")
+            path = self.project_dir(project_id) / "checks.json"
+            data = read_json(path)
+            check = {"id": check_id, "stage": stage, "command": command, "required": required}
+            existing = next((item for item in data["checks"] if item["id"] == check_id), None)
+            if existing:
+                existing.update(check)
+                existing.pop("last_evidence", None)
+                existing.pop("last_status", None)
+            else:
+                data["checks"].append(check)
+            atomic_json(path, data)
+            self.audit(project_id, {"event": "check_configured", "at": utc_now(), "check": check})
+            return check
 
     def add_test(self, project_id: str, case: dict[str, Any]) -> dict[str, Any]:
         if not CASE_ID_RE.fullmatch(case["id"]):
             raise WorkflowError("测试用例标识格式无效。")
-        path = self.project_dir(project_id) / "tests/cases.json"
-        data = read_json(path)
-        if any(item["id"] == case["id"] for item in data["cases"]):
-            raise WorkflowError("测试用例已存在。")
-        case.update({"status": "pending", "evidence": []})
-        data["cases"].append(case)
-        atomic_json(path, data)
-        return case
+        with self.lock(project_id):
+            state = self.load(project_id)
+            if state["stage"] != "G_INDEPENDENT_TEST" or state["status"] != "in_progress":
+                raise WorkflowError("只有执行中的独立测试阶段可添加测试用例。")
+            path = self.project_dir(project_id) / "tests/cases.json"
+            data = read_json(path)
+            if any(item["id"] == case["id"] for item in data["cases"]):
+                raise WorkflowError("测试用例已存在。")
+            case.update({"status": "pending", "evidence": []})
+            data["cases"].append(case)
+            atomic_json(path, data)
+            self.audit(project_id, {"event": "test_case_created", "at": utc_now(), "case": case})
+            return case
 
     def _execute(self, project_id: str, command: str, actor: str, role: str, timeout: int, extra: dict[str, Any]) -> dict[str, Any]:
+        if not command.strip():
+            raise WorkflowError("执行命令不能为空。")
+        if not 1 <= timeout <= 3600:
+            raise WorkflowError("执行超时时间须在 1–3600 秒之间。")
         started = utc_now()
         workspace = self.project_dir(project_id) / "workspace"
         before = tree_digest(workspace)
@@ -545,25 +705,37 @@ class Engine:
             invocation = command
             use_shell = True
             shell_mode = "default shell"
-        try:
-            completed = subprocess.run(
-                invocation,
-                cwd=workspace,
-                shell=use_shell,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=timeout,
-            )
-            exit_code = completed.returncode
-            stdout, stderr = completed.stdout, completed.stderr
-            timed_out = False
-        except subprocess.TimeoutExpired as exc:
-            exit_code = 124
-            stdout = exc.stdout or ""
-            stderr = exc.stderr or ""
-            timed_out = True
+        temporary_root = self.root / "var" / "tmp"
+        temporary_root.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temporary_root) as directory:
+            stdout_path = Path(directory) / "stdout.bin"
+            stderr_path = Path(directory) / "stderr.bin"
+            with stdout_path.open("wb") as stdout_file, stderr_path.open("wb") as stderr_file:
+                options: dict[str, Any] = {
+                    "cwd": workspace,
+                    "shell": use_shell,
+                    "stdout": stdout_file,
+                    "stderr": stderr_file,
+                }
+                if os.name == "nt":
+                    options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+                else:
+                    options["start_new_session"] = True
+                try:
+                    process = subprocess.Popen(invocation, **options)
+                    try:
+                        exit_code = process.wait(timeout=timeout)
+                        timed_out = False
+                    except subprocess.TimeoutExpired:
+                        terminate_process_tree(process)
+                        exit_code = 124
+                        timed_out = True
+                except OSError as exc:
+                    exit_code = 126
+                    timed_out = False
+                    stderr_file.write(f"命令启动失败：{exc}\n".encode("utf-8", errors="replace"))
+            stdout, stdout_truncated = read_captured_output(stdout_path)
+            stderr, stderr_truncated = read_captured_output(stderr_path)
         evidence_id = f"EXEC-{utc_now().replace(':', '').replace('-', '')}-{uuid.uuid4().hex[:8]}"
         relative = f"tests/evidence/{evidence_id}.json"
         evidence = {
@@ -580,7 +752,10 @@ class Engine:
             "exit_code": exit_code,
             "timed_out": timed_out,
             "stdout": stdout,
+            "stdout_truncated": stdout_truncated,
             "stderr": stderr,
+            "stderr_truncated": stderr_truncated,
+            "capture_limit_bytes": MAX_CAPTURE_BYTES,
             "tree_digest_before": before,
             "tree_digest_after": tree_digest(workspace),
             **extra,
@@ -601,21 +776,36 @@ class Engine:
                 raise WorkflowError("检查未配置。")
             if check["stage"] != state["stage"]:
                 raise WorkflowError(f"检查属于 {check['stage']}，当前为 {state['stage']}。")
+            expected_roles = {
+                "F_SELF_TEST": "self_tester",
+                "G_INDEPENDENT_TEST": "test_engineer",
+                "H_RELEASE": "test_engineer",
+            }
+            expected_role = expected_roles.get(state["stage"])
+            if expected_role is None or role != expected_role:
+                raise WorkflowError(f"当前阶段检查只能由 {expected_role or '对应阶段'} 角色执行。")
             cases_path = self.project_dir(project_id) / "tests/cases.json"
             cases = read_json(cases_path)
             case = None
             if case_id:
+                if state["stage"] not in {"G_INDEPENDENT_TEST", "H_RELEASE"}:
+                    raise WorkflowError("只有 G/H 阶段可以将检查关联到独立测试用例。")
                 case = next((item for item in cases["cases"] if item["id"] == case_id), None)
                 if not case:
                     raise WorkflowError("测试用例不存在。")
             evidence = self._execute(project_id, check["command"], actor, role, timeout, {"check_id": check_id, "case_id": case_id})
             relative = evidence["path"]
+            evidence_sha256 = sha256_file(self.project_dir(project_id) / relative)
             check["last_evidence"] = relative
+            check["last_evidence_sha256"] = evidence_sha256
             check["last_status"] = "passed" if evidence["exit_code"] == 0 else "failed"
             atomic_json(checks_path, checks)
             if case:
                 case["evidence"].append(relative)
                 case["last_evidence"] = relative
+                case["last_evidence_sha256"] = evidence_sha256
+                case["last_check_id"] = check_id
+                case["last_check_stage"] = state["stage"]
                 case["status"] = "passed" if evidence["exit_code"] == 0 else "failed"
                 atomic_json(cases_path, cases)
                 self._update_defect(project_id, state, case, evidence)
@@ -666,6 +856,7 @@ class Engine:
         elif defect:
             defect["status"] = "resolved"
             defect["resolved_evidence"] = evidence["path"]
+            defect["resolved_evidence_sha256"] = sha256_file(self.project_dir(project_id) / evidence["path"])
             defect["resolved_at"] = utc_now()
             tasks_path = self.project_dir(project_id) / "tasks/tasks.json"
             tasks = read_json(tasks_path)
@@ -673,6 +864,7 @@ class Engine:
             if fix_task:
                 fix_task["status"] = "completed"
                 fix_task["last_evidence"] = evidence["path"]
+                fix_task["last_evidence_sha256"] = defect["resolved_evidence_sha256"]
                 fix_task["evidence"].append(evidence["path"])
                 atomic_json(tasks_path, tasks)
         atomic_json(path, data)
@@ -682,8 +874,8 @@ class Engine:
             raise WorkflowError("版本号格式无效。")
         with self.lock(project_id):
             state = self.load(project_id)
-            if state["stage"] != "H_RELEASE":
-                raise WorkflowError("只有发布准备阶段可设置发布清单。")
+            if state["stage"] != "H_RELEASE" or state["status"] != "in_progress":
+                raise WorkflowError("只有执行中的发布准备阶段可设置发布清单。")
             workspace = self.project_dir(project_id) / "workspace"
             records = []
             for item in artifacts:
