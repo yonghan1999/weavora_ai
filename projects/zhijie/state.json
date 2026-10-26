@@ -4,9 +4,9 @@
   "project_id": "zhijie",
   "name": "织界",
   "stage": "B1_PROTOTYPE",
-  "status": "in_progress",
+  "status": "awaiting_approval",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-10-26T08:22:00Z",
+  "updated_at": "2026-10-26T09:18:38Z",
   "retry_counts": {},
   "max_retries": 3,
   "approvals": [
@@ -282,6 +282,59 @@
         "docs/02a-prototype.md",
         "docs/02b-ui.md",
         "docs/03-architecture.md"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B1_PROTOTYPE",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-10-26T08:53:37Z",
+      "actor": "product-designer",
+      "role": "product_designer",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/02-requirements.md",
+        "docs/02a-prototype.md",
+        "workspace/design/prototype/index.html"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B1_PROTOTYPE",
+      "from": "awaiting_approval",
+      "to": "in_progress",
+      "at": "2026-10-26T08:59:17Z",
+      "actor": "product-designer",
+      "role": "product_designer",
+      "reason": "用户认为当前原型不符合要求；按面向 C 端及 Discord 式群组、频道、成员和语音交互重新组织 B1",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B1_PROTOTYPE",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-10-26T09:18:38Z",
+      "actor": "product-designer",
+      "role": "product_designer",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/02-requirements.md",
+        "docs/02a-prototype.md",
+        "workspace/design/prototype/index.html"
       ],
       "human_authorization": false
     }
