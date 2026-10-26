@@ -1,6 +1,6 @@
 # 织界：通用 AI 自主软件研发工作空间
 
-这是一套已可执行的本地研发控制平面：需求接收 → 需求分析 → 产品设计/评审 → 架构设计/评审 → 开发规划 → 编码 → 自测 → 独立测试 → 缺陷修复 → 发布准备 → 验收归档。它不限定未来业务项目的技术栈，也不绑定特定 Coding Agent。
+这是一套已可执行的本地研发控制平面：需求接收 → 需求分析 → 产品原型/评审 → UI 视觉设计/评审 → 架构设计/评审 → 开发规划 → 编码 → 自测 → 独立测试 → 缺陷修复 → 发布准备 → 验收归档。它不限定未来业务项目的技术栈，也不绑定特定 Coding Agent。
 
 ## 环境与安装
 
@@ -25,7 +25,7 @@ python zhijie.py submit my-app --actor requirements-analyst --role requirements_
 python zhijie.py status my-app
 ```
 
-B、C、H、I 阶段会生成 `approvals/current.json` 并暂停。审批请求包含阶段、文档、基线哈希和审批标识。AI 必须在此等待。
+B、B1、B2、C、H、I 阶段会生成 `approvals/current.json` 并暂停。审批请求包含阶段、文档、基线哈希和审批标识。AI 必须在此等待。
 
 **以下命令只能由人类决策者执行：**
 
@@ -41,6 +41,22 @@ python zhijie.py submit my-app --actor requirements-analyst --role requirements_
 ```
 
 审批绑定文件哈希；批准后修改基线会使审批失效。
+
+## 产品原型与 UI 设计
+
+新项目在需求批准后依次进入 `B1_PROTOTYPE` 和 `B2_UI`，两者均需人工审批：
+
+1. B1 填写 `docs/02a-prototype.md`，并在 `workspace/design/prototype/index.html` 提供使用模拟数据的低保真可点击原型。确认功能、页面结构、核心流程、权限和异常状态后提交审批。
+2. B2 填写 `docs/02b-ui.md`，并在 `workspace/design/ui/index.html` 提供高保真可点击 UI。确认视觉规范、核心页面、组件状态和适配要求后提交审批。
+3. 原型和 UI 均须追踪全部 REQ。自动门禁检查交互元素及本地链接，但完整操作路径仍需人工走查，未验证事项须如实记录。
+
+```bash
+python zhijie.py submit my-app --actor product-designer --role product_designer
+# 人类批准 B1 后，完成 UI 文档与高保真原型
+python zhijie.py submit my-app --actor ui-designer --role ui_designer
+```
+
+既有项目保持创建时的九阶段路径，不会被自动迁移或使在途审批失效。开发交接必须包含已批准需求、原型、UI 和架构基线。
 
 ## 开发任务与真实执行
 
@@ -136,7 +152,7 @@ python scripts/validate_workspace.py
 ```text
 AGENTS.md                  当前 Coding Agent 规则
 zhijie.py                  统一命令入口
-workflow/config/           九阶段与状态机配置
+workflow/config/           十一阶段与状态机配置（兼容既有九阶段项目）
 workflow/spec/             工具无关规范、角色、契约、适配说明
 workflow/schemas/          Agent 输入输出 JSON Schema
 workflow/templates/        阶段文档模板

@@ -18,6 +18,24 @@
       }
     },
     {
+      "id": "B1_PROTOTYPE",
+      "name": "产品原型设计与评审",
+      "approval": true,
+      "documents": {
+        "docs/02a-prototype.md": ["设计目标与范围", "功能清单", "页面结构", "核心流程", "角色与权限", "关键状态与异常", "可点击原型", "需求追踪", "设计假设与待确认事项"],
+        "workspace/design/prototype/index.html": []
+      }
+    },
+    {
+      "id": "B2_UI",
+      "name": "UI 视觉设计与评审",
+      "approval": true,
+      "documents": {
+        "docs/02b-ui.md": ["视觉设计目标", "设计系统", "高保真页面", "组件与交互状态", "响应式与可访问性", "可点击 UI 原型", "需求追踪", "未验证事项"],
+        "workspace/design/ui/index.html": []
+      }
+    },
+    {
       "id": "C_DESIGN",
       "name": "架构与详细设计",
       "approval": true,

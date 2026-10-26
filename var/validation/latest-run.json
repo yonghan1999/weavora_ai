@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "run_at": "2026-10-26T03:04:30Z",
+  "run_at": "2026-10-26T07:51:23Z",
   "overall": "passed",
   "results": [
     {
@@ -39,7 +39,7 @@
       ],
       "exit_code": 0,
       "stdout": "",
-      "stderr": "test_complete_simulated_workflow (test_end_to_end.EndToEndTests.test_complete_simulated_workflow) ... ok\ntest_baseline_change_invalidates_approval (test_workflow.WorkflowTests.test_baseline_change_invalidates_approval) ... ok\ntest_explicit_failure_and_retry (test_workflow.WorkflowTests.test_explicit_failure_and_retry) ... ok\ntest_incomplete_dependency_blocks_execution (test_workflow.WorkflowTests.test_incomplete_dependency_blocks_execution) ... ok\ntest_installation_and_json_contracts (test_workflow.WorkflowTests.test_installation_and_json_contracts) ... ok\ntest_invalid_transition_is_rejected (test_workflow.WorkflowTests.test_invalid_transition_is_rejected) ... ok\ntest_pause_resume_persists_status (test_workflow.WorkflowTests.test_pause_resume_persists_status) ... ok\ntest_rejection_revision_and_resubmission (test_workflow.WorkflowTests.test_rejection_revision_and_resubmission) ... ok\ntest_template_gate_and_human_approval (test_workflow.WorkflowTests.test_template_gate_and_human_approval) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 2.215s\n\nOK\n"
+      "stderr": "test_complete_simulated_workflow (test_end_to_end.EndToEndTests.test_complete_simulated_workflow) ... ok\ntest_baseline_change_invalidates_approval (test_workflow.WorkflowTests.test_baseline_change_invalidates_approval) ... ok\ntest_design_gate_rejects_missing_trace_and_static_mockup (test_workflow.WorkflowTests.test_design_gate_rejects_missing_trace_and_static_mockup) ... ok\ntest_explicit_failure_and_retry (test_workflow.WorkflowTests.test_explicit_failure_and_retry) ... ok\ntest_incomplete_dependency_blocks_execution (test_workflow.WorkflowTests.test_incomplete_dependency_blocks_execution) ... ok\ntest_installation_and_json_contracts (test_workflow.WorkflowTests.test_installation_and_json_contracts) ... ok\ntest_invalid_transition_is_rejected (test_workflow.WorkflowTests.test_invalid_transition_is_rejected) ... ok\ntest_legacy_stage_order_does_not_force_new_design_stages (test_workflow.WorkflowTests.test_legacy_stage_order_does_not_force_new_design_stages) ... ok\ntest_pause_resume_persists_status (test_workflow.WorkflowTests.test_pause_resume_persists_status) ... ok\ntest_prototype_then_ui_require_separate_human_approvals (test_workflow.WorkflowTests.test_prototype_then_ui_require_separate_human_approvals) ... ok\ntest_rejection_revision_and_resubmission (test_workflow.WorkflowTests.test_rejection_revision_and_resubmission) ... ok\ntest_template_gate_and_human_approval (test_workflow.WorkflowTests.test_template_gate_and_human_approval) ... ok\n\n----------------------------------------------------------------------\nRan 12 tests in 3.353s\n\nOK\n"
     }
   ]
 }

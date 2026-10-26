@@ -108,6 +108,12 @@ class Engine:
         self.stages = {item["id"]: item for item in self.stage_config["stages"]}
         self.stage_order = [item["id"] for item in self.stage_config["stages"]]
 
+    def stage_order_for(self, state: dict[str, Any]) -> list[str]:
+        """旧项目保持创建时的阶段路径，新项目启用完整产品设计流程。"""
+        if state.get("workflow_version", 1) < 2:
+            return [item for item in self.stage_order if item not in {"B1_PROTOTYPE", "B2_UI"}]
+        return self.stage_order
+
     def project_dir(self, project_id: str) -> Path:
         if not PROJECT_ID_RE.fullmatch(project_id):
             raise WorkflowError("项目标识须为 3–64 位小写字母、数字或连字符。")
@@ -187,6 +193,7 @@ class Engine:
             now = utc_now()
             state = {
                 "schema_version": 1,
+                "workflow_version": 2,
                 "workflow_id": f"WF-{project_id}",
                 "project_id": project_id,
                 "name": name,
@@ -263,20 +270,31 @@ class Engine:
 
     def approval_files(self, project_id: str, stage_id: str) -> list[str]:
         stage = self.stages[stage_id]
+        state = self.load(project_id)
+        modern = state.get("workflow_version", 1) >= 2
         files = list(stage.get("documents", {})) + list(stage.get("data", []))
-        if stage_id == "C_DESIGN":
+        if modern and stage_id == "B1_PROTOTYPE":
             files.append("docs/02-requirements.md")
+        elif modern and stage_id == "B2_UI":
+            files.extend(self.approval_files(project_id, "B1_PROTOTYPE"))
+        elif stage_id == "C_DESIGN":
+            if modern:
+                files.extend(self.approval_files(project_id, "B2_UI"))
+            else:
+                files.append("docs/02-requirements.md")
         elif stage_id == "H_RELEASE":
             files.extend(["docs/07-test-report.md", "tests/cases.json", "tests/defects.json"])
         elif stage_id == "I_ACCEPTANCE":
-            files = [
-                *[f"docs/{name}" for name in [
-                    "02-requirements.md", "03-architecture.md", "04-development-plan.md",
-                    "05-self-test.md", "06-test-plan.md", "07-test-report.md",
-                    "08-release.md", "09-acceptance.md", "10-delivery-index.md"
-                ]],
-                "tasks/tasks.json", "checks.json", "tests/cases.json", "tests/defects.json", "release.json",
+            documents = [
+                "02-requirements.md", "03-architecture.md", "04-development-plan.md",
+                "05-self-test.md", "06-test-plan.md", "07-test-report.md",
+                "08-release.md", "09-acceptance.md", "10-delivery-index.md",
             ]
+            if modern:
+                documents[1:1] = ["02a-prototype.md", "02b-ui.md"]
+                files.extend(["workspace/design/prototype/index.html", "workspace/design/ui/index.html"])
+            files.extend(f"docs/{name}" for name in documents)
+            files.extend(["tasks/tasks.json", "checks.json", "tests/cases.json", "tests/defects.json", "release.json"])
         return sorted(set(files))
 
     def baseline_digest(self, project_id: str, stage_id: str) -> str:
@@ -335,10 +353,11 @@ class Engine:
 
     def _advance(self, project_id: str, state: dict[str, Any], actor: str, role: str) -> None:
         current = state["stage"]
-        if current == self.stage_order[-1]:
+        order = self.stage_order_for(state)
+        if current == order[-1]:
             self.transition(project_id, state, "completed", actor, role, "最终验收批准，工作流完成", human_authorization=True)
             return
-        state["stage"] = self.stage_order[self.stage_order.index(current) + 1]
+        state["stage"] = order[order.index(current) + 1]
         self.transition(project_id, state, "in_progress", actor, role, f"进入{self.stages[state['stage']]['name']}")
 
     def approve(

@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote, urlsplit
 
 from .engine import PROJECT_ID_RE, SOURCE_ROOT, WorkflowError, read_json, sha256_file, tree_digest
 
@@ -45,6 +47,58 @@ def _section(text: str, heading: str) -> str:
 
 def requirement_ids(requirements_text: str) -> list[str]:
     return re.findall(r"^\|\s*(REQ-\d{3,})\s*\|", _section(requirements_text, "功能需求"), re.MULTILINE)
+
+
+class _InteractiveHTMLInspector(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.interactive_count = 0
+        self.links: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        if tag in {"a", "button", "input", "select", "textarea", "form"}:
+            self.interactive_count += 1
+        if tag == "a" and attributes.get("href") is not None:
+            self.links.append(attributes["href"] or "")
+
+
+def _check_design_trace(document: str, requirements: list[str], label: str, result: GateResult) -> None:
+    trace = _section(document, "需求追踪")
+    referenced = set(re.findall(r"REQ-\d{3,}", trace))
+    missing = sorted(set(requirements) - referenced)
+    unknown = sorted(referenced - set(requirements))
+    if missing:
+        result.errors.append(f"{label}未在需求追踪中覆盖需求：{missing}")
+    if unknown:
+        result.errors.append(f"{label}需求追踪引用未知需求：{unknown}")
+    result.checks.append(f"需求—{label}追踪")
+
+
+def _check_interactive_html(base: Path, relative: str, text: str, result: GateResult) -> None:
+    inspector = _InteractiveHTMLInspector()
+    try:
+        inspector.feed(text)
+        inspector.close()
+    except Exception as exc:
+        result.errors.append(f"原型 HTML 无法解析：{relative}：{exc}")
+        return
+    if inspector.interactive_count == 0:
+        result.errors.append(f"原型没有链接、按钮或表单等交互元素：{relative}")
+    html_path = base / relative
+    for href in inspector.links:
+        if not href.strip() or href.strip() == "#" or href.lower().startswith("javascript:"):
+            result.errors.append(f"原型包含占位链接：{relative}")
+            continue
+        parsed = urlsplit(href)
+        if parsed.scheme or parsed.netloc or not parsed.path:
+            continue
+        target = (html_path.parent / unquote(parsed.path)).resolve()
+        if base.resolve() not in target.parents:
+            result.errors.append(f"原型链接越出项目目录：{relative} → {href}")
+        elif not target.is_file():
+            result.errors.append(f"原型本地链接目标不存在：{relative} → {href}")
+    result.checks.append(f"可点击原型结构与本地链接：{relative}")
 
 
 def _check_documents(engine, project_id: str, stage: dict[str, Any], result: GateResult) -> dict[str, str]:
@@ -243,8 +297,9 @@ def _check_cases(engine, project_id: str, requirements: list[str], result: GateR
 
 def _check_previous_approvals(engine, project_id: str, stage_id: str, result: GateResult, include_current: bool) -> None:
     state = engine.load(project_id)
-    index = engine.stage_order.index(stage_id)
-    required = [item for item in engine.stage_order[:index] if engine.stages[item]["approval"]]
+    order = engine.stage_order_for(state)
+    index = order.index(stage_id)
+    required = [item for item in order[:index] if engine.stages[item]["approval"]]
     if include_current and engine.stages[stage_id]["approval"]:
         required.append(stage_id)
     approvals = state.get("approvals", [])
@@ -272,6 +327,16 @@ def check_stage(engine, project_id: str, stage_id: str, for_archive: bool = Fals
 
     if stage_id == "B_REQUIREMENTS":
         requirements = _check_requirements(documents.get("docs/02-requirements.md", ""), result)
+    elif stage_id == "B1_PROTOTYPE":
+        _check_design_trace(documents.get("docs/02a-prototype.md", ""), requirements, "产品原型", result)
+        relative = "workspace/design/prototype/index.html"
+        if relative in documents:
+            _check_interactive_html(base, relative, documents[relative], result)
+    elif stage_id == "B2_UI":
+        _check_design_trace(documents.get("docs/02b-ui.md", ""), requirements, "UI 设计", result)
+        relative = "workspace/design/ui/index.html"
+        if relative in documents:
+            _check_interactive_html(base, relative, documents[relative], result)
     elif stage_id == "C_DESIGN":
         architecture = documents.get("docs/03-architecture.md", "")
         missing = [item for item in requirements if item not in architecture]
@@ -349,6 +414,7 @@ def check_installation() -> GateResult:
         "workflow/config/state_machine.json", "workflow/spec/WORKFLOW.md",
         "workflow/spec/ROLES.md", "workflow/spec/CONTRACTS.md", "workflow/spec/ADAPTERS.md",
         "workflow/spec/GIT.md", "workflow/schemas/agent-task.schema.json", "workflow/schemas/agent-result.schema.json",
+        "workflow/templates/02a-prototype.md", "workflow/templates/02b-ui.md",
     ]
     for relative in required:
         if not (SOURCE_ROOT / relative).is_file():
@@ -356,8 +422,12 @@ def check_installation() -> GateResult:
     try:
         stages = read_json(SOURCE_ROOT / "workflow/config/stages.json")["stages"]
         machine = read_json(SOURCE_ROOT / "workflow/config/state_machine.json")
-        if len(stages) != 9 or [item["id"][0] for item in stages] != list("ABCDEFGHI"):
-            result.errors.append("工作流必须按 A–I 定义九个阶段")
+        expected = [
+            "A_INTAKE", "B_REQUIREMENTS", "B1_PROTOTYPE", "B2_UI", "C_DESIGN", "D_PLANNING",
+            "E_IMPLEMENTATION", "F_SELF_TEST", "G_INDEPENDENT_TEST", "H_RELEASE", "I_ACCEPTANCE",
+        ]
+        if [item["id"] for item in stages] != expected:
+            result.errors.append("工作流必须按需求、原型、UI、架构到归档定义十一个阶段")
         statuses = set(machine["statuses"])
         for source, targets in machine["transitions"].items():
             if source not in statuses or not set(targets) <= statuses:

@@ -42,6 +42,73 @@ REQUIREMENTS = """# 需求规格说明书：模拟加法工具
 REQ-001 → AC-001。
 """
 
+PROTOTYPE = """# 产品原型设计
+
+## 设计目标与范围
+模拟整数加法的页面与交互。
+
+## 功能清单
+REQ-001：计算页提供整数输入和结果展示。
+
+## 页面结构
+单一计算页，包含输入与结果区域。
+
+## 核心流程
+输入整数，激活计算操作，展示结果。
+
+## 角色与权限
+模拟用户均可使用。
+
+## 关键状态与异常
+覆盖初始、输入不完整与结果状态。
+
+## 可点击原型
+workspace/design/prototype/index.html；仅使用模拟数据，完整走查由人工审批执行。
+
+## 需求追踪
+REQ-001 → 计算页与计算交互 → AC-001。
+
+## 设计假设与待确认事项
+不验证真实浏览器和设备兼容性。
+"""
+
+UI = """# UI 视觉设计
+
+## 视觉设计目标
+清晰的单页计算界面。
+
+## 设计系统
+系统字体、蓝色按钮、统一间距。
+
+## 高保真页面
+计算页对应 REQ-001 和已批准原型。
+
+## 组件与交互状态
+定义输入框、按钮及禁用状态。
+
+## 响应式与可访问性
+窄屏纵向排列；未执行实际设备验证。
+
+## 可点击 UI 原型
+workspace/design/ui/index.html；完整走查由人工审批执行。
+
+## 需求追踪
+REQ-001 → 高保真计算页 → AC-001。
+
+## 未验证事项
+未验证真实浏览器、设备及辅助技术兼容性。
+"""
+
+PROTOTYPE_HTML = """<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>原型</title></head>
+<body><a href="result.html">查看结果</a></body></html>
+"""
+
+RESULT_HTML = """<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>结果</title></head>
+<body><button type="button">重新计算</button></body></html>
+"""
+
 ARCHITECTURE = """# 架构与详细设计
 
 ## 架构概述
@@ -135,6 +202,20 @@ class EndToEndTests(unittest.TestCase):
         with self.assertRaises(WorkflowError):
             self.engine.submit(self.project_id, "analyst", "requirements_analyst")
         approval_blocked = True
+        self.approve()
+        self.assertEqual(self.engine.load(self.project_id)["stage"], "B1_PROTOTYPE")
+
+        self.write("docs/02a-prototype.md", PROTOTYPE)
+        self.write("workspace/design/prototype/index.html", PROTOTYPE_HTML)
+        self.write("workspace/design/prototype/result.html", RESULT_HTML)
+        self.engine.submit(self.project_id, "designer", "product_designer")
+        self.approve()
+        self.assertEqual(self.engine.load(self.project_id)["stage"], "B2_UI")
+
+        self.write("docs/02b-ui.md", UI)
+        self.write("workspace/design/ui/index.html", PROTOTYPE_HTML)
+        self.write("workspace/design/ui/result.html", RESULT_HTML)
+        self.engine.submit(self.project_id, "designer", "ui_designer")
         self.approve()
         self.assertEqual(self.engine.load(self.project_id)["stage"], "C_DESIGN")
 
@@ -305,7 +386,7 @@ REQ-001 / AC-001 通过独立测试。
         self.write("docs/10-delivery-index.md", f"""# 交付物索引
 
 ## 需求与设计基线
-docs/02-requirements.md；docs/03-architecture.md；含人工批准记录。
+docs/02-requirements.md；docs/02a-prototype.md；docs/02b-ui.md；docs/03-architecture.md；两个可点击设计入口及人工批准记录。
 
 ## 任务与代码版本
 tasks/tasks.json；代码版本 {release['code_version']}。
