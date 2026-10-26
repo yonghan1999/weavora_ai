@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.coverage
+.pytest_cache/
+var/locks/
+var/tmp/
+projects/*/deliverables/*.zip
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+.DS_Store
+Thumbs.db

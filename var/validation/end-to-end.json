@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "simulation": true,
+  "description": "隔离临时目录中的最小加法工具，不是实际业务项目成果",
+  "result": "passed",
+  "stages_verified": [
+    "A_INTAKE",
+    "B_REQUIREMENTS",
+    "C_DESIGN",
+    "D_PLANNING",
+    "E_IMPLEMENTATION",
+    "F_SELF_TEST",
+    "G_INDEPENDENT_TEST",
+    "H_RELEASE",
+    "I_ACCEPTANCE"
+  ],
+  "approval_block_verified": true,
+  "development_failure_and_retry_verified": true,
+  "independent_defect_and_regression_verified": true,
+  "archive_verified": true,
+  "archive_sha256": "73d62ad1b8802e45f5328fb29e99f46fba7abea228cf112c5b8ce666c2584a00",
+  "archive_file_count": 37,
+  "real_command_evidence_count": 6,
+  "entry_command_exit_codes": [
+    {
+      "command": "zhijie.py new",
+      "exit_code": 0
+    }
+  ],
+  "temporary_project_cleaned_on_teardown": true
+}

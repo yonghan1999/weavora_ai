@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "run_at": "2026-10-26T03:04:30Z",
+  "overall": "passed",
+  "results": [
+    {
+      "command": [
+        "D:\\KimiData\\daimon-share\\daimon\\runtime\\python\\.venv\\Scripts\\python.exe",
+        "-m",
+        "compileall",
+        "-q",
+        "zhijie.py",
+        "workflow",
+        "tests"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "D:\\KimiData\\daimon-share\\daimon\\runtime\\python\\.venv\\Scripts\\python.exe",
+        "zhijie.py",
+        "self-check"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"stage\": \"INSTALLATION\",\n  \"ok\": true,\n  \"errors\": [],\n  \"warnings\": [],\n  \"checks\": [\n    \"目录、配置、模板和状态迁移\"\n  ],\n  \"evidence\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "D:\\KimiData\\daimon-share\\daimon\\runtime\\python\\.venv\\Scripts\\python.exe",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_complete_simulated_workflow (test_end_to_end.EndToEndTests.test_complete_simulated_workflow) ... ok\ntest_baseline_change_invalidates_approval (test_workflow.WorkflowTests.test_baseline_change_invalidates_approval) ... ok\ntest_explicit_failure_and_retry (test_workflow.WorkflowTests.test_explicit_failure_and_retry) ... ok\ntest_incomplete_dependency_blocks_execution (test_workflow.WorkflowTests.test_incomplete_dependency_blocks_execution) ... ok\ntest_installation_and_json_contracts (test_workflow.WorkflowTests.test_installation_and_json_contracts) ... ok\ntest_invalid_transition_is_rejected (test_workflow.WorkflowTests.test_invalid_transition_is_rejected) ... ok\ntest_pause_resume_persists_status (test_workflow.WorkflowTests.test_pause_resume_persists_status) ... ok\ntest_rejection_revision_and_resubmission (test_workflow.WorkflowTests.test_rejection_revision_and_resubmission) ... ok\ntest_template_gate_and_human_approval (test_workflow.WorkflowTests.test_template_gate_and_human_approval) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 2.215s\n\nOK\n"
+    }
+  ]
+}

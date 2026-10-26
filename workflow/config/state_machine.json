@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "initial_status": "pending",
+  "terminal_statuses": ["completed", "cancelled"],
+  "statuses": [
+    "pending",
+    "in_progress",
+    "awaiting_approval",
+    "approved",
+    "rejected",
+    "failed",
+    "awaiting_retry",
+    "blocked",
+    "paused",
+    "cancelled",
+    "completed"
+  ],
+  "transitions": {
+    "pending": ["in_progress", "blocked", "cancelled"],
+    "in_progress": ["awaiting_approval", "approved", "failed", "awaiting_retry", "blocked", "paused", "cancelled", "completed"],
+    "awaiting_approval": ["approved", "rejected", "paused", "cancelled"],
+    "approved": ["pending", "in_progress", "completed", "cancelled"],
+    "rejected": ["in_progress", "cancelled"],
+    "failed": ["awaiting_retry", "in_progress", "blocked", "cancelled"],
+    "awaiting_retry": ["in_progress", "blocked", "cancelled"],
+    "blocked": ["in_progress", "awaiting_retry", "paused", "cancelled"],
+    "paused": ["in_progress", "awaiting_approval", "failed", "awaiting_retry", "blocked", "cancelled"],
+    "cancelled": [],
+    "completed": []
+  }
+}

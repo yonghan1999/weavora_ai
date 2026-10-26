@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "stages": [
+    {
+      "id": "A_INTAKE",
+      "name": "需求接收",
+      "approval": false,
+      "documents": {
+        "docs/01-intake.md": ["初始想法与背景", "当前已知条件", "待澄清问题", "初步范围及风险"]
+      }
+    },
+    {
+      "id": "B_REQUIREMENTS",
+      "name": "需求分析与评审",
+      "approval": true,
+      "documents": {
+        "docs/02-requirements.md": ["产品目标", "用户故事或使用场景", "功能需求", "非功能需求", "业务流程及关键状态", "异常场景与边界条件", "验收标准", "需求追踪"]
+      }
+    },
+    {
+      "id": "C_DESIGN",
+      "name": "架构与详细设计",
+      "approval": true,
+      "documents": {
+        "docs/03-architecture.md": ["架构概述", "技术选型及依据", "模块划分与职责", "核心数据模型", "接口契约", "安全与权限设计", "部署及运行方案", "技术风险和待验证事项", "关键技术决策", "需求追踪"]
+      }
+    },
+    {
+      "id": "D_PLANNING",
+      "name": "开发规划",
+      "approval": false,
+      "documents": {
+        "docs/04-development-plan.md": ["开发里程碑", "任务列表", "任务依赖关系", "完成定义", "测试要求", "风险和回退策略", "需求追踪"]
+      },
+      "data": ["tasks/tasks.json"]
+    },
+    {
+      "id": "E_IMPLEMENTATION",
+      "name": "编码实现",
+      "approval": false,
+      "documents": {},
+      "data": ["tasks/tasks.json"]
+    },
+    {
+      "id": "F_SELF_TEST",
+      "name": "开发自测",
+      "approval": false,
+      "documents": {
+        "docs/05-self-test.md": ["构建或运行检查", "自动化测试", "异常与边界检查", "设计符合性", "安全检查", "未完成实现检查", "结论与证据"]
+      },
+      "data": ["checks.json"]
+    },
+    {
+      "id": "G_INDEPENDENT_TEST",
+      "name": "独立测试与质量验收",
+      "approval": false,
+      "documents": {
+        "docs/06-test-plan.md": ["测试范围", "测试环境", "测试用例", "需求覆盖", "准入与准出标准"],
+        "docs/07-test-report.md": ["实际执行记录", "失败用例与缺陷", "需求覆盖结果", "回归测试", "未验证事项", "测试结论"]
+      },
+      "data": ["checks.json", "tests/cases.json", "tests/defects.json"]
+    },
+    {
+      "id": "H_RELEASE",
+      "name": "发布准备",
+      "approval": true,
+      "documents": {
+        "docs/08-release.md": ["发布版本及变更说明", "构建产物或制品获取方式", "部署和配置说明", "数据迁移方案", "安全检查结果", "已知问题列表", "回滚或恢复方案", "发布检查清单"]
+      },
+      "data": ["release.json"]
+    },
+    {
+      "id": "I_ACCEPTANCE",
+      "name": "最终验收与归档",
+      "approval": true,
+      "documents": {
+        "docs/09-acceptance.md": ["交付范围", "需求验收结果", "质量门禁结果", "已知问题和遗留风险", "最终验收结论"],
+        "docs/10-delivery-index.md": ["需求与设计基线", "任务与代码版本", "构建与测试证据", "缺陷处理记录", "发布与回滚说明", "交付物索引", "版本信息"]
+      },
+      "data": ["release.json"]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:zhijie:agent-result",
+  "title": "Agent 执行结果契约",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["workflow_id", "task_id", "result_status", "files_changed", "decisions", "commands", "evidence", "unfinished", "risks", "next_action", "recommended_transition"],
+  "properties": {
+    "workflow_id": {"type": "string"},
+    "task_id": {"type": "string"},
+    "result_status": {"enum": ["completed_verified", "completed_unverified", "partial", "failed", "waiting_human"]},
+    "files_changed": {"type": "array", "items": {"type": "string"}},
+    "decisions": {"type": "array", "items": {"type": "object", "required": ["decision", "rationale"], "properties": {"decision": {"type": "string"}, "rationale": {"type": "string"}}}},
+    "commands": {"type": "array", "items": {"type": "object", "required": ["command", "exit_code"], "properties": {"command": {"type": "string"}, "exit_code": {"type": ["integer", "null"]}}}},
+    "evidence": {"type": "array", "items": {"type": "string"}},
+    "unfinished": {"type": "array", "items": {"type": "string"}},
+    "risks": {"type": "array", "items": {"type": "string"}},
+    "next_action": {"type": "string"},
+    "recommended_transition": {"type": ["string", "null"]}
+  }
+}

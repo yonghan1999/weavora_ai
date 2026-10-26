@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "workflow_id": "WF-zhijie",
+  "project_id": "zhijie",
+  "name": "织界",
+  "stage": "B_REQUIREMENTS",
+  "status": "awaiting_approval",
+  "created_at": "2026-10-26T02:50:01Z",
+  "updated_at": "2026-10-26T02:58:56Z",
+  "retry_counts": {},
+  "max_retries": 3,
+  "approvals": [],
+  "history": [
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "A_INTAKE",
+      "from": "pending",
+      "to": "in_progress",
+      "at": "2026-10-26T02:50:01Z",
+      "actor": "system",
+      "role": "product_owner",
+      "reason": "开始需求接收",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "A_INTAKE",
+      "from": "in_progress",
+      "to": "approved",
+      "at": "2026-10-26T02:50:01Z",
+      "actor": "system",
+      "role": "product_owner",
+      "reason": "需求记录已生成",
+      "evidence": [
+        "docs/01-intake.md"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B_REQUIREMENTS",
+      "from": "approved",
+      "to": "in_progress",
+      "at": "2026-10-26T02:50:01Z",
+      "actor": "system",
+      "role": "requirements_analyst",
+      "reason": "进入需求分析",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B_REQUIREMENTS",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-10-26T02:58:56Z",
+      "actor": "product-reviewer",
+      "role": "product_reviewer",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/02-requirements.md"
+      ],
+      "human_authorization": false
+    }
+  ],
+  "resume_status": null,
+  "active_task_id": null
+}
