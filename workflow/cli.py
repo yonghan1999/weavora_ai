@@ -26,6 +26,7 @@ def parser() -> argparse.ArgumentParser:
     for name, help_text in [
         ("submit", "执行当前阶段门禁并提交"),
         ("revise", "撤回待审批或驳回后重新进入修改"),
+        ("migrate", "将符合条件的既有项目显式迁移到当前流程"),
         ("pause", "暂停并持久化状态"),
         ("resume", "恢复暂停的工作流"),
         ("fail", "记录执行失败"),
@@ -38,7 +39,7 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--actor", required=True)
         if name not in {"archive"}:
             command.add_argument("--role", default="workflow_operator")
-        if name in {"revise", "pause", "fail", "retry", "cancel"}:
+        if name in {"revise", "migrate", "pause", "fail", "retry", "cancel"}:
             command.add_argument("--reason", required=True)
         if name == "fail":
             command.add_argument("--retryable", action="store_true")
@@ -120,6 +121,8 @@ def dispatch(args: argparse.Namespace) -> Any:
         return engine.approve(args.project_id, args.approval_id, args.decision, args.actor, args.human_confirm, args.reason)
     if args.command == "revise":
         return engine.revise(args.project_id, args.actor, args.role, args.reason)
+    if args.command == "migrate":
+        return engine.migrate(args.project_id, args.actor, args.role, args.reason)
     if args.command == "pause":
         return engine.pause(args.project_id, args.actor, args.role, args.reason)
     if args.command == "resume":

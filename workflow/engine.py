@@ -551,6 +551,76 @@ class Engine:
                 (self.project_dir(project_id) / "approvals/current.json").unlink(missing_ok=True)
             return state
 
+    def migrate(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
+        """将需求已批准、架构在途的旧项目显式迁移到含 B1/B2 的当前流程。"""
+        with self.lock(project_id):
+            state = self.load(project_id)
+            if state.get("workflow_version", 1) >= 2:
+                raise WorkflowError("项目已使用当前流程，无需迁移。")
+            if state["stage"] != "C_DESIGN" or state["status"] not in {"in_progress", "awaiting_approval"}:
+                raise WorkflowError("仅需求已批准且架构在途的旧项目可迁移到当前流程。")
+            approvals = [
+                item for item in state.get("approvals", [])
+                if item.get("stage") == "B_REQUIREMENTS" and item.get("decision") == "approved"
+            ]
+            if not approvals:
+                raise WorkflowError("迁移前必须存在已批准的需求基线。")
+            if approvals[-1].get("verified_baseline_digest") != self.baseline_digest(project_id, "B_REQUIREMENTS"):
+                raise WorkflowError("需求基线在批准后已变化，须先重新评审需求，不能迁移。")
+
+            base = self.project_dir(project_id)
+            for template_name in ("02a-prototype.md", "02b-ui.md"):
+                target = base / "docs" / template_name
+                if not target.exists():
+                    content = (SOURCE_ROOT / "workflow/templates" / template_name).read_text(encoding="utf-8")
+                    content = content.replace("{{PROJECT_NAME}}", state["name"]).replace("{{PROJECT_ID}}", project_id)
+                    target.write_text(content, encoding="utf-8", newline="\n")
+            for relative in ("workspace/design/prototype", "workspace/design/ui"):
+                (base / relative).mkdir(parents=True, exist_ok=True)
+
+            previous_status = state["status"]
+            pending = self.current_approval_request(project_id) if previous_status == "awaiting_approval" else None
+            state["workflow_version"] = 2
+            state["stage"] = "B1_PROTOTYPE"
+            state["migration"] = {
+                "from_workflow_version": 1,
+                "to_workflow_version": 2,
+                "from_stage": "C_DESIGN",
+                "from_status": previous_status,
+                "invalidated_approval_id": pending.get("approval_id") if pending else None,
+                "migrated_at": utc_now(),
+                "migrated_by": actor,
+                "reason": reason.strip() or "用户明确决定迁移到当前流程",
+                "preserved_documents": ["docs/02-requirements.md", "docs/03-architecture.md"],
+            }
+            migration_reason = f"从旧流程 C_DESIGN 迁移到当前流程 B1_PROTOTYPE：{state['migration']['reason']}"
+            evidence = ["docs/02-requirements.md", "docs/02a-prototype.md", "docs/02b-ui.md", "docs/03-architecture.md"]
+            if previous_status == "awaiting_approval":
+                self.transition(project_id, state, "in_progress", actor, role, migration_reason, evidence)
+                (base / "approvals/current.json").unlink(missing_ok=True)
+            else:
+                event = {
+                    "event": "workflow_migration",
+                    "workflow_id": state["workflow_id"],
+                    "project_id": project_id,
+                    "task_id": state.get("active_task_id"),
+                    "stage": "B1_PROTOTYPE",
+                    "from_stage": "C_DESIGN",
+                    "from_workflow_version": 1,
+                    "to_workflow_version": 2,
+                    "at": state["migration"]["migrated_at"],
+                    "actor": actor,
+                    "role": role,
+                    "reason": migration_reason,
+                    "evidence": evidence,
+                    "human_authorization": False,
+                }
+                state.setdefault("history", []).append(event)
+                state["history"] = state["history"][-200:]
+                self.save(project_id, state)
+                self.audit(project_id, event)
+            return state
+
     def pause(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
         with self.lock(project_id):
             state = self.load(project_id)

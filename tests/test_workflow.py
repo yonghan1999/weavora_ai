@@ -266,6 +266,39 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn("B2_UI", order)
         self.assertEqual(order[order.index("B_REQUIREMENTS") + 1], "C_DESIGN")
 
+    def test_migrate_legacy_architecture_progress_to_current_flow(self):
+        requirement_request = self.submit_requirements()
+        self.approve(requirement_request["approval_id"])
+        state = self.engine.load(self.project_id)
+        state.pop("workflow_version")
+        state["stage"] = "C_DESIGN"
+        state["status"] = "in_progress"
+        self.engine.save(self.project_id, state)
+
+        base = self.engine.project_dir(self.project_id)
+        sections = self.engine.stages["C_DESIGN"]["documents"]["docs/03-architecture.md"]
+        architecture = "# 架构与详细设计\n\n" + "\n\n".join(f"## {section}\n\n已设计 REQ-001。" for section in sections)
+        architecture_path = base / "docs/03-architecture.md"
+        architecture_path.write_text(architecture, encoding="utf-8")
+        architecture_request = self.engine.submit(self.project_id, "architect", "architecture_reviewer")["request"]
+        request_path = base / f"approvals/{architecture_request['approval_id']}.request.json"
+
+        migrated = self.engine.migrate(self.project_id, "operator", "workflow_operator", "用户明确决定启用原型和 UI 阶段")
+        self.assertEqual(migrated["workflow_version"], 2)
+        self.assertEqual(migrated["stage"], "B1_PROTOTYPE")
+        self.assertEqual(migrated["status"], "in_progress")
+        self.assertEqual(migrated["migration"]["invalidated_approval_id"], architecture_request["approval_id"])
+        self.assertEqual(architecture_path.read_text(encoding="utf-8"), architecture)
+        self.assertTrue(request_path.is_file())
+        self.assertIsNone(self.engine.current_approval_request(self.project_id, required=False))
+        self.assertTrue((base / "docs/02a-prototype.md").is_file())
+        self.assertTrue((base / "docs/02b-ui.md").is_file())
+        self.assertTrue((base / "workspace/design/prototype").is_dir())
+        self.assertTrue((base / "workspace/design/ui").is_dir())
+        self.assertEqual([item["stage"] for item in migrated["approvals"]], ["B_REQUIREMENTS"])
+        with self.assertRaisesRegex(WorkflowError, "无需迁移"):
+            self.engine.migrate(self.project_id, "operator", "workflow_operator", "重复迁移")
+
     def test_baseline_change_invalidates_approval(self):
         request = self.submit_requirements()
         path = self.engine.project_dir(self.project_id) / "docs/02-requirements.md"
