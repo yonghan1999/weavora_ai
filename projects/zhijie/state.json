@@ -4,9 +4,9 @@
   "project_id": "zhijie",
   "name": "织界",
   "stage": "C_DESIGN",
-  "status": "in_progress",
+  "status": "awaiting_approval",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-10-26T03:40:46Z",
+  "updated_at": "2026-10-26T05:39:10Z",
   "retry_counts": {},
   "max_retries": 3,
   "approvals": [
@@ -179,6 +179,90 @@
       "role": "human_approver",
       "reason": "进入架构与详细设计",
       "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "C_DESIGN",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-10-26T03:57:13Z",
+      "actor": "architecture-reviewer",
+      "role": "architecture_reviewer",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/02-requirements.md",
+        "docs/03-architecture.md"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "C_DESIGN",
+      "from": "awaiting_approval",
+      "to": "in_progress",
+      "at": "2026-10-26T05:25:25Z",
+      "actor": "architecture-analyst",
+      "role": "architecture_analyst",
+      "reason": "用户决定首版采用 Java，并保留后续以 Rust 替换部分组件的演进空间",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "C_DESIGN",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-10-26T05:31:48Z",
+      "actor": "architecture-reviewer",
+      "role": "architecture_reviewer",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/02-requirements.md",
+        "docs/03-architecture.md"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "C_DESIGN",
+      "from": "awaiting_approval",
+      "to": "in_progress",
+      "at": "2026-10-26T05:38:07Z",
+      "actor": "architecture-analyst",
+      "role": "architecture_analyst",
+      "reason": "修正逻辑拓扑图排版对齐",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "C_DESIGN",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-10-26T05:39:10Z",
+      "actor": "architecture-reviewer",
+      "role": "architecture_reviewer",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/02-requirements.md",
+        "docs/03-architecture.md"
+      ],
       "human_authorization": false
     }
   ],

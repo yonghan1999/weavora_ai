@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "approval_id": "APR-C-7a76100e6213",
+  "workflow_id": "WF-zhijie",
+  "project_id": "zhijie",
+  "stage": "C_DESIGN",
+  "stage_name": "架构与详细设计",
+  "requested_at": "2026-10-26T05:31:48Z",
+  "requested_by": "architecture-reviewer",
+  "baseline_digest": "c19438229ddf9d47f1b27b755555ee02c89ec81f1e67666e2ec28ac1ac56025b",
+  "decision": null,
+  "documents": [
+    "docs/02-requirements.md",
+    "docs/03-architecture.md"
+  ],
+  "summary": "请审批架构与详细设计基线；批准仅适用于当前文件摘要。",
+  "important_decisions": "以所列需求、设计、发布或验收文档中的决策为准。",
+  "risks_and_impacts": "风险、已知问题和未验证事项见所列文档；基线变化后须重新审批。",
+  "acceptance_and_checks": {
+    "stage": "C_DESIGN",
+    "ok": true,
+    "errors": [],
+    "warnings": [],
+    "checks": [
+      "文档结构：docs/03-architecture.md",
+      "需求—架构追踪",
+      "人工审批状态与基线一致性"
+    ],
+    "evidence": []
+  },
+  "allowed_decisions": [
+    "approved",
+    "rejected",
+    "changes_requested"
+  ],
+  "human_command": "python zhijie.py approve zhijie --approval-id APR-C-7a76100e6213 --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION"
+}
