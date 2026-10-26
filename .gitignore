@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 var/locks/
 var/tmp/
+tmp/
 var/transactions/
 projects/*/deliverables/*.zip
 .env
