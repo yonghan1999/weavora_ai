@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "approval_id": "APR-B-d2421e1b7f59",
+  "approval_id": "APR-B-2d95f3450d2e",
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "stage": "B_REQUIREMENTS",
   "stage_name": "需求分析与评审",
-  "requested_at": "2026-10-26T02:58:56Z",
+  "requested_at": "2026-10-26T03:33:29Z",
   "requested_by": "product-reviewer",
-  "baseline_digest": "241b0c64b3e5c0aea5a1eb766116c1a883edda1f14be47d6cd32fc8bb55e1141",
-  "decision": null,
+  "baseline_digest": "44ef7a9a5991a0950b5f298c11f8ae57c319304e4c7705fbcadcd97e37f4e5bd",
+  "decision": "approved",
   "documents": [
     "docs/02-requirements.md"
   ],
@@ -32,5 +32,10 @@
     "rejected",
     "changes_requested"
   ],
-  "human_command": "python zhijie.py approve zhijie --approval-id APR-B-d2421e1b7f59 --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION"
+  "human_command": "python zhijie.py approve zhijie --approval-id APR-B-2d95f3450d2e --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+  "decision_reason": "批准当前基线",
+  "decided_at": "2026-10-26T03:40:46Z",
+  "decided_by": "han",
+  "decision_source": "explicit_human_cli",
+  "verified_baseline_digest": "44ef7a9a5991a0950b5f298c11f8ae57c319304e4c7705fbcadcd97e37f4e5bd"
 }
