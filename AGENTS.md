@@ -4,7 +4,7 @@
 
 ## 必须遵循
 
-1. 收到软件需求后，先阅读 `workflow/spec/WORKFLOW.md`、`ROLES.md`、`CONTRACTS.md`，用 `python zhijie.py new` 创建项目。
+1. 收到软件需求后，只阅读 `workflow/spec/WORKFLOW.md` 中与当前阶段和操作相关的章节，并按需查阅 `ROLES.md`、`CONTRACTS.md` 的对应内容；不要重复全量读取无关规范。新建项目时用 `python zhijie.py new` 创建项目。
 2. 业务代码只放在该项目的 `workspace/`；技术选型依据具体需求和环境，不沿用其他项目假设。
 3. 所有阶段推进通过 CLI；不得直接编辑 `state.json`、`audit.jsonl`、`approvals/` 或执行证据。
 4. **AI 严禁执行 `approve`，严禁伪造或代替人工审批。** 到达审批节点后，向用户展示请求、摘要、路径、风险和检查，再暂停。
