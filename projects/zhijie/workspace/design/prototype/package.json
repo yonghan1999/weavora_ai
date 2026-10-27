@@ -1,8 +1,8 @@
 {
-  "name": "zhijie-low-fidelity-prototype",
-  "version": "0.1.0",
+  "name": "weavora-gaming-client-prototype",
+  "version": "0.2.0",
   "private": true,
-  "description": "织界 B1 低保真可点击原型；仅使用模拟数据",
+  "description": "织界游戏玩家客户端高保真可交互原型；仅使用模拟数据",
   "scripts": {
     "dev": "node server.js"
   }

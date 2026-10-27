@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "approval_id": "APR-B1-fae57167942c",
+  "approval_id": "APR-B1-26eca8261ea6",
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "stage": "B1_PROTOTYPE",
   "stage_name": "产品原型设计与评审",
-  "requested_at": "2026-10-26T15:41:37Z",
+  "requested_at": "2026-10-27T15:52:56Z",
   "requested_by": "kimi",
-  "baseline_digest": "d1c515419d9794e89009901dbb08c4c799a37389a34ae93a4888dce02ee1d64f",
+  "baseline_digest": "4b56c68e5c826c38e0acd18a5b5fa87db9bc5bd97d802699cdf1cef1650c59d3",
   "decision": null,
   "documents": [
     "docs/02-requirements.md",
@@ -36,5 +36,5 @@
     "rejected",
     "changes_requested"
   ],
-  "human_command": "python zhijie.py approve zhijie --approval-id APR-B1-fae57167942c --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION"
+  "human_command": "python zhijie.py approve zhijie --approval-id APR-B1-26eca8261ea6 --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION"
 }

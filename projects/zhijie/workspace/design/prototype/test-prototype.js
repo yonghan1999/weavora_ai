@@ -1,181 +1,118 @@
-const { spawn } = require('node:child_process');
-const fs = require('node:fs');
-const path = require('node:path');
-const os = require('node:os');
-
-const chrome = [
-  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
-].find((candidate) => fs.existsSync(candidate));
-if (!chrome) throw new Error('未找到可用的 Chrome 或 Edge 浏览器');
-const profile = path.join(__dirname, '.chrome-test-profile');
-const url = 'file:///' + path.join(__dirname, 'index.html').replace(/\\/g, '/');
-const results = [];
-const errors = [];
-let browser;
-let socket;
-let nextId = 0;
-const pending = new Map();
-
-function assert(name, condition, detail = '') {
-  if (!condition) throw new Error(`${name}: ${detail || '断言失败'}`);
-  results.push({ name, status: 'passed' });
-}
-async function delay(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
-async function command(method, params = {}) {
-  const id = ++nextId;
-  return new Promise((resolve, reject) => {
-    pending.set(id, { resolve, reject });
-    socket.send(JSON.stringify({ id, method, params }));
-  });
-}
-async function evaluate(expression) {
-  const response = await command('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
-  if (response.exceptionDetails) throw new Error(response.exceptionDetails.text + ': ' + (response.exceptionDetails.exception?.description || ''));
-  return response.result.value;
-}
-async function click(action) {
-  await evaluate(`document.querySelector('[data-action="${action}"]').click()`);
-  await delay(80);
-}
-async function main() {
-  browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-first-run', '--remote-debugging-port=9222', `--user-data-dir=${profile}`, url], { stdio: 'ignore' });
-  let pages;
-  for (let i = 0; i < 60; i++) {
-    try {
-      pages = await (await fetch('http://127.0.0.1:9222/json/list')).json();
-      if (pages.some((page) => page.type === 'page')) break;
-    } catch {}
-    await delay(100);
-  }
-  const page = pages?.find((item) => item.type === 'page');
-  if (!page) throw new Error('无法连接无头浏览器');
-  socket = new WebSocket(page.webSocketDebuggerUrl);
-  await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject; });
-  socket.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    if (message.id && pending.has(message.id)) {
-      const handlers = pending.get(message.id);
-      pending.delete(message.id);
-      if (message.error) handlers.reject(new Error(message.error.message)); else handlers.resolve(message.result);
-    }
-    if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.text);
-  };
-  await command('Runtime.enable');
-  await command('Page.enable');
-  await command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
-  for (let i = 0; i < 40; i++) {
-    if (await evaluate('document.readyState === "complete" && !!document.querySelector(\'.member-rail\')')) break;
-    await delay(100);
-  }
-  assert('默认展示 C 端群组工作区', await evaluate('state.view === "group" && !!document.querySelector(\'.member-rail\') && document.body.innerText.includes("大厅闲聊")'));
-  assert('群组房间成员语音同屏', await evaluate('document.body.innerText.includes("游戏房间") && document.body.innerText.includes("在线 — 4") && !!document.querySelector(\'.voice-panel\')'), await evaluate('JSON.stringify({text:document.body.innerText,voice:!!document.querySelector(\'.voice-panel\'),joined:state.joined})'));
-  assert('成员栏不混排虚拟 IP', await evaluate('!!document.querySelector(\'.member-rail\') && document.querySelectorAll(\'.member-rail .ip\').length === 0'));
-  const mainScreenshot = await command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
-  fs.writeFileSync(path.join(__dirname, 'prototype-walkthrough.png'), Buffer.from(mainScreenshot.data, 'base64'));
-  await evaluate('document.querySelector(\'[data-action="nav"][data-view="account"]\').click()');
-  await click('logout');
-  assert('登录页可渲染', await evaluate('document.body.innerText.includes("使用模拟账号登录")'));
-  await evaluate('document.querySelector(\'[data-action="auth-mode"][data-mode="register"]\').click()');
-  await click('register');
-  assert('注册进入邮箱验证', await evaluate('document.body.innerText.includes("6 位验证码")'), await evaluate('document.body.innerText'));
-  await click('verify');
-  assert('验证后直达群组工作区', await evaluate('state.authenticated && state.view === "group"'));
-  await evaluate('document.querySelector(\'[data-action="nav"][data-view="friends"]\').click()');
-  assert('好友中心默认展示在线分类', await evaluate('state.friendTab === "online" && !document.body.innerText.includes("beiyu#1003") && document.querySelectorAll(\'.friend-row\').length === 2'));
-  await evaluate('document.querySelector(\'[data-action="friend-tab"][data-tab="all"]\').click()');
-  assert('全部分类包含离线好友', await evaluate('document.querySelectorAll(\'.friend-row\').length === 3 && document.body.innerText.includes("北屿")'));
-  await evaluate('document.querySelector(\'[data-input="friend-search"]\').value = "beiyu#1003";document.querySelector(\'[data-input="friend-search"]\').dispatchEvent(new Event("input", {bubbles:true}))');
-  assert('好友可按账号 ID 搜索', await evaluate('document.querySelectorAll(\'.friend-row\').length === 1 && document.body.innerText.includes("北屿")'));
-  await evaluate('document.querySelector(\'[data-input="friend-search"]\').value = "";document.querySelector(\'[data-input="friend-search"]\').dispatchEvent(new Event("input", {bubbles:true}))');
-  await evaluate('document.querySelector(\'[data-action="friend-profile"][data-name="阿岚"]\').click()');
-  assert('好友资料卡展示账号与共同群组', await evaluate('document.body.innerText.includes("alan#1001") && document.body.innerText.includes("共同群组：周末远征队")'));
-  await click('modal-close');
-  await evaluate('document.querySelector(\'[data-action="friend-menu"][data-name="阿岚"]\').click()');
-  assert('好友更多操作包含资料复制和删除', await evaluate('document.querySelectorAll(\'.friend-menu [role="menuitem"]\').length === 3'));
-  await evaluate('document.querySelector(\'[data-action="friend-invite"][data-name="阿岚"]\').click()');
-  assert('好友可发起群组邀请', await evaluate('state.modal.target === "阿岚" && document.body.innerText.includes("对方接受后才建立群籍")'));
-  await click('confirm-friend-invite');
-  await evaluate('document.querySelector(\'[data-action="friend-tab"][data-tab="pending"]\').click()');
-  assert('待处理页区分收到和发出的申请', await evaluate('document.body.innerText.includes("收到的申请") && document.body.innerText.includes("发出的申请")'));
-  await click('friend-accept');
-  assert('好友申请接受', await evaluate('state.friends.some(f => f.name === "青禾" && f.id === "qinghe#1004") && state.requests.length === 0 && state.friendTab === "online"'));
-  await click('group-open');
-  assert('群消息页可进入', await evaluate('state.view === "group" && state.groupTab === "messages"'));
-  await evaluate('document.getElementById("message-input").value = "原型走查消息";document.querySelector(\'[data-form="message"]\').requestSubmit()');
-  assert('群消息可发送', await evaluate('state.messages.some(m => m.text === "原型走查消息")'));
-  assert('消息删除默认不收进正文', await evaluate('!document.querySelector(\'[data-action="delete-message"]\') && document.querySelectorAll(\'[data-action="message-menu"]\').length >= 2'));
-  await evaluate('document.querySelector(\'[data-message="1"]\').focus()');
-  await delay(160);
-  assert('键盘聚焦显示消息工具条', await evaluate('document.activeElement?.dataset.message === "1" && getComputedStyle(document.querySelector(\'[data-message="1"] .message-actions\')).opacity === "1"'));
-  await evaluate('document.querySelector(\'[data-change="role"]\').value = "member";document.querySelector(\'[data-change="role"]\').dispatchEvent(new Event("change", {bubbles:true}))');
-  assert('普通成员不能代删他人消息', await evaluate('!document.querySelector(\'[data-action="message-menu"][data-id="1"]\') && !!document.querySelector(\'[data-action="message-menu"][data-id="2"]\')'));
-  await evaluate('document.querySelector(\'[data-change="role"]\').value = "owner";document.querySelector(\'[data-change="role"]\').dispatchEvent(new Event("change", {bubbles:true}))');
-  await evaluate('document.querySelector(\'[data-action="message-menu"][data-id="1"]\').click()');
-  assert('管理员更多菜单包含代删', await evaluate('state.messageMenu === 1 && document.querySelector(\'[data-action="delete-message"]\').textContent.includes("管理员")'));
-  await evaluate('document.dispatchEvent(new KeyboardEvent("keydown", {key:"Escape", bubbles:true}))');
-  assert('Escape 收起消息菜单', await evaluate('state.messageMenu == null && !document.querySelector(\'[data-action="delete-message"]\')'));
-  await evaluate('document.querySelector(\'[data-action="message-menu"][data-id="1"]\').click()');
-  await click('delete-message');
-  assert('代删前显示确认及审计影响', await evaluate('state.modal.target === 1 && document.body.innerText.includes("追加只读管理记录")'));
-  await click('modal-close');
-  assert('取消删除不改变消息', await evaluate('!state.messages.find(m => m.id === 1).deleted'));
-  await evaluate('document.querySelector(\'[data-action="message-menu"][data-id="1"]\').click()');
-  await click('delete-message');
-  await click('confirm-delete-message');
-  assert('确认代删保留提示并追加记录', await evaluate('state.messages.find(m => m.id === 1).deleted && state.messages.find(m => m.id === 1).text.includes("管理员") && state.audit.some(a => a.target === "消息 M-1")'));
-  const ownMessageId = await evaluate('state.messages.find(m => m.text === "原型走查消息").id');
-  await evaluate(`document.querySelector('[data-action="message-menu"][data-id="${ownMessageId}"]').click()`);
-  await click('delete-message');
-  await click('confirm-delete-message');
-  assert('本人删除显示作者删除提示', await evaluate(`state.messages.find(m => m.id === ${ownMessageId}).text === "一条消息已被作者删除"`));
-  await evaluate('document.querySelector(\'[data-action="group-tab"][data-tab="rooms"]\').click()');
-  await click('room-open');
-  await click('join-room');
-  await click('confirm-join');
-  await delay(1100);
-  assert('加入后双通道独立连接', await evaluate('state.joined && state.voice === "connected" && state.network === "connected"'));
-  assert('活动页默认概览且有三个功能分区', await evaluate('state.roomTab === "overview" && document.querySelectorAll(\'.room-tab\').length === 3'));
-  await evaluate('document.querySelector(\'[data-action="room-tab"][data-tab="voice"]\').click()');
-  assert('语音页只有语音控制与成员语音状态', await evaluate('document.body.innerText.includes("成员语音状态") && !document.querySelector(\'.member-ip-list\')'));
-  await evaluate('document.querySelector(\'[data-action="room-tab"][data-tab="network"]\').click()');
-  assert('虚拟网络页独立展示 IP 与手动联机', await evaluate('document.body.innerText.includes("我的虚拟 IP") && document.querySelectorAll(\'.member-ip-list .row\').length === 4 && !document.body.innerText.includes("成员语音状态")'));
-  await evaluate('document.querySelector(\'[data-action="room-tab"][data-tab="overview"]\').click()');
-  await click('voice-fail');
-  assert('语音失败不影响网络', await evaluate('state.voice === "failed" && state.network === "connected"'));
-  await click('voice-retry');
-  await delay(850);
-  assert('语音可独立恢复', await evaluate('state.voice === "connected"'));
-  await click('network-fail');
-  assert('网络失败不影响语音', await evaluate('state.network === "failed" && state.voice === "connected"'));
-  await click('network-retry');
-  await delay(850);
-  assert('网络可独立恢复', await evaluate('state.network === "connected"'));
-  const originalIp = await evaluate('state.currentIp');
-  await click('disconnect');
-  assert('短时断线进入保留', await evaluate('state.grace && state.voice === "disconnected" && state.network === "disconnected"'));
-  await click('resume');
-  assert('有效恢复保持原 IP', await evaluate(`!state.grace && state.currentIp === "${originalIp}" && state.voice === "connected" && state.network === "connected"`));
-  await click('group-open');
-  await evaluate('document.querySelector(\'[data-change="role"]\').value = "member";document.querySelector(\'[data-change="role"]\').dispatchEvent(new Event("change", {bubbles:true}))');
-  await evaluate('document.querySelector(\'[data-action="group-tab"][data-tab="audit"]\').click()');
-  assert('普通成员不可读管理记录', await evaluate('document.body.innerText.includes("无权限查看管理记录")'));
-  await evaluate('document.querySelector(\'[data-change="role"]\').value = "admin";document.querySelector(\'[data-change="role"]\').dispatchEvent(new Event("change", {bubbles:true}))');
-  assert('管理员可读只读记录', await evaluate('document.body.innerText.includes("只读管理记录") && !!document.querySelector("table")'));
-  assert('管理区不混入社交成员栏', await evaluate('!document.querySelector(\'.member-rail\')'));
-  await evaluate('document.querySelector(\'[data-action="nav"][data-view="account"]\').click()');
-  await click('support-matrix');
-  assert('支持矩阵收纳于账号页对话框且不伪造通过', await evaluate('document.body.innerText.includes("当前所有平台与游戏均为“候选 / 未验证”") && !!document.querySelector(\'.modal\')'));
-  const screenshot = await command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
-  fs.writeFileSync(path.join(__dirname, 'prototype-compatibility.png'), Buffer.from(screenshot.data, 'base64'));
-  assert('走查期间无脚本异常', errors.length === 0, errors.join('; '));
-  console.log(JSON.stringify({ ok: true, checks: results, consoleErrors: errors }, null, 2));
-}
-main().catch((error) => { console.error(error.stack || error); process.exitCode = 1; }).finally(async () => {
-  if (socket) socket.close();
-  if (browser) browser.kill();
-  await delay(500);
-  fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
-});
+const {spawn}=require('node:child_process');const fs=require('node:fs');const path=require('node:path');
+const chrome=['C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe','C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe','C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe','C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'].find(p=>fs.existsSync(p));if(!chrome)throw new Error('未找到 Chrome 或 Edge');
+const port=9500+Math.floor(Math.random()*1000),profile=path.join(__dirname,`.chrome-test-profile-${process.pid}`),url='file:///'+path.join(__dirname,'index.html').replace(/\\/g,'/'),results=[],errors=[],pending=new Map();let browser,socket,nextId=0;const delay=ms=>new Promise(r=>setTimeout(r,ms));
+function assert(name,condition,detail=''){if(!condition)throw new Error(`${name}: ${detail||'断言失败'}`);results.push({name,status:'passed'})}
+function command(method,params={}){const id=++nextId;return new Promise((resolve,reject)=>{pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}))})}
+async function evaluate(expression){const r=await command('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw new Error(r.exceptionDetails.text+': '+(r.exceptionDetails.exception?.description||''));return r.result.value}
+async function click(action){await evaluate(`document.querySelector('[data-action="${action}"]').click()`);await delay(100)}
+async function screenshot(name){const image=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(__dirname,name),Buffer.from(image.data,'base64'))}
+async function main(){browser=spawn(chrome,['--headless=new','--disable-gpu','--no-first-run',`--remote-debugging-port=${port}`,`--user-data-dir=${profile}`,url],{stdio:'ignore'});let pages;for(let i=0;i<60;i++){try{pages=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();if(pages.some(p=>p.type==='page'))break}catch{}await delay(100)}const page=pages?.find(p=>p.type==='page');if(!page)throw new Error('无法连接无头浏览器');socket=new WebSocket(page.webSocketDebuggerUrl);await new Promise((r,j)=>{socket.onopen=r;socket.onerror=j});socket.onmessage=e=>{const m=JSON.parse(e.data);if(m.id&&pending.has(m.id)){const h=pending.get(m.id);pending.delete(m.id);m.error?h.reject(new Error(m.error.message)):h.resolve(m.result)}if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails.text)};await command('Runtime.enable');await command('Page.enable');await command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});for(let i=0;i<60;i++){if(await evaluate('document.readyState==="complete"&&!!window.state&&document.querySelectorAll(".room-card").length===3'))break;await delay(100)}
+assert('品牌与产品定位正确',await evaluate('document.title.includes("WEAVORA")&&document.body.innerText.includes("虚拟局域网")'));
+assert('窗口控制按钮固定标题栏右侧',await evaluate('(()=>{const title=document.querySelector(".titlebar"),controls=document.querySelector(".window-controls");return Math.abs(controls.getBoundingClientRect().right-(title.getBoundingClientRect().right-parseFloat(getComputedStyle(title).paddingRight)))<1&&getComputedStyle(document.querySelector(".top-actions")).marginLeft!=="0px"})()'));
+assert('默认未入房且不显示个人活动',await evaluate('state.sessionStatus==="idle"&&!state.joined&&!document.querySelector(".voice-dock")&&!document.querySelector(".hero")&&!document.body.innerText.includes("已连接 42 分钟")'));
+assert('首版移除全局搜索与通知中心',await evaluate('!document.querySelector("[data-action=global-search]")&&!document.querySelector("[data-action=notifications]")&&!document.body.innerText.includes("28 ms")'));
+assert('大厅在线好友不包含自己',await evaluate('document.querySelector(".right-panel .count-badge").textContent==="4 在线"&&!document.querySelector(".right-panel").innerText.includes("林墨")'));
+await evaluate('document.querySelector("[data-window=minimize]").click()');assert('最小化按钮提供原型边界反馈',await evaluate('state.toast.includes("最小化由正式桌面客户端执行")'));
+await evaluate('document.querySelector("[data-window=maximize]").click()');assert('最大化按钮提供原型边界反馈',await evaluate('state.toast.includes("最大化由正式桌面客户端执行")'));
+await evaluate('document.querySelector("[data-window=close]").click()');assert('关闭按钮打开明确说明而非无响应',await evaluate('document.querySelector(".modal").innerText.includes("浏览器原型不会关闭真实窗口")'));await click('modal-close');
+await screenshot('prototype-walkthrough.png');
+await click('join-room');await click('confirm-join');
+assert('加入中不展示成功状态或可用 IP',await evaluate('state.sessionStatus==="joining"&&state.voice==="connecting"&&state.network==="connecting"&&document.querySelectorAll(".ip-address").length===0&&!document.querySelector(".network-panel").innerText.includes("已连接")'));
+await delay(1000);
+assert('加入后双通道独立成功',await evaluate('state.sessionStatus==="active"&&state.voice==="connected"&&state.network==="connected"&&!!document.querySelector(".voice-dock")'));
+await evaluate('state.speaking=true;render()');await click('audio-settings');await click('toggle-setting');
+assert('关闭说话动效仍保留文字状态',await evaluate('state.speaking&&state.settings.speaking===false&&!document.querySelector(".voice-dock .wave")&&document.querySelector("[data-action=toggle-mute]").innerText.includes("发言中")'));
+await click('toggle-setting');await evaluate('document.querySelector(".voice-now").click()');await evaluate('document.querySelector("[data-action=room-tab][data-tab=network]").click()');
+assert('成员和容量来自房间数据',await evaluate('currentRoom().members.length===4&&document.querySelector(".room-heading").innerText.includes("4 / 16")&&document.querySelectorAll(".player-tile").length===5'));
+assert('联机页 IP 唯一且本人一致',await evaluate('currentRoom().members.map(m=>m.ip).every((ip,i,a)=>a.indexOf(ip)===i)&&myMember(currentRoom()).ip==="10.66.0.12"&&document.body.innerText.includes("10.66.0.12")'));
+assert('联机页展示全部成员而非仅房主地址',await evaluate('document.querySelectorAll(".member-ip-row").length===currentRoom().members.length&&currentRoom().members.every(m=>document.querySelector(`[data-action="copy-ip"][data-ip="${m.ip}"]`))&&document.querySelector(".network-panel").innerText.includes("织界房主不一定是游戏内主机")'));
+assert('其他成员 IP 有独立复制入口',await evaluate('document.querySelector(`[data-action="copy-ip"][data-name="北屿"]`).dataset.ip==="10.66.0.11"'));
+await screenshot('prototype-network.png');
+await evaluate('document.querySelector("[data-action=room-tab][data-tab=chat]").click()');
+await click('toggle-mute');assert('本人静音同步底栏头像和成员数据',await evaluate('state.muted&&myMember(currentRoom()).muted&&document.querySelector("[data-action=toggle-mute]").innerText.includes("已静音")&&(()=>{const tile=[...document.querySelectorAll(".player-tile")].find(el=>el.innerText.includes("林墨"));return tile.innerText.includes("麦克风已关闭")&&!!tile.querySelector(".player-state.muted")})()'));
+await evaluate('(()=>{const input=document.getElementById("room-message-input");input.value="房间草稿";input.dispatchEvent(new Event("input",{bubbles:true}))})()');await click('toggle-mute');await evaluate('document.querySelector("[data-action=room-tab][data-tab=network]").click()');await evaluate('document.querySelector("[data-action=room-tab][data-tab=chat]").click()');
+assert('房间草稿跨静音和页签切换保留',await evaluate('state.drafts.room.weekend==="房间草稿"&&document.getElementById("room-message-input").value==="房间草稿"'));
+await evaluate('document.getElementById("room-message-input").value="准备下矿";document.querySelector("[data-form=room-message]").requestSubmit()');await delay(50);
+assert('房间消息使用当前房间数据',await evaluate('currentRoom().messages.some(m=>m.text==="准备下矿")&&document.body.innerText.includes("准备下矿")'));
+assert('房间发送后清空草稿并滚动到底部',await evaluate('state.drafts.room.weekend===""&&document.getElementById("room-message-input").value===""&&Math.abs(document.querySelector(".chat-scroll").scrollHeight-document.querySelector(".chat-scroll").clientHeight-document.querySelector(".chat-scroll").scrollTop)<2'));
+await click('attach-media');await evaluate('(()=>{const dt=new DataTransfer();dt.items.add(new File(["<svg xmlns=\\"http://www.w3.org/2000/svg\\"></svg>"],"截图.svg",{type:"image/svg+xml"}));const input=document.getElementById("media-file");input.files=dt.files;input.dispatchEvent(new Event("change",{bubbles:true}))})()');
+assert('图片选择后展示本地预览',await evaluate('state.pendingMedia.type==="image"&&!!document.querySelector("#media-preview img")'));
+await click('confirm-media');assert('图片消息进入当前房间聊天记录',await evaluate('currentRoom().messages.some(m=>m.media?.type==="image")&&!!document.querySelector(".chat-scroll img.message-media")'));
+await click('delete-message');await click('confirm-delete-message');
+assert('消息删除后保留占位提示',await evaluate('currentRoom().messages[0].deleted&&document.querySelector(".chat-scroll").innerText.includes("此消息已被删除")'));
+await evaluate('state.toast="";renderToast()');await screenshot('prototype-room.png');
+await evaluate('document.querySelector("[data-action=nav][data-view=lobby]").click()');
+assert('已入房大厅显示当前活动与语音条',await evaluate('!!document.querySelector(".hero")&&document.querySelector(".hero").innerText.includes("周末方块局")&&!!document.querySelector(".voice-dock")'));
+await click('toggle-mute');await evaluate('document.querySelector("[data-action=join-room][data-room=star]").click()');await click('confirm-join');await delay(1000);
+assert('切房同步房主成员游戏与 IP',await evaluate('state.roomId==="star"&&currentRoom().host==="青禾"&&currentRoom().members.length===3&&document.querySelector(".room-heading").innerText.includes("星际边境")&&myMember(currentRoom()).ip==="10.66.1.12"&&!rooms.find(r=>r.id==="weekend").members.some(m=>m.name==="林墨")'));
+assert('切房后本人静音状态三处一致',await evaluate('state.muted&&myMember(currentRoom()).muted&&document.querySelector("[data-action=toggle-mute]").innerText.includes("已静音")&&(()=>{const tile=[...document.querySelectorAll(".player-tile")].find(el=>el.innerText.includes("林墨"));return tile.innerText.includes("麦克风已关闭")&&!!tile.querySelector(".player-state.muted")})()'));
+await evaluate('document.querySelector("[data-action=room-tab][data-tab=chat]").click()');
+assert('切房聊天不串房',await evaluate('currentRoom().messages.length===1&&document.body.innerText.includes("今晚一起去看新星球")&&!document.querySelector(".chat-scroll").innerText.includes("准备下矿")'));
+await click('leave-room');await click('confirm-leave');
+assert('离开立即清除个人活动',await evaluate('state.sessionStatus==="idle"&&state.roomId===null&&!document.querySelector(".hero")&&!document.querySelector(".voice-dock")&&!currentRoom()'));
+await click('join-code');await evaluate('document.getElementById("join-code").value="INVALID"');await click('confirm-join-code');
+assert('无效邀请码保留弹框且不加入',await evaluate('!state.joined&&!!state.modal&&document.getElementById("join-code").value==="INVALID"&&state.toast.includes("邀请码无效")'));
+await evaluate('document.getElementById("join-code").value="wv-star-3k"');await click('confirm-join-code');await delay(1000);
+assert('有效邀请码进入对应房间并保留静音',await evaluate('state.roomId==="star"&&state.sessionStatus==="active"&&state.muted&&myMember(currentRoom()).muted&&document.querySelector("[data-action=toggle-mute]").innerText.includes("已静音")'));
+await click('leave-room');await click('confirm-leave');await evaluate('document.querySelector("[data-action=nav][data-view=friends]").click()');
+await evaluate('document.querySelector("[data-input=friend-search]").value="alan#1001";document.querySelector("[data-input=friend-search]").dispatchEvent(new Event("input",{bubbles:true}))');
+assert('好友支持账号 ID 搜索',await evaluate('document.querySelectorAll(".friend-row").length===1&&document.body.innerText.includes("alan#1001")'));
+await click('friend-profile');
+assert('资料卡账号 ID 与权威数据一致',await evaluate('document.querySelector(".modal").innerText.includes("alan#1001")'));
+await click('copy-id');
+assert('复制目标使用当前好友 ID',await evaluate('document.querySelector("[data-action=copy-id]").dataset.name==="阿岚"'));
+await click('modal-close');await evaluate('document.querySelector("[data-input=friend-search]").value="";document.querySelector("[data-input=friend-search]").dispatchEvent(new Event("input",{bubbles:true}))');
+await click('friend-requests');await click('accept-request');
+assert('接受好友同步列表与申请数',await evaluate('state.friends.includes("洛川")&&state.incomingRequests.length===0&&!document.querySelector(".modal")'));
+await evaluate('document.querySelector("[data-action=friend-filter][data-filter=all]").click()');
+assert('全部好友数量由关系数据派生',await evaluate('document.querySelectorAll(".friend-row").length===5&&document.querySelector("[data-filter=all]").innerText.includes("5")'));
+await evaluate('document.querySelector("[data-action=friend-profile][data-name=苏叶]").click()');await click('remove-friend');await click('confirm-remove-friend');
+assert('删除好友同步列表与计数',await evaluate('!state.friends.includes("苏叶")&&document.querySelectorAll(".friend-row").length===4'));
+await evaluate('document.querySelector("[data-action=nav][data-view=groups]").click()');
+assert('群卡片使用各群成员和房间数',await evaluate('groups.every(g=>document.body.innerText.includes(g.members.length+" 位成员 · "+g.roomIds.length+" 个游戏房间"))'));
+await evaluate('document.querySelector("[data-action=open-group][data-group=observatory]").click()');
+assert('不同群聊人数在线数不共用',await evaluate('currentGroup().id==="observatory"&&document.querySelector(".group-chat-head").innerText.includes("3 位成员 · 2 人在线")'));
+assert('群聊展示本群游戏房间与加入入口',await evaluate('document.querySelectorAll(".group-room-card").length===1&&document.querySelector(".group-room-list").innerText.includes("星野探索队")&&document.querySelector(".group-room-list").innerText.includes("2 / 16")&&!!document.querySelector(".group-room-list [data-action=join-room]")'));
+await evaluate('(()=>{const input=document.getElementById("group-message-input");input.value="群组草稿";input.dispatchEvent(new Event("input",{bubbles:true}))})()');
+await click('attach-media');await evaluate('(()=>{const videoTransfer=new DataTransfer();videoTransfer.items.add(new File(["video-demo"],"精彩操作.mp4",{type:"video/mp4"}));const videoInput=document.getElementById("media-file");videoInput.files=videoTransfer.files;videoInput.dispatchEvent(new Event("change",{bubbles:true}))})()');
+assert('视频选择后展示播放预览',await evaluate('state.pendingMedia.type==="video"&&!!document.querySelector("#media-preview video")'));
+await evaluate('document.getElementById("media-caption").value="看这波操作"');await click('confirm-media');assert('视频消息和附言进入当前群聊',await evaluate('currentGroup().messages.some(m=>m.media?.type==="video"&&m.text==="看这波操作")&&!!document.querySelector(".group-chat-body video.message-media")'));
+assert('群组草稿跨媒体发送保留',await evaluate('state.drafts.group.observatory==="群组草稿"&&document.getElementById("group-message-input").value==="群组草稿"'));
+await evaluate('document.querySelector("[data-action=nav][data-view=groups]").click()');await evaluate('document.querySelector("[data-action=open-group][data-group=observatory]").click()');assert('群组草稿跨页面导航保留',await evaluate('document.getElementById("group-message-input").value==="群组草稿"'));
+await evaluate('(()=>{for(let i=0;i<20;i++)currentGroup().messages.push({id:"test-history-"+i,user:"阿岚",time:"20:00",text:"历史消息 "+i});render();document.querySelector(".group-chat-body").scrollTop=0;document.getElementById("group-message-input").value="周末见";document.querySelector("[data-form=group-message]").requestSubmit()})()');await delay(80);
+assert('群消息归属当前群',await evaluate('currentGroup().messages.some(m=>m.text==="周末见")&&!groups.find(g=>g.id==="expedition").messages.some(m=>m.text==="周末见")'));
+assert('群聊发送后清空草稿并滚动到底部',await evaluate('state.drafts.group.observatory===""&&document.getElementById("group-message-input").value===""&&Math.abs(document.querySelector(".group-chat-body").scrollHeight-document.querySelector(".group-chat-body").clientHeight-document.querySelector(".group-chat-body").scrollTop)<2'));
+assert('群聊自己居右他人居左且内容铺满',await evaluate('document.querySelector(".group-chat-body .message:last-child").classList.contains("own")&&!document.querySelector(".group-chat-body .message").classList.contains("own")&&getComputedStyle(document.querySelector(".group-chat-body")).maxWidth==="none"&&getComputedStyle(document.querySelector(".group-chat-body .message.own")).flexDirection==="row-reverse"'));
+await evaluate('currentGroup().messages=currentGroup().messages.filter(m=>!m.id.startsWith("test-history-"));render();scrollChatToBottom("group")');await delay(50);await screenshot('prototype-group.png');
+await evaluate('document.querySelector("[data-action=nav][data-view=groups]").click()');await click('create-group');await evaluate('document.getElementById("new-group-name").value="周三小队";document.getElementById("new-group-desc").value="周三固定组队与复盘"');await click('confirm-create-group');
+assert('创建群后立即可见并进入',await evaluate('groups.some(g=>g.name==="周三小队")&&state.view==="groupChat"&&document.querySelector(".group-chat-head").innerText.includes("1 位成员")'));
+assert('群简介保存并展示在群聊头部',await evaluate('currentGroup().desc==="周三固定组队与复盘"&&document.querySelector(".group-chat-head").innerText.includes("周三固定组队与复盘")'));
+await click('group-manage');await evaluate('document.querySelector("[data-change=role]").value="member";document.querySelector("[data-change=role]").dispatchEvent(new Event("change",{bubbles:true}))');
+assert('普通成员不可见管理记录与危险操作',await evaluate('!document.querySelector("[data-action=audit]")&&!document.querySelector("[data-action=owner-actions]")'));
+await click('modal-close');await evaluate('document.querySelector("[data-action=nav][data-view=lobby]").click()');await click('create-room');await evaluate('document.getElementById("new-room-name").value="测试小队";document.getElementById("new-room-game").value="测试游戏"');await click('confirm-create-room');await delay(1000);
+assert('创建房间写入统一数据并加入',await evaluate('rooms.some(r=>r.name==="测试小队")&&currentRoom().host==="林墨"&&currentRoom().members.length===1&&state.sessionStatus==="active"'));
+await click('room-settings');await evaluate('document.getElementById("edit-room-name").value="测试小队改版";document.getElementById("edit-room-game").value="新游戏名"');await click('save-room');
+assert('保存房间同步名称与游戏',await evaluate('currentRoom().name==="测试小队改版"&&currentRoom().game==="新游戏名"&&document.querySelector(".room-heading").innerText.includes("测试小队改版")'));
+await click('room-settings');await click('pause-room');
+assert('暂停加入更新真实模拟状态',await evaluate('!currentRoom().open&&state.joined&&document.querySelector(".room-heading").innerText.includes("测试小队改版")'));
+await click('room-settings');await click('end-room');await click('confirm-end-room');
+assert('结束活动清退成员但保留配置',await evaluate('rooms.find(r=>r.name==="测试小队改版").members.length===0&&!state.joined&&state.view==="lobby"&&!!document.querySelector(".room-card")'));
+await evaluate('document.querySelector("[data-action=nav][data-view=settings]").click()');
+assert('默认语音设置在右侧页内展示',await evaluate('state.settingsTab==="voice"&&document.querySelector(".settings-content").innerText.includes("语音设备")&&document.querySelector("[data-action=settings-tab][data-tab=voice]").getAttribute("aria-selected")==="true"&&!document.querySelector(".modal")'));
+await click('toggle-setting');
+assert('设置开关保留模拟偏好',await evaluate('state.settings.speaking===false&&!document.querySelector("[data-setting=speaking]").classList.contains("on")'));
+await evaluate('(()=>{const input=document.querySelector("[data-change=input-device]");input.value="USB 麦克风（模拟）";input.dispatchEvent(new Event("change",{bubbles:true}));const volume=document.querySelector("[data-input=volume]");volume.value="65";volume.dispatchEvent(new Event("input",{bubbles:true}))})()');
+await click('account-settings');assert('账号页签页内切换且不弹框',await evaluate('state.view==="settings"&&state.settingsTab==="account"&&document.querySelector(".settings-content").innerText.includes("活动设备规则")&&document.querySelector("[data-action=account-settings]").getAttribute("aria-selected")==="true"&&!document.querySelector(".modal")'));
+await click('support-matrix');assert('支持矩阵页内展示且不伪造验证',await evaluate('state.settingsTab==="support"&&document.querySelector(".settings-content").innerText.includes("当前所有平台与游戏均为「候选 / 未验证」")&&document.querySelector("[data-action=support-matrix]").getAttribute("aria-selected")==="true"&&!document.querySelector(".modal")'));
+await evaluate('state.toast="";renderToast()');await screenshot('prototype-settings.png');await evaluate('document.querySelector("[data-action=settings-tab][data-tab=voice]").click()');
+assert('设置跨页签保留设备音量与偏好',await evaluate('state.settings.inputDevice==="USB 麦克风（模拟）"&&state.volume===65&&state.settings.speaking===false&&document.querySelector("[data-change=input-device]").value==="USB 麦克风（模拟）"&&document.querySelector("[data-input=volume]").value==="65"&&!document.querySelector("[data-setting=speaking]").classList.contains("on")'));
+await click('support-matrix');await click('logout');
+assert('退出登录先显示确认且不直接退出',await evaluate('state.authenticated&&state.view==="settings"&&document.querySelector(".modal").innerText.includes("退出登录？")&&document.querySelector(".modal").innerText.includes("确认后才会退出当前账号")'));
+await click('modal-close');assert('取消退出保持当前账号和页面',await evaluate('state.authenticated&&state.view==="settings"&&!state.modal'));
+await click('logout');await click('confirm-logout');assert('确认退出后登录页可用',await evaluate('!state.authenticated&&document.body.innerText.includes("欢迎回来，玩家")'));await click('login');assert('登录默认不伪造已入房',await evaluate('state.authenticated&&!state.joined&&state.view==="lobby"&&!document.querySelector(".voice-dock")'));
+await command('Emulation.setDeviceMetricsOverride',{width:900,height:800,deviceScaleFactor:1,mobile:false});await delay(150);assert('900 像素大厅无横向溢出',await evaluate('document.documentElement.scrollWidth<=900'));assert('窄窗口保留右侧窗口控制按钮',await evaluate('(()=>{const title=document.querySelector(".titlebar"),controls=document.querySelector(".window-controls");return getComputedStyle(controls).display==="flex"&&Math.abs(controls.getBoundingClientRect().right-(title.getBoundingClientRect().right-parseFloat(getComputedStyle(title).paddingRight)))<1})()'));
+await click('join-room');await click('confirm-join');await delay(1000);assert('900 像素房间保留聊天联机成员区域',await evaluate('(()=>{const side=document.querySelector(".room-side"),rect=side.getBoundingClientRect();return getComputedStyle(side).display==="grid"&&rect.width>0&&rect.height>=280&&document.querySelectorAll(".side-tab").length===3})()'));
+assert('900 像素房间三个页签均可操作',await evaluate('(()=>{document.querySelector("[data-tab=chat]").click();const chat=!!document.querySelector("[data-form=room-message]");document.querySelector("[data-tab=network]").click();const network=!!document.querySelector(".member-ip-list");document.querySelector("[data-tab=members]").click();const members=!!document.querySelector(".room-side .friend-list")||document.querySelectorAll(".room-side .friend-item").length>0;document.querySelector("[data-tab=chat]").click();return chat&&network&&members&&document.documentElement.scrollWidth<=900})()'));await screenshot('prototype-narrow-room.png');
+await command('Emulation.setDeviceMetricsOverride',{width:600,height:800,deviceScaleFactor:1,mobile:false});await delay(150);await evaluate('document.querySelector("[data-action=nav][data-view=settings]").click()');assert('600 像素保留设置与账号入口',await evaluate('(()=>{const settings=document.querySelector(".rail-bottom [data-view=settings]"),profile=document.querySelector(".mini-me");return getComputedStyle(settings).display!=="none"&&settings.getBoundingClientRect().width>0&&profile.getBoundingClientRect().width>0&&document.documentElement.scrollWidth<=600})()'));await screenshot('prototype-compact-settings.png');
+assert('走查期间无脚本异常',errors.length===0,errors.join('; '));console.log(JSON.stringify({ok:true,viewport:'1440x900 + 900x800 + 600x800',checks:results,consoleErrors:errors},null,2))}
+main().catch(e=>{console.error(e.stack||e);process.exitCode=1}).finally(async()=>{if(socket)socket.close();if(browser){if(process.platform==='win32')await new Promise(resolve=>{const killer=spawn('taskkill',['/pid',String(browser.pid),'/T','/F'],{stdio:'ignore'});killer.on('exit',resolve);killer.on('error',()=>{browser.kill();resolve()})});else browser.kill()}await delay(500);fs.rmSync(profile,{recursive:true,force:true,maxRetries:5,retryDelay:200})});

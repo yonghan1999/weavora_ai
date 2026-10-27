@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "approval_id": "APR-B1-d0d73a3037ff",
+  "workflow_id": "WF-zhijie",
+  "project_id": "zhijie",
+  "stage": "B1_PROTOTYPE",
+  "stage_name": "产品原型设计与评审",
+  "requested_at": "2026-10-27T11:41:55Z",
+  "requested_by": "kimi",
+  "baseline_digest": "de239bc11e45b9dd78c6dc3707c6b1685a97ad797b008857aacad6cb2d540be8",
+  "decision": null,
+  "documents": [
+    "docs/02-requirements.md",
+    "docs/02a-prototype.md",
+    "workspace/design/prototype/index.html"
+  ],
+  "summary": "请审批产品原型设计与评审基线；批准仅适用于当前文件摘要。",
+  "important_decisions": "以所列需求、设计、发布或验收文档中的决策为准。",
+  "risks_and_impacts": "风险、已知问题和未验证事项见所列文档；基线变化后须重新审批。",
+  "acceptance_and_checks": {
+    "stage": "B1_PROTOTYPE",
+    "ok": true,
+    "errors": [],
+    "warnings": [],
+    "checks": [
+      "文档结构：docs/02a-prototype.md",
+      "文档结构：workspace/design/prototype/index.html",
+      "需求—产品原型追踪",
+      "可点击原型结构与本地链接：workspace/design/prototype/index.html",
+      "人工审批状态与基线一致性"
+    ],
+    "evidence": []
+  },
+  "allowed_decisions": [
+    "approved",
+    "rejected",
+    "changes_requested"
+  ],
+  "human_command": "python zhijie.py approve zhijie --approval-id APR-B1-d0d73a3037ff --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION"
+}
