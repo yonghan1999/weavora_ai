@@ -4,6 +4,8 @@
   "private": true,
   "description": "织界游戏玩家客户端高保真可交互原型；仅使用模拟数据",
   "scripts": {
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "share": "node build-share.cjs",
+    "test": "node test-prototype.js"
   }
 }
