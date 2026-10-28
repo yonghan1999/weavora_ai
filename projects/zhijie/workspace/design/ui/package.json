@@ -1,0 +1,9 @@
+{
+  "name": "weavora-ui-preview",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "share": "node build-share.cjs",
+    "test": "node test-ui.cjs"
+  }
+}

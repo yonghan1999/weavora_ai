@@ -3,10 +3,10 @@
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "name": "织界",
-  "stage": "B2_UI",
+  "stage": "C_DESIGN",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-10-28T05:35:30Z",
+  "updated_at": "2026-10-28T09:34:36Z",
   "retry_counts": {},
   "max_retries": 3,
   "approvals": [
@@ -95,6 +95,53 @@
       "decided_by": "han",
       "decision_source": "explicit_human_cli",
       "verified_baseline_digest": "d728aafee05870ce2950e43c1ef08ca0698d5184d4a4332db21dcf37fa1ef7ff"
+    },
+    {
+      "schema_version": 1,
+      "approval_id": "APR-B2-de9ff485a1ed",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "stage": "B2_UI",
+      "stage_name": "UI 视觉设计与评审",
+      "requested_at": "2026-10-28T08:25:34Z",
+      "requested_by": "ui-designer",
+      "baseline_digest": "3d2b5c9973e26e63c87c927993dd5ef497ee3069576f57868db2f0dcccf3b94b",
+      "decision": "approved",
+      "documents": [
+        "docs/02-requirements.md",
+        "docs/02a-prototype.md",
+        "docs/02b-ui.md",
+        "workspace/design/prototype/index.html",
+        "workspace/design/ui/index.html"
+      ],
+      "summary": "请审批UI 视觉设计与评审基线；批准仅适用于当前文件摘要。",
+      "important_decisions": "以所列需求、设计、发布或验收文档中的决策为准。",
+      "risks_and_impacts": "风险、已知问题和未验证事项见所列文档；基线变化后须重新审批。",
+      "acceptance_and_checks": {
+        "stage": "B2_UI",
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "checks": [
+          "文档结构：docs/02b-ui.md",
+          "文档结构：workspace/design/ui/index.html",
+          "需求—UI 设计追踪",
+          "可点击原型结构与本地链接：workspace/design/ui/index.html",
+          "人工审批状态与基线一致性"
+        ],
+        "evidence": []
+      },
+      "allowed_decisions": [
+        "approved",
+        "rejected",
+        "changes_requested"
+      ],
+      "human_command": "python zhijie.py approve zhijie --approval-id APR-B2-de9ff485a1ed --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+      "decision_reason": "批准当前基线",
+      "decided_at": "2026-10-28T09:34:36Z",
+      "decided_by": "han",
+      "decision_source": "explicit_human_cli",
+      "verified_baseline_digest": "3d2b5c9973e26e63c87c927993dd5ef497ee3069576f57868db2f0dcccf3b94b"
     }
   ],
   "history": [
@@ -1160,6 +1207,95 @@
       "actor": "han",
       "role": "human_approver",
       "reason": "进入UI 视觉设计与评审",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B2_UI",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-10-28T07:58:42Z",
+      "actor": "ui-designer",
+      "role": "ui_designer",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/02-requirements.md",
+        "docs/02a-prototype.md",
+        "docs/02b-ui.md",
+        "workspace/design/prototype/index.html",
+        "workspace/design/ui/index.html"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B2_UI",
+      "from": "awaiting_approval",
+      "to": "in_progress",
+      "at": "2026-10-28T08:11:26Z",
+      "actor": "ui-designer",
+      "role": "ui_designer",
+      "reason": "按用户要求重新开展专业UI设计，补足任务导向布局、真实组件状态、表单反馈和开发交接",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B2_UI",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-10-28T08:25:34Z",
+      "actor": "ui-designer",
+      "role": "ui_designer",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/02-requirements.md",
+        "docs/02a-prototype.md",
+        "docs/02b-ui.md",
+        "workspace/design/prototype/index.html",
+        "workspace/design/ui/index.html"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B2_UI",
+      "from": "awaiting_approval",
+      "to": "approved",
+      "at": "2026-10-28T09:34:36Z",
+      "actor": "han",
+      "role": "human_approver",
+      "reason": "人工明确批准",
+      "evidence": [
+        "approvals/APR-B2-de9ff485a1ed.decision.json"
+      ],
+      "human_authorization": true
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "C_DESIGN",
+      "from": "approved",
+      "to": "in_progress",
+      "at": "2026-10-28T09:34:36Z",
+      "actor": "han",
+      "role": "human_approver",
+      "reason": "进入架构与详细设计",
       "evidence": [],
       "human_authorization": false
     }
