@@ -4,8 +4,9 @@ const { spawn, spawnSync } = require('node:child_process');
 const { pathToFileURL } = require('node:url');
 
 const root = __dirname;
-const entry = path.resolve(root, '../../../../../tmp/weavora-ui.html');
-const build = spawnSync(process.execPath, [path.join(root, 'build-share.cjs')], { encoding: 'utf8' });
+const outputDir = fs.mkdtempSync(path.join(root, '.ui-test-artifacts-'));
+const entry = path.join(outputDir, 'weavora-ui.html');
+const build = spawnSync(process.execPath, [path.join(root, 'build-share.cjs')], { encoding: 'utf8', env: { ...process.env, WEAVORA_UI_OUTPUT_DIR: outputDir } });
 if (build.status !== 0) throw new Error(build.stderr || 'UI 构建失败');
 const regression = spawnSync(process.execPath, [path.join(root, '../prototype/test-prototype.js')], {
   encoding: 'utf8',
@@ -45,7 +46,7 @@ async function screenshot(name) {
   fs.writeFileSync(path.join(root, name + '.png'), Buffer.from(result.data, 'base64'));
 }
 async function main() {
-  browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-first-run', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, pathToFileURL(path.join(root, 'index.html')).href], { stdio: 'ignore' });
+  browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--no-first-run', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, pathToFileURL(path.join(root, 'index.html')).href], { stdio: 'ignore' });
   let page;
   for (let attempt = 0; attempt < 60; attempt++) {
     try { page = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find(item => item.type === 'page'); } catch {}
@@ -116,14 +117,59 @@ async function main() {
       await screenshot('ui-room-capacity');
       await evaluate('currentRoom().members=JSON.parse(window.membersBefore);state.roomTab="network";render()');
     }
-    await evaluate('state.network="failed";state.channelErrors.network="虚拟网卡权限不足，请授权后重试。";render()');
-    await assert(`${width}px 失败有文字与独立重试`, '!!document.querySelector(".status-chip.error")&&!!document.querySelector("[data-action=network-retry]")&&document.body.innerText.includes("权限不足")&&state.voice==="connected"');
+    await evaluate('state.network="failed";state.voice="waiting";state.channelErrors.network="NAT 或防火墙阻止直连，不会转由服务器传输。";render()');
+    await assert(`${width}px 隧道失败有原因、重试且语音等待`, '!!document.querySelector(".status-chip.error")&&!!document.querySelector("[data-action=network-retry]")&&document.body.innerText.includes("不会转由服务器传输")&&state.voice==="waiting"&&[...document.querySelectorAll(".status-chip")].some(chip=>chip.textContent.includes("等待虚拟网络")&&chip.dataset.connection==="pending")');
+    await assert(`${width}px 隧道失败成员卡不虚报连接或说话`, '!document.querySelector(".player-tile.speaking")&&[...document.querySelectorAll(".player-name small")].every(label=>label.textContent.includes("等待虚拟网络"))');
+    await evaluate('state.roomTab="members";render()');
+    await assert(`${width}px 成员列表同步显示语音等待`, '!document.querySelector(".room-side").innerText.includes("语音已连接")&&document.querySelector(".room-side").innerText.includes("等待虚拟网络")');
+    await evaluate('state.roomTab="network";render()');
     if (width === 1440) await screenshot('ui-network-failure');
+    await evaluate('retryChannel("network")');await delay(650);
+    await assert(`${width}px 隧道恢复后语音自动连接`, 'state.network==="connected"&&state.voice==="connected"');
     await evaluate('state.view="settings";state.settingsTab="account";render();document.querySelector("[data-action=logout]").click()');
     await assert(`${width}px 退出确认保持语义与取消焦点`, 'document.querySelector(".modal").getAttribute("role")==="dialog"&&document.activeElement.dataset.action==="modal-close"&&state.modal.desc.includes("断开语音和联机")');
     if (width === 1440) await screenshot('ui-logout-confirm');
     await evaluate('closeModal();revokeActivity();state.view="lobby";render()');
   }
+  await command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await evaluate('enterRoom("weekend");state.roomTab="chat";render()');await delay(800);
+  await evaluate('state.toast="";renderToast();mediaModal("room")');
+  await evaluate(`(async()=>{const canvas=document.createElement("canvas");canvas.width=480;canvas.height=270;const context=canvas.getContext("2d");context.fillStyle="#12171b";context.fillRect(0,0,480,270);context.fillStyle="#d3f65b";context.fillRect(40,40,400,120);context.fillStyle="#f2f4f1";context.font="24px sans-serif";context.fillText("WEAVORA",40,220);const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));await selectMediaFile(new File([blob],"战术截图.png",{type:"image/png"}))})()`);
+  await evaluate('document.getElementById("media-caption").value="看这条进攻路线";document.getElementById("media-caption").dispatchEvent(new Event("input",{bubbles:true}))');
+  await assert('媒体选择后呈现高保真预览与待发送状态', 'state.mediaDraft.status==="selected"&&document.querySelector(".modal.media-modal")&&document.querySelector("#media-preview img")&&!document.querySelector("#media-preview .media-open")&&!document.querySelector("[data-action=confirm-media]").disabled');
+  await screenshot('ui-media-selected');
+  await evaluate('document.querySelector("[data-action=confirm-media]").click()');
+  await assert('媒体处理中防止重复提交且保留取消', 'document.querySelector(".modal").dataset.mediaStatus==="uploading"&&document.getElementById("media-file").disabled&&document.querySelector("[data-action=confirm-media]").getAttribute("aria-busy")==="true"&&!document.querySelector(".modal-actions [data-action=modal-close]").disabled&&!!document.querySelector("progress[aria-label=模拟上传进度]")');
+  await delay(1200);
+  await assert('已发送图片提供明确查看入口', '!state.modal&&!!document.querySelector(".chat-scroll .media-open")&&document.querySelector(".chat-scroll .media-open").getAttribute("aria-label").includes("战术截图.png")');
+  await screenshot('ui-media-message');
+  await evaluate('document.querySelector(".chat-scroll .media-open").focus();document.querySelector(".chat-scroll .media-open").click()');
+  await assert('图片查看对话框可操作并管理焦点', 'document.querySelector(".modal.media-viewer-modal").getAttribute("role")==="dialog"&&!!document.querySelector(".media-viewer img")&&document.activeElement.dataset.action==="modal-close"');
+  await screenshot('ui-media-viewer');
+  await evaluate('closeModal()');
+  await assert('关闭图片查看后焦点返回原消息', 'document.activeElement.classList.contains("media-open")');
+  await evaluate('state.toast="";renderToast();mediaModal("room")');
+  await evaluate(`(async()=>{const canvas=document.createElement("canvas");canvas.width=480;canvas.height=270;const context=canvas.getContext("2d");context.fillStyle="#242d35";context.fillRect(0,0,480,270);context.fillStyle="#d3f65b";context.fillRect(40,40,400,120);const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));await selectMediaFile(new File([blob],"失败保留.png",{type:"image/png"}));document.getElementById("media-caption").value="保留这段附言";document.getElementById("media-caption").dispatchEvent(new Event("input",{bubbles:true}));state.service="offline";startMediaDelivery()})()`);
+  await delay(300);
+  await assert('媒体失败保留预览附言与重试入口', 'document.querySelector(".media-transfer").dataset.status==="failed"&&!!document.querySelector(".media-error")&&document.getElementById("media-caption").value==="保留这段附言"&&!!document.querySelector("#media-preview img")&&!!document.querySelector("[data-action=retry-media]")');
+  await screenshot('ui-media-failure');
+  await evaluate('state.service="online";document.querySelector("[data-action=retry-media]").click()');await delay(1200);
+  await assert('媒体失败重试成功后才进入消息列表', '!state.modal&&currentRoom().messages.some(message=>message.media?.name==="失败保留.png")');
+  await command('Emulation.setDeviceMetricsOverride', { width: 600, height: 900, deviceScaleFactor: 1, mobile: false });
+  await evaluate('state.toast="";renderToast();mediaModal("room")');
+  await evaluate(`(async()=>{const canvas=document.createElement("canvas");canvas.width=480;canvas.height=270;const context=canvas.getContext("2d");context.fillStyle="#242d35";context.fillRect(0,0,480,270);context.fillStyle="#d3f65b";context.fillRect(40,40,400,120);const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));await selectMediaFile(new File([blob],"窄窗口.png",{type:"image/png"}))})()`);
+  await assert('600px 媒体对话框无横向溢出且操作可达', 'document.documentElement.scrollWidth<=innerWidth&&(()=>{const modal=document.querySelector(".modal").getBoundingClientRect(),actions=document.querySelector(".modal-actions").getBoundingClientRect();return modal.left>=0&&modal.right<=innerWidth&&actions.bottom<=innerHeight})()');
+  await screenshot('ui-media-600');
+  await evaluate('closeModal();revokeActivity();state.view="lobby";render()');
+  await evaluate('state.view="groupChat";state.groupId="expedition";state.peerMode="offline";render();document.getElementById("group-message-input").value="UI待同步";sendTextMessage("group")');
+  await assert('600px 无副本提示保持可见，收据标为本机待同步', 'document.documentElement.scrollWidth<=innerWidth&&document.querySelector(".sync-notice").getBoundingClientRect().top>=document.querySelector(".group-chat-head").getBoundingClientRect().bottom&&!!document.querySelector(".message-receipt[data-delivery=pending]")&&document.querySelector(".sync-notice").innerText.includes("暂不可用")');
+  await screenshot('ui-peer-offline-600');
+  await evaluate('state.peerMode="partial";syncPeerMessages("group")');
+  await assert('部分送达保留其他成员待同步说明', '!!document.querySelector(".message-receipt[data-delivery=partial]")&&document.querySelector(".group-chat-body").innerText.includes("其他成员待同步")');
+  await screenshot('ui-peer-partial-600');
+  await evaluate('state.peerMode="online";syncPeerMessages("group")');
+  await assert('未入房可同步群内容且保留模拟标识', '!state.joined&&!!document.querySelector(".message-receipt[data-delivery=received]")&&document.querySelector(".group-chat-body").innerText.includes("对端已接收（模拟）")');
+  await evaluate('delete state.peerMode');
   await command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
   await evaluate('state.view="settings";render();document.querySelector("[data-action=logout]").click()');
   await assert('减少动态模式关闭弹框动画', 'getComputedStyle(document.querySelector(".modal")).animationName==="none"');
@@ -138,8 +184,14 @@ async function main() {
   await delay(1000);
   await assert('组件完成后恢复可操作', '!document.getElementById("pending-action").disabled&&document.getElementById("action-result").textContent.includes("完成")');
   await evaluate('document.getElementById("retry-demo").click()');
-  await assert('组件重试过程保持语音状态', 'document.getElementById("network-state").textContent.includes("重试中")&&document.getElementById("network-reason").textContent.includes("语音保持已连接")');
+  await assert('组件重试过程等待共享隧道', 'document.getElementById("network-state").textContent.includes("重试中")&&document.getElementById("voice-state").textContent.includes("等待虚拟网络")&&document.getElementById("network-reason").textContent.includes("无服务器回退")');
   await delay(1000);
+  await assert('组件隧道就绪后连接语音', 'document.getElementById("voice-state").textContent.includes("已连接")&&document.getElementById("network-state").textContent.includes("已连接")');
+  await assert('组件无副本不冒充对端送达', 'document.getElementById("replica-notice").textContent.includes("暂不可用")&&document.getElementById("replica-receipt").textContent.includes("待同步")');
+  await evaluate('document.getElementById("replica-mode").value="partial";document.getElementById("replica-mode").dispatchEvent(new Event("change"))');
+  await assert('组件部分送达有文字状态', 'document.getElementById("replica-receipt").dataset.delivery==="partial"&&document.getElementById("replica-receipt").textContent.includes("其他成员待同步")');
+  await evaluate('document.getElementById("replica-mode").value="online";document.getElementById("replica-mode").dispatchEvent(new Event("change"))');
+  await assert('组件对端接收说明校验落盘判据', 'document.getElementById("replica-receipt").textContent.includes("校验落盘确认")');
   await evaluate('document.getElementById("form-demo").requestSubmit()');
   await assert('组件表单空值有错误与关联', 'document.getElementById("room-name-demo").getAttribute("aria-invalid")==="true"&&!document.getElementById("field-feedback").hidden');
   await evaluate('document.getElementById("room-name-demo").value="今晚联机";document.getElementById("room-name-demo").dispatchEvent(new Event("input",{bubbles:true}));document.getElementById("form-demo").requestSubmit()');
@@ -166,4 +218,6 @@ main().catch(error => { console.error(error.stack || error); process.exitCode = 
   await delay(500);
   if (path.dirname(path.resolve(profile)) !== path.resolve(root) || !path.basename(profile).startsWith('.chrome-ui-profile-')) throw new Error('Unsafe profile path');
   fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  if (path.dirname(path.resolve(outputDir)) !== path.resolve(root) || !path.basename(outputDir).startsWith('.ui-test-artifacts-')) throw new Error('Unsafe output path');
+  fs.rmSync(outputDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 });

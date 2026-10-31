@@ -1,4 +1,47 @@
-const baseUi = { render, renderModal, toast, focusModal, networkPanel, groupsView, friendsView, settingsView, roomView };
+const baseUi = { render, renderModal, toast, focusModal, networkPanel, groupsView, friendsView, settingsView, roomView, mediaPreview, updateMediaTransfer, messageReceipt, playerTile, membersPanel };
+
+function uiMemberVoice(member) {
+  return state.network !== 'connected' ? 'waiting' : member.name === me ? state.voice : member.voice;
+}
+
+playerTile = function(member) {
+  const voice = uiMemberVoice(member);
+  const html = baseUi.playerTile({ ...member, voice, speaking: voice === 'connected' && member.speaking });
+  return voice === 'connected' ? html : html.replace('player-tile speaking', 'player-tile');
+};
+
+membersPanel = function() {
+  if (state.network === 'connected') return baseUi.membersPanel();
+  return baseUi.membersPanel().replace(/语音已连接|语音未连接/g, channelLabel('voice', 'waiting'));
+};
+
+messageReceipt = function(message) {
+  return baseUi.messageReceipt(message).replace('class="message-receipt"', `class="message-receipt" data-delivery="${esc(message.delivery || '')}"`);
+};
+
+mediaPreview = function(media) {
+  const preview = baseUi.mediaPreview(media);
+  if (!media || media.type !== 'image' || state.pendingMedia === media) return preview;
+  return `<button type="button" class="media-open" data-action="view-media" data-url="${esc(media.url)}" data-name="${esc(media.name)}" aria-label="查看图片 ${esc(media.name)}">${preview}</button>`;
+};
+
+updateMediaTransfer = function() {
+  baseUi.updateMediaTransfer();
+  const transfer = document.getElementById('media-transfer');
+  const modal = transfer?.closest('.modal');
+  if (!modal || !state.mediaDraft) return;
+  modal.classList.add('media-modal');
+  modal.dataset.mediaStatus = state.mediaDraft.status;
+  transfer.dataset.status = state.mediaDraft.status;
+};
+
+document.addEventListener('click',event => {
+  const trigger = event.target.closest('[data-action="view-media"]');
+  if (!trigger) return;
+  const name = trigger.dataset.name || '图片';
+  openModal('查看图片',esc(name),`<div class="media-viewer"><img class="message-media" src="${esc(trigger.dataset.url)}" alt="${esc(name)}"></div>`,'<button class="button primary" data-action="modal-close">关闭</button>');
+  document.querySelector('.modal')?.classList.add('media-viewer-modal');
+});
 
 function uiHeading(title, description, actions = '', eyebrow = '') {
   return `<div class="page-heading"><div>${eyebrow ? `<div class="eyebrow">${esc(eyebrow)}</div>` : ''}<h1>${esc(title)}</h1><p>${esc(description)}</p></div>${actions ? `<div class="heading-actions">${actions}</div>` : ''}</div>`;
@@ -133,7 +176,7 @@ render = function() {
     if (button.dataset.name) button.setAttribute('aria-label',`邀请 ${button.dataset.name} 组队`);
   });
   document.querySelectorAll('.status-chip').forEach(element => {
-    element.dataset.connection = /已连接/.test(element.textContent) ? 'connected' : /连接中|重试中/.test(element.textContent) ? 'pending' : 'other';
+    element.dataset.connection = /已连接/.test(element.textContent) ? 'connected' : /等待虚拟网络|连接中|重试中/.test(element.textContent) ? 'pending' : 'other';
   });
 };
 

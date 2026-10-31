@@ -132,6 +132,14 @@ python zhijie.py cancel my-app --actor operator --role workflow_operator --reaso
 
 新终端或新会话先运行 `status`，无需依赖旧对话。框架元数据由项目级回滚日志保护，异常或崩溃会在下次带锁访问时恢复；外部命令副作用和业务工作区文件不会自动回滚。重试次数耗尽会阻塞并需要人工介入。
 
+架构阶段尚无开发任务时，用户决定扩大需求可通过 CLI 返回需求分析（历史文件保留，旧批准不再沿用）：
+
+```powershell
+python zhijie.py rebaseline my-app --actor operator --role workflow_operator --reason "用户决定新增交付范围，重新评审需求和设计"
+```
+
+更新需求后重新 `submit`，依次由人类审批 B、B1、B2、C；`rebaseline` 不执行或替代任何人工批准。已有开发任务时不允许使用此命令。
+
 ## Git 提交与推送
 
 本地提交默认放在需求/设计批准、开发规划通过、单个任务验证通过、缺陷回归通过、自测/独立测试通过、发布批准和最终验收之后。待审批、测试失败、未验证或混入无关变更时不提交。本地 commit 与远程 push 分开授权，详细节点、提交前检查和提交说明格式见 `workflow/spec/GIT.md`。

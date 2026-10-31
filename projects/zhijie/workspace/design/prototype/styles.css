@@ -57,3 +57,12 @@
 .group-invites{border-color:transparent;color:var(--muted)}
 .group-invites:hover{color:var(--text)}
 .group-invites .count-badge{min-width:20px;text-align:center}
+/* 媒体交互为本地状态模拟，保持进度、失败与取消入口可见。 */
+.media-transfer{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0;min-height:30px}
+.media-transfer progress{flex:1;min-width:100px;accent-color:var(--accent,#d7ff5f)}
+.media-error{flex-basis:100%;margin:0;color:#ffb4b4;overflow-wrap:anywhere}
+.media-review{margin-top:12px}.media-review button{margin:8px 4px 0 0}
+.media-preview{overflow-wrap:anywhere;min-width:0}.media-preview img,.media-preview video{max-width:100%;max-height:250px;object-fit:contain}
+
+/* 客户端副本状态与收据 */
+.sync-notice{position:sticky;top:0;z-index:1;background:#101416;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-bottom:12px;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:12px;overflow-wrap:anywhere}.message-receipt{display:block;color:var(--muted);font-size:11px;margin-top:6px;overflow-wrap:anywhere}

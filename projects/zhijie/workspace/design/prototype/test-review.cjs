@@ -33,7 +33,7 @@ module.exports = async ({ evaluate, click, assert, delay, command, screenshot })
   await click('voice-retry');await delay(600);
   assert('语音独立重试后恢复', await evaluate('state.voice==="connected"&&state.network==="connected"'));
   await evaluate('state.outcomes.network="虚拟IP冲突";retryChannel("network")');await delay(600);
-  assert('网络失败不影响语音且不暴露可用地址', await evaluate('state.network==="failed"&&state.voice==="connected"&&!document.querySelector(".member-ip-list")'));
+  assert('网络失败使语音等待且不暴露可用地址', await evaluate('state.network==="failed"&&state.voice==="waiting"&&!document.querySelector(".member-ip-list")'));
   await click('network-retry');await delay(600);
   await evaluate('disconnectActivity();window.retainedIp=myMember(currentRoom()).ip;currentRoom().open=false;recoverActivity()');await delay(600);
   assert('暂停房间保留期恢复不当作新加入且IP不变', await evaluate('state.joined&&state.network==="connected"&&myMember(currentRoom()).ip===window.retainedIp'));

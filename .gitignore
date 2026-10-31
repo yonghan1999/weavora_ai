@@ -15,3 +15,9 @@ projects/*/deliverables/*.zip
 *.key
 .DS_Store
 Thumbs.db
+
+# Browser profiles and generated prototype test output
+projects/zhijie/workspace/design/prototype/.chrome-test-profile-*/
+projects/zhijie/workspace/design/prototype/*-test-error.log
+projects/zhijie/workspace/design/prototype/*-test-result.json
+projects/zhijie/workspace/design/ui/.ui-test-artifacts-*/

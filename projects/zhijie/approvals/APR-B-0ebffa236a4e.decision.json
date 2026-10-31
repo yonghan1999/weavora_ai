@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "approval_id": "APR-B-0ebffa236a4e",
+  "workflow_id": "WF-zhijie",
+  "project_id": "zhijie",
+  "stage": "B_REQUIREMENTS",
+  "stage_name": "需求分析与评审",
+  "requested_at": "2026-10-30T05:44:38Z",
+  "requested_by": "codex-requirements-analyst",
+  "baseline_digest": "930c3479678860f60613bb33a20a6064286f1325aec0ed71866dd0336e22c2f4",
+  "decision": "approved",
+  "documents": [
+    "docs/02-requirements.md"
+  ],
+  "summary": "请审批需求分析与评审基线；批准仅适用于当前文件摘要。",
+  "important_decisions": "以所列需求、设计、发布或验收文档中的决策为准。",
+  "risks_and_impacts": "风险、已知问题和未验证事项见所列文档；基线变化后须重新审批。",
+  "acceptance_and_checks": {
+    "stage": "B_REQUIREMENTS",
+    "ok": true,
+    "errors": [],
+    "warnings": [],
+    "checks": [
+      "文档结构：docs/02-requirements.md",
+      "需求唯一标识与验收标准",
+      "人工审批状态与基线一致性"
+    ],
+    "evidence": []
+  },
+  "allowed_decisions": [
+    "approved",
+    "rejected",
+    "changes_requested"
+  ],
+  "human_command": "python zhijie.py approve zhijie --approval-id APR-B-0ebffa236a4e --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+  "decision_reason": "批准当前基线",
+  "decided_at": "2026-10-30T05:52:17Z",
+  "decided_by": "han",
+  "decision_source": "explicit_human_cli",
+  "verified_baseline_digest": "930c3479678860f60613bb33a20a6064286f1325aec0ed71866dd0336e22c2f4"
+}

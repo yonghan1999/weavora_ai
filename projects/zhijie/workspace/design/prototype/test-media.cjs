@@ -1,0 +1,53 @@
+module.exports = async ({ evaluate, click, assert, delay, command, screenshot }) => {
+  const waitFor = async expression => {
+    for (let attempt = 0; attempt < 80; attempt++) {
+      if (await evaluate(expression)) return;
+      await delay(100);
+    }
+    throw new Error('媒体状态等待超时: ' + expression);
+  };
+  await command('Page.navigate', { url: await evaluate('location.href.split("?")[0]+"?review=1"') }); await delay(300);
+  await command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await evaluate('state.groupId="expedition";state.view="groupChat";render();window.pickImage=async()=>{const c=document.createElement("canvas");c.width=320;c.height=160;const ctx=c.getContext("2d");ctx.fillStyle="#31442a";ctx.fillRect(0,0,320,160);ctx.fillStyle="#d3f65b";ctx.fillRect(40,40,90,80);ctx.fillStyle="#70d6d0";ctx.fillRect(160,65,100,55);const blob=await new Promise(resolve=>c.toBlob(resolve,"image/png"));await selectMediaFile(new File([blob],"image.png",{type:"image/png"}))}');
+  await click('attach-media');
+  assert('未选文件禁用发送且声明模拟边界', await evaluate('document.querySelector("[data-action=confirm-media]").disabled&&document.querySelector(".modal").innerText.includes("不会上传")'));
+  await evaluate('selectMediaFile(new File(["<svg/>"],"bad.svg",{type:"image/svg+xml"}))');
+  assert('SVG 被拒绝且不存在旧文件回退', await evaluate('state.mediaDraft.status==="invalid"&&!state.pendingMedia&&document.querySelector("[data-action=confirm-media]").disabled'));
+  await evaluate('selectMediaFile(new File([new Uint8Array(10*1024*1024+1)],"large.png",{type:"image/png"}))');
+  assert('图片按 10 MiB 上限而非旧 25 MB', await evaluate('state.mediaDraft.error.includes("10 MiB")&&!state.pendingMedia'));
+  await evaluate('selectMediaFile(new File(["broken"],"broken.png",{type:"image/png"}))');
+  assert('损坏图片无法进入待发送状态', await evaluate('state.mediaDraft.status==="invalid"&&!state.pendingMedia'));
+  await evaluate('pickImage();'); await delay(100);
+  assert('有效本地图片可预览且默认不自动发送', await evaluate('state.mediaDraft.status==="selected"&&!!state.pendingMedia&&!currentGroup().messages.some(message=>message.media)'));
+  await evaluate('window.beforeMediaCount=currentGroup().messages.length;state.mediaReviewOutcome="offline";document.getElementById("media-caption").value="保留附言"');
+  assert('上传中显示进度且按钮防重复', await evaluate('(()=>{document.querySelector("[data-action=confirm-media]").click();return state.mediaDraft.status==="uploading"&&!!document.querySelector("progress")&&document.querySelector("[data-action=confirm-media]").disabled})()'));
+  await waitFor('state.mediaDraft.status==="failed"');
+  assert('失败保留预览附言和重试入口且无幽灵消息', await evaluate('state.mediaDraft.status==="failed"&&!!state.pendingMedia&&document.getElementById("media-caption").value==="保留附言"&&!!document.querySelector("[data-action=retry-media]")&&currentGroup().messages.length===window.beforeMediaCount'));
+  await screenshot('prototype-media-failure.png');
+  await click('retry-media'); await evaluate('startMediaDelivery()'); await waitFor('!state.mediaDraft');
+  assert('重试及重复点击只生成一条消息', await evaluate('currentGroup().messages.length===window.beforeMediaCount+1&&currentGroup().messages.at(-1).text==="保留附言"&&!state.mediaDraft'));
+  await click('attach-media'); await evaluate('pickImage()'); await click('confirm-media'); await click('modal-close'); await delay(1100);
+  assert('取消中止在途模拟且迟到结果不发送', await evaluate('currentGroup().messages.length===window.beforeMediaCount+1&&!state.pendingMedia&&!state.mediaDraft'));
+  await click('attach-media'); await evaluate('pickImage()'); await evaluate('state.mediaReviewOutcome="quota"'); await click('confirm-media'); await waitFor('state.mediaDraft.status==="failed"');
+  assert('群配额满持续提示并允许清理后重试', await evaluate('state.mediaDraft.error.includes("10 GiB")&&state.mediaDraft.status==="failed"&&!!document.querySelector("[data-action=retry-media]")'));
+  await click('modal-close'); await click('attach-media'); await evaluate('pickImage()'); await evaluate('state.mediaDraft.createdAt-=15*60*1000'); await click('confirm-media');
+  assert('15 分钟草稿过期禁用发送', await evaluate('state.mediaDraft.status==="expired"&&document.querySelector("[data-action=confirm-media]").disabled'));
+  await click('modal-close'); await click('attach-media'); await evaluate('pickImage()'); await evaluate('state.mediaReviewOutcome="revoked"'); await click('confirm-media'); await waitFor('state.mediaDraft.status==="revoked"');
+  assert('发送前失权不生成消息且不能盲目重试', await evaluate('state.mediaDraft.status==="revoked"&&currentGroup().messages.length===window.beforeMediaCount+1&&document.querySelector("[data-action=confirm-media]").disabled'));
+  await click('modal-close');
+  await evaluate('enterRoom("weekend")'); await delay(800); await evaluate('state.roomTab="chat";render()');
+  await click('attach-media'); await evaluate('pickImage()'); await click('confirm-media'); await evaluate('window.roomCount=currentRoom().messages.length;revokeActivity();render()'); await delay(1100);
+  assert('退房清除在途附件且旧活动不提交', await evaluate('!state.mediaDraft&&!state.pendingMedia&&rooms.find(room=>room.id==="weekend").messages.length===window.roomCount'));
+  await evaluate('closeModal();enterRoom("weekend")'); await delay(800); await evaluate('state.roomTab="chat";render();document.getElementById("room-message-input").value="新活动前消息";document.querySelector("[data-form=room-message]").requestSubmit()');
+  await click('room-settings'); await click('end-room'); await click('confirm-end-room');
+  assert('结束活动清除房间历史但保留群消息与房间配置', await evaluate('!state.joined&&rooms.find(room=>room.id==="weekend").messages.length===0&&groups.find(group=>group.id==="expedition").messages.length===window.beforeMediaCount+1'));
+  await evaluate('enterRoom("weekend")'); await delay(800); await evaluate('state.roomTab="chat";render();disconnectActivity();document.getElementById("room-message-input").value="保留期不能发送";document.querySelector("[data-form=room-message]").requestSubmit()');
+  assert('断线保留不允许继续发送房间消息', await evaluate('currentRoom().messages.length===0&&state.toast.includes("活动已改变")'));
+  await evaluate('recoverActivity()'); await delay(600); await evaluate('state.roomTab="chat";render();document.getElementById("room-message-input").value="😀".repeat(4001);document.querySelector("[data-form=room-message]").requestSubmit()');
+  assert('文字按 Unicode 码点上限校验并保留输入', await evaluate('currentRoom().messages.length===0&&document.getElementById("room-message-input").value.length===8002&&state.toast.includes("4000")'));
+  await evaluate('document.getElementById("room-message-input").value="";state.toast="";renderToast();mediaModal("room")'); await evaluate('pickImage()');
+  await command('Emulation.setDeviceMetricsOverride', { width: 600, height: 800, deviceScaleFactor: 1, mobile: false });
+  assert('600px 媒体弹框无横向溢出且取消可达', await evaluate('document.documentElement.scrollWidth<=600&&document.querySelector(".modal-actions [data-action=modal-close]").getBoundingClientRect().width>0'));
+  await screenshot('prototype-media-600.png'); await click('modal-close');
+  await command('Page.reload', { ignoreCache: true }); await delay(300);
+};

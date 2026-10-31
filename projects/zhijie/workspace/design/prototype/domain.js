@@ -5,6 +5,8 @@ const roleNames = { owner: '群主', admin: '管理员', member: '普通成员' 
 
 function initializePrototype() {
   Object.assign(state, { epoch: 0, channelErrors: {}, outcomes: {}, recovery: null, editRoomId: null, activeDevice: '此电脑', reviewRoles: {}, lastIps: {}, service: 'online' });
+  state.mediaDraft = null;
+  state.mediaReviewOutcome = '';
   groups.forEach(group => Object.assign(group, { owner: me, roles: {}, audit: [], ...group }));
   rooms.forEach(room => { room.password = ''; room.desc ||= '好友组队'; });
   rooms.find(room => room.id === 'racing').members = rooms.find(room => room.id === 'racing').members.filter(member => member.name !== '北屿');
@@ -70,7 +72,7 @@ function handleModalKey(event) {
 
 function channelLabel(type, value) {
   const prefix = type === 'voice' ? '语音' : '虚拟网络';
-  return prefix + ({ connected: '已连接', connecting: '连接中', retrying: '重试中', failed: '连接失败', disconnected: '已断开', limited: '受限' }[value] || '未连接');
+  return prefix + ({ connected: '已连接', waiting: '等待虚拟网络', connecting: '连接中', retrying: '重试中', failed: '连接失败', disconnected: '已断开', limited: '受限' }[value] || '未连接');
 }
 
 function renderChannelStatus(type, value) {
@@ -98,6 +100,7 @@ function showJoinRoom(id) {
 }
 
 function revokeActivity() {
+  if (state.mediaDraft?.scope === 'room') discardMediaDraft();
   clearTimeout(recoveryTimer);
   Object.values(channelTimers).forEach(clearTimeout);
   state.epoch++;
@@ -124,9 +127,8 @@ function enterRoom(id, password = '') {
     address = `10.66.${subnet}.${host}`;
   }
   room.members.push({ name: me, ip: address, voice: 'connecting', muted: state.muted });
-  Object.assign(state, { roomId: id, sessionStatus: 'joining', voice: 'connecting', network: 'connecting', joinedAt: Date.now(), view: 'room', roomTab: 'network', activeDevice: '此电脑' });
+  Object.assign(state, { roomId: id, sessionStatus: 'joining', voice: 'waiting', network: 'connecting', joinedAt: Date.now(), view: 'room', roomTab: 'network', activeDevice: '此电脑' });
   closeModal(); render();
-  retryChannel('voice', true);
   retryChannel('network', true);
   return true;
 }
@@ -134,21 +136,35 @@ function enterRoom(id, password = '') {
 function retryChannel(type, initial = false) {
   if (!state.joined || !isGroupMember(currentRoom()?.groupId)) return;
   if (state.recovery) { recoverActivity(); return; }
+  if (type === 'voice' && state.network !== 'connected') {
+    state.voice = 'waiting';
+    state.channelErrors.voice = '等待虚拟网络恢复后自动连接语音。';
+    if (myMember(currentRoom())) myMember(currentRoom()).voice = 'waiting';
+    render(); return;
+  }
   const epoch = state.epoch, id = state.roomId;
+  if (type === 'network') {
+    clearTimeout(channelTimers.voice);
+    state.voice = 'waiting'; state.speaking = false;
+    if (myMember(currentRoom())) myMember(currentRoom()).voice = 'waiting';
+  }
   state[type] = initial ? 'connecting' : 'retrying';
   state.channelErrors[type] = '';
   render();
   clearTimeout(channelTimers[type]);
   channelTimers[type] = setTimeout(() => {
     if (state.epoch !== epoch || state.roomId !== id || !state.joined) return;
+    if (type === 'voice' && state.network !== 'connected') return;
     const failure = state.outcomes[type];
     delete state.outcomes[type];
     state[type] = failure ? 'failed' : 'connected';
     state.channelErrors[type] = failure || '';
+    if (type === 'network' && failure) state.channelErrors.voice = '虚拟网络不可用，语音等待恢复。';
+    if (type === 'network' && !failure) { retryChannel('voice', initial); return; }
     if (type === 'voice' && myMember(currentRoom())) myMember(currentRoom()).voice = state.voice;
     state.sessionStatus = ['connecting','retrying'].includes(state.voice) || ['connecting','retrying'].includes(state.network) ? 'joining' : 'active';
     render();
-  }, initial ? type === 'voice' ? 350 : 700 : 500);
+  }, initial ? type === 'voice' ? 250 : 450 : type === 'voice' ? 200 : 300);
 }
 
 function disconnectActivity() {
@@ -176,7 +192,7 @@ function recoverActivity() {
   if (!state.recovery || state.recovery.until <= Date.now() || !room || !isGroupMember(room.groupId)) { expireRecovery(); return; }
   clearTimeout(recoveryTimer);
   state.recovery = null;
-  retryChannel('voice'); retryChannel('network');
+  retryChannel('network');
 }
 
 function showCreateRoom() {
@@ -242,6 +258,7 @@ function showMembers() {
 }
 
 function removeGroupMember(group, name) {
+  if (name === me && state.mediaDraft?.groupId === group.id) discardMediaDraft();
   group.members = group.members.filter(member => member !== name);
   delete group.roles[name];
   if (group.transfer?.target === name) group.transfer = null;
@@ -261,7 +278,7 @@ function showOwnerActions() {
 
 function showReviewTools() {
   const group = currentGroup();
-  openModal('原型复核工具', '仅 ?review=1 可见；模拟行为不代表真实服务通过。', `<div class="review-actions">${[['voice-fail','语音失败'],['network-fail','网络权限不足'],['network-conflict','IP 地址冲突'],['voice-device','麦克风拔出'],['service-offline','服务不可达'],['auth-expired','登录过期'],['disconnect','短时断线'],['recover','网络恢复'],['device-fail','设备转移预检失败'],['expire','保留期超时'],['lose-membership','当前群资格撤销']].map(([scenario,label]) => `<button class="button" data-action="review-scenario" data-scenario="${scenario}">${label}</button>`).join('')}</div><h3>模拟邀请接收方</h3>${state.invites.filter(invite => invite.name !== me && invitationStatus(invite) === 'pending').map(invite => `<div class="member-management"><span>${esc(invite.name)}</span><button class="button small" data-action="review-accept-invite" data-id="${invite.id}">接受邀请</button></div>`).join('') || '<p>暂无待接受邀请</p>'}${group?.transfer ? `<p>转让接收方：${esc(group.transfer.target)}</p><button class="button" data-action="review-accept-transfer">模拟接收方接受</button>` : ''}`, '<button class="button" data-action="modal-close">关闭</button>');
+  openModal('原型复核工具', '仅 ?review=1 可见；模拟行为不代表真实服务通过。', `<div class="review-actions">${[['voice-fail','语音失败'],['network-fail','网络权限不足'],['network-conflict','IP 地址冲突'],['network-nat','NAT 直连失败'],['voice-device','麦克风拔出'],['service-offline','服务不可达'],['auth-expired','登录过期'],['disconnect','短时断线'],['recover','网络恢复'],['device-fail','设备转移预检失败'],['expire','保留期超时'],['lose-membership','当前群资格撤销']].map(([scenario,label]) => `<button class="button" data-action="review-scenario" data-scenario="${scenario}">${label}</button>`).join('')}</div><h3>内容副本与直连</h3><div class="review-actions">${[["online","在线副本可达"],["offline","无在线可达副本"],["partial","部分成员不可达"]].map(([mode,label]) => `<button class="button" data-action="review-peer-mode" data-mode="${mode}">${label}</button>`).join("")}</div><h3>模拟邀请接收方</h3>${state.invites.filter(invite => invite.name !== me && invitationStatus(invite) === 'pending').map(invite => `<div class="member-management"><span>${esc(invite.name)}</span><button class="button small" data-action="review-accept-invite" data-id="${invite.id}">接受邀请</button></div>`).join('') || '<p>暂无待接受邀请</p>'}${group?.transfer ? `<p>转让接收方：${esc(group.transfer.target)}</p><button class="button" data-action="review-accept-transfer">模拟接收方接受</button>` : ''}`, '<button class="button" data-action="modal-close">关闭</button>');
 }
 
 function authView() {
@@ -353,6 +370,9 @@ function handleDomainAction(event) {
   } else if (action === 'confirm-end-room' || action === 'confirm-delete-room') {
     if (state.roomId === room.id) revokeActivity();
     room.members = [];
+    clearMessageMedia(room.messages);
+    room.messages = [];
+    delete state.drafts.room[room.id];
     if (action === 'confirm-delete-room') {
       room.messages.forEach(message => { if (message.media) URL.revokeObjectURL(message.media.url); });
       rooms.splice(rooms.indexOf(room), 1);
@@ -398,7 +418,9 @@ function handleDomainAction(event) {
   } else if (action === 'confirm-dissolve-group') {
     if (document.getElementById('dissolve-name').value !== group.name) { toast('群名称不匹配。'); return; }
     if (currentRoom()?.groupId === group.id) revokeActivity();
-    rooms.filter(item => item.groupId === group.id).forEach(item => { delete state.lastIps[item.id]; delete state.drafts.room[item.id]; });
+    if (state.mediaDraft?.groupId === group.id) discardMediaDraft();
+    clearMessageMedia(group.messages);
+    rooms.filter(item => item.groupId === group.id).forEach(item => { clearMessageMedia(item.messages); delete state.lastIps[item.id]; delete state.drafts.room[item.id]; });
     for (let index = rooms.length - 1; index >= 0; index--) if (rooms[index].groupId === group.id) rooms.splice(index, 1);
     state.invites = state.invites.filter(invite => invite.groupId !== group.id);
     delete state.drafts.group[group.id]; groups.splice(groups.indexOf(group), 1);
@@ -433,8 +455,13 @@ function handleDomainAction(event) {
     } else {
       const type = scenario.startsWith('voice') ? 'voice' : 'network';
       clearTimeout(channelTimers[type]);
-      state[type] = 'failed'; state.channelErrors[type] = scenario === 'network-conflict' ? '虚拟 IP 地址冲突，请重试以重新分配。' : scenario === 'network-fail' ? '虚拟网卡权限不足，请在系统中授权后重试。' : scenario === 'voice-device' ? '麦克风已拔出，请重新连接或选择输入设备。' : '语音连接失败，请检查网络后重试。';
+      state[type] = 'failed'; state.channelErrors[type] = scenario === 'network-nat' ? '无法与队友直连，请检查 UDP 或防火墙后重试；不会转由服务器传输。' : scenario === 'network-conflict' ? '虚拟 IP 地址冲突，请重试以重新分配。' : scenario === 'network-fail' ? '虚拟网卡权限不足，请在系统中授权后重试。' : scenario === 'voice-device' ? '麦克风已拔出，请重新连接或选择输入设备。' : '语音连接失败，请检查网络后重试。';
       if (type === 'voice') { myMember(currentRoom()).voice = 'failed'; state.speaking = false; }
+      else {
+        clearTimeout(channelTimers.voice); state.voice = 'waiting'; state.speaking = false;
+        state.channelErrors.voice = '虚拟网络不可用，语音等待恢复。';
+        myMember(currentRoom()).voice = 'waiting';
+      }
       render(); toast(state.channelErrors[type]);
     }
   } else if (action === 'review-accept-invite') {

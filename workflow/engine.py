@@ -551,6 +551,48 @@ class Engine:
                 (self.project_dir(project_id) / "approvals/current.json").unlink(missing_ok=True)
             return state
 
+    def rebaseline(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
+        """架构在途的需求变更退回 B，保留历史文件但不沿用旧批准。"""
+        if role != "workflow_operator" or not actor.strip() or not reason.strip():
+            raise WorkflowError("需求改基线须由 workflow_operator 提供执行者和具体原因。")
+        with self.lock(project_id):
+            state = self.load(project_id)
+            if state["stage"] != "C_DESIGN" or state["status"] not in {"in_progress", "awaiting_approval"}:
+                raise WorkflowError("仅执行中或待审批的架构阶段可返回需求分析。")
+            tasks = read_json(self.project_dir(project_id) / "tasks/tasks.json")
+            if tasks.get("tasks") or state.get("active_task_id"):
+                raise WorkflowError("已有开发任务，不能使用架构阶段的需求改基线命令。")
+            pending = self.current_approval_request(project_id, required=False)
+            event = {
+                "event": "requirements_rebaseline",
+                "workflow_id": state["workflow_id"],
+                "project_id": project_id,
+                "from_stage": state["stage"],
+                "from_status": state["status"],
+                "stage": "B_REQUIREMENTS",
+                "at": utc_now(),
+                "actor": actor,
+                "role": role,
+                "reason": reason.strip(),
+                "invalidated_approval_ids": [item["approval_id"] for item in state.get("approvals", [])],
+                "invalidated_request_id": pending["approval_id"] if pending else None,
+                "human_authorization": False,
+            }
+            # 原始请求和决策文件保留，旧批准只退出当前有效基线列表。
+            state["approvals"] = []
+            state["stage"] = "B_REQUIREMENTS"
+            state["resume_status"] = None
+            state["retry_counts"] = {}
+            state.setdefault("history", []).append(event)
+            self.audit(project_id, event)
+            (self.project_dir(project_id) / "approvals/current.json").unlink(missing_ok=True)
+            if state["status"] == "awaiting_approval":
+                self.transition(project_id, state, "in_progress", actor, role, reason.strip())
+            else:
+                state["history"] = state["history"][-200:]
+                self.save(project_id, state)
+            return state
+
     def migrate(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
         """将需求已批准、架构在途的旧项目显式迁移到含 B1/B2 的当前流程。"""
         with self.lock(project_id):

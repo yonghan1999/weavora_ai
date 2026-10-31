@@ -307,6 +307,66 @@ class WorkflowTests(unittest.TestCase):
             self.engine.approve(self.project_id, request["approval_id"], "approved", "人类评审", HUMAN_CONFIRMATION)
         self.assertEqual(self.engine.load(self.project_id)["status"], "awaiting_approval")
 
+    def reach_architecture(self):
+        self.approve(self.submit_requirements()["approval_id"])
+        for stage in ["B1_PROTOTYPE", "B2_UI"]:
+            self.write_design(stage)
+            self.approve(self.engine.submit(self.project_id, "designer", "design_reviewer")["request"]["approval_id"])
+
+    def test_rebaseline_preserves_files_and_requires_all_new_approvals(self):
+        self.reach_architecture()
+        base = self.engine.project_dir(self.project_id)
+        originals = {path: path.read_bytes() for path in (base / "approvals").glob("*.json")}
+        ui_path = base / "workspace/design/ui/index.html"
+        ui_before = ui_path.read_bytes()
+        state = self.engine.rebaseline(self.project_id, "operator", "workflow_operator", "用户新增真实媒体消息")
+        self.assertEqual((state["stage"], state["status"]), ("B_REQUIREMENTS", "in_progress"))
+        self.assertEqual(state["approvals"], [])
+        self.assertEqual(ui_path.read_bytes(), ui_before)
+        for path, content in originals.items():
+            self.assertEqual(path.read_bytes(), content)
+        event = next(item for item in reversed(state["history"]) if item["event"] == "requirements_rebaseline")
+        self.assertEqual(len(event["invalidated_approval_ids"]), 3)
+        self.assertFalse(event["human_authorization"])
+        result = check_stage(self.engine, self.project_id, "C_DESIGN")
+        self.assertTrue(any("缺少人工批准记录" in error for error in result.errors))
+        request = self.engine.submit(self.project_id, "analyst", "requirements_analyst")["request"]
+        self.assertEqual(request["stage"], "B_REQUIREMENTS")
+        self.assertEqual(self.engine.load(self.project_id)["status"], "awaiting_approval")
+
+    def test_rebaseline_pending_request_is_invalidated_without_deleting_history(self):
+        self.reach_architecture()
+        base = self.engine.project_dir(self.project_id)
+        sections = self.engine.stages["C_DESIGN"]["documents"]["docs/03-architecture.md"]
+        (base / "docs/03-architecture.md").write_text(
+            "# 架构\n\n" + "\n\n".join(f"## {section}\n\n已设计 REQ-001。" for section in sections), encoding="utf-8",
+        )
+        request = self.engine.submit(self.project_id, "reviewer", "architecture_reviewer")["request"]
+        self.engine.rebaseline(self.project_id, "operator", "workflow_operator", "调整需求")
+        self.assertIsNone(self.engine.current_approval_request(self.project_id, required=False))
+        self.assertTrue((base / f"approvals/{request['approval_id']}.request.json").is_file())
+        self.assertEqual(self.engine.load(self.project_id)["stage"], "B_REQUIREMENTS")
+
+    def test_rebaseline_guards_and_transaction_rollback(self):
+        from unittest.mock import patch
+
+        with self.assertRaisesRegex(WorkflowError, "架构阶段"):
+            self.engine.rebaseline(self.project_id, "operator", "workflow_operator", "调整需求")
+        self.reach_architecture()
+        before = self.engine.load(self.project_id)
+        for actor, role, reason in [("operator", "developer", "调整需求"), ("operator", "workflow_operator", " "), (" ", "workflow_operator", "调整需求")]:
+            with self.assertRaisesRegex(WorkflowError, "具体原因"):
+                self.engine.rebaseline(self.project_id, actor, role, reason)
+        with patch.object(self.engine, "save", side_effect=OSError("模拟写入失败")):
+            with self.assertRaises(OSError):
+                self.engine.rebaseline(self.project_id, "operator", "workflow_operator", "调整需求")
+        self.assertEqual(self.engine.load(self.project_id), before)
+        tasks_path = self.engine.project_dir(self.project_id) / "tasks/tasks.json"
+        atomic_json(tasks_path, {"schema_version": 1, "tasks": [{"id": "TASK-001"}]})
+        with self.assertRaisesRegex(WorkflowError, "已有开发任务"):
+            self.engine.rebaseline(self.project_id, "operator", "workflow_operator", "调整需求")
+        self.assertEqual(self.engine.load(self.project_id), before)
+
     def test_rejection_revision_and_resubmission(self):
         first = self.submit_requirements()
         with self.assertRaisesRegex(WorkflowError, "具体原因"):
