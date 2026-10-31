@@ -191,7 +191,7 @@ python zhijie.py task-run zhijie TASK-001 --actor codex-developer --role develop
 | H 发布准备 | 最终制品/hash、配置/迁移/回退、最终制品回归、发布清单 | 必须人工批准，批准不授权生产部署 |
 | I 验收归档 | 需求/任务/证据/缺陷/版本/制品索引及验收，CLI生成归档ZIP | 必须最终人工验收 |
 
-同一AI可顺序承担不同角色但不能冒充多人独立验证；同一批次的 developer、self_tester、test_engineer 证据必须按角色分别记录，即使由同一执行者顺序完成。用户已授权 AI 在开发过程中按 `04a-development-standards.md` 小步进行本地 commit；该授权不包含远程 push、合并到 `main`、改写历史、标签或生产部署。E/F/G不是人工审批节点，不额外捏造工作流审批要求；当前停留D是遵循用户“先不要直接实现代码”的明确指示。
+同一AI可顺序承担不同角色但不能冒充多人独立验证；同一批次的 developer、self_tester、test_engineer 证据必须按角色分别记录，即使由同一执行者顺序完成。每个任务分支先完成现状与方案记录，再按“理解现状 → 评估风险 → 最小设计 → 编码 → 真实验证 → 交接”推进。用户已授权 AI 在开发过程中按 `04a-development-standards.md` 小步进行本地 commit；凡开发业务代码、自动化测试、运行脚本、migration、协议实现或行为配置，必须先从最新 `develop` 创建对应 `feature/TASK-xxx-*` 或 `fix/DEF-xxx-*` 分支，禁止直接在 `develop` 编码。该授权不包含远程 push、合并到 `main`、改写历史、标签或生产部署。E/F/G不是人工审批节点，不额外捏造工作流审批要求；当前停留D是遵循用户“先不要直接实现代码”的明确指示。
 
 ## 风险和回退策略
 
