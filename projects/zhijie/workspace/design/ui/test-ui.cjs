@@ -111,8 +111,8 @@ async function main() {
     if(width===1440){
       await evaluate('state.view="lobby";render()');await screenshot('ui-current-session');
       await assert('当前活动区显示两个真实模拟通道状态而非固定成功', 'document.querySelector(".current-session").innerText.includes("语音已连接")&&document.querySelector(".current-session").innerText.includes("虚拟网络已连接")');
-      await evaluate('state.view="room";render();window.membersBefore=JSON.stringify(currentRoom().members);currentRoom().members=Array.from({length:16},(_,index)=>({name:index===0?me:"长昵称队友"+index,voice:"connected",ip:"10.66.0."+(index+10)}));state.roomTab="chat";render()');
-      await assert('16人卡片可滚动查看且不挤压聊天发送区', 'document.querySelectorAll(".player-tile:not(.empty-player)").length===16&&document.querySelector(".room-stage").scrollHeight>document.querySelector(".room-stage").clientHeight&&document.querySelector(".chat-compose").getBoundingClientRect().bottom<=innerHeight');
+      await evaluate('state.view="room";render();window.membersBefore=JSON.stringify(currentRoom().members);currentRoom().members=Array.from({length:ROOM_CAPACITY},(_,index)=>({name:index===0?me:"长昵称队友"+index,voice:"connected",ip:"10.66.0."+(index+10)}));state.roomTab="chat";render()');
+      await assert('12人卡片可滚动查看且不挤压聊天发送区', 'document.querySelectorAll(".player-tile:not(.empty-player)").length===ROOM_CAPACITY&&document.querySelector(".stage-heading").innerText.includes("12 / 12")&&document.querySelector(".room-stage").scrollHeight>document.querySelector(".room-stage").clientHeight&&document.querySelector(".chat-compose").getBoundingClientRect().bottom<=innerHeight');
       await screenshot('ui-room-capacity');
       await evaluate('currentRoom().members=JSON.parse(window.membersBefore);state.roomTab="network";render()');
     }

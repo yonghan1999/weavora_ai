@@ -204,6 +204,57 @@ class WorkflowTests(unittest.TestCase):
         (base / html).parent.mkdir(parents=True, exist_ok=True)
         (base / html).write_text(INTERACTIVE_HTML, encoding="utf-8")
 
+    def test_reopen_requirements_preserves_assets_and_invalidates_old_approvals(self):
+        request = self.submit_requirements()
+        self.approve(request["approval_id"])
+        self.write_design("B1_PROTOTYPE")
+        pending = self.engine.submit(self.project_id, "designer", "product_designer")["request"]
+        base = self.engine.project_dir(self.project_id)
+        paths = [base / relative for relative in self.engine.approval_files(self.project_id, "B1_PROTOTYPE")]
+        paths += list((base / "approvals").glob("APR-*.json"))
+        before = {path: path.read_bytes() for path in paths}
+        reopened = self.engine.reopen_requirements(
+            self.project_id, "operator", "workflow_operator", "用户要求根据带宽限制重新分析需求",
+        )
+        self.assertEqual((reopened["stage"], reopened["status"]), ("B_REQUIREMENTS", "in_progress"))
+        self.assertEqual(reopened["approvals"][0]["approval_id"], request["approval_id"])
+        self.assertIn(request["approval_id"], reopened["invalidated_approval_ids"])
+        self.assertIn(pending["approval_id"], reopened["invalidated_approval_ids"])
+        self.assertIsNone(self.engine.current_approval_request(self.project_id, required=False))
+        for path, content in before.items():
+            self.assertEqual(path.read_bytes(), content)
+        # 即使需求内容未变，旧批准也不能满足新一轮原型门禁。
+        gate = check_stage(self.engine, self.project_id, "B1_PROTOTYPE")
+        self.assertIn("缺少人工批准记录：B_REQUIREMENTS", gate.errors)
+        new_request = self.engine.submit(self.project_id, "analyst", "requirements_analyst")["request"]
+        self.assertNotEqual(new_request["approval_id"], request["approval_id"])
+        self.approve(new_request["approval_id"])
+        self.assertTrue(check_stage(self.engine, self.project_id, "B1_PROTOTYPE").ok)
+        event = next(item for item in self.engine.load(self.project_id)["history"]
+                     if item["event"] == "requirements_reopened")
+        self.assertEqual(event["from_stage"], "B1_PROTOTYPE")
+        self.assertFalse(event["human_authorization"])
+
+    def test_reopen_requirements_rejects_invalid_context_without_changes(self):
+        base = self.engine.project_dir(self.project_id)
+        before = (base / "state.json").read_bytes()
+        for role, reason in [("developer", "用户要求变更"), ("workflow_operator", " "),
+                             ("workflow_operator", "当前已是需求阶段")]:
+            with self.assertRaises(WorkflowError):
+                self.engine.reopen_requirements(self.project_id, "operator", role, reason)
+            self.assertEqual((base / "state.json").read_bytes(), before)
+
+    def test_reopen_requirements_rolls_back_on_audit_failure(self):
+        request = self.submit_requirements()
+        self.approve(request["approval_id"])
+        base = self.engine.project_dir(self.project_id)
+        before = (base / "state.json").read_bytes()
+        from unittest.mock import patch
+        with patch.object(self.engine, "audit", side_effect=OSError("模拟审计写入失败")):
+            with self.assertRaises(OSError):
+                self.engine.reopen_requirements(self.project_id, "operator", "workflow_operator", "用户变更")
+        self.assertEqual((base / "state.json").read_bytes(), before)
+
     def test_installation_and_json_contracts(self):
         result = check_installation()
         self.assertTrue(result.ok, result.errors)

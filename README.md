@@ -122,6 +122,8 @@ python zhijie.py archive my-app --actor release-archivist
 
 ## 暂停、恢复、重试和取消
 
+用户明确变更需求时，可在开发前的原型、UI 或架构阶段执行 `python zhijie.py reopen-requirements my-app --actor operator --role workflow_operator --reason "用户要求重新分析范围"`。命令退回需求分析并使历史批准不再适用于新一轮，保留原型/UI 及全部审批历史；不得将其当作人工批准或跳过后续评审。
+
 ```bash
 python zhijie.py pause my-app --actor operator --role workflow_operator --reason "等待外部条件"
 python zhijie.py resume my-app --actor operator --role workflow_operator

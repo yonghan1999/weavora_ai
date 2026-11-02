@@ -11,12 +11,12 @@ function uiAvatarStack(names, limit = 3) {
 roomCard = function(room) {
   const current = state.joined && room.id === state.roomId;
   const group = groups.find(item => item.id === room.groupId);
-  const full = room.members.length >= 16;
+  const full = room.members.length >= ROOM_CAPACITY;
   const availability = !room.open ? '暂停加入' : full ? '房间已满' : room.members.length ? '活动中' : '等待队友';
   const names = room.members.map(member => member.name);
   const action = current ? 'open-room' : 'join-room';
   const label = current ? '回到房间' : state.joined ? '切换房间' : '加入房间';
-  return `<article class="room-card ${current ? 'is-current' : ''}"><div class="room-cover ${room.cover}"><span class="game-chip">${esc(room.game)}</span><span class="room-capacity" aria-label="${names.length} 人，最多 16 人">${names.length} / 16</span></div><div class="room-body"><div class="room-provenance">${icon('messages',13)} ${esc(group?.name || '群组')}</div><div class="room-title-row"><h3>${esc(room.name)}</h3>${canManageRoom(room) ? `<button class="icon-button" data-action="room-settings" data-room="${esc(room.id)}" aria-label="管理 ${esc(room.name)}">${icon('more',17)}</button>` : ''}</div><p class="room-description">${esc(room.desc)}</p><div class="room-presence"><span class="availability ${room.open && !full ? 'available' : 'unavailable'}"><i></i>${availability}</span>${room.password ? `<span class="password-label">${icon('shield',12)} 需密码</span>` : ''}</div><div class="room-footer">${names.length ? uiAvatarStack(names) : '<span class="room-waiting">还没有人，等你开场</span>'}<button class="button small ${current ? 'primary' : ''}" data-action="${action}" data-room="${esc(room.id)}" aria-label="${label} ${esc(room.name)}">${label}${icon('arrow',14)}</button></div></div></article>`;
+  return `<article class="room-card ${current ? 'is-current' : ''}"><div class="room-cover ${room.cover}"><span class="game-chip">${esc(room.game)}</span><span class="room-capacity" aria-label="${names.length} 人，最多 ${ROOM_CAPACITY} 人">${names.length} / ${ROOM_CAPACITY}</span></div><div class="room-body"><div class="room-provenance">${icon('messages',13)} ${esc(group?.name || '群组')}</div><div class="room-title-row"><h3>${esc(room.name)}</h3>${canManageRoom(room) ? `<button class="icon-button" data-action="room-settings" data-room="${esc(room.id)}" aria-label="管理 ${esc(room.name)}">${icon('more',17)}</button>` : ''}</div><p class="room-description">${esc(room.desc)}</p><div class="room-presence"><span class="availability ${room.open && !full ? 'available' : 'unavailable'}"><i></i>${availability}</span>${room.password ? `<span class="password-label">${icon('shield',12)} 需密码</span>` : ''}</div><div class="room-footer">${names.length ? uiAvatarStack(names) : '<span class="room-waiting">还没有人，等你开场</span>'}<button class="button small ${current ? 'primary' : ''}" data-action="${action}" data-room="${esc(room.id)}" aria-label="${label} ${esc(room.name)}">${label}${icon('arrow',14)}</button></div></div></article>`;
 };
 
 activeHero = function() {
@@ -58,7 +58,7 @@ roomView = function() {
   const html = baseUi.roomView();
   const room = currentRoom();
   if (!room) return html;
-  return html.replace('<div class="party-grid">',`<div class="stage-heading"><div><span class="stage-label">语音房间</span><h2>队友已就位</h2></div><span>${room.members.length} / 16 人</span></div><div class="party-grid">`);
+  return html.replace('<div class="party-grid">',`<div class="stage-heading"><div><span class="stage-label">语音房间</span><h2>队友已就位</h2></div><span>${room.members.length} / ${ROOM_CAPACITY} 人</span></div><div class="party-grid">`);
 };
 
 focusModal = function() {

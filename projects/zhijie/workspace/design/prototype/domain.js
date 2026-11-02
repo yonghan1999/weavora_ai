@@ -1,10 +1,76 @@
+const ROOM_CAPACITY = 12;
+let deviceTestTimer;
 const reviewEnabled = new URLSearchParams(location.search).has('review');
 let recoveryTimer;
 const channelTimers = {};
 const roleNames = { owner: '群主', admin: '管理员', member: '普通成员' };
 
+function messageGroup(scope) {
+  if (!state.authenticated || state.verified === false) return null;
+  const id = scope === 'room' ? currentRoom()?.groupId : state.groupId;
+  return isGroupMember(id) ? groups.find(group => group.id === id) : null;
+}
+
+function activityEligible() {
+  return state.authenticated && state.verified !== false && state.joined &&
+    state.activeDevice === '此电脑' && isGroupMember(currentRoom()?.groupId) && !!myMember(currentRoom());
+}
+
+function audioIssueLabel() {
+  return {permission:'无法使用麦克风，请在系统设置中授权后重试。',unplugged:'设备已断开，请连接或选择输入设备。',processor:'降噪暂不可用，可继续使用未降噪语音。'}[state.audioIssue] || '';
+}
+
+function deviceTestLabel() {
+  return {idle:'未开始',running:'测试中',stopped:'已停止',success:'模拟测试完成',failed:'模拟测试失败，请检查设备'}[state.deviceTest];
+}
+
+function noiseControl() {
+  const available = state.audioIssue !== 'processor';
+  const label = audioIssueLabel() || (state.muted ? '麦克风已静音' : state.settings.noise ? '降噪已开启（模拟）' : '降噪已关闭（模拟）');
+  return `<div class="setting-row"><div><strong>降噪</strong><small role="status">${esc(label)}</small></div><button class="toggle ${available&&state.settings.noise?'on':''}" data-action="toggle-setting" data-setting="noise" aria-label="切换降噪" aria-pressed="${available&&state.settings.noise}" ${available?'':'disabled'}></button></div><div class="modal-note">语音处理状态为模拟；游戏并行时的人声清晰度、回声与音量处理待实测。</div>`;
+}
+
+function stopDeviceTest(status='idle') {
+  clearTimeout(deviceTestTimer);
+  state.deviceTest = status;
+}
+
+function toggleDeviceTest() {
+  if (state.deviceTest === 'running') {stopDeviceTest('stopped');render();return;}
+  stopDeviceTest('running'); render();
+  deviceTestTimer = setTimeout(() => {
+    state.deviceTest = state.outcomes.test || ['permission','unplugged'].includes(state.audioIssue) ? 'failed' : 'success';
+    delete state.outcomes.test;
+    render();
+  }, 1500);
+}
+
+// 仅复核工具使用的运营输入，普通客户端没有线路策略入口。
+function handleAdaptationScenario(scenario) {
+  if (!reviewEnabled) return false;
+  if (['direct-only','direct-first','relay-only','direct-fail','relay-fail','route-reset'].includes(scenario)) {
+    if (scenario==='direct-fail') state.directAvailable=false;
+    else if (scenario==='relay-fail') state.relayAvailable=false;
+    else if (scenario==='route-reset') state.directAvailable=state.relayAvailable=true;
+    else state.policy=scenario;
+    state.policyVersion++;
+    if (activityEligible()&&!state.recovery) {retryChannel('voice');retryChannel('network');}
+  } else if (scenario==='noise-fail') state.audioIssue='processor';
+  else if (scenario==='audio-reset') {state.audioIssue=null;stopDeviceTest();}
+  else if (scenario==='test-fail') {state.outcomes.test=true;toast('下一次设备测试将模拟失败。');}
+  else if (scenario==='audio-permission') {
+    state.audioIssue='permission'; stopDeviceTest('failed');
+    clearTimeout(channelTimers.voice); state.voice='failed';state.speaking=false;
+    myMember(currentRoom()).voice='failed';state.channelErrors.voice=audioIssueLabel();
+  } else if (['voice-capacity','network-capacity'].includes(scenario)) {
+    const type=scenario.split('-')[0];
+    state.outcomes[type]='暂时无法连接，请稍后重试。';retryChannel(type);
+  } else return false;
+  render();return true;
+}
+
 function initializePrototype() {
-  Object.assign(state, { epoch: 0, channelErrors: {}, outcomes: {}, recovery: null, editRoomId: null, activeDevice: '此电脑', reviewRoles: {}, lastIps: {}, service: 'online' });
+  Object.assign(state, { epoch: 0, channelErrors: {}, outcomes: {}, recovery: null, editRoomId: null, activeDevice: '此电脑', reviewRoles: {}, lastIps: {}, service: 'online', deviceTest:'idle', audioIssue:null, policy:'direct-first', policyVersion:0, directAvailable:true, relayAvailable:true, paths:{} });
   groups.forEach(group => Object.assign(group, { owner: me, roles: {}, audit: [], ...group }));
   rooms.forEach(room => { room.password = ''; room.desc ||= '好友组队'; });
   rooms.find(room => room.id === 'racing').members = rooms.find(room => room.id === 'racing').members.filter(member => member.name !== '北屿');
@@ -75,7 +141,7 @@ function channelLabel(type, value) {
 
 function renderChannelStatus(type, value) {
   const retry = ['failed', 'disconnected', 'limited'].includes(value) && state.joined;
-  return `<span class="status-chip ${value === 'connected' ? 'good' : value === 'failed' ? 'error' : ''}" title="${esc(state.channelErrors?.[type] || '')}">${value === 'connected' ? '<i class="status-dot"></i>' : ''}${channelLabel(type, value)}${retry ? `<button class="text-button" data-action="${type}-retry">重试</button>` : ''}</span>`;
+  return `<span class="status-chip ${value === 'connected' ? 'good' : value === 'failed' ? 'error' : ''}" role="status" title="${esc(state.channelErrors?.[type] || '')}">${value === 'connected' ? '<i class="status-dot"></i>' : ''}${channelLabel(type, value)}${retry ? `<button class="text-button" data-action="${type}-retry">重试</button>` : ''}</span>`;
 }
 
 function joinError(room, password, checkPassword = true) {
@@ -84,7 +150,7 @@ function joinError(room, password, checkPassword = true) {
   if (!room || !rooms.includes(room)) return '房间已删除。';
   if (!isGroupMember(room.groupId)) return '请先接受群组邀请，再加入本群房间。';
   if (!room.open) return '房间已暂停加入，请联系房主。';
-  if (room.members.filter(member => member.name !== me).length >= 16) return '房间已满（16 人），请稍后再试。';
+  if (new Set(room.members.filter(member => member.name !== me).map(member=>member.name)).size >= ROOM_CAPACITY) return '房间已满（12 人），请稍后再试。';
   if (checkPassword && room.password && !canModerate(room.groupId) && password !== room.password) return '房间密码错误，请重试。';
   return '';
 }
@@ -99,6 +165,7 @@ function showJoinRoom(id) {
 
 function revokeActivity() {
   clearTimeout(recoveryTimer);
+  stopDeviceTest();
   Object.values(channelTimers).forEach(clearTimeout);
   state.epoch++;
   const room = currentRoom();
@@ -107,7 +174,7 @@ function revokeActivity() {
     if (member) state.lastIps[room.id] = member.ip;
     room.members = room.members.filter(member => member.name !== me);
   }
-  Object.assign(state, { roomId: null, sessionStatus: 'idle', voice: 'disconnected', network: 'disconnected', speaking: false, recovery: null, joinedAt: null, view: 'lobby', channelErrors: {} });
+  Object.assign(state, { roomId: null, sessionStatus: 'idle', voice: 'disconnected', network: 'disconnected', speaking: false, recovery: null, joinedAt: null, view: 'lobby', channelErrors: {}, paths:{} });
 }
 
 function enterRoom(id, password = '') {
@@ -132,16 +199,21 @@ function enterRoom(id, password = '') {
 }
 
 function retryChannel(type, initial = false) {
-  if (!state.joined || !isGroupMember(currentRoom()?.groupId)) return;
+  if (!activityEligible()) { if(state.joined){revokeActivity();render();} return; }
   if (state.recovery) { recoverActivity(); return; }
-  const epoch = state.epoch, id = state.roomId;
+  const epoch = state.epoch, id = state.roomId, policyVersion=state.policyVersion;
   state[type] = initial ? 'connecting' : 'retrying';
   state.channelErrors[type] = '';
   render();
   clearTimeout(channelTimers[type]);
   channelTimers[type] = setTimeout(() => {
-    if (state.epoch !== epoch || state.roomId !== id || !state.joined) return;
-    const failure = state.outcomes[type];
+    if (state.epoch !== epoch || state.roomId !== id || state.policyVersion !== policyVersion || !activityEligible()) return;
+    const path=state.policy==='relay-only'?'relay':state.directAvailable?'direct':state.policy==='direct-first'?'relay':null;
+    state.paths[type]=null;
+    const routeFailure=(!path||path==='relay'&&!state.relayAvailable)?'当前网络暂时无法建立连接，请稍后重试。':'';
+    const deviceFailure=type==='voice'&&['permission','unplugged'].includes(state.audioIssue)?audioIssueLabel():'';
+    const failure = state.outcomes[type]||deviceFailure||routeFailure;
+    if(!failure)state.paths[type]=path;
     delete state.outcomes[type];
     state[type] = failure ? 'failed' : 'connected';
     state.channelErrors[type] = failure || '';
@@ -155,8 +227,9 @@ function disconnectActivity() {
   if (!state.joined) return;
   Object.values(channelTimers).forEach(clearTimeout);
   state.epoch++;
-  state.recovery = { until: Date.now() + 60000, ip: myMember(currentRoom()).ip };
+  state.recovery = { until: Date.now() + 60000, ip: myMember(currentRoom()).ip, account:me,device:state.activeDevice,roomId:state.roomId,epoch:state.epoch };
   state.voice = state.network = 'disconnected';
+  state.paths = {};
   state.speaking = false;
   myMember(currentRoom()).voice = 'disconnected';
   state.channelErrors = { voice: '连接中断，名额与地址保留 60 秒。', network: '连接中断，名额与地址保留 60 秒。' };
@@ -172,8 +245,11 @@ function expireRecovery() {
 
 function recoverActivity() {
   const room = currentRoom();
+  if (!state.recovery || state.recovery.until <= Date.now() || !room || !activityEligible() || state.recovery.account!==me || state.recovery.device!==state.activeDevice || state.recovery.roomId!==state.roomId || state.recovery.epoch!==state.epoch) {
+    const expired = state.recovery && state.recovery.until <= Date.now();
+    revokeActivity(); closeModal(); render(); toast(expired?'断线保留已超时，请按当前规则重新加入。':'恢复资格已失效，请按当前规则重新加入。'); return;
+  }
   if (state.service==='offline') {toast('服务仍不可达，请恢复网络后重试。');return;}
-  if (!state.recovery || state.recovery.until <= Date.now() || !room || !isGroupMember(room.groupId)) { expireRecovery(); return; }
   clearTimeout(recoveryTimer);
   state.recovery = null;
   retryChannel('voice'); retryChannel('network');
@@ -183,7 +259,7 @@ function showCreateRoom() {
   const eligible = groups.filter(group => canModerate(group.id));
   if (!eligible.length) { toast('只有群主或管理员可以创建房间。'); return; }
   const selected = state.view === 'groupChat' && eligible.some(group => group.id === state.groupId) ? state.groupId : eligible[0].id;
-  openModal('开一个新房间', '最多 16 人。', `<div class="field"><label for="new-room-name">房间名称</label><input id="new-room-name" maxlength="60" placeholder="给这次组队起个名字"></div><div class="field"><label for="new-room-game">游戏名称</label><input id="new-room-game" maxlength="60" placeholder="输入游戏名称"></div><div class="field"><label for="new-room-group">所属群组</label><select id="new-room-group">${eligible.map(group => `<option value="${group.id}" ${group.id === selected ? 'selected' : ''}>${esc(group.name)}</option>`).join('')}</select></div><div class="field"><label for="new-room-desc">描述</label><input id="new-room-desc" maxlength="120" placeholder="玩法或集合时间"></div><div class="field"><label for="new-room-password">房间密码（可选）</label><input id="new-room-password" type="password" maxlength="64" autocomplete="new-password"></div>`, '<button class="button" data-action="modal-close">取消</button><button class="button primary" data-action="confirm-create-room">创建并进入</button>');
+  openModal('开一个新房间', '最多 12 人（含断线保留名额）。', `<div class="field"><label for="new-room-name">房间名称</label><input id="new-room-name" maxlength="60" placeholder="给这次组队起个名字"></div><div class="field"><label for="new-room-game">游戏名称</label><input id="new-room-game" maxlength="60" placeholder="输入游戏名称"></div><div class="field"><label for="new-room-group">所属群组</label><select id="new-room-group">${eligible.map(group => `<option value="${group.id}" ${group.id === selected ? 'selected' : ''}>${esc(group.name)}</option>`).join('')}</select></div><div class="field"><label for="new-room-desc">描述</label><input id="new-room-desc" maxlength="120" placeholder="玩法或集合时间"></div><div class="field"><label for="new-room-password">房间密码（可选）</label><input id="new-room-password" type="password" maxlength="64" autocomplete="new-password"></div>`, '<button class="button" data-action="modal-close">取消</button><button class="button primary" data-action="confirm-create-room">创建并进入</button>');
 }
 
 function showRoomSettings(id) {
@@ -261,7 +337,7 @@ function showOwnerActions() {
 
 function showReviewTools() {
   const group = currentGroup();
-  openModal('原型复核工具', '仅 ?review=1 可见；模拟行为不代表真实服务通过。', `<div class="review-actions">${[['voice-fail','语音失败'],['network-fail','网络权限不足'],['network-conflict','IP 地址冲突'],['voice-device','麦克风拔出'],['service-offline','服务不可达'],['auth-expired','登录过期'],['disconnect','短时断线'],['recover','网络恢复'],['device-fail','设备转移预检失败'],['expire','保留期超时'],['lose-membership','当前群资格撤销']].map(([scenario,label]) => `<button class="button" data-action="review-scenario" data-scenario="${scenario}">${label}</button>`).join('')}</div><h3>模拟邀请接收方</h3>${state.invites.filter(invite => invite.name !== me && invitationStatus(invite) === 'pending').map(invite => `<div class="member-management"><span>${esc(invite.name)}</span><button class="button small" data-action="review-accept-invite" data-id="${invite.id}">接受邀请</button></div>`).join('') || '<p>暂无待接受邀请</p>'}${group?.transfer ? `<p>转让接收方：${esc(group.transfer.target)}</p><button class="button" data-action="review-accept-transfer">模拟接收方接受</button>` : ''}`, '<button class="button" data-action="modal-close">关闭</button>');
+  openModal('原型复核工具', '仅 ?review=1 可见；模拟行为不代表真实服务通过。', `<div class="review-actions">${[['voice-capacity','语音容量不足'],['network-capacity','网络容量不足'],['noise-fail','降噪处理不可用'],['audio-permission','麦克风权限拒绝'],['audio-reset','音频处理与设备恢复'],['test-fail','下次设备测试失败'],['direct-only','运营：禁止中继'],['direct-first','运营：允许回退'],['relay-only','运营：强制中继'],['direct-fail','直连不可用'],['relay-fail','中继不可用'],['route-reset','网络路径恢复'],['voice-fail','语音失败'],['network-fail','网络权限不足'],['network-conflict','IP 地址冲突'],['voice-device','麦克风拔出'],['service-offline','服务不可达'],['auth-expired','登录过期'],['disconnect','短时断线'],['recover','网络恢复'],['device-fail','设备转移预检失败'],['expire','保留期超时'],['lose-membership','当前群资格撤销']].map(([scenario,label]) => `<button class="button" data-action="review-scenario" data-scenario="${scenario}">${label}</button>`).join('')}</div><h3>模拟邀请接收方</h3>${state.invites.filter(invite => invite.name !== me && invitationStatus(invite) === 'pending').map(invite => `<div class="member-management"><span>${esc(invite.name)}</span><button class="button small" data-action="review-accept-invite" data-id="${invite.id}">接受邀请</button></div>`).join('') || '<p>暂无待接受邀请</p>'}${group?.transfer ? `<p>转让接收方：${esc(group.transfer.target)}</p><button class="button" data-action="review-accept-transfer">模拟接收方接受</button>` : ''}`, '<button class="button" data-action="modal-close">关闭</button>');
 }
 
 function authView() {
@@ -326,7 +402,7 @@ function handleDomainAction(event) {
     if (!canModerate(groupId)) { toast('只有群主或管理员可以创建房间。'); return; }
     if (!name || name.length > 60) { toast('房间名称须为 1–60 个字符。'); return; }
     const id = 'room-' + state.nextId++;
-    rooms.push({ id, name, game: document.getElementById('new-room-game').value.trim() || '未指定游戏', desc: document.getElementById('new-room-desc').value.trim() || '好友组队', password: document.getElementById('new-room-password').value, groupId, host: me, open: true, members: [], messages: [], cover: 'cubes' });
+    rooms.push({ id, name, game: document.getElementById('new-room-game').value.trim() || '未指定游戏', desc: document.getElementById('new-room-desc').value.trim() || '好友组队', password: document.getElementById('new-room-password').value, groupId, host: me, open: true, members: [], cover: 'cubes' });
     groups.find(item => item.id === groupId).roomIds.push(id); appendAudit(groupId, '创建房间', name); enterRoom(id);
   } else if (action === 'confirm-join-code') {
     const code = document.getElementById('join-code').value.trim().toUpperCase();
@@ -354,11 +430,10 @@ function handleDomainAction(event) {
     if (state.roomId === room.id) revokeActivity();
     room.members = [];
     if (action === 'confirm-delete-room') {
-      room.messages.forEach(message => { if (message.media) URL.revokeObjectURL(message.media.url); });
       rooms.splice(rooms.indexOf(room), 1);
       const parent = groups.find(item => item.id === room.groupId); parent.roomIds = parent.roomIds.filter(id => id !== room.id);
       state.invites.filter(invite => invite.roomId === room.id && invite.status === 'pending').forEach(invite => { invite.status = 'expired'; });
-      delete state.drafts.room[room.id]; delete state.lastIps[room.id];
+       delete state.lastIps[room.id];
     }
     appendAudit(room.groupId, action === 'confirm-delete-room' ? '删除房间' : '结束活动', room.name);
     closeModal(); render(); toast(action === 'confirm-delete-room' ? '房间已删除。' : '活动已结束。');
@@ -398,7 +473,7 @@ function handleDomainAction(event) {
   } else if (action === 'confirm-dissolve-group') {
     if (document.getElementById('dissolve-name').value !== group.name) { toast('群名称不匹配。'); return; }
     if (currentRoom()?.groupId === group.id) revokeActivity();
-    rooms.filter(item => item.groupId === group.id).forEach(item => { delete state.lastIps[item.id]; delete state.drafts.room[item.id]; });
+    rooms.filter(item => item.groupId === group.id).forEach(item => { delete state.lastIps[item.id]; });
     for (let index = rooms.length - 1; index >= 0; index--) if (rooms[index].groupId === group.id) rooms.splice(index, 1);
     state.invites = state.invites.filter(invite => invite.groupId !== group.id);
     delete state.drafts.group[group.id]; groups.splice(groups.indexOf(group), 1);
@@ -419,6 +494,7 @@ function handleDomainAction(event) {
     const scenario = button.dataset.scenario;
     closeModal();
     if (!state.joined && !['service-offline','auth-expired','recover','expire','lose-membership'].includes(scenario)) { toast('请先加入房间。'); return; }
+    if(handleAdaptationScenario(scenario))return;
     if (scenario === 'service-offline') { state.service = 'offline'; if(state.joined)disconnectActivity(); toast('服务不可达，恢复前保留有效房间资格。'); }
     else if (scenario === 'auth-expired') { revokeActivity(); state.authenticated=false; state.authMode='login'; render(); toast('登录已过期，请重新登录。'); }
     else if (scenario === 'device-fail') { state.outcomes.device='目标设备不可达，请稍后重试。'; toast('下一次设备转移将模拟预检失败。'); }
@@ -434,6 +510,7 @@ function handleDomainAction(event) {
       const type = scenario.startsWith('voice') ? 'voice' : 'network';
       clearTimeout(channelTimers[type]);
       state[type] = 'failed'; state.channelErrors[type] = scenario === 'network-conflict' ? '虚拟 IP 地址冲突，请重试以重新分配。' : scenario === 'network-fail' ? '虚拟网卡权限不足，请在系统中授权后重试。' : scenario === 'voice-device' ? '麦克风已拔出，请重新连接或选择输入设备。' : '语音连接失败，请检查网络后重试。';
+      if(scenario==='voice-device'){state.audioIssue='unplugged';stopDeviceTest('failed');}
       if (type === 'voice') { myMember(currentRoom()).voice = 'failed'; state.speaking = false; }
       render(); toast(state.channelErrors[type]);
     }

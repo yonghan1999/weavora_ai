@@ -9,7 +9,7 @@ for (const name of ['domain.js', 'app.js']) {
   html = html.replace(`<script src="${name}"></script>`, () => `<script>${read(name).replace(/<\/script/gi, '<\\/script')}</script>`);
 }
 html = html.replace('<a href="index.html">重新加载原型</a>', '请使用浏览器打开文件并允许 JavaScript。');
-const output = path.resolve(root, '../../../../../tmp/weavora-prototype.html');
+const output = path.resolve(root, 'exports/weavora-prototype.html');
 fs.mkdirSync(path.dirname(output), { recursive: true });
 fs.writeFileSync(output, html, 'utf8');
 console.log(`单文件分享版：${output}（${(Buffer.byteLength(html) / 1024).toFixed(1)} KB）`);

@@ -551,6 +551,49 @@ class Engine:
                 (self.project_dir(project_id) / "approvals/current.json").unlink(missing_ok=True)
             return state
 
+    def reopen_requirements(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
+        """开发前按用户明确变更重开需求，不删除资产或改写历史审批。"""
+        if role != "workflow_operator" or not actor.strip() or not reason.strip():
+            raise WorkflowError("重开需求须由 workflow_operator 提供执行者和用户变更原因。")
+        with self.lock(project_id):
+            state = self.load(project_id)
+            if state["stage"] not in {"B1_PROTOTYPE", "B2_UI", "C_DESIGN"} or state["status"] not in {
+                "in_progress", "awaiting_approval", "rejected", "paused", "failed", "awaiting_retry", "blocked",
+            }:
+                raise WorkflowError("仅支持开发前的原型、UI 或架构阶段重开需求；其他阶段须单独评估。")
+            pending = self.current_approval_request(project_id, required=False)
+            invalidated = set(state.get("invalidated_approval_ids", []))
+            invalidated.update(item["approval_id"] for item in state.get("approvals", []))
+            if pending:
+                invalidated.add(pending["approval_id"])
+            event = {
+                "event": "requirements_reopened",
+                "workflow_id": state["workflow_id"],
+                "project_id": project_id,
+                "from_stage": state["stage"],
+                "from_status": state["status"],
+                "stage": "B_REQUIREMENTS",
+                "to_status": "in_progress",
+                "at": utc_now(),
+                "actor": actor,
+                "role": role,
+                "reason": reason.strip(),
+                "invalidated_approval_ids": sorted(invalidated),
+                "human_authorization": False,
+            }
+            state["stage"] = "B_REQUIREMENTS"
+            state["status"] = "in_progress"
+            state["resume_status"] = None
+            state["active_task_id"] = None
+            state["retry_counts"] = {}
+            state["invalidated_approval_ids"] = sorted(invalidated)
+            state.setdefault("history", []).append(event)
+            state["history"] = state["history"][-200:]
+            self.save(project_id, state)
+            self.audit(project_id, event)
+            (self.project_dir(project_id) / "approvals/current.json").unlink(missing_ok=True)
+            return state
+
     def migrate(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
         """将需求已批准、架构在途的旧项目显式迁移到含 B1/B2 的当前流程。"""
         with self.lock(project_id):
@@ -562,6 +605,7 @@ class Engine:
             approvals = [
                 item for item in state.get("approvals", [])
                 if item.get("stage") == "B_REQUIREMENTS" and item.get("decision") == "approved"
+                and item.get("approval_id") not in state.get("invalidated_approval_ids", [])
             ]
             if not approvals:
                 raise WorkflowError("迁移前必须存在已批准的需求基线。")
