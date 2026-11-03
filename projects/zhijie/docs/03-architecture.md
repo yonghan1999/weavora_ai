@@ -82,7 +82,8 @@ Tauri、媒体 SDK、Rust WireGuard 和 Relay 传输均为有明确验证出口�
 | 语音 | 自托管 WebRTC SFU，LiveKit 首选候选；媒体访问经 Voice Adapter 隔离 | 复用成熟 SFU 的发布/订阅、房间和重连能力，不自研 SFU。具体 Rust/JS/原生 SDK 组合须验证设备、AEC/降噪、多人叠音、CPU、弱网和许可证；SFU 可接触媒体明文，不宣称语音端到端加密。 |
 | 客户端音频处理 | 成熟 WebRTC Audio Processing 或等价库的 Rust 绑定候选 | 客户端优先完成 AEC、降噪、AGC/限幅和 VAD/静音不传输，不重写成熟算法；算法、默认值和资源开销由真实设备 A/B 测试决定。 |
 | 控制面 | Java 21+、Spring Boot 模块化单体、Spring MVC、Maven Wrapper，暂保留为工作基线 | 原服务端决定不因客户端 Rust 评估自动变更；显式事务适合复杂权限与状态机。2 GB 下单机资源是硬性入口风险，P0/P1 不达标须提交独立 ADR，不得靠 swap 或未授权扩容掩盖。 |
-| 持久化 | PostgreSQL + Spring Data JDBC + 显式 SQL | 事务、行锁、唯一约束和部分索引可表达全局单活动、12 人占额、地址唯一、策略修订及 Outbox；关键并发路径使用显式 SQL 和事务边界。 |
+| 持久化 | PostgreSQL + MyBatis + Spring 事务 + 显式 SQL | MyBatis Mapper/XML 直接表达行锁、条件更新、代次校验和 Outbox 同事务写入；唯一约束、部分索引和外键由 PostgreSQL 兜底。关键并发路径不依赖自动生成 SQL 或隐式 ORM 行为。 |
+| 数据库迁移 | Flyway + 单向版本化 SQL | 表结构、约束和索引通过可审计迁移管理；MyBatis 不负责 DDL 版本。发布前备份并验证迁移与回滚预案，不在已执行生产迁移上原地改历史脚本。 |
 | 客户端 API | REST + WebSocket | REST 承担命令和查询；WebSocket 承担状态、消息、策略和撤销通知。命令结果以 REST/数据库为准，WebSocket 重连后按游标补同步。 |
 | 虚拟网络 | Rust Network Helper + 候选 Rust WireGuard 实现 + 真实 TUN | Rust 优先匹配团队能力并隔离管理员/root 权限。候选库必须审查维护状态、安全、许可证及自定义传输能力；三平台 TUN、路由、权限、直连和崩溃清理仍需 PoC，不默认引入 Go。 |
 | 游戏转发 | 独立 Rust Relay，按运营策略启用 | 与控制面进程和资源隔离，统一执行房间隔离和撤销；不持有成员私钥、不创建明文转发网卡。吞吐、内存和撤销时延必须实测。 |
@@ -108,7 +109,8 @@ Tauri、媒体 SDK、Rust WireGuard 和 Relay 传输均为有明确验证出口�
 - Tauri 安全与更新：<https://v2.tauri.app/security/>、<https://v2.tauri.app/plugin/updater/>
 - Java 21 虚拟线程：<https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html>
 - Spring Boot：<https://docs.spring.io/spring-boot/>
-- Spring Data JDBC：<https://docs.spring.io/spring-data/jdbc/reference/>
+- MyBatis：<https://mybatis.org/mybatis-3/>、<https://mybatis.org/spring-boot-starter/mybatis-spring-boot-autoconfigure/>
+- Flyway：<https://documentation.red-gate.com/fd/>
 - LiveKit 自托管 WebRTC SFU：<https://docs.livekit.io/intro/about/>
 - LiveKit 客户端 SDK：<https://docs.livekit.io/reference/client-sdk-js/>
 - 自托管令牌撤销限制：<https://docs.livekit.io/frontends/reference/tokens-grants/>
@@ -136,7 +138,16 @@ Tauri、媒体 SDK、Rust WireGuard 和 Relay 传输均为有明确验证出口�
 
 ### 2. Java 控制面
 
-控制面按业务模块组织 Spring Boot 单体，模块间通过明确 Java 接口和领域事件协作，禁止跨模块直接修改他人数据。事务边界放在应用服务层，并发关键路径使用 Spring Data JDBC 执行显式 SQL；REST、WebSocket、Outbox、SFU 管理和 Relay 管理客户端均通过接口隔离，以便候选替换不改变业务语义。
+控制面按业务模块组织 Spring Boot 单体，模块间通过明确 Java 接口和领域事件协作，禁止跨模块直接修改他人数据。事务边界放在应用服务层，并发关键路径使用 MyBatis 执行显式 SQL；REST、WebSocket、Outbox、SFU 管理和 Relay 管理客户端均通过接口隔离，以便候选替换不改变业务语义。
+
+持久化按以下边界实现：
+
+- 每个业务模块只调用自己的 Mapper 接口；加入、切房、设备转移、撤销等应用服务使用 Spring `@Transactional` 管理同一数据库事务，业务变更与 Outbox 写入不得跨事务。
+- 关键并发 SQL 放在可审查的 MyBatis XML 中，显式使用 `SELECT ... FOR UPDATE`、统一锁顺序、带代次条件的 `UPDATE`、唯一冲突转换和幂等响应查询；不使用自动生成 SQL 代替这些路径。
+- PostgreSQL 唯一约束、部分索引、外键和检查约束是最终一致性兜底。12 人容量计数与成员插入、全局单活动指针替换、活跃 IP 分配必须在相同锁/事务范围内执行。
+- Mapper 参数统一使用 `#{}` 绑定；`${}` 只允许服务端白名单中的列名或排序方向，禁止拼接用户输入。时间映射为 UTC，ID 保持字符串契约，数据库错误转换为稳定领域错误且不泄露 SQL/秘密。
+- Flyway 管理单向版本化 DDL、约束和索引；应用启动校验迁移版本。迁移回滚通过备份恢复或前向补偿预案处理，不假定 MyBatis 能回滚 DDL。
+- 持久化测试使用真实 PostgreSQL 及相同迁移脚本，覆盖第 13 人拒绝、并发切房/设备争抢、IP 冲突、重复幂等键、事务回滚和 Outbox 原子性；Mock Mapper 结果不能替代这些证据。
 
 虚拟线程只用于阻塞式 I/O 的并发简化，不改变数据库锁、代次或授权语义；连接池、事务和 ThreadLocal 等兼容性必须经验证，不能因使用虚拟线程而取消背压、超时或资源上限。P0/P1 须分别测量控制面和整机资源，JVM 参数不得挤占 SFU、PostgreSQL、Relay 和操作系统余量。
 
@@ -397,7 +408,7 @@ Helper 崩溃或 IPC 断开时，UI 将网络标为失败/未知并可独立重�
 
 ### 6. 配置、观测与备份
 
-- 配置通过环境变量/受限密钥存储注入，仓库不保存真实秘密。数据库迁移单向版本化并在发布前备份。
+- 配置通过环境变量/受限密钥存储注入，仓库不保存真实秘密。Flyway 数据库迁移单向版本化并在发布前备份；记录迁移版本、执行结果和前向补偿/恢复预案。
 - 指标至少包括 API 错误、在线/在房/发言/直连/中继分档容量、活动占额、代次/策略冲突、Outbox 延迟、撤销耗时、JVM 堆/线程/GC 停顿、各进程 RSS/CPU、数据库连接池、SFU 参与者/音频质量、Relay 会话/吞吐/丢包/拒绝、客户端音频处理和 Helper 启动/路由错误。
 - 日志使用 `correlation_id + activity_id + user/device 伪标识` 关联，不记录秘密；针对撤销失败、Relay/SFU 不可达、容量饱和和 Outbox 积压配置告警。
 - PostgreSQL 备份、恢复演练、物理删除和保留政策在生产准备阶段批准。首版只承诺产品重启后的持久化，不将“有数据库”写成“已有灾难恢复”。
@@ -417,7 +428,7 @@ Helper 崩溃或 IPC 断开时，UI 将网络标为失败/未知并可独立重�
 | SP-06 发布与更新 | Tauri 候选安装包、Helper 签名安装、macOS 签名公证和各平台更新未验证 | 每个标为通过的平台实际安装、更新、卸载，更新后数据与 Helper 兼容，权限和失败提示有证据；记录包体、WebView 依赖与许可证 | 缺少证书或设备则标待接入/未验证；容器关键能力失败时提交对照 ADR，不发布伪造通过矩阵 |
 | SP-07 容量与撤销时延 | 12 人 60 分钟、100 人在线/分房、5 秒撤销、15 秒恢复、Relay 带宽、整机 CPU/RSS 和 SFU 资源尚无数据 | 按 C0～C4 在目标 2 核/2 GB/Debian/5 Mbit/s 运行真实语音、虚拟网络、游戏/测试流量和业务负载，保存资源、媒体、丢包、上下行、时延和撤销证据 | 依据数据调参并提交实测上限和资源选项；未达目标如实报告，不自动扩容、降配或修改证据 |
 | SP-08 Relay 元数据与媒体信任 | Relay 可见外层目标元数据，SFU 可接触媒体明文；直连暴露对端网络地址 | 威胁模型、配置检查和抓包证明无默认路由/明文虚拟网络泄漏；记录直连地址暴露、日志秘密扫描和撤销边界 | 最小化外层元数据和日志；安全文案准确描述信任边界，不宣称未实现的端到端语音加密 |
-| SP-09 Java 控制面集成与资源 | Java 21+ 虚拟线程、Spring Data JDBC、连接池、SFU 管理 API 在 2 GB 共置环境的兼容性和余量未验证 | 运行控制面 PoC 和 C0/C1；并发加入/切房保持单活动和地址唯一；验证事务、超时/背压、ThreadLocal、SFU 撤销；保存各进程峰值和 OOM 数据 | 固定受支持运行时和依赖；可停用虚拟线程或调整资源，服务端实质替换须独立 ADR，不降低一致性和撤销要求 |
+| SP-09 Java/MyBatis 控制面集成与资源 | Java 21+ 虚拟线程、MyBatis、Flyway、连接池、SFU 管理 API 在 2 GB 共置环境的兼容性和余量未验证 | 运行控制面 PoC 和 C0/C1；以真实 PostgreSQL 验证显式锁、事务连接边界、第 13 人拒绝、单活动/IP 唯一、回滚及 Outbox 原子性；检查 `#{}` 绑定、超时/背压、ThreadLocal、迁移版本和 SFU 撤销；保存各进程峰值和 OOM 数据 | 固定受支持运行时和依赖；修正 SQL/锁/映射或停用虚拟线程，服务端实质替换须独立 ADR；不以 Mock 或降低一致性要求代替真实数据库验证 |
 | SP-10 Rust 客户端垂直切片 | Rust 核心、Tauri Command/Event、媒体、Helper IPC、状态恢复和三平台构建组合未验证 | 完成登录、入房、真实音频、真实 TUN、双通道状态、退出清理的最小切片；比较候选包体、CPU/RSS、许可证和团队维护记录，满足 AC-043 | 保持候选状态并修复；若引入 Go 或改用 Electron，说明必要性、替代成本与证据后重新评审 |
 | SP-11 直连/中继策略 | NAT 穿透、禁止回退、强制中继、在途策略迁移、回滚和旧端点强制撤销未验证 | 覆盖 AC-041/042 全矩阵，以两端及服务器流量证明路径；变更、断网、失权和迟到握手均符合代次/策略；记录无法强制的离线直连边界 | 调整信令、票据和 Peer 撤销；禁止路径有流量即失败，不依赖客户端自觉，不把语音路径混入游戏策略结论 |
 | SP-12 设计资产生产适配 | 现有 UI 的模拟域、定时成功和复核工具可能误进正式产品 | 保留原型/UI 文件摘要与视觉回归；命令/事件差异清单覆盖 CA-01～CA-12，正式构建不含模拟授权、故障注入和设备假数据 | 仅修复适配层；必要 UI 变化单独追踪并重审，不重做视觉风格或复用旧审批 |
@@ -432,7 +443,7 @@ Helper 崩溃或 IPC 断开时，UI 将网络标为失败/未知并可独立重�
 | --- | --- | --- |
 | ADR-001 | Rust Client Core + Tauri 候选容器 + 复用现有 UI | 符合团队 Rust 能力和 REQ-028，避免重做设计资产；系统 WebView、媒体、包体、更新与三平台组合须 SP-03/06/10 定案，Electron 仅作有证据的对照 |
 | ADR-002 | 自托管 WebRTC SFU，LiveKit 首选候选，不自研 SFU | 复用成熟多人媒体能力；具体 SDK/DSP 由真实音质定案，接受 SFU 运维和媒体信任边界，撤销采用组合措施 |
-| ADR-003 | Java 21+、Spring Boot 模块化单体 + PostgreSQL 暂保留 | 原服务端不因客户端评估自动重写；显式事务/锁覆盖单活动、12 人容量和地址，2 GB 共置资源由 SP-07/09 验证，实质替换需独立 ADR |
+| ADR-003 | Java 21+、Spring Boot 模块化单体 + MyBatis + PostgreSQL + Flyway | 原服务端不因客户端评估自动重写；按用户决定以 MyBatis XML 显式控制事务 SQL/行锁，Flyway 管理 DDL 版本，覆盖单活动、12 人容量、地址和 Outbox；接受 SQL/映射维护成本，2 GB 资源及真实并发由 SP-07/09 验证 |
 | ADR-004 | 持久房间与临时活动分表分状态 | 结束活动不丢配置；活动代次使旧凭据和迟到事件失效，删除房间才终止全部恢复 |
 | ADR-005 | 语音和网络双控制通道、双状态机 | 加入后并行自动连接，可独立失败和重试；共同受权威活动撤销约束 |
 | ADR-006 | 独立 Rust 特权 Helper + 候选 Rust WireGuard + 真实 TUN | UI 不持有管理员/root 权限；窄 IPC 限制攻击面并匹配团队能力，候选库维护、安全、许可证及平台适配须验证，不默认引入 Go |

@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "approval_id": "APR-C-af540061f5fd",
+  "approval_id": "APR-C-23e94d4bc1d3",
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "stage": "C_DESIGN",
   "stage_name": "架构与详细设计",
-  "requested_at": "2026-11-02T08:51:43Z",
+  "requested_at": "2026-11-03T02:00:48Z",
   "requested_by": "kimi",
-  "baseline_digest": "c8afa5a330998a41843a059cd315c70bfe934ea523d0b23c3b3c0fec65fceec3",
-  "decision": null,
+  "baseline_digest": "c6a3587a5b974d79509dee48b5b1c057b36b4094b5fc1f0633221cd1a068a80d",
+  "decision": "approved",
   "documents": [
     "docs/02-requirements.md",
     "docs/02a-prototype.md",
@@ -37,5 +37,10 @@
     "rejected",
     "changes_requested"
   ],
-  "human_command": "python zhijie.py approve zhijie --approval-id APR-C-af540061f5fd --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION"
+  "human_command": "python zhijie.py approve zhijie --approval-id APR-C-23e94d4bc1d3 --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+  "decision_reason": "批准当前基线",
+  "decided_at": "2026-11-03T06:04:11Z",
+  "decided_by": "han",
+  "decision_source": "explicit_human_cli",
+  "verified_baseline_digest": "c6a3587a5b974d79509dee48b5b1c057b36b4094b5fc1f0633221cd1a068a80d"
 }
