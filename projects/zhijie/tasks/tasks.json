@@ -273,10 +273,14 @@
       "acceptance": "协议白名单、旧代次、路由限制、崩溃清理及秘密日志测试通过；三平台真实TUN仍需实机证据",
       "test": "cargo test -p zhijie-helper",
       "rollback": "停止并卸载本任务 Helper，清理其TUN和路由，回退代码；不触碰默认路由和物理LAN配置",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T102532Z-7a49b028.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T102532Z-7a49b028.json",
+      "last_evidence_sha256": "7e14561ef75ede73fff5380c2ae2d7acc8adcc3c2646862d21071ff476ca0cd7"
     },
     {
       "id": "TASK-012",
