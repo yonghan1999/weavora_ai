@@ -144,6 +144,20 @@ public class IdentityService {
                 ));
     }
 
+    public UserAccount authenticate(String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            throw invalidAccessToken();
+        }
+        TokenParts parts = parseToken(authorization.substring(7), "ACCESS_TOKEN_INVALID");
+        AuthSession session = repository.findSessionById(parts.sessionId()).orElseThrow(this::invalidAccessToken);
+        Instant now = clock.instant();
+        if (session.revokedAt() != null || now.isAfter(session.accessExpiresAt())
+                || !credentials.hashToken(parts.secret()).equals(session.accessTokenHash())) {
+            throw invalidAccessToken();
+        }
+        return requireActive(session.userId());
+    }
+
     private AuthTokens createSession(UserAccount user, String deviceId) {
         String sessionId = UUID.randomUUID().toString();
         TokenMaterial material = newTokenMaterial(sessionId);

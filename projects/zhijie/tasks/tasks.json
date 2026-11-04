@@ -62,10 +62,14 @@
       "acceptance": "覆盖重复申请、接受拒绝、删除和权限隔离；好友不授予群房权限且无私聊接口",
       "test": "./mvnw -q -pl control-plane -am test",
       "rollback": "回退 Social 模块代码与对应迁移，保留账号认证基线",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T071228Z-737184cb.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T071228Z-737184cb.json",
+      "last_evidence_sha256": "21a9fd0667e7d51fa5015e9ba2281417f880348ab148a6fe4baa5d33e80b6232"
     },
     {
       "id": "TASK-004",

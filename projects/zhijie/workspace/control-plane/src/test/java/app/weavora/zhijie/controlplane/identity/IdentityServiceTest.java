@@ -61,6 +61,21 @@ class IdentityServiceTest {
     }
 
     @Test
+    void accessAuthenticationChecksSessionSecretExpiryAndAccountStatus() {
+        service.register(EMAIL, PASSWORD);
+        service.verifyEmail(EMAIL, emailDispatch.codes.get(ChallengePurpose.VERIFY_EMAIL));
+        AuthTokens tokens = service.login(EMAIL, PASSWORD, "device-a");
+
+        assertThat(service.authenticate("Bearer " + tokens.accessToken()).emailNormalized())
+                .isEqualTo("player@example.com");
+        assertThatThrownBy(() -> service.authenticate("Bearer " + tokens.sessionId() + ".wrong-secret"))
+                .isInstanceOf(ApiException.class);
+        service.logout(tokens.accessToken());
+        assertThatThrownBy(() -> service.authenticate("Bearer " + tokens.accessToken()))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
     void verificationChallengeIsSingleUseAndFailedAttemptsAreCounted() {
         service.register(EMAIL, PASSWORD);
         String code = emailDispatch.codes.get(ChallengePurpose.VERIFY_EMAIL);

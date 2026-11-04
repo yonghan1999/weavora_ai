@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.weavora.zhijie.controlplane.social.SocialMapper">
+    <resultMap id="UserSearchView" type="app.weavora.zhijie.controlplane.social.UserSearchView">
+        <constructor>
+            <idArg column="id" javaType="String"/>
+            <arg column="email_normalized" javaType="String"/>
+            <arg column="status" javaType="app.weavora.zhijie.controlplane.identity.AccountStatus"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="FriendRequest" type="app.weavora.zhijie.controlplane.social.FriendRequest">
+        <constructor>
+            <idArg column="id" javaType="String"/>
+            <arg column="requester_id" javaType="String"/>
+            <arg column="addressee_id" javaType="String"/>
+            <arg column="status" javaType="app.weavora.zhijie.controlplane.social.FriendRequestStatus"/>
+            <arg column="created_at" javaType="java.time.Instant"/>
+            <arg column="responded_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="Friendship" type="app.weavora.zhijie.controlplane.social.Friendship">
+        <constructor>
+            <idArg column="id" javaType="String"/>
+            <arg column="user_low_id" javaType="String"/>
+            <arg column="user_high_id" javaType="String"/>
+            <arg column="created_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+
+    <select id="searchActiveUsers" resultMap="UserSearchView">
+        SELECT id, email_normalized, status FROM users
+        WHERE status = 'ACTIVE' AND id &lt;&gt; #{excludedUserId}
+          AND email_normalized LIKE '%' || #{query} || '%'
+        ORDER BY email_normalized LIMIT #{limit}
+    </select>
+    <select id="findRequestById" resultMap="FriendRequest">
+        SELECT * FROM friend_requests WHERE id = #{requestId}
+    </select>
+    <select id="findPendingRequestBetween" resultMap="FriendRequest">
+        SELECT * FROM friend_requests WHERE status = 'PENDING'
+          AND LEAST(requester_id, addressee_id) = LEAST(#{firstUserId}, #{secondUserId})
+          AND GREATEST(requester_id, addressee_id) = GREATEST(#{firstUserId}, #{secondUserId})
+    </select>
+    <insert id="insertRequest" parameterType="app.weavora.zhijie.controlplane.social.FriendRequest">
+        INSERT INTO friend_requests (id, requester_id, addressee_id, status, created_at, responded_at)
+        VALUES (#{id}, #{requesterId}, #{addresseeId}, #{status}, #{createdAt}, #{respondedAt})
+    </insert>
+    <update id="updateRequest" parameterType="app.weavora.zhijie.controlplane.social.FriendRequest">
+        UPDATE friend_requests SET status = #{status}, responded_at = #{respondedAt} WHERE id = #{id}
+    </update>
+
+    <select id="findFriendship" resultMap="Friendship">
+        SELECT * FROM friendships WHERE user_low_id = #{userLowId} AND user_high_id = #{userHighId}
+    </select>
+    <select id="listFriendships" resultMap="Friendship">
+        SELECT * FROM friendships WHERE user_low_id = #{userId} OR user_high_id = #{userId}
+    </select>
+    <insert id="insertFriendship" parameterType="app.weavora.zhijie.controlplane.social.Friendship">
+        INSERT INTO friendships (id, user_low_id, user_high_id, created_at)
+        VALUES (#{id}, #{userLowId}, #{userHighId}, #{createdAt})
+    </insert>
+    <delete id="deleteFriendship">
+        DELETE FROM friendships WHERE user_low_id = #{userLowId} AND user_high_id = #{userHighId}
+    </delete>
+    <select id="findUsersByIds" resultMap="UserSearchView">
+        SELECT id, email_normalized, status FROM users WHERE id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">#{userId}</foreach>
+    </select>
+    <insert id="recordHeartbeat">
+        INSERT INTO presence (user_id, last_seen_at) VALUES (#{userId}, #{seenAt})
+        ON CONFLICT (user_id) DO UPDATE SET last_seen_at = EXCLUDED.last_seen_at
+    </insert>
+    <select id="findLastSeen" resultType="java.time.Instant">
+        SELECT last_seen_at FROM presence WHERE user_id = #{userId}
+    </select>
+</mapper>
