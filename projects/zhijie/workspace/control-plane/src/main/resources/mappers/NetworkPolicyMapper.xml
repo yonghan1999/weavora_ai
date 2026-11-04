@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.weavora.zhijie.controlplane.network.NetworkPolicyMapper">
+    <resultMap id="NetworkPolicyRevision" type="app.weavora.zhijie.controlplane.network.NetworkPolicyRevision">
+        <constructor>
+            <idArg column="revision" javaType="Long"/>
+            <arg column="mode" javaType="app.weavora.zhijie.controlplane.network.NetworkPolicyMode"/>
+            <arg column="existing_connection_action" javaType="String"/>
+            <arg column="effective_at" javaType="java.time.Instant"/><arg column="actor_ref" javaType="String"/>
+        </constructor>
+    </resultMap>
+    <select id="current" resultMap="NetworkPolicyRevision">
+        SELECT * FROM network_policy_revisions ORDER BY revision DESC LIMIT 1
+    </select>
+    <select id="findByRevision" resultMap="NetworkPolicyRevision">
+        SELECT * FROM network_policy_revisions WHERE revision = #{revision}
+    </select>
+    <insert id="insert" parameterType="app.weavora.zhijie.controlplane.network.NetworkPolicyRevision">
+        INSERT INTO network_policy_revisions (revision, mode, existing_connection_action, effective_at, actor_ref)
+        VALUES (#{revision}, #{mode}, #{existingConnectionAction}, #{effectiveAt}, #{actorRef})
+    </insert>
+</mapper>

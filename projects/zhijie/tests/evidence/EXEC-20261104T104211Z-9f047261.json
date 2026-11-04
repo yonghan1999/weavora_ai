@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261104T104211Z-9f047261",
+  "project_id": "zhijie",
+  "started_at": "2026-11-04T10:41:50Z",
+  "finished_at": "2026-11-04T10:42:11Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "cargo test -p zhijie-relay",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "\nrunning 2 tests\ntest tests::real_udp_datagrams_forward_ciphertext_between_authorized_room_members ... ok\ntest tests::cross_activity_disabled_and_revoked_sessions_are_not_forwarded ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+  "stdout_truncated": false,
+  "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s\n     Running unittests src\\lib.rs (target\\debug\\deps\\zhijie_relay-73015e8b4d0f4ab3.exe)\n     Running unittests src\\main.rs (target\\debug\\deps\\zhijie_relay-9cb3361aa5390b36.exe)\n   Doc-tests zhijie_relay\n",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "88b88292cfbf6f11f2ac29afb0b0615a57176b6e7900931a7683a0b2e533e5cf",
+  "tree_digest_after": "88b88292cfbf6f11f2ac29afb0b0615a57176b6e7900931a7683a0b2e533e5cf",
+  "task_id": "TASK-012"
+}

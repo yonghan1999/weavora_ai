@@ -301,10 +301,15 @@
       "acceptance": "跨房伪造目标、禁止回退、旧策略和撤销测试通过；Relay不持有私钥且真实NAT与带宽结果另测",
       "test": "cargo test -p zhijie-relay",
       "rollback": "禁用Relay授权并回退路径服务；清理活动会话，不自动切换为未授权路径",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 2,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T103825Z-0324d4bb.json",
+        "tests/evidence/EXEC-20261104T104211Z-9f047261.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T104211Z-9f047261.json",
+      "last_evidence_sha256": "5c71e9944618898963b8233ae6dcc99bd20b845b26b3270e54d8dfcb3713ccdb"
     },
     {
       "id": "TASK-013",

@@ -6,9 +6,9 @@
   "stage": "E_IMPLEMENTATION",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-11-04T10:25:51Z",
+  "updated_at": "2026-11-04T10:42:31Z",
   "retry_counts": {
-    "E_IMPLEMENTATION": 1
+    "E_IMPLEMENTATION": 2
   },
   "max_retries": 3,
   "approvals": [
@@ -1834,6 +1834,38 @@
       "actor": "developer",
       "role": "workflow_operator",
       "reason": "第 1 次重试：修复 Windows POSIX 命令执行支持",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-012",
+      "stage": "E_IMPLEMENTATION",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-04T10:38:45Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "任务 TASK-012 命令失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261104T103825Z-0324d4bb.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-012",
+      "stage": "E_IMPLEMENTATION",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-04T10:41:50Z",
+      "actor": "developer",
+      "role": "workflow_operator",
+      "reason": "第 2 次重试：修复 Relay 撤销与迟到注册竞态",
       "evidence": [],
       "human_authorization": false
     }

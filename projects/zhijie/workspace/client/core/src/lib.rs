@@ -1,5 +1,6 @@
 pub mod api;
 pub mod model;
+pub mod policy;
 pub mod protocol;
 pub mod state;
 

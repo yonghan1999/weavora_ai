@@ -29,10 +29,12 @@ public class GrantService {
     private final VoiceGateway voiceGateway;
     private final Clock clock;
     private final String voiceUrl;
+    private final app.weavora.zhijie.controlplane.network.NetworkPolicyService policies;
 
     public GrantService(GrantRepository repository, ActivityRepository activities, IdentityService identity,
                         CredentialProtector credentials, VoiceGateway voiceGateway, Clock clock,
-                        @org.springframework.beans.factory.annotation.Value("${zhijie.voice.url:ws://127.0.0.1:7880}") String voiceUrl) {
+                        @org.springframework.beans.factory.annotation.Value("${zhijie.voice.url:ws://127.0.0.1:7880}") String voiceUrl,
+                        app.weavora.zhijie.controlplane.network.NetworkPolicyService policies) {
         this.repository = repository;
         this.activities = activities;
         this.identity = identity;
@@ -40,6 +42,7 @@ public class GrantService {
         this.voiceGateway = voiceGateway;
         this.clock = clock;
         this.voiceUrl = voiceUrl;
+        this.policies = policies;
     }
 
     @Transactional
@@ -51,7 +54,7 @@ public class GrantService {
         }
         Instant expiresAt = clock.instant().plus(GRANT_TTL);
         String token = voiceGateway.issueToken(activityId, userId, member.memberGeneration(), expiresAt);
-        ActivityGrant grant = saveGrant(member, lease, "VOICE", token, null, expiresAt);
+        ActivityGrant grant = saveGrant(member, lease, "VOICE", token, null, null, expiresAt);
         return new VoiceGrantResponse(grant.id(), activityId, member.memberGeneration(), lease.id(), voiceUrl, token, expiresAt);
     }
 
@@ -62,19 +65,25 @@ public class GrantService {
         if (publicKey == null || publicKey.isBlank()) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_FAILED", "必须提供本机 WireGuard 公钥", false);
         }
+        var policy = policies.current();
+        List<String> allowedPaths = policies.allowedPaths(policy.mode());
+        lease = new ConnectionLease(lease.id(), lease.activityId(), lease.userId(), lease.deviceId(),
+                lease.activityGeneration(), lease.memberGeneration(), policy.revision(), lease.voiceState(),
+                lease.networkState(), lease.expiresAt(), lease.revokedAt());
+        activities.updateLease(lease);
         Instant expiresAt = clock.instant().plus(GRANT_TTL);
         String ticket = credentials.randomSecret();
-        ActivityGrant grant = saveGrant(member, lease, "NETWORK", ticket, publicKey, expiresAt);
+        ActivityGrant grant = saveGrant(member, lease, "NETWORK", ticket, publicKey, String.join(",", allowedPaths), expiresAt);
         IpAllocation address = activities.findAddress(activityId, userId).orElseThrow();
         return new NetworkGrantResponse(grant.id(), activityId, member.memberGeneration(), lease.id(), ticket,
-                lease.policyRevision(), List.of("DIRECT", "RELAY"), address.ipv4(), ActivityCoordinator.ACTIVITY_CIDR, expiresAt);
+                lease.policyRevision(), allowedPaths, address.ipv4(), ActivityCoordinator.ACTIVITY_CIDR, expiresAt);
     }
 
     private ActivityGrant saveGrant(ActivityMember member, ConnectionLease lease, String kind, String token,
-                                    String publicKey, Instant expiresAt) {
+                                    String publicKey, String allowedPaths, Instant expiresAt) {
         ActivityGrant grant = new ActivityGrant(UUID.randomUUID().toString(), member.activityId(), member.userId(), lease.id(),
                 member.memberGeneration(), lease.policyRevision(), kind, credentials.hashToken(token), publicKey,
-                expiresAt, null, clock.instant());
+                allowedPaths, expiresAt, null, clock.instant());
         repository.insert(grant);
         return grant;
     }
