@@ -67,14 +67,14 @@ def parser() -> argparse.ArgumentParser:
     command.add_argument("task_id")
     command.add_argument("--actor", required=True)
     command.add_argument("--role", default="developer")
-    command.add_argument("--command", required=True)
+    command.add_argument("--command", dest="exec_command", required=True)
     command.add_argument("--timeout", type=int, default=120)
 
     command = sub.add_parser("add-check", help="配置阶段自动化检查")
     command.add_argument("project_id")
     command.add_argument("--check-id", required=True)
     command.add_argument("--stage", required=True)
-    command.add_argument("--command", required=True)
+    command.add_argument("--command", dest="exec_command", required=True)
     command.add_argument("--optional", action="store_true")
 
     command = sub.add_parser("verify", help="真实运行构建或测试检查")
@@ -150,9 +150,9 @@ def dispatch(args: argparse.Namespace) -> Any:
         }
         return engine.add_task(args.project_id, task)
     if args.command == "task-run":
-        return engine.run_task(args.project_id, args.task_id, args.actor, args.role, args.command, args.timeout)
+        return engine.run_task(args.project_id, args.task_id, args.actor, args.role, args.exec_command, args.timeout)
     if args.command == "add-check":
-        return engine.add_check(args.project_id, args.check_id, args.stage, args.command, not args.optional)
+        return engine.add_check(args.project_id, args.check_id, args.stage, args.exec_command, not args.optional)
     if args.command == "verify":
         return engine.verify(args.project_id, args.check_id, args.actor, args.role, args.case_id, args.timeout)
     if args.command == "add-test":

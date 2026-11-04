@@ -113,6 +113,24 @@ INTERACTIVE_HTML = """<!doctype html>
 """
 
 
+class CliParserTests(unittest.TestCase):
+    def test_execution_command_does_not_replace_subcommand(self):
+        from workflow.cli import parser
+
+        task_args = parser().parse_args([
+            "task-run", "demo", "TASK-001", "--actor", "developer", "--command", "node test.js",
+        ])
+        self.assertEqual(task_args.command, "task-run")
+        self.assertEqual(task_args.exec_command, "node test.js")
+
+        check_args = parser().parse_args([
+            "add-check", "demo", "--check-id", "self-test", "--stage", "F_SELF_TEST",
+            "--command", "npm test",
+        ])
+        self.assertEqual(check_args.command, "add-check")
+        self.assertEqual(check_args.exec_command, "npm test")
+
+
 class CleanCheckoutTests(unittest.TestCase):
     def test_missing_temporary_root_is_created(self):
         with tempfile.TemporaryDirectory() as clean_checkout:
