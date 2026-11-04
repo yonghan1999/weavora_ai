@@ -72,7 +72,7 @@ def tree_digest(root: Path) -> str:
     if not root.exists():
         return digest.hexdigest()
     for path in sorted(item for item in root.rglob("*") if item.is_file()):
-        if "__pycache__" in path.parts or ".git" in path.parts:
+        if any(part in {"__pycache__", ".git", "target", "node_modules", "dist"} for part in path.parts):
             continue
         digest.update(path.relative_to(root).as_posix().encode("utf-8"))
         digest.update(b"\0")

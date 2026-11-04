@@ -138,6 +138,22 @@ class CliParserTests(unittest.TestCase):
         self.assertFalse(use_shell)
         self.assertEqual(mode, "bash -o pipefail -c")
 
+    def test_tree_digest_excludes_generated_dependency_and_build_directories(self):
+        from workflow.engine import tree_digest
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "src").mkdir()
+            (root / "src/main.txt").write_text("source", encoding="utf-8")
+            (root / "target/generated").mkdir(parents=True)
+            (root / "target/generated/output.bin").write_bytes(b"generated")
+            (root / "node_modules/package").mkdir(parents=True)
+            (root / "node_modules/package/index.js").write_text("dependency", encoding="utf-8")
+            original = tree_digest(root)
+            self.assertEqual(original, tree_digest(root))
+            (root / "src/main.txt").write_text("changed", encoding="utf-8")
+            self.assertNotEqual(original, tree_digest(root))
+
 
 class CleanCheckoutTests(unittest.TestCase):
     def test_missing_temporary_root_is_created(self):
