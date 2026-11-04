@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261104T070135Z-60841f2a",
+  "project_id": "zhijie",
+  "started_at": "2026-11-04T07:01:33Z",
+  "finished_at": "2026-11-04T07:01:35Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "./mvnw -q -pl control-plane -am test",
+  "cwd": "workspace",
+  "shell_mode": "cmd.exe /d /s /c",
+  "exit_code": 1,
+  "timed_out": false,
+  "stdout": "",
+  "stdout_truncated": false,
+  "stderr": "'.' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "bdf7468884922c1a43abea75b20ecfecfe808b97a01ad1b10df361e38c657b63",
+  "tree_digest_after": "bdf7468884922c1a43abea75b20ecfecfe808b97a01ad1b10df361e38c657b63",
+  "task_id": "TASK-002"
+}

@@ -214,6 +214,12 @@
     },
     {
       "ecosystem": "maven",
+      "name": "org.bouncycastle:bcprov-jdk18on",
+      "version": "1.81",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
       "name": "org.checkerframework:checker-qual",
       "version": "3.49.3",
       "license": "unreviewed"
@@ -516,6 +522,12 @@
       "ecosystem": "maven",
       "name": "org.springframework.boot:spring-boot-test-autoconfigure",
       "version": "3.5.6",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
+      "name": "org.springframework.security:spring-security-crypto",
+      "version": "6.5.5",
       "license": "unreviewed"
     },
     {

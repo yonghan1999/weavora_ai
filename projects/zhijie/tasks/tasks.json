@@ -38,10 +38,15 @@
       "acceptance": "认证服务测试覆盖未验证限制、令牌轮换、防枚举和秘密脱敏；真实邮件投递仅保留受控适配接口并标未验证",
       "test": "./mvnw -q -pl control-plane -am test",
       "rollback": "回退认证模块及迁移，保留可恢复数据库备份，不删除既有用户数据",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 2,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T070135Z-60841f2a.json",
+        "tests/evidence/EXEC-20261104T070513Z-1183982d.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T070513Z-1183982d.json",
+      "last_evidence_sha256": "626032648c9c8c0b9a410994da7fe43f383c576923c3746800903edbd9665f29"
     },
     {
       "id": "TASK-003",

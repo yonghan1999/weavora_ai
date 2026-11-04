@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.weavora.zhijie.controlplane.identity.IdentityMapper">
+    <resultMap id="UserAccount" type="app.weavora.zhijie.controlplane.identity.UserAccount">
+        <constructor>
+            <idArg column="id" javaType="String"/>
+            <arg column="email_normalized" javaType="String"/>
+            <arg column="status" javaType="app.weavora.zhijie.controlplane.identity.AccountStatus"/>
+            <arg column="password_hash" javaType="String"/>
+            <arg column="created_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="EmailChallenge" type="app.weavora.zhijie.controlplane.identity.EmailChallenge">
+        <constructor>
+            <idArg column="id" javaType="String"/>
+            <arg column="user_id" javaType="String"/>
+            <arg column="purpose" javaType="app.weavora.zhijie.controlplane.identity.ChallengePurpose"/>
+            <arg column="code_hash" javaType="String"/>
+            <arg column="expires_at" javaType="java.time.Instant"/>
+            <arg column="attempts" javaType="int"/>
+            <arg column="consumed_at" javaType="java.time.Instant"/>
+            <arg column="created_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="AuthSession" type="app.weavora.zhijie.controlplane.identity.AuthSession">
+        <constructor>
+            <idArg column="id" javaType="String"/>
+            <arg column="user_id" javaType="String"/>
+            <arg column="device_id" javaType="String"/>
+            <arg column="refresh_token_hash" javaType="String"/>
+            <arg column="access_token_hash" javaType="String"/>
+            <arg column="expires_at" javaType="java.time.Instant"/>
+            <arg column="access_expires_at" javaType="java.time.Instant"/>
+            <arg column="revoked_at" javaType="java.time.Instant"/>
+            <arg column="generation" javaType="long"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findUserByEmail" resultMap="UserAccount">
+        SELECT * FROM users WHERE email_normalized = #{emailNormalized}
+    </select>
+    <select id="findUserById" resultMap="UserAccount">
+        SELECT * FROM users WHERE id = #{userId}
+    </select>
+    <insert id="insertUser" parameterType="app.weavora.zhijie.controlplane.identity.UserAccount">
+        INSERT INTO users (id, email_normalized, status, password_hash, created_at)
+        VALUES (#{id}, #{emailNormalized}, #{status}, #{passwordHash}, #{createdAt})
+    </insert>
+    <update id="updateUser" parameterType="app.weavora.zhijie.controlplane.identity.UserAccount">
+        UPDATE users SET status = #{status}, password_hash = #{passwordHash} WHERE id = #{id}
+    </update>
+
+    <select id="findLatestChallenge" resultMap="EmailChallenge">
+        SELECT * FROM email_challenges
+        WHERE user_id = #{userId} AND purpose = #{purpose}
+        ORDER BY created_at DESC LIMIT 1
+    </select>
+    <insert id="insertChallenge" parameterType="app.weavora.zhijie.controlplane.identity.EmailChallenge">
+        INSERT INTO email_challenges
+            (id, user_id, purpose, code_hash, expires_at, attempts, consumed_at, created_at)
+        VALUES
+            (#{id}, #{userId}, #{purpose}, #{codeHash}, #{expiresAt}, #{attempts}, #{consumedAt}, #{createdAt})
+    </insert>
+    <update id="updateChallenge" parameterType="app.weavora.zhijie.controlplane.identity.EmailChallenge">
+        UPDATE email_challenges SET attempts = #{attempts}, consumed_at = #{consumedAt} WHERE id = #{id}
+    </update>
+
+    <select id="findSessionById" resultMap="AuthSession">
+        SELECT * FROM auth_sessions WHERE id = #{sessionId}
+    </select>
+    <select id="findSessionByAccessTokenHash" resultMap="AuthSession">
+        SELECT * FROM auth_sessions WHERE access_token_hash = #{accessTokenHash}
+    </select>
+    <insert id="insertSession" parameterType="app.weavora.zhijie.controlplane.identity.AuthSession">
+        INSERT INTO auth_sessions
+            (id, user_id, device_id, refresh_token_hash, access_token_hash,
+             expires_at, access_expires_at, revoked_at, generation)
+        VALUES
+            (#{id}, #{userId}, #{deviceId}, #{refreshTokenHash}, #{accessTokenHash},
+             #{expiresAt}, #{accessExpiresAt}, #{revokedAt}, #{generation})
+    </insert>
+    <update id="updateSession" parameterType="app.weavora.zhijie.controlplane.identity.AuthSession">
+        UPDATE auth_sessions
+        SET refresh_token_hash = #{refreshTokenHash}, access_token_hash = #{accessTokenHash},
+            expires_at = #{expiresAt}, access_expires_at = #{accessExpiresAt},
+            revoked_at = #{revokedAt}, generation = #{generation}
+        WHERE id = #{id}
+    </update>
+    <update id="revokeAllSessions">
+        UPDATE auth_sessions SET revoked_at = #{revokedAt}
+        WHERE user_id = #{userId} AND revoked_at IS NULL
+    </update>
+</mapper>
