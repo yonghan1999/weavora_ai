@@ -32,6 +32,21 @@ pub struct VoiceGrant {
     pub expires_at: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkGrant {
+    pub grant_id: String,
+    pub activity_id: String,
+    pub member_generation: u64,
+    pub lease_id: String,
+    pub network_ticket: String,
+    pub policy_revision: u64,
+    pub allowed_paths: Vec<String>,
+    pub virtual_ipv4: String,
+    pub activity_cidr: String,
+    pub expires_at: String,
+}
+
 #[derive(Clone)]
 pub struct ControlPlaneClient {
     http: reqwest::Client,
@@ -78,6 +93,35 @@ impl ControlPlaneClient {
             .await
             .map_err(transport)?;
         decode(response).await
+    }
+
+    pub async fn rooms(
+        &self,
+        access_token: &str,
+        group_id: &str,
+    ) -> Result<Vec<serde_json::Value>, ClientError> {
+        let response = self
+            .http
+            .get(format!("{}/api/v1/groups/{group_id}/rooms", self.base_url))
+            .bearer_auth(access_token)
+            .send()
+            .await
+            .map_err(transport)?;
+        decode(response).await
+    }
+
+    pub async fn network_grant(
+        &self,
+        access_token: &str,
+        activity_id: &str,
+        public_key: &str,
+    ) -> Result<NetworkGrant, ClientError> {
+        self.post(
+            &format!("/api/v1/activities/{activity_id}/network-grants"),
+            Some(access_token),
+            &serde_json::json!({ "publicKey": public_key }),
+        )
+        .await
     }
 
     pub async fn voice_grant(

@@ -46,12 +46,36 @@ async function loadGroups() {
   const list = document.getElementById("room-list");
   list.replaceChildren();
   for (const group of groups) {
-    const item = document.createElement("article");
-    item.className = "room-card";
-    const heading = document.createElement("h3");
-    heading.textContent = group.name;
-    item.append(heading);
-    list.append(item);
+    for (const room of await bridge.rooms(group.id)) {
+      const item = document.createElement("article");
+      item.className = "room-card";
+      const heading = document.createElement("h3");
+      heading.textContent = `${group.name} / ${room.name}`;
+      const button = document.createElement("button");
+      button.className = "button primary";
+      button.textContent = store.state.activity?.activityId === room.currentActivityId ? "回到房间" : "加入房间";
+      button.disabled = room.openState !== "OPEN";
+      button.addEventListener("click", () => joinRoom(room.id));
+      item.append(heading, button);
+      list.append(item);
+    }
+  }
+}
+
+async function joinRoom(roomId) {
+  try {
+    const snapshot = await bridge.join(roomId, deviceId, null, crypto.randomUUID());
+    store.apply(snapshot);
+    const activityId = store.state.activity?.activityId;
+    if (!activityId) return;
+    try {
+      store.applyVoice(await bridge.connectVoice(activityId));
+    } catch (error) {
+      store.applyVoice(await bridge.voiceSnapshot());
+      showError(error);
+    }
+  } catch (error) {
+    showError(error);
   }
 }
 

@@ -330,10 +330,15 @@
       "acceptance": "本地受控集成场景真实执行，双通道故障隔离和迟到结果拒绝有证据；未运行外部媒体或实机项目明确标记",
       "test": "node scripts/test-e2e.mjs --contract",
       "rollback": "关闭垂直切片入口并回退编排适配，保留各独立模块及权威撤销",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 2,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T105733Z-5bf91b6c.json",
+        "tests/evidence/EXEC-20261104T110016Z-70e6242a.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T110016Z-70e6242a.json",
+      "last_evidence_sha256": "d17828021c7c21801a4ed53951c6a1eff0209f941166a5fd64a030042df859ac"
     },
     {
       "id": "TASK-014",

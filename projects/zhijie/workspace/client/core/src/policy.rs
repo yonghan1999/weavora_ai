@@ -32,7 +32,11 @@ pub struct PathCoordinator {
 
 impl PathCoordinator {
     pub fn new(revision: u64, mode: NetworkPolicyMode) -> Self {
-        Self { revision, mode, active_path: None }
+        Self {
+            revision,
+            mode,
+            active_path: None,
+        }
     }
 
     pub fn initial_path(&self) -> NetworkPath {
@@ -89,7 +93,11 @@ impl PathCoordinator {
     }
 
     fn check_revision(&self, revision: u64) -> Result<(), PathFailure> {
-        if revision == self.revision { Ok(()) } else { Err(PathFailure::PolicyStale) }
+        if revision == self.revision {
+            Ok(())
+        } else {
+            Err(PathFailure::PolicyStale)
+        }
     }
 }
 
@@ -118,9 +126,15 @@ mod tests {
     fn relay_only_and_revision_changes_are_enforced() {
         let mut policy = PathCoordinator::new(1, NetworkPolicyMode::RelayOnly);
         assert_eq!(policy.initial_path(), NetworkPath::Relay);
-        assert_eq!(policy.connected(1, NetworkPath::Direct), Err(PathFailure::RelayDisabled));
+        assert_eq!(
+            policy.connected(1, NetworkPath::Direct),
+            Err(PathFailure::RelayDisabled)
+        );
         assert_eq!(policy.direct_failed(2), Err(PathFailure::PolicyStale));
-        assert_eq!(policy.migrate(2, NetworkPolicyMode::DirectOnly), NetworkPath::Direct);
+        assert_eq!(
+            policy.migrate(2, NetworkPolicyMode::DirectOnly),
+            NetworkPath::Direct
+        );
         assert_eq!(policy.active_path(), None);
     }
 }

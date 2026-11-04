@@ -11,7 +11,6 @@ pub struct ClientCore {
 #[derive(Clone)]
 struct PendingActivity {
     request_id: String,
-    activity_id: String,
 }
 
 impl ClientCore {
@@ -27,10 +26,7 @@ impl ClientCore {
     }
 
     pub fn begin_activity(&self, request_id: String, activity_id: String, device_id: String) {
-        *self.pending.lock().expect("pending activity lock") = Some(PendingActivity {
-            request_id,
-            activity_id: activity_id.clone(),
-        });
+        *self.pending.lock().expect("pending activity lock") = Some(PendingActivity { request_id });
         self.snapshot.lock().expect("client state lock").activity = Some(ActivityContext {
             activity_id,
             activity_generation: 0,
@@ -45,16 +41,14 @@ impl ClientCore {
 
     pub fn apply_activity_result(&self, request_id: &str, result: ActivityResult) -> bool {
         let pending = self.pending.lock().expect("pending activity lock").clone();
-        if !pending.is_some_and(|item| {
-            item.request_id == request_id && item.activity_id == result.activity_id
-        }) {
+        if !pending.is_some_and(|item| item.request_id == request_id) {
             return false;
         }
         let mut snapshot = self.snapshot.lock().expect("client state lock");
         let Some(current) = snapshot.activity.as_ref() else {
             return false;
         };
-        if current.activity_id != result.activity_id
+        if (current.activity_generation > 0 && current.activity_id != result.activity_id)
             || current.activity_generation > result.activity_generation
             || current.member_generation > result.member_generation
         {

@@ -140,6 +140,10 @@ impl VoiceManager {
         }
     }
 
+    pub fn fail(&self, code: String) -> VoiceSnapshot {
+        self.update_state(VoiceConnectionState::Failed, Some(code))
+    }
+
     fn update_state(&self, state: VoiceConnectionState, failure: Option<String>) -> VoiceSnapshot {
         let mut snapshot = self.snapshot.lock().expect("voice state lock");
         snapshot.state = state;

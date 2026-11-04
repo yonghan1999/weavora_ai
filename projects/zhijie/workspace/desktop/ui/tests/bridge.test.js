@@ -10,6 +10,7 @@ test("bridge sends real versioned desktop commands without a mock fallback", asy
     return { userId: "user", activity: null, service: "CONNECTED" };
   });
   await bridge.login("user@example.com", "password", "device");
+  await bridge.rooms("group");
   await bridge.join("room", "device", null, "operation");
   await bridge.connectVoice("activity");
   await bridge.setMuted(true);
@@ -17,10 +18,10 @@ test("bridge sends real versioned desktop commands without a mock fallback", asy
   await bridge.setVolume(0.5, "member");
   await bridge.selectAudioDevice(2, true);
   assert.deepEqual(calls.map(call => call.command), [
-    "session_login", "activity_join", "voice_connect", "voice_set_mute",
+    "session_login", "room_list", "activity_join", "voice_connect", "voice_set_mute",
     "voice_set_receive", "voice_set_volume", "audio_select",
   ]);
-  assert.equal(calls[1].payload.operationId, "operation");
+  assert.equal(calls[2].payload.operationId, "operation");
   assert.throws(() => new CoreBridge(null), /TAURI_UNAVAILABLE/);
 });
 

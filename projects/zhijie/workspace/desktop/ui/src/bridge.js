@@ -12,6 +12,10 @@ export class CoreBridge {
     return this.invoke("group_list");
   }
 
+  rooms(groupId) {
+    return this.invoke("room_list", { groupId });
+  }
+
   join(roomId, deviceId, password, operationId) {
     return this.invoke("activity_join", { roomId, deviceId, password, operationId });
   }

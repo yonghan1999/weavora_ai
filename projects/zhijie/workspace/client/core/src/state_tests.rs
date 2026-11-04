@@ -16,6 +16,14 @@ fn result() -> ActivityResult {
 }
 
 #[test]
+fn server_assigns_activity_id_for_initial_room_join() {
+    let core = ClientCore::default();
+    core.begin_activity("request".into(), "target-room".into(), "device".into());
+    assert!(core.apply_activity_result("request", result()));
+    assert_eq!(core.snapshot().activity.unwrap().activity_id, "activity");
+}
+
+#[test]
 fn late_results_cannot_replace_current_activity() {
     let core = ClientCore::default();
     core.begin_activity("request-current".into(), "activity".into(), "device".into());

@@ -62,6 +62,18 @@ async fn group_list(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>
 }
 
 #[tauri::command]
+async fn room_list(
+    group_id: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
+    state
+        .client
+        .rooms(&state.access_token()?, &group_id)
+        .await
+        .map_err(error_code)
+}
+
+#[tauri::command]
 async fn activity_join(
     room_id: String,
     device_id: String,
@@ -121,11 +133,18 @@ async fn voice_connect(
     activity_id: String,
     state: State<'_, AppState>,
 ) -> Result<zhijie_voice::VoiceSnapshot, String> {
-    let grant = state
+    let grant = match state
         .client
         .voice_grant(&state.access_token()?, &activity_id)
         .await
-        .map_err(error_code)?;
+    {
+        Ok(grant) => grant,
+        Err(error) => {
+            let code = error_code(error);
+            state.voice.fail(code.clone());
+            return Err(code);
+        }
+    };
     state
         .voice
         .connect(&grant.voice_url, &grant.voice_token)
@@ -133,7 +152,9 @@ async fn voice_connect(
 }
 
 #[tauri::command]
-async fn voice_disconnect(state: State<'_, AppState>) -> Result<zhijie_voice::VoiceSnapshot, String> {
+async fn voice_disconnect(
+    state: State<'_, AppState>,
+) -> Result<zhijie_voice::VoiceSnapshot, String> {
     Ok(state.voice.disconnect().await)
 }
 
@@ -191,6 +212,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             session_login,
             group_list,
+            room_list,
             activity_join,
             session_logout,
             state_snapshot,
