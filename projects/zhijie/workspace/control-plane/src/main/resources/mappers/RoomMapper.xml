@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.weavora.zhijie.controlplane.room.RoomMapper">
+    <resultMap id="Room" type="app.weavora.zhijie.controlplane.room.Room">
+        <constructor>
+            <idArg column="id" javaType="String"/><arg column="group_id" javaType="String"/>
+            <arg column="name" javaType="String"/><arg column="description" javaType="String"/>
+            <arg column="game_name" javaType="String"/><arg column="password_hash" javaType="String"/>
+            <arg column="owner_user_id" javaType="String"/>
+            <arg column="open_state" javaType="app.weavora.zhijie.controlplane.room.RoomOpenState"/>
+            <arg column="lifecycle" javaType="app.weavora.zhijie.controlplane.room.RoomLifecycle"/>
+            <arg column="current_activity_id" javaType="String"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="Activity" type="app.weavora.zhijie.controlplane.room.Activity">
+        <constructor>
+            <idArg column="id" javaType="String"/><arg column="room_id" javaType="String"/>
+            <arg column="activity_generation" javaType="Long"/>
+            <arg column="state" javaType="app.weavora.zhijie.controlplane.room.ActivityState"/>
+            <arg column="started_at" javaType="java.time.Instant"/><arg column="ended_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <insert id="insertRoom" parameterType="app.weavora.zhijie.controlplane.room.Room">
+        INSERT INTO rooms (id, group_id, name, description, game_name, password_hash, owner_user_id,
+                           open_state, lifecycle, current_activity_id)
+        VALUES (#{id}, #{groupId}, #{name}, #{description}, #{gameName}, #{passwordHash}, #{ownerUserId},
+                #{openState}, #{lifecycle}, #{currentActivityId})
+    </insert>
+    <select id="findRoom" resultMap="Room">SELECT * FROM rooms WHERE id = #{roomId}</select>
+    <select id="listGroupRooms" resultMap="Room">SELECT * FROM rooms WHERE group_id = #{groupId} ORDER BY name, id</select>
+    <update id="updateRoom" parameterType="app.weavora.zhijie.controlplane.room.Room">
+        UPDATE rooms SET name = #{name}, description = #{description}, game_name = #{gameName},
+            password_hash = #{passwordHash}, owner_user_id = #{ownerUserId}, open_state = #{openState},
+            lifecycle = #{lifecycle}, current_activity_id = #{currentActivityId} WHERE id = #{id}
+    </update>
+    <insert id="insertActivity" parameterType="app.weavora.zhijie.controlplane.room.Activity">
+        INSERT INTO activities (id, room_id, activity_generation, state, started_at, ended_at)
+        VALUES (#{id}, #{roomId}, #{activityGeneration}, #{state}, #{startedAt}, #{endedAt})
+    </insert>
+    <select id="findActivity" resultMap="Activity">SELECT * FROM activities WHERE id = #{activityId}</select>
+    <select id="findActiveActivityByRoom" resultMap="Activity">
+        SELECT * FROM activities WHERE room_id = #{roomId} AND state = 'ACTIVE'
+    </select>
+    <update id="updateActivity" parameterType="app.weavora.zhijie.controlplane.room.Activity">
+        UPDATE activities SET activity_generation = #{activityGeneration}, state = #{state}, ended_at = #{endedAt}
+        WHERE id = #{id}
+    </update>
+</mapper>

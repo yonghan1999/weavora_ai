@@ -140,10 +140,14 @@
       "acceptance": "覆盖第12/13账号、保留占额、暂停、免密码边界、接管触发和结束保房；删除为终态",
       "test": "./mvnw -q -pl control-plane -am test",
       "rollback": "停用新房间命令并回退应用代码；数据库使用备份或前向补偿，不物理删除房间",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T080007Z-2d506080.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T080007Z-2d506080.json",
+      "last_evidence_sha256": "253e5a1271fdf1a8c2c7811eb68324522507aadcf87535359076bfb760ba0cfd"
     },
     {
       "id": "TASK-007",

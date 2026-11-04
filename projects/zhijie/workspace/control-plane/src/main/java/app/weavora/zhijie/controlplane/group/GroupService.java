@@ -6,6 +6,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,11 +16,13 @@ public class GroupService {
     private final GroupRepository repository;
     private final IdentityService identityService;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
-    public GroupService(GroupRepository repository, IdentityService identityService, Clock clock) {
+    public GroupService(GroupRepository repository, IdentityService identityService, Clock clock, ApplicationEventPublisher events) {
         this.repository = repository;
         this.identityService = identityService;
         this.clock = clock;
+        this.events = events;
     }
 
     @Transactional
@@ -238,6 +241,9 @@ public class GroupService {
                     invitation.inviteeId(), InvitationStatus.INVALIDATED, invitation.createdAt(), invitation.acceptedAt(),
                     invitation.revokedAt(), now));
         }
+        String groupOwnerId = activeGroup(member.groupId()).ownerUserId();
+        events.publishEvent(new app.weavora.zhijie.controlplane.room.GroupMemberStatusEvent(
+                member.groupId(), member.userId(), groupOwnerId, status));
     }
 
     private OwnerTransfer findPendingTransferById(String transferId) {

@@ -31,7 +31,7 @@ class GroupServiceTest {
         when(identity.requireActive(anyString())).thenAnswer(invocation -> new UserAccount(
                 invocation.getArgument(0), invocation.getArgument(0) + "@example.com", AccountStatus.ACTIVE, "hidden", Instant.now()
         ));
-        service = new GroupService(repository, identity, Clock.systemUTC());
+        service = new GroupService(repository, identity, Clock.systemUTC(), mock(org.springframework.context.ApplicationEventPublisher.class));
     }
 
     @Test

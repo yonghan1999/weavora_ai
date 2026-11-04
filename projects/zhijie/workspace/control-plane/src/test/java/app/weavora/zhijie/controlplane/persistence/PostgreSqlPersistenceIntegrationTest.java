@@ -12,6 +12,9 @@ import app.weavora.zhijie.controlplane.identity.EmailDispatchPort;
 import app.weavora.zhijie.controlplane.identity.IdentityService;
 import app.weavora.zhijie.controlplane.message.MessageService;
 import app.weavora.zhijie.controlplane.message.MessageView;
+import app.weavora.zhijie.controlplane.room.Activity;
+import app.weavora.zhijie.controlplane.room.Room;
+import app.weavora.zhijie.controlplane.room.RoomService;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import java.util.EnumMap;
 import java.util.Map;
@@ -43,6 +46,7 @@ class PostgreSqlPersistenceIntegrationTest {
         String email = "restart@example.com";
         String groupId;
         String messageId;
+        String roomId;
         try (ConfigurableApplicationContext context = newContext()) {
             IdentityService identity = context.getBean(IdentityService.class);
             TestEmailDispatch mail = context.getBean(TestEmailDispatch.class);
@@ -56,6 +60,12 @@ class PostgreSqlPersistenceIntegrationTest {
             groupId = group.id();
             MessageView message = context.getBean(MessageService.class).post(userId, groupId, "持久消息");
             messageId = message.id();
+            RoomService rooms = context.getBean(RoomService.class);
+            Room room = rooms.createRoom(userId, groupId, "持久房间", "配置保持", "测试游戏", "room-password");
+            roomId = room.id();
+            Activity activity = rooms.startActivity(userId, roomId);
+            rooms.setOpenState(userId, roomId, app.weavora.zhijie.controlplane.room.RoomOpenState.PAUSED);
+            rooms.endActivity(userId, activity.id());
             context.getBean(AuditService.class).record(groupId, userId, "GROUP", groupId, "GROUP_CREATE", "SUCCESS", "restart-test");
         }
 
@@ -66,6 +76,10 @@ class PostgreSqlPersistenceIntegrationTest {
             assertThat(group.name()).isEqualTo("持久小队");
             assertThat(restarted.getBean(MessageService.class).list(userId, groupId, null, 50))
                     .extracting(MessageView::id).contains(messageId);
+            Room room = restarted.getBean(RoomService.class).getRoom(userId, roomId);
+            assertThat(room.description()).isEqualTo("配置保持");
+            assertThat(room.currentActivityId()).isNull();
+            assertThat(room.openState()).isEqualTo(app.weavora.zhijie.controlplane.room.RoomOpenState.PAUSED);
             assertThat(restarted.getBean(AuditService.class).list(userId, groupId, null, 50))
                     .extracting("action").contains("GROUP_CREATE");
         }
