@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d0f">
+  <title>织界</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body>
+  <main id="app" class="main-scroll">
+    <section id="login-panel" class="settings-card">
+      <div class="eyebrow">织界 / WEAVORA</div>
+      <h1>和队友一起开局</h1>
+      <p>使用已验证的账号登录。语音与虚拟网络状态来自真实服务。</p>
+      <form id="login-form">
+        <label class="field">邮箱<input id="auth-email" name="email" type="email" required autocomplete="username"></label>
+        <label class="field">密码<input id="auth-password" name="password" type="password" required minlength="12" autocomplete="current-password"></label>
+        <button class="button primary" type="submit">登录</button>
+      </form>
+    </section>
+    <section id="lobby-panel" hidden>
+      <div class="page-heading"><div><div class="eyebrow">玩家大厅</div><h1>选择房间</h1></div><button id="logout" class="button">退出登录</button></div>
+      <div id="connection-summary" role="status" aria-live="polite"></div>
+      <div id="room-list" class="room-grid"></div>
+    </section>
+    <p id="feedback" class="inline-feedback" role="alert" aria-live="assertive"></p>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

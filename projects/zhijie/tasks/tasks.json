@@ -219,10 +219,14 @@
       "acceptance": "复用现有呈现而不复制模拟授权和故障注入；核心迟到结果处理、错误映射与 UI 契约测试通过",
       "test": "cargo test -p zhijie-core && npm --prefix desktop/ui test",
       "rollback": "回退桌面适配层和核心增量，保留 design 资产及控制面契约",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T084814Z-20f9dd33.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T084814Z-20f9dd33.json",
+      "last_evidence_sha256": "fa19effdcc7564525c41b6285fca60ca15b31749ccf411dbf5631333653c79bc"
     },
     {
       "id": "TASK-010",

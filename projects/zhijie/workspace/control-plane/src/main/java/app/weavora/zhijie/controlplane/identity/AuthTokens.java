@@ -4,6 +4,7 @@ import java.time.Instant;
 
 public record AuthTokens(
         String sessionId,
+        String userId,
         String accessToken,
         String refreshToken,
         Instant accessExpiresAt,

@@ -4,6 +4,7 @@ members = [
     "client/voice",
     "network/helper",
     "network/relay",
+    "desktop/shell",
 ]
 resolver = "2"
 

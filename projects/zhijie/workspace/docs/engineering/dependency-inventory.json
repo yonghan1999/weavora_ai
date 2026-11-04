@@ -22,6 +22,12 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "zhijie-shell",
+      "version": "0.1.0",
+      "license": "Proprietary"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "zhijie-voice",
       "version": "0.1.0",
       "license": "Proprietary"

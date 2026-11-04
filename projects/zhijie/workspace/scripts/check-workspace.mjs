@@ -27,7 +27,7 @@ const cargo = spawnSync("cargo", ["metadata", "--format-version", "1", "--no-dep
 });
 assert.equal(cargo.status, 0, cargo.stderr);
 const packageNames = JSON.parse(cargo.stdout).packages.map((item) => item.name).sort();
-assert.deepEqual(packageNames, ["zhijie-core", "zhijie-helper", "zhijie-relay", "zhijie-voice"]);
+assert.deepEqual(packageNames, ["zhijie-core", "zhijie-helper", "zhijie-relay", "zhijie-shell", "zhijie-voice"]);
 
 const mavenExecutable = process.platform === "win32" ? "mvnw.cmd" : "./mvnw";
 const maven = spawnSync(

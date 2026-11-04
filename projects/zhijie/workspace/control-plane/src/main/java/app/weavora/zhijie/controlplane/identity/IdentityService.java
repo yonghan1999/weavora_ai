@@ -262,7 +262,7 @@ public class IdentityService {
     private record TokenMaterial(String accessToken, String refreshToken, String accessHash, String refreshHash) {
         AuthTokens tokens(AuthSession session) {
             return new AuthTokens(
-                    session.id(), accessToken, refreshToken, session.accessExpiresAt(), session.expiresAt()
+                    session.id(), session.userId(), accessToken, refreshToken, session.accessExpiresAt(), session.expiresAt()
             );
         }
     }

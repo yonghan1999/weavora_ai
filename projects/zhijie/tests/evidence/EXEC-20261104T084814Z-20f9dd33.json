@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261104T084814Z-20f9dd33",
+  "project_id": "zhijie",
+  "started_at": "2026-11-04T08:48:00Z",
+  "finished_at": "2026-11-04T08:48:14Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "cargo test -p zhijie-core && npm --prefix desktop/ui test",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "\nrunning 3 tests\ntest state_tests::late_results_cannot_replace_current_activity ... ok\ntest state_tests::protocol_requires_current_version_and_request_id ... ok\ntest state_tests::voice_and_network_fail_retry_and_revoke_independently ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\n> @zhijie/desktop-ui@0.1.0 test\n> node --test tests/*.test.js\n\n✔ bridge sends real versioned desktop commands without a mock fallback (2.1991ms)\n✔ production store publishes authoritative snapshots (0.365ms)\n✔ desktop adapter exposes the versioned command protocol (1.0361ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 129.6158\n",
+  "stdout_truncated": false,
+  "stderr": "   Compiling zhijie-core v0.1.0 (D:\\claude\\weavora_ai\\projects\\zhijie\\workspace\\client\\core)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.81s\n     Running unittests src\\lib.rs (target\\debug\\deps\\zhijie_core-f5b04c35286d5358.exe)\n   Doc-tests zhijie_core\n",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "e034e2d2720efb6dc73068aa4a181ddaac0362a07dcc460db17c09bcbda1d5f4",
+  "tree_digest_after": "9613b5f22a895247cbff0aacf9fc3c4adc1bc328fbd8fc8a46b9b59e921e6c7a",
+  "task_id": "TASK-009"
+}

@@ -1,0 +1,13 @@
+[package]
+name = "zhijie-shell"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tauri = "2.8.5"
+serde_json = "1.0.145"
+zhijie-core = { path = "../../client/core" }
+
+[build-dependencies]
+tauri-build = "2.4.1"
