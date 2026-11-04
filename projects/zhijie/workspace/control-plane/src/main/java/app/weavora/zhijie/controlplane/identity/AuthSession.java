@@ -11,6 +11,6 @@ public record AuthSession(
         Instant expiresAt,
         Instant accessExpiresAt,
         Instant revokedAt,
-        long generation
+        Long generation
 ) {
 }

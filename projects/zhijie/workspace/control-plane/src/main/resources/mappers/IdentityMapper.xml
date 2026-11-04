@@ -17,7 +17,7 @@
             <arg column="purpose" javaType="app.weavora.zhijie.controlplane.identity.ChallengePurpose"/>
             <arg column="code_hash" javaType="String"/>
             <arg column="expires_at" javaType="java.time.Instant"/>
-            <arg column="attempts" javaType="int"/>
+            <arg column="attempts" javaType="Integer"/>
             <arg column="consumed_at" javaType="java.time.Instant"/>
             <arg column="created_at" javaType="java.time.Instant"/>
         </constructor>
@@ -32,7 +32,7 @@
             <arg column="expires_at" javaType="java.time.Instant"/>
             <arg column="access_expires_at" javaType="java.time.Instant"/>
             <arg column="revoked_at" javaType="java.time.Instant"/>
-            <arg column="generation" javaType="long"/>
+            <arg column="generation" javaType="Long"/>
         </constructor>
     </resultMap>
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.weavora.zhijie.controlplane.audit.AuditMapper">
+    <resultMap id="AuditLog" type="app.weavora.zhijie.controlplane.audit.AuditLog">
+        <constructor>
+            <idArg column="id" javaType="String"/><arg column="group_id" javaType="String"/>
+            <arg column="actor_id" javaType="String"/><arg column="target_type" javaType="String"/>
+            <arg column="target_id" javaType="String"/><arg column="action" javaType="String"/>
+            <arg column="result" javaType="String"/><arg column="occurred_at" javaType="java.time.Instant"/>
+            <arg column="correlation_id" javaType="String"/>
+        </constructor>
+    </resultMap>
+    <insert id="insert" parameterType="app.weavora.zhijie.controlplane.audit.AuditLog">
+        INSERT INTO audit_logs
+            (id, group_id, actor_id, target_type, target_id, action, result, occurred_at, correlation_id)
+        VALUES (#{id}, #{groupId}, #{actorId}, #{targetType}, #{targetId}, #{action}, #{result}, #{occurredAt}, #{correlationId})
+    </insert>
+    <select id="list" resultMap="AuditLog">
+        SELECT * FROM audit_logs WHERE group_id = #{groupId}
+        <if test="before != null">AND occurred_at &lt; #{before}</if>
+        ORDER BY occurred_at DESC, id DESC LIMIT #{limit}
+    </select>
+</mapper>

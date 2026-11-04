@@ -8,7 +8,7 @@ public record EmailChallenge(
         ChallengePurpose purpose,
         String codeHash,
         Instant expiresAt,
-        int attempts,
+        Integer attempts,
         Instant consumedAt,
         Instant createdAt
 ) {

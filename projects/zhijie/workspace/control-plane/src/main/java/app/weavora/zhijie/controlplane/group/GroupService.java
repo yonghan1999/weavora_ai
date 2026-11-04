@@ -210,7 +210,7 @@ public class GroupService {
         repository.cancelPendingTransfers(groupId, now);
     }
 
-    GroupMember requireMembership(String groupId, String userId) {
+    public GroupMember requireMembership(String groupId, String userId) {
         identityService.requireActive(userId);
         GroupMember member = repository.findMember(groupId, userId).orElseThrow(this::groupUnavailable);
         if (member.status() != MemberStatus.ACTIVE) throw groupUnavailable();

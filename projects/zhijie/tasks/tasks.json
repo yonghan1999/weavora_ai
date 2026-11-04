@@ -115,10 +115,14 @@
       "acceptance": "逐角色越权测试通过；作者和管理员删除边界、审计只读、跨群隔离及秘密扫描有证据",
       "test": "./mvnw -q -pl control-plane -am test",
       "rollback": "回退消息和审计增量变更，保留历史数据并通过前向迁移修复结构",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T074837Z-f99f9de5.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T074837Z-f99f9de5.json",
+      "last_evidence_sha256": "81bede394cdc54bdbf9782118e12696f0999640d95b784081d48209e26cf98da"
     },
     {
       "id": "TASK-006",

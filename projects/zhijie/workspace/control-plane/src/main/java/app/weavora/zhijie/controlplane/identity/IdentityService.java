@@ -164,7 +164,7 @@ public class IdentityService {
         Instant now = clock.instant();
         AuthSession session = new AuthSession(
                 sessionId, user.id(), deviceId, material.refreshHash(), material.accessHash(),
-                now.plus(REFRESH_TTL), now.plus(ACCESS_TTL), null, 1
+                now.plus(REFRESH_TTL), now.plus(ACCESS_TTL), null, 1L
         );
         repository.insertSession(session);
         return material.tokens(session);

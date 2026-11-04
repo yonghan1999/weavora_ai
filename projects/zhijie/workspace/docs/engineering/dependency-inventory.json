@@ -106,6 +106,18 @@
     },
     {
       "ecosystem": "maven",
+      "name": "commons-codec:commons-codec",
+      "version": "1.18.0",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
+      "name": "commons-io:commons-io",
+      "version": "2.21.0",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
       "name": "io.micrometer:micrometer-commons",
       "version": "1.15.4",
       "license": "unreviewed"
@@ -114,6 +126,36 @@
       "ecosystem": "maven",
       "name": "io.micrometer:micrometer-observation",
       "version": "1.15.4",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
+      "name": "io.zonky.test:embedded-postgres",
+      "version": "2.2.2",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
+      "name": "io.zonky.test.postgres:embedded-postgres-binaries-darwin-amd64",
+      "version": "14.22.0",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
+      "name": "io.zonky.test.postgres:embedded-postgres-binaries-linux-amd64",
+      "version": "14.22.0",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
+      "name": "io.zonky.test.postgres:embedded-postgres-binaries-linux-amd64-alpine",
+      "version": "14.22.0",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
+      "name": "io.zonky.test.postgres:embedded-postgres-binaries-windows-amd64",
+      "version": "17.5.0",
       "license": "unreviewed"
     },
     {
@@ -162,6 +204,18 @@
       "ecosystem": "maven",
       "name": "net.minidev:json-smart",
       "version": "2.5.2",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
+      "name": "org.apache.commons:commons-compress",
+      "version": "1.28.0",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
+      "name": "org.apache.commons:commons-lang3",
+      "version": "3.17.0",
       "license": "unreviewed"
     },
     {
@@ -528,6 +582,12 @@
       "ecosystem": "maven",
       "name": "org.springframework.security:spring-security-crypto",
       "version": "6.5.5",
+      "license": "unreviewed"
+    },
+    {
+      "ecosystem": "maven",
+      "name": "org.tukaani:xz",
+      "version": "1.11",
       "license": "unreviewed"
     },
     {
