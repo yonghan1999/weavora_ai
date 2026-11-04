@@ -23,6 +23,12 @@
     <section id="lobby-panel" hidden>
       <div class="page-heading"><div><div class="eyebrow">玩家大厅</div><h1>选择房间</h1></div><button id="logout" class="button">退出登录</button></div>
       <div id="connection-summary" role="status" aria-live="polite"></div>
+      <section class="settings-card" aria-label="语音控制">
+        <div id="voice-state">语音未连接</div>
+        <button id="voice-mute" class="button" type="button">切换静音</button>
+        <button id="voice-receive" class="button" type="button">切换接收</button>
+        <label>总音量<input id="voice-volume" type="range" min="0" max="2" step="0.05" value="1"></label>
+      </section>
       <div id="room-list" class="room-grid"></div>
     </section>
     <p id="feedback" class="inline-feedback" role="alert" aria-live="assertive"></p>

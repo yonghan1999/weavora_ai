@@ -28,15 +28,18 @@ public class GrantService {
     private final CredentialProtector credentials;
     private final VoiceGateway voiceGateway;
     private final Clock clock;
+    private final String voiceUrl;
 
     public GrantService(GrantRepository repository, ActivityRepository activities, IdentityService identity,
-                        CredentialProtector credentials, VoiceGateway voiceGateway, Clock clock) {
+                        CredentialProtector credentials, VoiceGateway voiceGateway, Clock clock,
+                        @org.springframework.beans.factory.annotation.Value("${zhijie.voice.url:ws://127.0.0.1:7880}") String voiceUrl) {
         this.repository = repository;
         this.activities = activities;
         this.identity = identity;
         this.credentials = credentials;
         this.voiceGateway = voiceGateway;
         this.clock = clock;
+        this.voiceUrl = voiceUrl;
     }
 
     @Transactional
@@ -49,7 +52,7 @@ public class GrantService {
         Instant expiresAt = clock.instant().plus(GRANT_TTL);
         String token = voiceGateway.issueToken(activityId, userId, member.memberGeneration(), expiresAt);
         ActivityGrant grant = saveGrant(member, lease, "VOICE", token, null, expiresAt);
-        return new VoiceGrantResponse(grant.id(), activityId, member.memberGeneration(), lease.id(), token, expiresAt);
+        return new VoiceGrantResponse(grant.id(), activityId, member.memberGeneration(), lease.id(), voiceUrl, token, expiresAt);
     }
 
     @Transactional

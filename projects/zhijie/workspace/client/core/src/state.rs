@@ -45,11 +45,15 @@ impl ClientCore {
 
     pub fn apply_activity_result(&self, request_id: &str, result: ActivityResult) -> bool {
         let pending = self.pending.lock().expect("pending activity lock").clone();
-        if !pending.is_some_and(|item| item.request_id == request_id && item.activity_id == result.activity_id) {
+        if !pending.is_some_and(|item| {
+            item.request_id == request_id && item.activity_id == result.activity_id
+        }) {
             return false;
         }
         let mut snapshot = self.snapshot.lock().expect("client state lock");
-        let Some(current) = snapshot.activity.as_ref() else { return false };
+        let Some(current) = snapshot.activity.as_ref() else {
+            return false;
+        };
         if current.activity_id != result.activity_id
             || current.activity_generation > result.activity_generation
             || current.member_generation > result.member_generation
@@ -72,7 +76,13 @@ impl ClientCore {
 
     pub fn channel_failed(&self, activity_id: &str, channel: Channel, error_code: String) {
         let mut snapshot = self.snapshot.lock().expect("client state lock");
-        let Some(activity) = snapshot.activity.as_mut().filter(|item| item.activity_id == activity_id) else { return };
+        let Some(activity) = snapshot
+            .activity
+            .as_mut()
+            .filter(|item| item.activity_id == activity_id)
+        else {
+            return;
+        };
         match channel {
             Channel::Voice => activity.voice = ChannelStatus::Failed,
             Channel::Network => activity.network = ChannelStatus::Failed,
@@ -82,7 +92,13 @@ impl ClientCore {
 
     pub fn retry_channel(&self, activity_id: &str, channel: Channel) {
         let mut snapshot = self.snapshot.lock().expect("client state lock");
-        let Some(activity) = snapshot.activity.as_mut().filter(|item| item.activity_id == activity_id) else { return };
+        let Some(activity) = snapshot
+            .activity
+            .as_mut()
+            .filter(|item| item.activity_id == activity_id)
+        else {
+            return;
+        };
         match channel {
             Channel::Voice => activity.voice = ChannelStatus::Retrying,
             Channel::Network => activity.network = ChannelStatus::Retrying,
@@ -91,15 +107,22 @@ impl ClientCore {
 
     pub fn revoke(&self, activity_id: &str, member_generation: u64) {
         let mut snapshot = self.snapshot.lock().expect("client state lock");
-        let Some(activity) = snapshot.activity.as_mut().filter(|item| item.activity_id == activity_id
-            && item.member_generation == member_generation) else { return };
+        let Some(activity) = snapshot.activity.as_mut().filter(|item| {
+            item.activity_id == activity_id && item.member_generation == member_generation
+        }) else {
+            return;
+        };
         activity.voice = ChannelStatus::Revoked;
         activity.network = ChannelStatus::Revoked;
     }
 
     pub fn clear_activity(&self, activity_id: &str) {
         let mut snapshot = self.snapshot.lock().expect("client state lock");
-        if snapshot.activity.as_ref().is_some_and(|item| item.activity_id == activity_id) {
+        if snapshot
+            .activity
+            .as_ref()
+            .is_some_and(|item| item.activity_id == activity_id)
+        {
             snapshot.activity = None;
             *self.pending.lock().expect("pending activity lock") = None;
         }

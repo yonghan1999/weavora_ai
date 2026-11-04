@@ -20,6 +20,10 @@ store.addEventListener("changed", () => {
   document.getElementById("connection-summary").textContent = activity
     ? `语音：${activity.voice}；虚拟网络：${activity.network}；IP：${activity.virtualIpv4 ?? "分配中"}`
     : "当前未加入房间";
+  const voice = store.state.voice;
+  document.getElementById("voice-state").textContent = voice
+    ? `语音：${voice.state}；${voice.muted ? "已静音" : "麦克风开启"}；${voice.receiveEnabled ? "接收开启" : "接收关闭"}`
+    : "语音未连接";
 });
 
 document.getElementById("login-form").addEventListener("submit", async event => {
@@ -57,6 +61,29 @@ document.getElementById("logout").addEventListener("click", async () => {
     store.apply(await bridge.logout());
     document.getElementById("login-panel").hidden = false;
     document.getElementById("lobby-panel").hidden = true;
+  } catch (error) {
+    showError(error);
+  }
+});
+
+for (const [id, action] of [
+  ["voice-mute", () => bridge.setMuted(!store.state.voice?.muted)],
+  ["voice-receive", () => bridge.setReceiveEnabled(!store.state.voice?.receiveEnabled)],
+]) {
+  document.getElementById(id).addEventListener("click", async () => {
+    if (!bridge) return;
+    try {
+      store.applyVoice(await action());
+    } catch (error) {
+      showError(error);
+    }
+  });
+}
+
+document.getElementById("voice-volume").addEventListener("change", async event => {
+  if (!bridge) return;
+  try {
+    store.applyVoice(await bridge.setVolume(Number(event.currentTarget.value)));
   } catch (error) {
     showError(error);
   }

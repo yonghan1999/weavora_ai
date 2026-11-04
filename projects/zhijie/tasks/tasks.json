@@ -246,10 +246,14 @@
       "acceptance": "适配器和状态测试通过；模拟音频不标为真实验证，设备、12人音质与游戏并行场景留给专项实测",
       "test": "cargo test -p zhijie-voice && npm --prefix desktop/ui test",
       "rollback": "禁用语音适配功能开关并回退媒体依赖，保持网络通道和已批准 UI 可用",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T100521Z-2b132793.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T100521Z-2b132793.json",
+      "last_evidence_sha256": "a5040a9a41e5a08517781ec46019d1d538b2d82097b2cc26fdabc397c83d7d89"
     },
     {
       "id": "TASK-011",

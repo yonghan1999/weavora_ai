@@ -8,6 +8,7 @@ license.workspace = true
 tauri = "2.8.5"
 serde_json = "1.0.145"
 zhijie-core = { path = "../../client/core" }
+zhijie-voice = { path = "../../client/voice" }
 
 [build-dependencies]
 tauri-build = "2.4.1"
