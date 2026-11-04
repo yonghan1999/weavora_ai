@@ -1,4 +1,380 @@
 {
   "schema_version": 1,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "建立多模块工程与质量基线",
+      "requirement_ids": [
+        "REQ-028"
+      ],
+      "depends_on": [],
+      "input": "已批准架构 ADR-001/003/006/015；workspace 内仅保留设计资产",
+      "output": "Maven Wrapper、Rust Cargo 工作区、现有 UI 生产适配工程、依赖锁文件与质量脚本",
+      "acceptance": "各模块可被发现，锁文件和许可证清单可生成；质量脚本真实退出码为0；不改动已批准设计资产",
+      "test": "node scripts/check-workspace.mjs",
+      "rollback": "移除本任务新增工程骨架和锁文件，保留 design 目录原样",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-002",
+      "title": "实现账号认证与安全凭据",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-024"
+      ],
+      "depends_on": [
+        "TASK-001"
+      ],
+      "input": "认证 API、账号状态、邮件适配器与凭据安全设计",
+      "output": "注册验证、登录退出、刷新轮换、找回密码、邮件端口及安全存储服务",
+      "acceptance": "认证服务测试覆盖未验证限制、令牌轮换、防枚举和秘密脱敏；真实邮件投递仅保留受控适配接口并标未验证",
+      "test": "./mvnw -q -pl control-plane -am test",
+      "rollback": "回退认证模块及迁移，保留可恢复数据库备份，不删除既有用户数据",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-003",
+      "title": "实现好友关系与在线状态",
+      "requirement_ids": [
+        "REQ-003"
+      ],
+      "depends_on": [
+        "TASK-002"
+      ],
+      "input": "Social 模块、好友 API 与账号状态契约",
+      "output": "账号搜索、好友申请处理、删除和在线状态查询",
+      "acceptance": "覆盖重复申请、接受拒绝、删除和权限隔离；好友不授予群房权限且无私聊接口",
+      "test": "./mvnw -q -pl control-plane -am test",
+      "rollback": "回退 Social 模块代码与对应迁移，保留账号认证基线",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-004",
+      "title": "实现群组邀请与群主治理",
+      "requirement_ids": [
+        "REQ-004",
+        "REQ-005",
+        "REQ-006"
+      ],
+      "depends_on": [
+        "TASK-002"
+      ],
+      "input": "Group、Invitation、Ownership 数据模型和角色规则",
+      "output": "群资料、成员、邀请、群主转让与人工恢复申请服务",
+      "acceptance": "邀请失效和幂等、重入角色、转让接受及争议保持归属均有自动化测试；不提供公开群搜索",
+      "test": "./mvnw -q -pl control-plane -am test",
+      "rollback": "回退群治理应用服务和增量迁移，按备份或前向补偿处理数据",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-005",
+      "title": "实现权限、消息、审计与持久化",
+      "requirement_ids": [
+        "REQ-004",
+        "REQ-007",
+        "REQ-019",
+        "REQ-020",
+        "REQ-021",
+        "REQ-024"
+      ],
+      "depends_on": [
+        "TASK-004"
+      ],
+      "input": "授权矩阵、Message、Audit 与 PostgreSQL 持久化设计",
+      "output": "执行时授权、群文字消息 tombstone、只读管理记录和重启持久化测试",
+      "acceptance": "逐角色越权测试通过；作者和管理员删除边界、审计只读、跨群隔离及秘密扫描有证据",
+      "test": "./mvnw -q -pl control-plane -am test",
+      "rollback": "回退消息和审计增量变更，保留历史数据并通过前向迁移修复结构",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-006",
+      "title": "实现持久房间与活动生命周期",
+      "requirement_ids": [
+        "REQ-008",
+        "REQ-009",
+        "REQ-010"
+      ],
+      "depends_on": [
+        "TASK-004"
+      ],
+      "input": "Room Administration、活动状态机、12人容量和房主接管规则",
+      "output": "房间 CRUD、开放暂停、活动开始结束、密码和房主管理",
+      "acceptance": "覆盖第12/13账号、保留占额、暂停、免密码边界、接管触发和结束保房；删除为终态",
+      "test": "./mvnw -q -pl control-plane -am test",
+      "rollback": "停用新房间命令并回退应用代码；数据库使用备份或前向补偿，不物理删除房间",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-007",
+      "title": "实现加入切换恢复与地址租约",
+      "requirement_ids": [
+        "REQ-002",
+        "REQ-009",
+        "REQ-011",
+        "REQ-015"
+      ],
+      "depends_on": [
+        "TASK-006"
+      ],
+      "input": "Activity Coordinator、Address & Lease、代次、Outbox 和真实 PostgreSQL 锁设计",
+      "output": "原子加入切房、设备转移、60秒保留、租约、/27地址分配及历史IP优先恢复",
+      "acceptance": "真实数据库测试覆盖并发单活动、迟到代次、超时释放、IP唯一和安全重入；无Mock替代并发证据",
+      "test": "./mvnw -q -pl control-plane -am test",
+      "rollback": "关闭新活动命令入口并回退代码；保留审计和租约记录，以前向迁移修复数据",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-008",
+      "title": "实现实时同步、授权签发与撤销协调",
+      "requirement_ids": [
+        "REQ-017",
+        "REQ-018",
+        "REQ-021",
+        "REQ-023"
+      ],
+      "depends_on": [
+        "TASK-005",
+        "TASK-006",
+        "TASK-007"
+      ],
+      "input": "REST/WebSocket、Voice Grant、Network Grant、Outbox 与 Revocation Coordinator 契约",
+      "output": "双通道凭据接口、游标同步、重同步和 SFU/Relay/Peer 撤销适配器",
+      "acceptance": "失权后接口立即拒绝，事件与业务事务一致，旧代次无效，撤销失败可重试且可观测；外部服务结果标未验证",
+      "test": "./mvnw -q -pl control-plane -am test",
+      "rollback": "停用新凭据签发与同步入口，恢复上一稳定控制面版本并保留撤销事件以便重放",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-009",
+      "title": "构建 Rust 客户端核心与生产 UI 适配",
+      "requirement_ids": [
+        "REQ-023",
+        "REQ-028"
+      ],
+      "depends_on": [
+        "TASK-001",
+        "TASK-008"
+      ],
+      "input": "Tauri 候选 Command/Event、Rust Client Core 和已批准 UI 资产",
+      "output": "桌面壳、版本化核心契约、API 客户端、状态快照及 UI Adapter",
+      "acceptance": "复用现有呈现而不复制模拟授权和故障注入；核心迟到结果处理、错误映射与 UI 契约测试通过",
+      "test": "cargo test -p zhijie-core && npm --prefix desktop/ui test",
+      "rollback": "回退桌面适配层和核心增量，保留 design 资产及控制面契约",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-010",
+      "title": "接入真实语音与音频设备处理",
+      "requirement_ids": [
+        "REQ-012",
+        "REQ-013",
+        "REQ-017",
+        "REQ-026"
+      ],
+      "depends_on": [
+        "TASK-008",
+        "TASK-009"
+      ],
+      "input": "Voice Adapter、SFU 候选、Audio Device & Processing 和独立状态机",
+      "output": "真实媒体适配、设备选择测试、静音接收音量、AEC/降噪/AGC/VAD配置及弱网恢复",
+      "acceptance": "适配器和状态测试通过；模拟音频不标为真实验证，设备、12人音质与游戏并行场景留给专项实测",
+      "test": "cargo test -p zhijie-voice && npm --prefix desktop/ui test",
+      "rollback": "禁用语音适配功能开关并回退媒体依赖，保持网络通道和已批准 UI 可用",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-011",
+      "title": "实现受限网络 Helper 与真实 TUN",
+      "requirement_ids": [
+        "REQ-014",
+        "REQ-015",
+        "REQ-016",
+        "REQ-024"
+      ],
+      "depends_on": [
+        "TASK-007",
+        "TASK-009"
+      ],
+      "input": "Network Helper IPC、候选 Rust WireGuard、/27路由与密钥边界",
+      "output": "本机受限IPC、TUN生命周期、Peer管理、真实状态事件和清理逻辑",
+      "acceptance": "协议白名单、旧代次、路由限制、崩溃清理及秘密日志测试通过；三平台真实TUN仍需实机证据",
+      "test": "cargo test -p zhijie-helper",
+      "rollback": "停止并卸载本任务 Helper，清理其TUN和路由，回退代码；不触碰默认路由和物理LAN配置",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-012",
+      "title": "实现 Rust Relay 与运营路径策略",
+      "requirement_ids": [
+        "REQ-014",
+        "REQ-015",
+        "REQ-016",
+        "REQ-018",
+        "REQ-027"
+      ],
+      "depends_on": [
+        "TASK-008",
+        "TASK-011"
+      ],
+      "input": "Relay 管理/数据协议、策略修订、直连回退强制中继及撤销设计",
+      "output": "密文数据报转发、目标映射、三模式路径编排、策略迁移与拒绝集合",
+      "acceptance": "跨房伪造目标、禁止回退、旧策略和撤销测试通过；Relay不持有私钥且真实NAT与带宽结果另测",
+      "test": "cargo test -p zhijie-relay",
+      "rollback": "禁用Relay授权并回退路径服务；清理活动会话，不自动切换为未授权路径",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-013",
+      "title": "贯通双通道房间垂直切片",
+      "requirement_ids": [
+        "REQ-011",
+        "REQ-017",
+        "REQ-018",
+        "REQ-023"
+      ],
+      "depends_on": [
+        "TASK-009",
+        "TASK-010",
+        "TASK-012"
+      ],
+      "input": "SP-10 垂直切片、控制面、语音、Helper、Relay 与 UI 契约",
+      "output": "登录入房、并行连接、独立重试、状态恢复、退出撤销的端到端集成流程",
+      "acceptance": "本地受控集成场景真实执行，双通道故障隔离和迟到结果拒绝有证据；未运行外部媒体或实机项目明确标记",
+      "test": "node scripts/test-e2e.mjs --contract",
+      "rollback": "关闭垂直切片入口并回退编排适配，保留各独立模块及权威撤销",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-014",
+      "title": "准备三平台安装更新与支持矩阵",
+      "requirement_ids": [
+        "REQ-022",
+        "REQ-028"
+      ],
+      "depends_on": [
+        "TASK-013"
+      ],
+      "input": "Tauri bundler/updater 候选、Helper 安装权限及 AC-030/031/043",
+      "output": "安装更新配置、签名钩子、版本兼容检查、卸载清理和支持矩阵生成器",
+      "acceptance": "配置和清单校验通过，候选与已验证严格区分；无证书或实机的平台保持未验证",
+      "test": "node scripts/test-release.mjs --contract",
+      "rollback": "撤回新增安装配置与更新源配置，保留上一可安装版本和本地用户数据",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-015",
+      "title": "补齐观测、安全与受控降级",
+      "requirement_ids": [
+        "REQ-020",
+        "REQ-023",
+        "REQ-024",
+        "REQ-025"
+      ],
+      "depends_on": [
+        "TASK-008",
+        "TASK-013"
+      ],
+      "input": "指标、脱敏日志、限流背压、容量分档和撤销告警设计",
+      "output": "结构化观测、秘密扫描、资源上限、通道级容量拒绝和诊断信息",
+      "acceptance": "日志和审计秘密扫描、限流、过时事件、背压及故障告警自动化测试通过；不暴露服务器秘密",
+      "test": "./mvnw -q -pl control-plane -am test && cargo test --workspace && npm --prefix desktop/ui test",
+      "rollback": "恢复上一观测和限流配置，保留撤销与授权安全控制，不通过关闭安全检查回退",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-016",
+      "title": "建立容量、音质与长会话验证工具",
+      "requirement_ids": [
+        "REQ-012",
+        "REQ-014",
+        "REQ-025",
+        "REQ-026"
+      ],
+      "depends_on": [
+        "TASK-010",
+        "TASK-012",
+        "TASK-013",
+        "TASK-015"
+      ],
+      "input": "C0-C4容量模型、AC-034/038/039/040和SP-03/07验证方案",
+      "output": "可复现负载脚本、指标采集、音频A/B记录模板、长会话及资源预算校验",
+      "acceptance": "负载参数和结果模式经自动化校验，明确100在线、满房和分房不能互相替代；未实测不生成通过结论",
+      "test": "node scripts/test-performance.mjs --validate-fixtures",
+      "rollback": "移除新增负载工具和未验证结果，保留原始实测数据，不修改验收阈值",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-017",
+      "title": "整合跨平台验证与发布证据入口",
+      "requirement_ids": [
+        "REQ-014",
+        "REQ-022",
+        "REQ-028"
+      ],
+      "depends_on": [
+        "TASK-013",
+        "TASK-014",
+        "TASK-016"
+      ],
+      "input": "SP-01/02/06/10/12、支持矩阵和最终 REQ-AC 追踪",
+      "output": "跨平台验证运行器、证据索引、依赖许可证/维护记录和资产摘要差异报告",
+      "acceptance": "验证清单与摘要检查通过，所有未执行平台、游戏、签名、音质和容量项明确标未验证；不伪造AC通过",
+      "test": "node scripts/test-compatibility.mjs --validate-matrix",
+      "rollback": "回退验证运行器和索引生成变更，保留原始证据与既有支持矩阵，不删除未验证记录",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    }
+  ]
 }
