@@ -21,5 +21,12 @@
     "security": {
       "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'"
     }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi", "dmg", "appimage", "deb"],
+    "icon": ["icons/icon.png", "icons/icon.ico"],
+    "publisher": "Weavora",
+    "createUpdaterArtifacts": false
   }
 }

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261104T110440Z-423a2906",
+  "project_id": "zhijie",
+  "started_at": "2026-11-04T11:04:20Z",
+  "finished_at": "2026-11-04T11:04:40Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "node scripts/test-release.mjs --contract",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "Release configuration, support matrix, and artifact hashes are consistent; installers remain unverified.\n",
+  "stdout_truncated": false,
+  "stderr": "",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "7973e8c47399f4198523f863c618760b7c6b08aaa6cef19bd2aa84a151cf387c",
+  "tree_digest_after": "7973e8c47399f4198523f863c618760b7c6b08aaa6cef19bd2aa84a151cf387c",
+  "task_id": "TASK-014"
+}

@@ -355,10 +355,14 @@
       "acceptance": "配置和清单校验通过，候选与已验证严格区分；无证书或实机的平台保持未验证",
       "test": "node scripts/test-release.mjs --contract",
       "rollback": "撤回新增安装配置与更新源配置，保留上一可安装版本和本地用户数据",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T110440Z-423a2906.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T110440Z-423a2906.json",
+      "last_evidence_sha256": "59b10f3e9379a0133eb1154e7bf2ae07805c63a42bceb27d6c95c70c055b040f"
     },
     {
       "id": "TASK-015",
