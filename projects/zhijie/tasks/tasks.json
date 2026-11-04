@@ -194,10 +194,14 @@
       "acceptance": "失权后接口立即拒绝，事件与业务事务一致，旧代次无效，撤销失败可重试且可观测；外部服务结果标未验证",
       "test": "./mvnw -q -pl control-plane -am test",
       "rollback": "停用新凭据签发与同步入口，恢复上一稳定控制面版本并保留撤销事件以便重放",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T082610Z-a39f9195.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T082610Z-a39f9195.json",
+      "last_evidence_sha256": "d3b128d27f6b34f91d2f9e44dbb23b086c9a612639608481840b5f3663da6ecd"
     },
     {
       "id": "TASK-009",

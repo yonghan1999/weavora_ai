@@ -20,12 +20,15 @@ public class RoomService {
     private final GroupService groups;
     private final CredentialProtector credentials;
     private final Clock clock;
+    private final app.weavora.zhijie.controlplane.revocation.RevocationService revocation;
 
-    public RoomService(RoomRepository repository, GroupService groups, CredentialProtector credentials, Clock clock) {
+    public RoomService(RoomRepository repository, GroupService groups, CredentialProtector credentials, Clock clock,
+                       app.weavora.zhijie.controlplane.revocation.RevocationService revocation) {
         this.repository = repository;
         this.groups = groups;
         this.credentials = credentials;
         this.clock = clock;
+        this.revocation = revocation;
     }
 
     @Transactional
@@ -134,6 +137,7 @@ public class RoomService {
         if (activity.state() == ActivityState.ACTIVE) {
             repository.updateActivity(new Activity(activity.id(), activity.roomId(), activity.activityGeneration() + 1,
                     ActivityState.ENDED, activity.startedAt(), clock.instant()));
+            revocation.revokeActivity(activity.id(), "ACTIVITY_ENDED_OR_ROOM_DELETED");
         }
         if (room.currentActivityId() != null) {
             repository.updateRoom(copy(room, room.ownerUserId(), room.openState(), room.lifecycle(), null));

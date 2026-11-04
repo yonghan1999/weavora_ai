@@ -38,7 +38,8 @@ class RoomServiceTest {
         CredentialProtector credentials = mock(CredentialProtector.class);
         when(credentials.hashPassword(anyString())).thenReturn("argon2id-hash");
         when(credentials.matchesPassword("secret", "argon2id-hash")).thenReturn(true);
-        service = new RoomService(repository, groups, credentials, Clock.systemUTC());
+        service = new RoomService(repository, groups, credentials, Clock.systemUTC(),
+                mock(app.weavora.zhijie.controlplane.revocation.RevocationService.class));
     }
 
     @Test

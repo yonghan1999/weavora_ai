@@ -34,14 +34,17 @@ public class ActivityCoordinator {
     private final GroupService groups;
     private final RoomService rooms;
     private final Clock clock;
+    private final app.weavora.zhijie.controlplane.revocation.RevocationService revocation;
 
     public ActivityCoordinator(ActivityRepository repository, IdentityService identity, GroupService groups,
-                               RoomService rooms, Clock clock) {
+                               RoomService rooms, Clock clock,
+                               app.weavora.zhijie.controlplane.revocation.RevocationService revocation) {
         this.repository = repository;
         this.identity = identity;
         this.groups = groups;
         this.rooms = rooms;
         this.clock = clock;
+        this.revocation = revocation;
     }
 
     @Transactional
@@ -190,31 +193,18 @@ public class ActivityCoordinator {
                     previousLease.deviceId(), previousLease.activityGeneration(), previousLease.memberGeneration(),
                     previousLease.policyRevision(), ChannelState.REVOKED, ChannelState.REVOKED,
                     previousLease.expiresAt(), now));
+            revocation.revokeLease(previousLease, "ACTIVITY_OR_DEVICE_CHANGED");
         }
         if (!previous.activityId().equals(replacement.activityId())) {
             ActivityMember oldMember = repository.findMember(previous.activityId(), previous.userId()).orElse(null);
-            if (oldMember != null) repository.upsertMember(new ActivityMember(oldMember.activityId(), oldMember.userId(),
-                    oldMember.deviceId(), oldMember.memberGeneration(), MemberState.REVOKED, oldMember.joinedAt(), null));
-            repository.releaseAddress(previous.activityId(), previous.userId(), now);
+            if (oldMember != null) revocation.revokeMember(oldMember, "ACTIVITY_SWITCHED");
         }
     }
 
     private void leaveInternal(ActivityMember member) {
-        Instant now = clock.instant();
+        revocation.revokeMember(member, "LEAVE_OR_GRACE_EXPIRED");
         repository.upsertMember(new ActivityMember(member.activityId(), member.userId(), member.deviceId(),
                 member.memberGeneration(), MemberState.LEFT, member.joinedAt(), null));
-        ConnectionLease lease = repository.findLatestLease(member.activityId(), member.userId()).orElse(null);
-        if (lease != null && lease.revokedAt() == null) {
-            repository.updateLease(new ConnectionLease(lease.id(), lease.activityId(), lease.userId(), lease.deviceId(),
-                    lease.activityGeneration(), lease.memberGeneration(), lease.policyRevision(), ChannelState.REVOKED,
-                    ChannelState.REVOKED, lease.expiresAt(), now));
-        }
-        repository.releaseAddress(member.activityId(), member.userId(), now);
-        AccountActivity pointer = repository.findAccountActivity(member.userId()).orElse(null);
-        if (pointer != null && pointer.activityId().equals(member.activityId())
-                && pointer.memberGeneration().equals(member.memberGeneration())) {
-            repository.deleteAccountActivity(member.userId());
-        }
     }
 
     private Activity currentActivity(Room room) {

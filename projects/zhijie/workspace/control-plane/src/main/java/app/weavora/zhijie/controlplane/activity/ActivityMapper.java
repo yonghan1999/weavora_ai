@@ -31,4 +31,6 @@ public interface ActivityMapper {
     Optional<IpHistory> findIpHistory(@Param("roomId") String roomId, @Param("userId") String userId);
     void upsertIpHistory(IpHistory history);
     List<ActivityMember> listExpiredGrace(Instant now);
+    String findGroupId(String activityId);
+    List<ActivityMember> listActiveByGroup(String groupId);
 }

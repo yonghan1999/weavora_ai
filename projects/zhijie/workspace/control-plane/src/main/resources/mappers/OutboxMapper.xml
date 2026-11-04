@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.weavora.zhijie.controlplane.sync.OutboxMapper">
+    <resultMap id="OutboxEvent" type="app.weavora.zhijie.controlplane.sync.OutboxEvent">
+        <constructor>
+            <idArg column="sequence" javaType="Long"/><arg column="event_id" javaType="String"/>
+            <arg column="group_id" javaType="String"/><arg column="activity_id" javaType="String"/>
+            <arg column="aggregate_id" javaType="String"/><arg column="type" javaType="String"/>
+            <arg column="payload" javaType="String"/><arg column="generation" javaType="Long"/>
+            <arg column="policy_revision" javaType="Long"/><arg column="occurred_at" javaType="java.time.Instant"/>
+            <arg column="delivered_at" javaType="java.time.Instant"/><arg column="attempts" javaType="Integer"/>
+        </constructor>
+    </resultMap>
+    <insert id="insert" parameterType="app.weavora.zhijie.controlplane.sync.OutboxEvent">
+        INSERT INTO outbox_events (event_id, group_id, activity_id, aggregate_id, type, payload,
+            generation, policy_revision, occurred_at, delivered_at, attempts)
+        VALUES (#{eventId}, #{groupId}, #{activityId}, #{aggregateId}, #{type}, #{payload},
+            #{generation}, #{policyRevision}, #{occurredAt}, #{deliveredAt}, #{attempts})
+    </insert>
+    <select id="listAfter" resultMap="OutboxEvent">
+        SELECT * FROM outbox_events WHERE sequence &gt; #{cursor} ORDER BY sequence LIMIT #{limit}
+    </select>
+    <select id="listUndelivered" resultMap="OutboxEvent">
+        SELECT * FROM outbox_events WHERE delivered_at IS NULL ORDER BY sequence LIMIT #{limit}
+    </select>
+    <select id="latestSequence" resultType="long">SELECT COALESCE(MAX(sequence), 0) FROM outbox_events</select>
+    <update id="markDelivered">UPDATE outbox_events SET delivered_at = NOW() WHERE event_id = #{eventId}</update>
+    <update id="recordFailure">UPDATE outbox_events SET attempts = attempts + 1 WHERE event_id = #{eventId}</update>
+</mapper>

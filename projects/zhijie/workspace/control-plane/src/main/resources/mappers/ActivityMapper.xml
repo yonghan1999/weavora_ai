@@ -114,4 +114,12 @@
     <select id="listExpiredGrace" resultMap="ActivityMember">
         SELECT * FROM activity_members WHERE state = 'GRACE' AND grace_expires_at &lt;= #{now}
     </select>
+    <select id="findGroupId" resultType="String">
+        SELECT r.group_id FROM activities a JOIN rooms r ON r.id = a.room_id WHERE a.id = #{activityId}
+    </select>
+    <select id="listActiveByGroup" resultMap="ActivityMember">
+        SELECT m.* FROM activity_members m JOIN activities a ON a.id = m.activity_id
+        JOIN rooms r ON r.id = a.room_id
+        WHERE r.group_id = #{groupId} AND m.state IN ('ACTIVE', 'GRACE')
+    </select>
 </mapper>

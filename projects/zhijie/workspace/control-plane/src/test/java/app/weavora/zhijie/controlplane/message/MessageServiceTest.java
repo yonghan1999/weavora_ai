@@ -38,7 +38,8 @@ class MessageServiceTest {
                 invocation.getArgument(1).equals("owner") ? GroupRole.OWNER : GroupRole.MEMBER,
                 MemberStatus.ACTIVE, Instant.now(), null
         ));
-        service = new MessageService(repository, groups, audit, Clock.systemUTC());
+        service = new MessageService(repository, groups, audit, Clock.systemUTC(),
+                mock(app.weavora.zhijie.controlplane.sync.OutboxService.class));
     }
 
     @Test
