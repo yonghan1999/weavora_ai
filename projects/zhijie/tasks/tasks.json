@@ -87,10 +87,14 @@
       "acceptance": "邀请失效和幂等、重入角色、转让接受及争议保持归属均有自动化测试；不提供公开群搜索",
       "test": "./mvnw -q -pl control-plane -am test",
       "rollback": "回退群治理应用服务和增量迁移，按备份或前向补偿处理数据",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T072033Z-1e221d86.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T072033Z-1e221d86.json",
+      "last_evidence_sha256": "dd1fcca11d27ab59d070be3aa13411800b7f4d6b489068b9adfaa8bdc3ea6376"
     },
     {
       "id": "TASK-005",
