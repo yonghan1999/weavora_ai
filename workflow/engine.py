@@ -127,6 +127,16 @@ def file_lock(path: Path, timeout: float = 10.0):
 MAX_CAPTURE_BYTES = 1_000_000
 
 
+def shell_invocation(command: str, platform_name: str | None = None, bash_path: str | None = None) -> tuple[str | list[str], bool, str]:
+    if (platform_name or os.name) == "nt":
+        bash = bash_path if bash_path is not None else shutil.which("bash")
+        if bash:
+            return [bash, "-o", "pipefail", "-c", command], False, "bash -o pipefail -c"
+        # /d 禁止注册表 AutoRun 干扰命令结果；仍支持用户显式提供的 shell 语法。
+        return ["cmd.exe", "/d", "/s", "/c", command], False, "cmd.exe /d /s /c"
+    return command, True, "default shell"
+
+
 def read_captured_output(path: Path) -> tuple[str, bool]:
     with path.open("rb") as handle:
         content = handle.read(MAX_CAPTURE_BYTES + 1)
@@ -813,15 +823,7 @@ class Engine:
         started = utc_now()
         workspace = self.project_dir(project_id) / "workspace"
         before = tree_digest(workspace)
-        if os.name == "nt":
-            # /d 禁止注册表 AutoRun 干扰命令结果；仍支持用户显式提供的 shell 语法。
-            invocation: str | list[str] = ["cmd.exe", "/d", "/s", "/c", command]
-            use_shell = False
-            shell_mode = "cmd.exe /d /s /c"
-        else:
-            invocation = command
-            use_shell = True
-            shell_mode = "default shell"
+        invocation, use_shell, shell_mode = shell_invocation(command)
         temporary_root = self.root / "var" / "tmp"
         temporary_root.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temporary_root) as directory:

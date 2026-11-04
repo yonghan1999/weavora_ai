@@ -130,6 +130,14 @@ class CliParserTests(unittest.TestCase):
         self.assertEqual(check_args.command, "add-check")
         self.assertEqual(check_args.exec_command, "npm test")
 
+    def test_windows_uses_bash_for_posix_project_commands_when_available(self):
+        from workflow.engine import shell_invocation
+
+        invocation, use_shell, mode = shell_invocation("./mvnw test", "nt", "C:/Git/bin/bash.exe")
+        self.assertEqual(invocation, ["C:/Git/bin/bash.exe", "-o", "pipefail", "-c", "./mvnw test"])
+        self.assertFalse(use_shell)
+        self.assertEqual(mode, "bash -o pipefail -c")
+
 
 class CleanCheckoutTests(unittest.TestCase):
     def test_missing_temporary_root_is_created(self):
