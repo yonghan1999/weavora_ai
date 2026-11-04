@@ -1,0 +1,1 @@
+pub const RELAY_PROTOCOL_VERSION: u16 = 1;

@@ -1,0 +1,1 @@
+pub const VOICE_ADAPTER_PROTOCOL_VERSION: u16 = 1;

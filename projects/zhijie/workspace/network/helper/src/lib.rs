@@ -1,0 +1,1 @@
+pub const HELPER_PROTOCOL_VERSION: u16 = 1;

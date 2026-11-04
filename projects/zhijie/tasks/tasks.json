@@ -13,10 +13,14 @@
       "acceptance": "各模块可被发现，锁文件和许可证清单可生成；质量脚本真实退出码为0；不改动已批准设计资产",
       "test": "node scripts/check-workspace.mjs",
       "rollback": "移除本任务新增工程骨架和锁文件，保留 design 目录原样",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T040314Z-b12c7525.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T040314Z-b12c7525.json",
+      "last_evidence_sha256": "70a0b56e32892aa199e2c8f98a61b95a6a64670c0d357d1b6d2ff81068b3b341"
     },
     {
       "id": "TASK-002",

@@ -1,0 +1,1 @@
+export const COMMAND_PROTOCOL_VERSION = 1;

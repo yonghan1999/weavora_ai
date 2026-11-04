@@ -1,0 +1,1 @@
+pub const COMMAND_PROTOCOL_VERSION: u16 = 1;

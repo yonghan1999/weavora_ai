@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261104T040314Z-b12c7525",
+  "project_id": "zhijie",
+  "started_at": "2026-11-04T04:02:55Z",
+  "finished_at": "2026-11-04T04:03:14Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "node scripts/check-workspace.mjs",
+  "cwd": "workspace",
+  "shell_mode": "cmd.exe /d /s /c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "Workspace checks passed: Maven, Cargo, npm, locks, and dependency inventory.\n",
+  "stdout_truncated": false,
+  "stderr": "(node:23596) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "933e81dc7a20f100c2a955bdef938c2ade5cb9afee161fef42691f105ce7e1c6",
+  "tree_digest_after": "933e81dc7a20f100c2a955bdef938c2ade5cb9afee161fef42691f105ce7e1c6",
+  "task_id": "TASK-001"
+}
