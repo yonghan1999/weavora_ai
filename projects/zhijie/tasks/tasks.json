@@ -166,10 +166,14 @@
       "acceptance": "真实数据库测试覆盖并发单活动、迟到代次、超时释放、IP唯一和安全重入；无Mock替代并发证据",
       "test": "./mvnw -q -pl control-plane -am test",
       "rollback": "关闭新活动命令入口并回退代码；保留审计和租约记录，以前向迁移修复数据",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T081020Z-80ed363b.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261104T081020Z-80ed363b.json",
+      "last_evidence_sha256": "27494a22364449d34b38278414633058cc5714fa8f3ba48f07160d89b7656aea"
     },
     {
       "id": "TASK-008",
