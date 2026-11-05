@@ -9,6 +9,15 @@
       "last_evidence": "tests/evidence/EXEC-20261105T011337Z-ae6fc342.json",
       "last_evidence_sha256": "1216377190cf11265f57f0a6ed3ce718dbc64ea0badee5c71c3e2b02c3ef41c3",
       "last_status": "passed"
+    },
+    {
+      "id": "independent-full-regression",
+      "stage": "G_INDEPENDENT_TEST",
+      "command": "./mvnw -q -pl control-plane -am test && cargo test --workspace && npm --prefix desktop/ui test && node scripts/test-e2e.mjs --contract && node scripts/test-release.mjs --contract && node scripts/test-performance.mjs --validate-fixtures && node scripts/test-compatibility.mjs --validate-matrix",
+      "required": true,
+      "last_evidence": "tests/evidence/EXEC-20261105T011815Z-f0b369f0.json",
+      "last_evidence_sha256": "999af115f4f3d01b14da54965f4ffecc9543dbd2dfa37081d518ca63e086c0ee",
+      "last_status": "passed"
     }
   ]
 }
