@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261105T011021Z-e82b41e4",
+  "project_id": "zhijie",
+  "started_at": "2026-11-05T01:09:54Z",
+  "finished_at": "2026-11-05T01:10:21Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "node scripts/test-compatibility.mjs --validate-matrix",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "Compatibility runner inputs, evidence index, dependency review gaps and design hashes are consistent; platform, game, signing, audio and capacity acceptance remain unverified.\n",
+  "stdout_truncated": false,
+  "stderr": "",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "b070236aa74142612a11f05ec05279acebd693ae2edad770233808e61582982d",
+  "tree_digest_after": "b070236aa74142612a11f05ec05279acebd693ae2edad770233808e61582982d",
+  "task_id": "TASK-017"
+}

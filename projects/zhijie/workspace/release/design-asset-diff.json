@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "baseline": "release/design-asset-baseline.json",
+  "status": "unchanged",
+  "added": [],
+  "removed": [],
+  "changed": [],
+  "untrackedTestArtifactsExcluded": true
+}

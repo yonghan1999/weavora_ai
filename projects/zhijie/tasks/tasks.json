@@ -440,10 +440,14 @@
       "acceptance": "验证清单与摘要检查通过，所有未执行平台、游戏、签名、音质和容量项明确标未验证；不伪造AC通过",
       "test": "node scripts/test-compatibility.mjs --validate-matrix",
       "rollback": "回退验证运行器和索引生成变更，保留原始证据与既有支持矩阵，不删除未验证记录",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261105T011021Z-e82b41e4.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261105T011021Z-e82b41e4.json",
+      "last_evidence_sha256": "85fd81d204e97e14ebfc9057ff9902b13d2fe6bbf7c17fbec6eb2402172710e9"
     }
   ]
 }
