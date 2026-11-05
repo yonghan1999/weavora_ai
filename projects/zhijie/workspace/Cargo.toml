@@ -1,0 +1,19 @@
+[workspace]
+members = [
+    "client/core",
+    "client/voice",
+    "network/helper",
+    "network/relay",
+    "desktop/shell",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Proprietary"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

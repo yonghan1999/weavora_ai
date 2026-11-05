@@ -1,341 +1,498 @@
 # 架构与详细设计：织界
 
-> WF-zhijie；C_DESIGN；设计任务 C-ARCH-004；当前结果 `waiting_human`。本文替换原 LiveKit、Java Relay、wireguard-go 中继及服务器媒体存储路线，旧方案仅存在于历史版本/审批中，不再作为开发输入。所有容量、5 秒撤销、15 秒恢复及跨平台数值均为设计/验收目标，尚无新数据面 PoC 或实测通过结论。
-
-### 已批准输入与交接
-
-| 输入 | 路径 | 人工批准及基线 |
-| --- | --- | --- |
-| 需求 | `docs/02-requirements.md` | han；APR-B-0ebffa236a4e；REQ-001～REQ-029，AC-001～AC-048；摘要 `930c3479678860f60613bb33a20a6064286f1325aec0ed71866dd0336e22c2f4` |
-| B1 | `docs/02a-prototype.md`、`workspace/design/prototype/index.html` | han；APR-B1-15e3bfc1a414；摘要 `c07383892d558fd21859ef0c6a2c9c943868144e507cf3a50951869163e144d4` |
-| B2 | `docs/02b-ui.md`、`workspace/design/ui/index.html` | han；APR-B2-9fb61c0498c2；2026-10-30T06:22:40Z；摘要 `f86dfd731963866e8982ee6b0630cc3502ee90dd322e2242a60b4cc65ff5d8b4` |
-| 补充交接 | `docs/02b-ui-handoff.md`、`workspace/design/ui/system.html`、`docs/03a-peer-network-impact.md` | 组件契约及历史影响分析；其旧阶段描述不替代上述 CLI 批准 |
-
-批准源文件保持原样，其历史“待批准”表述由上表实际 CLI 批准状态解释，不因此重写已批准基线。正式业务代码尚未开始，本轮只形成架构与复核材料。
+> 状态：C 阶段架构草案，待人工审批。依据当前已批准的 `docs/02-requirements.md`（REQ-001～REQ-028）、`docs/02a-prototype.md` 和 `docs/02b-ui.md`，以及 `workspace/design/prototype/index.html`、`workspace/design/ui/index.html`。
+>
+> 本文中的容量、音质、时延和恢复数值均为验收目标，不是实测结果。当前未运行架构 PoC；Tauri/Rust 客户端、Windows/macOS/Linux 的音频与 TUN、12 人容量、100 人在线、直连/中继、邮件投递、签名安装与自动更新均须在对应验证完成后才能宣称支持。
 
 ## 架构概述
 
-### 1. 在线服务及内容边界
+### 1. 目标与边界
 
-只部署两类在线业务服务：Java 控制面和 Lighthouse。PostgreSQL 属于控制面内部依赖。控制面负责身份、好友、群/房间、活动、授权、顺序、删除、逻辑预算、最小收据及审计，不接收文字正文、附言、文件名原文、头像或附件字节。Lighthouse 只发现端点及协调打洞，不提供业务转发或内容缓存。客户端承担真实内容存储、点对点传输、媒体校验、语音编解码及游戏通信。
+织界首版采用“Rust 客户端核心与网络辅助逻辑 + 跨平台 WebView 界面 + 单控制面 + 自托管语音媒体面 + 可选房间密文中继”的客户端/服务端架构。持久群组和房间属于控制面；一次游戏联机属于房间内的临时活动。用户加入活动后，客户端并行发起语音和虚拟网络连接，两者使用不同凭据、状态机和故障域。
 
-所有业务内容均经过客户端虚拟局域网直传，无 SFU、LiveKit、TURN、业务 Relay、服务器媒体存储或透明回退。服务器仍承受控制请求、短租约刷新、端点发现及审计流量；“降低内容带宽”不等于零流量。邮件投递、签名和安装更新属于交付依赖，不成为业务内容通信服务。
+首版必须形成以下真实链路，不能用界面状态或模拟传输替代：
 
-### 2. 逻辑拓扑与两种客户端网络范围
+1. 好友、群组、邀请、消息、权限和持久房间均由服务端权威管理并持久化。
+2. 语音经 WebRTC 进入自托管 SFU，支持最多 12 个账号的真实双向音频；LiveKit 是首选候选，最终 SDK、音频处理链和部署形态由 SP-03/SP-07/SP-10 验证后锁定。
+3. 虚拟网络由独立 Rust 特权辅助进程创建真实 TUN，并采用经安全与维护性评审的 Rust WireGuard 实现建立端到端密文通信；路径由运营策略决定，支持直连限定、直连优先可回退和强制中继，不再默认全量中继。
+4. 中继只转发同房、同活动代次、有效设备租约之间的密文；直连只允许当前授权 Peer。两种路径都不设置默认路由、不代理普通互联网、不转发物理局域网其他设备。
+5. 退出、踢出、失权、结束活动和删除房间均由服务端产生权威撤销，语音、直连、中继和内容同步分别执行撤销，迟到结果不能恢复旧资格。
+6. 初期部署受单台 2 核 CPU、2 GB 内存、Debian、5 Mbit/s 限制。100 个账号在线、12 人满房语音和游戏中继是不同容量目标，任何一档通过都不能替代其他档。
+
+### 2. 逻辑拓扑
 
 ```text
-客户端 A                                      客户端 B
-Electron/React UI                             Electron/React UI
-  | 窄 IPC                                      | 窄 IPC
-非特权内容/音频 Worker + 本机加密存储           非特权内容/音频 Worker + 本机加密存储
-  |                                            |
-Network Helper                                Network Helper
-  - 当前授权/代次 Gate                         - 当前授权/代次 Gate
-  - Nebula 私有用户态传输网栈  <== UDP 直连 ==>  - Nebula 私有用户态传输网栈
-  - 活动 OS TUN / IP 包封装                    - 活动 OS TUN / IP 包封装
-           | 发现、打洞                               |
-           +----------- Lighthouse ------------------+
-           |        无 TUN / 无 Relay                 |
-           +------ Java 控制面 HTTPS/WSS ------------+
-                         |
-                     PostgreSQL
+桌面客户端（Windows / macOS / Linux）
+├─ Tauri 候选容器 + 现有 HTML/CSS/JS 产品 UI
+│  └─ 经版本化 Command/Event 调用 Rust 核心，不直接持有系统特权
+├─ Rust Client Core
+│  ├─ 会话、活动状态机、连接编排、设备状态、更新与本地安全存储
+│  ├─ Voice Adapter：候选媒体 SDK + AEC/降噪/AGC/VAD
+│  └─ Network Controller：密钥、公钥、策略、直连/中继状态机
+└─ Rust 特权 Network Helper
+   └─ 候选 Rust WireGuard、真实 TUN、/27 路由、直连与 Relay 传输
+
+控制面与数据面（首台 2 核 / 2 GB / Debian / 5 Mbit/s）
+├─ Java 控制面（模块化单体，资源门槛待 P0/P1）
+│  ├─ 认证、好友、群组、房间、活动、运营网络策略
+│  ├─ IP / 租约、撤销、消息、审计
+│  └─ PostgreSQL + Outbox 事件
+├─ 自托管 WebRTC SFU（LiveKit 首选候选）
+│  └─ 真实多人语音媒体，与游戏网络路径分开计量
+└─ Rust Room Relay
+   └─ WireGuard 密文转发，不持有成员私钥
+
+连接关系
+1. 产品 UI -> Rust Client Core：Tauri Command/Event 候选 IPC
+2. Rust Client Core -> Java 控制面：HTTPS / WebSocket
+3. Voice Adapter -> 自托管 SFU：WebRTC
+4. Network Helper -> 当前授权 Peer：WireGuard 直连；或 -> Rust Relay：加密中继会话
+5. Java 控制面 -> SFU、Rust Relay：管理 API / 授权、策略与撤销事件
+6. Java 控制面 -> PostgreSQL：JDBC / 事务
 ```
 
-采用一个设备级 Nebula 传输身份，但不把其全网 IP 网段直接挂到操作系统。Nebula 的 TUN 抽象对接私有用户态网栈（候选 gVisor netstack），仅 Helper 可访问。群内容以专用应用端点和群授权通信；无需入房。游戏另建真实 OS TUN，分配活动内 IP，仅将当前活动 IP 包封装到带作用域/代次的应用数据报后交给 Nebula。音频也走该传输网栈的活动数据报，等待对应隧道就绪。
+Tauri、媒体 SDK、Rust WireGuard 和 Relay 传输均为有明确验证出口的架构候选，不表示已完成三平台适配。若候选未通过，必须保留外部状态/命令、授权代次和安全边界，提交替代 ADR 后重新评审，不能静默回到 Electron、Go 或固定全量中继旧方案。
 
-这是需要验证的客户端集成设计，不是声称官方 Nebula 已提供全部能力。D 阶段首先验证固定版本的 TUN 适配、收发 Gate、用户态 TCP/UDP 及三平台安装；若集成不能实现隔离或撤销，停止该路线并重新评审，不退化为全网 OS TUN 加静态防火墙，也不自动增加服务端中继。
+### 3. 权威状态与一致性
 
-### 3. 地址和数据路径
+- PostgreSQL 是账号、群籍、角色、房间、活动资格、IP 分配、连接租约、运营网络策略和消息的唯一权威数据源；客户端缓存和 WebSocket 事件均不是授权依据。
+- 所有敏感接口在执行时重新校验账号状态、群籍、角色、房间和活动资格，不能仅凭访问令牌中的旧声明授权。
+- 加入、切房、设备转移和恢复使用事务、行锁、唯一约束及幂等键。账号的活动指针全局唯一，房间占用按“不同账号 + 活动中/断线保留”计数，第 12 个不同账号可占额，第 13 个被拒绝。
+- `activities.activity_generation` 标识活动生命周期代次，`activity_members.member_generation` 标识成员资格代次；以下合称“代次”。加入、退出、切房、失权、结束和删除使相应旧代次失效。
+- `network_policy_revisions` 保存运营策略版本；活动授权快照记录 `policy_revision` 和允许路径。策略变化产生新修订并写入 Outbox，客户端不能自行提高权限或选择被禁路径。
+- 权威变更与待投递事件在同一数据库事务内提交；Outbox 投递可重试，消费者按事件 ID 幂等。撤销事件的优先级高于普通状态同步。
+- 客户端连接、恢复、Helper 请求及媒体/直连/中继接入均携带活动 ID、两类代次、设备 ID、租约 ID 和策略修订；任一不匹配即拒绝或丢弃。
 
-- **设备传输地址**：由控制面在部署选定且经冲突检查的独立 RFC1918 地址池分配，绑定设备证书及密钥；用于 Nebula 身份和私有用户态路由，不显示为游戏地址、不加入普通 OS 路由。所有持久设备有唯一地址，证书重签不改变有效设备身份，注销吊销后不得继承其权限。
-- **活动游戏地址**：每个当前活动分配不重叠 `/27`，32 个地址中保留网络/广播及控制地址，足够容纳 16 个不同账号。OS 只安装该活动子网路由，不设默认路由、DNS、NAT 出口或 unsafe route，不桥接物理网卡。地址池冲突则拒绝入网并提示；不静默覆盖已有路由。
-- **恢复**：同账号、同设备、同活动、同代次在 60 秒保留内保持 IP。主动离开、切换或超时后重入，优先检索房间地址历史，只有子网及地址仍可用且隔离检查通过才尝试复用；否则分配新 IP。任何复用均创建新资格、密钥会话和成员代次。
-- **游戏数据报**：`protocol_version, kind=game, activity_id, activity_generation, sender/target_member_generation, device_id, lease_id, sequence, payload_length, inner_IP_packet`。身份从 Nebula 已认证对端取得，不能信任头中自报身份；目标及源 IP 必须属于当前授权映射。旧代次即使内层 IP 相同也丢弃。分片有长度、并发、重组时间和内存上限；初始内层 MTU 候选 1200，必须实测 PMTU、IPv4/TCP/UDP，不承诺广播发现或 IPv6 游戏能力。
-- **群内容**：专用用户态 TCP/TLS 端点，只提供版本化应用协议，禁止 CONNECT、任意 URL/端口和文件系统路径。群授权不能构造游戏数据报，不能把内容端点当任意 TCP 代理。TLS 身份与 Nebula 设备身份匹配，应用请求另验当前群籍/消息及删除状态。传输层 Gate 验当前设备/通道许可，应用层在每个 manifest/chunk 和读取操作验具体 scope、消息及删除版本；不能从加密 TCP 包外层猜测消息授权，也不能将一次 TLS 握手视为永久群权限。
-- **接收路径**：Nebula 解密认证 → 作用域 Gate → 数据类型/长度/重放检查 → 内容网栈或活动 TUN。发送路径也检查当前资格；已建立 TCP/UDP 流和连接跟踪缓存不得绕过 Gate。Nebula 建隧道/发现使用的必要握手仅可到认证节点及固定 Lighthouse，不据此允许业务包通过。普通 OS 无法直接访问其他设备传输 IP。
+### 4. 关键运行链路
 
-### 4. 权威数据与并发
+**加入/切房/设备转移**：先锁定账号活动指针并校验旧活动，再校验目标房间、当前群籍、密码或管理员豁免、开放状态、12 人容量及目标地址；目标可预留后在事务内原子替换活动资格并增加代次。目标校验或预留失败且旧活动仍有效时不改变旧活动；旧活动已结束则保持未入房。提交后才签发两种独立凭据，任何迟到回调均须通过代次校验。
 
-PostgreSQL 是身份、群籍、房间、活动资格、地址、授权版本、消息元数据和 tombstone 的权威来源。客户端 SQLite/文件库保存正文和附件，不能改变当前权限。REST 事务结果为命令结果，WSS 只通知事件；Outbox 与业务变更同事务，事件按 ID 幂等。客户端遇游标缺口或服务器恢复纪元变化，进入同步屏障，不猜测缺失状态。
+**断线恢复**：租约断线后保留 60 秒名额、设备归属和原 IP。保留期内仅同账号、同设备、同活动及有效代次可恢复；超时由租约清理任务释放。主动退出、切房、失权、结束或删除立即取消恢复，不等待 60 秒。
 
-统一加入入口按账号锁 → 群/房间 ID 排序锁 → 活动/地址锁处理；群级批量操作先收集账号、按序加锁再复查，集合变化/锁超时有限重试。事务内校验当前账号、群籍、目标暂停、密码/管理员豁免、16 人占额、设备归属和地址。目标预检失败保留仍有效旧活动。提交切换后进入 `activation_pending`，先撤销旧资格并完成授权到期屏障，再激活新资格；此后 NAT 连接失败不复活旧活动。
+**重新加入与 IP**：重入不承诺原 IP。系统先查该账号在该房间的历史地址；只有地址在当前活动可用、无冲突且通过房间隔离和当前安全校验时才优先恢复，否则分配新地址。任何地址复用都创建新成员代次、设备租约、语音凭据和 WireGuard 会话，不继承旧密钥、旧连接或旧访问权限。
 
-`account_activity` 每账号唯一，active、grace 和 activation_pending 均占名额；锁加唯一约束兜底。同一房间可有一个开放活动，持久房间与活动分表。暂停只阻止新加入、含管理员；允许同活动有效恢复。结束活动清退并保持房间配置/暂停状态，删除房间是终态。房主失群籍/账号失效才由群主接管，普通离线/退房不接管。
-
-### 5. 短期授权、失联及切换屏障
-
-长期 Nebula 证书只证明设备网络身份。每个受支持 Helper 还需要控制面签名的短期 capability，绑定账号、设备公钥、作用域、活动/成员代次、允许操作、授权版本、删除游标及请求 nonce。候选有效期 **3 秒**、每 **1 秒**批量刷新；每设备一个批次覆盖正在使用的群和活动，签发前串行读取当前权威版本。此设计控制面开销需容量验证，不能在压力下悄悄延长 TTL。
-
-1. 启动/重连先同步当前资格、活动及 tombstone 到快照游标，持久提交后才能申请/安装相应授权。副本目录上线、内容服务和本地阅读也受同一屏障约束；旧快照不能开门。
-2. 刷新响应绑定本次请求 nonce、快照版本、服务器发行/到期时刻。Helper 同时采用请求发出时的单调时钟计算保守期限；响应耗时计入 3 秒，不因迟到响应重置 3 秒。墙钟倒退不延长授权；进程重启、休眠/唤醒、时钟不可信时先关闭 Gate、重同步。跨重启不恢复可用租约。
-3. 控制面撤销事务停止签发旧版本并发 WSS 高优先级事件；有事件即关 Gate、停音频/TUN/内容请求、取消在途读取及播放授权。无事件时依旧租约到期关闭。每次包/块及本地授权读取检查期限，另有候选不超过 1 秒的清理看门狗。3 秒授权 + 调度/时钟容差必须在 5 秒撤销目标内实测；不能凭 TTL 数学推导宣称通过。
-4. 切房/设备转移在目标预留及旧资格撤销事务提交后，记录旧版本**最晚已签发截止时刻**。新活动凭据必须等该时刻及候选 1 秒保护窗经过，且新资格仍有效后才能签发；不只相信旧设备自报 ACK。签发与撤销按相同版本锁串行，防止屏障后又签出旧租约。签发先在事务内持久记录拟签期限上界，提交成功后才返回该版本的签名授权；事务回滚/返回前崩溃时不得泄出可用授权，重试不扩展旧版本截止。等待期间新旧都不可激活，不创建两个可用活动。
-5. 账号活动心跳每 5 秒，15 秒未收到进入 grace；保留截止为最后有效心跳 + 60 秒，短期数据面授权到期远早于占额释放。未激活或 grace 资格不能发新活动数据；恢复事务重新检查代次、设备、群籍和期限，再过屏障连接。
-6. 控制面故障超过租约期限，受控通信/读取停止，已保存字节仍留本机；控制面恢复后重新授权才可读。已有授权期间本机内容仍可读，缺失内容另依赖可达副本。服务器重启使用持久化版本/签发截止，并在恢复纪元改变时触发快照重同步。
-
-以上面向产品受控收发路径；无法远程抹除已导出内容或阻止两个修改客户端在产品外交换已持有数据。接收端独立 Gate 可抵御失权旧发送端，不能宣称恶意双方均被控制面绝对阻断。
+**网络路径建立**：控制面签发绑定当前策略修订的短时网络票据。直连限定模式只下发直连候选与 Peer，失败后返回 `DIRECT_UNAVAILABLE`；直连优先模式在直连超时或失败后，只有票据明确允许时才可回退中继；强制中继模式不发起直连。UI 只显示连接、受限、失败和可重试状态，不提供路径选择。
 
 ## 技术选型及依据
 
-| 层次 | 当前选择/候选 | 依据及必须验证的限制 |
+| 层次 | 架构决定或候选 | 依据与限制 |
 | --- | --- | --- |
-| 桌面 UI | Electron + React + TypeScript | 延续已批准 UI 和跨平台窗口、设备权限能力；应用壳持有活动状态，路由不重建网络；不复制原型全局函数包装 |
-| 控制面 | Java 21 LTS、Spring Boot 模块化单体、Maven Wrapper | 用户指定 Java；显式事务和模块边界处理复杂权限；框架版本在环境任务固定，不以当前 Java 8 构建 |
-| 数据库 | PostgreSQL + Spring Data JDBC/显式 SQL | 单活动、容量、地址、预算和 Outbox 需要事务/约束；不引入 Redis、消息集群或业务微服务 |
-| 隧道/发现 | Nebula **v1.12.0** 固定版本评估基线，Go Helper 集成 | 官方发布及配置已静态核验；该版刚发布，需固定源码、二进制哈希和许可证后验证，不等于生产认可或最新版本自动升级 |
-| 客户端网栈 | Nebula TUN 抽象 + 私有 gVisor netstack 候选，活动 OS TUN | 避免群同步开放全网 OS 路由，带活动代次的封装解决旧 IP 包复活；非稳定集成 API 和依赖兼容是 SP-01 阻断风险 |
-| 内容传输 | 用户态 TCP + TLS 1.3 双端身份认证 + 帧式分块协议 | 只经 Nebula 虚拟 IP，可靠传输与背压由 TCP；应用请求按范围鉴权。局部丢包队头阻塞和吞吐需实测，不引入自研 QUIC 栈 |
-| 语音 | 原生非特权 Audio Worker：PortAudio + libopus，RTP/Opus 数据报 | 20 ms Opus 帧、多对多发送、接收端抖动缓冲/混音；Nebula 提供传输认证加密，不自研密码算法；协议/拥塞/音频设备和打包风险须 PoC |
-| 本机存储 | SQLite WAL + 内容文件库；OS 密钥库保护设备/本地数据密钥 | 消息事务/索引与大文件分离，原子重命名、fsync、崩溃恢复；本地加密形式及原生绑定在 D 固定版本并验证，不将 Object URL 视为存储 |
-| 安装/更新 | electron-builder/updater；Helper 与 Worker 同版签名制品 | Windows NSIS、macOS DMG/ZIP、Linux AppImage 候选；更新兼容性、权限、证书/公证须实机验证 |
-| 文件探测 | 低权限隔离 Worker；图片解码/重编码，固定 FFmpeg/ffprobe 构建候选 | 接收端独立核验；路径白名单、禁网络、资源/时间上限；视频 H.264/AAC 许可与二进制分发条件需核对，不承诺通用转码 |
+| 客户端核心 | Rust，独立领域状态机和连接编排 | 符合团队能力和 REQ-028；页面不直接处理授权、密钥、路由或系统命令。核心与 UI、媒体、Helper 之间使用版本化契约。 |
+| 桌面壳与 UI | Tauri 候选容器，增量复用现有 HTML/CSS/JS 和视觉组件 | 避免为语言偏好重做已批准 UI；Tauri 的系统 WebView 差异、真实音频、三平台签名更新尚未验证。Electron + React 仅作对照候选，不是默认回退。 |
+| 语音 | 自托管 WebRTC SFU，LiveKit 首选候选；媒体访问经 Voice Adapter 隔离 | 复用成熟 SFU 的发布/订阅、房间和重连能力，不自研 SFU。具体 Rust/JS/原生 SDK 组合须验证设备、AEC/降噪、多人叠音、CPU、弱网和许可证；SFU 可接触媒体明文，不宣称语音端到端加密。 |
+| 客户端音频处理 | 成熟 WebRTC Audio Processing 或等价库的 Rust 绑定候选 | 客户端优先完成 AEC、降噪、AGC/限幅和 VAD/静音不传输，不重写成熟算法；算法、默认值和资源开销由真实设备 A/B 测试决定。 |
+| 控制面 | Java 21+、Spring Boot 模块化单体、Spring MVC、Maven Wrapper，暂保留为工作基线 | 原服务端决定不因客户端 Rust 评估自动变更；显式事务适合复杂权限与状态机。2 GB 下单机资源是硬性入口风险，P0/P1 不达标须提交独立 ADR，不得靠 swap 或未授权扩容掩盖。 |
+| 持久化 | PostgreSQL + MyBatis + Spring 事务 + 显式 SQL | MyBatis Mapper/XML 直接表达行锁、条件更新、代次校验和 Outbox 同事务写入；唯一约束、部分索引和外键由 PostgreSQL 兜底。关键并发路径不依赖自动生成 SQL 或隐式 ORM 行为。 |
+| 数据库迁移 | Flyway + 单向版本化 SQL | 表结构、约束和索引通过可审计迁移管理；MyBatis 不负责 DDL 版本。发布前备份并验证迁移与回滚预案，不在已执行生产迁移上原地改历史脚本。 |
+| 客户端 API | REST + WebSocket | REST 承担命令和查询；WebSocket 承担状态、消息、策略和撤销通知。命令结果以 REST/数据库为准，WebSocket 重连后按游标补同步。 |
+| 虚拟网络 | Rust Network Helper + 候选 Rust WireGuard 实现 + 真实 TUN | Rust 优先匹配团队能力并隔离管理员/root 权限。候选库必须审查维护状态、安全、许可证及自定义传输能力；三平台 TUN、路由、权限、直连和崩溃清理仍需 PoC，不默认引入 Go。 |
+| 游戏转发 | 独立 Rust Relay，按运营策略启用 | 与控制面进程和资源隔离，统一执行房间隔离和撤销；不持有成员私钥、不创建明文转发网卡。吞吐、内存和撤销时延必须实测。 |
+| 直连与中继传输 | 版本化 Rust transport trait；UDP WireGuard 直连，QUIC Datagram 中继首选候选 | 同一授权/代次语义覆盖两种路径。QUIC 库与 WireGuard 传输组合未验证；不可用时评估其他 UDP 封装或 TLS 流及队头阻塞，不预先宣称成功。 |
+| 安装与更新 | Tauri bundler/updater 候选；平台签名安装包 | 候选 Windows NSIS/MSI、macOS DMG/ZIP、Linux AppImage/deb，最终目标由 SP-06 确定。macOS 更新依赖签名；Helper 随签名包安装、升级、回滚和卸载，三平台均须实测。 |
+| 服务间投递 | PostgreSQL Transactional Outbox + 幂等消费者 | 避免“数据库已撤销但媒体/中继未收到事件”的双写不一致；首版由控制面内后台任务投递，无需独立消息集群。 |
+| 设计资产 | 保留已批准原型、UI、组件与视觉风格 | 仅通过适配层替换模拟数据和定时器；不复制 `domain.js` 的可信授权、故障注入或模拟设备逻辑到正式产品。 |
 
-### 本轮核验的官方依据
+### 客户端候选对比与定案门槛
 
-2026-10-30 UTC 通过 Python HTTPS 成功读取 GitHub 官方仓库，发布 API 显示 v1.12.0 于 2026-10-29T15:18:31Z 发布：
+| 方案 | 团队维护与资产复用 | 主要风险 | 当前结论 |
+| --- | --- | --- | --- |
+| Tauri + Rust 核心 + 现有 UI | Rust 主逻辑统一，UI 改动最小，候选包体和内存较低 | 系统 WebView 差异；音频设备/DSP、Helper 签名安装和更新组合未验证 | 首选垂直切片；SP-03/06/10 全部满足后才锁定 |
+| Electron + Rust 核心 + 现有 UI | Chromium 媒体路径较成熟，仍可复用 UI | 包体/内存和双运行时 IPC；仍须接入 Rust 网络与真实 DSP | 对照方案，仅在 Tauri 关键项失败且收益有证据时提交替代 ADR |
+| 原生 Rust UI | 本地逻辑一致 | 重做已批准 UI、可访问性和三平台工作量最大 | 首版不采用 |
+| Go Helper | wireguard-go 生态可作参考 | 团队相对不熟悉，增加第二语言和发布链 | 非默认；确有不可替代必要性时按 AC-043 单独说明成本并评审 |
 
-- 发布：<https://github.com/slackhq/nebula/releases/tag/v1.12.0>。
-- 固定版配置：<https://github.com/slackhq/nebula/blob/v1.12.0/examples/config.yml>。包含 `relay.am_relay: false`，但 `relay.use_relays` 默认 true；部署必须显式 false。`tun.disabled` 支持 Lighthouse 不建本地 TUN。配置未证明本产品的动态资格、短期撤销或私有网栈集成可用。
-- 固定版源码：<https://github.com/slackhq/nebula/blob/v1.12.0/interface.go>，可见内部 `inside overlay.Device` 及 `NewInterface` 对 Inside 的检查；这只佐证内部抽象存在，不证明稳定的外部嵌入 API。私有网栈/授权 Gate 可能需要维护固定版集成补丁，纳入 SP-01 的升级维护成本和安全回归。
-- 固定版构建：<https://github.com/slackhq/nebula/blob/v1.12.0/go.mod>，声明 Go 1.27.3；当前 PATH 没有 Go，不声称已编译。
-- 许可证：<https://github.com/slackhq/nebula/blob/v1.12.0/LICENSE>，MIT；其依赖、驱动、音频/媒体编解码及分发许可证还需制品清单核对。
-- Electron 安全：<https://www.electronjs.org/docs/latest/tutorial/security>；PortAudio：<https://www.portaudio.com/>；Opus：<https://opus-codec.org/>；这些为后续核验入口，本轮未做对应运行验证。
+最小定案证据为：三平台构建与签名安装/更新、真实音频采集播放与处理、真实 TUN/TCP/UDP、直连和中继、撤销清理、包体/CPU/RSS、依赖许可证及团队可维护性记录。任何一项未执行都保持“候选/未验证”。
 
-补充查询 tag 对象遇到 TLS EOF，尝试的 `overlay/overlay.go` 路径返回 404，未据此推断能力；实际成功核验的源码为上述 `interface.go`。本轮没有下载/执行第三方二进制，也没有据最新发布信息推断跨平台或性能能力。
+### 官方技术依据
+
+- Rust：<https://doc.rust-lang.org/book/>
+- Tauri 安全与更新：<https://v2.tauri.app/security/>、<https://v2.tauri.app/plugin/updater/>
+- Java 21 虚拟线程：<https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html>
+- Spring Boot：<https://docs.spring.io/spring-boot/>
+- MyBatis：<https://mybatis.org/mybatis-3/>、<https://mybatis.org/spring-boot-starter/mybatis-spring-boot-autoconfigure/>
+- Flyway：<https://documentation.red-gate.com/fd/>
+- LiveKit 自托管 WebRTC SFU：<https://docs.livekit.io/intro/about/>
+- LiveKit 客户端 SDK：<https://docs.livekit.io/reference/client-sdk-js/>
+- 自托管令牌撤销限制：<https://docs.livekit.io/frontends/reference/tokens-grants/>
+- LiveKit RemoveParticipant 等管理 API：<https://docs.livekit.io/intro/basics/rooms-participants-tracks/participants/>
+- WebRTC 音频处理：<https://webrtc.googlesource.com/src/+/refs/heads/main/modules/audio_processing/>
+- BoringTun 候选参考：<https://github.com/cloudflare/boringtun>
+- PostgreSQL 行锁：<https://www.postgresql.org/docs/current/explicit-locking.html>
+
+依赖具体版本在开发规划阶段根据 Cargo/npm/Maven 锁文件和兼容性验证固定；候选库还需记录维护状态、安全公告与许可证，本文不虚构已验证版本。
 
 ## 模块划分与职责
 
-| 模块 | 单一职责 | 输入/输出及限制 |
-| --- | --- | --- |
-| Identity/Session | 邮箱验证、登录、找回、会话和设备绑定 | 未验证只可账号操作；多端登录与单活动分离 |
-| Social | 好友申请/接受/拒绝/删除、最小在线状态 | 好友不授予群或房间权限，无私聊 |
-| Group/Ownership | 群资料、角色、邀请、转让及恢复申请 | 邀请默认不过期但随撤销/邀请人失群籍失效；已接受成员独立；人工恢复不自动改归属 |
-| Room/Activity | 持久房间、临时活动、16 人、暂停、密码、单设备、IP | 所有加入入口共用事务，不能以房主身份旁路读取活动消息 |
-| Authorization/Revocation | 当前资格、签名短租约、撤销/激活屏障 | 不持有业务正文；签发、版本与截止在事务中一致 |
-| Message Metadata/Budget | 消息 ID/序号、摘要引用、删除、逻辑预留与最小收据 | 不接收正文、附言、文件名或附件；元数据登记不等于对端送达 |
-| Event/Replica Directory | Outbox、WSS、快照、短期副本可达提示 | 目录只记录候选持有端和不透明对象 ID，不保证副本在线/存在 |
-| Audit/Diagnostics | 只读管理记录、脱敏错误、支持矩阵 | 不记录秘密及正文；不建立独立监控业务服务 |
-| App Shell/Adapters | UI、稳定错误码、焦点/表单与各通道状态 | UI 只显示实测事件；复用令牌/行为，不复制模拟定时器 |
-| Network Helper | 当前授权 Gate、Nebula、作用域封装、活动 TUN/路由 | 特权部分只做设备/路由，解析/解码不放在管理员进程；本地 IPC 不能任意执行命令 |
-| Content Sync/Store | 本机落盘、缺口补读、去重/收据、临时清理 | 非特权；只有当前授权可向 UI/对端供给内容 |
-| Audio Worker | 采集、Opus、RTP、抖动缓冲、混音、设备控制 | 非特权；隧道/租约无效即停，设备故障不撤销可用隧道 |
-| Media Probe Worker | 收发端独立媒体检查、受限预览 | 不执行文件内容，不获得任意磁盘/网络权限 |
+### 1. 桌面端
 
-DRY：加入/资格、消息信封、收据、tombstone、预算、错误码在群/房间共享实现，仅策略不同。SOLID：UI 依赖 Network/Audio/Store 抽象；协议适配与特权操作分开。KISS/YAGNI：单控制面、单数据库、两类业务服务；不做自动转码、客户端中继选主或通用插件平台。
+| 模块 | 职责 | 明确不负责 |
+| --- | --- | --- |
+| Tauri Shell（候选） | 创建受限 WebView 窗口、最小能力白名单、签名校验与更新、调用 Rust 核心 | 不直接执行任意系统命令，不直接创建 TUN，不把管理员/root 权限授予 UI |
+| 现有产品 UI + UI Adapter | 账号、好友、群组、房间、群文字消息、成员/IP、权限和真实状态展示；把已批准 Command/Event 映射到界面 | 不自行判定授权，不伪造在线/连接/兼容状态，不复用原型模拟域作为生产授权 |
+| Rust Client Core | 会话、活动代次、命令幂等、连接编排、统一错误、状态快照、操作系统安全存储和更新协调 | 不在 UI 线程执行阻塞网络或特权操作，不以本地状态覆盖服务端权威结果 |
+| Voice Controller + Voice Adapter | 获取语音凭据、候选 SFU 连接、独立重试、参与者/说话状态、静音与接收开关 | 不控制虚拟网络生命周期，不将本地静音或 SDK 已连接当作服务端授权和音质通过 |
+| Audio Device & Processing | 输入输出选择、设备测试、总音量、成员音量、AEC/降噪/AGC/VAD、权限拒绝/拔出/切换提示 | 不修改其他成员的本地音量，不在设备或处理失败时停止虚拟网络，不用 SDK 名称替代音质结果 |
+| Network Controller | 获取网络凭据、生成/保护本机密钥、应用运营策略、编排直连/回退/中继、调用 Helper、独立重试 | 不依赖语音成功，不提供普通用户路径开关，不设置默认路由，不转发物理 LAN |
+| Local Helper Client | 使用固定协议调用 Helper，校验响应、代次、策略修订与事件，处理超时/断连和取消 | 不提供任意路由、任意命令或任意文件写接口，不发送秘密到普通日志 |
+| Rust Network Helper | 创建和销毁 TUN、配置仅活动网段路由、运行候选 Rust WireGuard、建立直连或 Relay 会话、应用成员 Peer、上报真实错误 | 不决定群/房间权限或运营策略，不持久保存服务端刷新令牌，不接受未白名单请求 |
+
+### 2. Java 控制面
+
+控制面按业务模块组织 Spring Boot 单体，模块间通过明确 Java 接口和领域事件协作，禁止跨模块直接修改他人数据。事务边界放在应用服务层，并发关键路径使用 MyBatis 执行显式 SQL；REST、WebSocket、Outbox、SFU 管理和 Relay 管理客户端均通过接口隔离，以便候选替换不改变业务语义。
+
+持久化按以下边界实现：
+
+- 每个业务模块只调用自己的 Mapper 接口；加入、切房、设备转移、撤销等应用服务使用 Spring `@Transactional` 管理同一数据库事务，业务变更与 Outbox 写入不得跨事务。
+- 关键并发 SQL 放在可审查的 MyBatis XML 中，显式使用 `SELECT ... FOR UPDATE`、统一锁顺序、带代次条件的 `UPDATE`、唯一冲突转换和幂等响应查询；不使用自动生成 SQL 代替这些路径。
+- PostgreSQL 唯一约束、部分索引、外键和检查约束是最终一致性兜底。12 人容量计数与成员插入、全局单活动指针替换、活跃 IP 分配必须在相同锁/事务范围内执行。
+- Mapper 参数统一使用 `#{}` 绑定；`${}` 只允许服务端白名单中的列名或排序方向，禁止拼接用户输入。时间映射为 UTC，ID 保持字符串契约，数据库错误转换为稳定领域错误且不泄露 SQL/秘密。
+- Flyway 管理单向版本化 DDL、约束和索引；应用启动校验迁移版本。迁移回滚通过备份恢复或前向补偿预案处理，不假定 MyBatis 能回滚 DDL。
+- 持久化测试使用真实 PostgreSQL 及相同迁移脚本，覆盖第 13 人拒绝、并发切房/设备争抢、IP 冲突、重复幂等键、事务回滚和 Outbox 原子性；Mock Mapper 结果不能替代这些证据。
+
+虚拟线程只用于阻塞式 I/O 的并发简化，不改变数据库锁、代次或授权语义；连接池、事务和 ThreadLocal 等兼容性必须经验证，不能因使用虚拟线程而取消背压、超时或资源上限。P0/P1 须分别测量控制面和整机资源，JVM 参数不得挤占 SFU、PostgreSQL、Relay 和操作系统余量。
+
+| 模块 | 职责与关键规则 |
+| --- | --- |
+| Identity & Session | 邮箱注册验证、登录/退出、找回密码、会话轮换、账号失效；未验证账号仅开放必要账号接口 |
+| Social | 账号搜索、好友申请/接受/拒绝/删除、在线状态；好友关系不授予群或房间权限，不实现私聊 |
+| Group & Invitation | 群资料、成员、邀请、角色和解散；邀请接受幂等，邀请人失群籍时使待接受邀请失效，已接受成员不随之退出 |
+| Ownership | 群主转让接受流程和人工恢复申请；完成前原群主不变，证据不足或争议不自动继任 |
+| Room Administration | 持久房间 CRUD、密码、开放状态、房主、活动开始/结束；房主失群籍或账号失效时由群主接管 |
+| Activity Coordinator | 加入、切房、设备转移、退出、60 秒保留、12 人容量、代次和唯一活动资格；采用统一锁顺序避免并发死锁与双活动 |
+| Address & Lease | `/27` 地址分配、历史 IP、冲突检测、活跃地址唯一、租约心跳/过期及重入优先恢复 |
+| Voice Grant | 校验当前资格后签发房间限定、短 TTL 的 SFU token；失权后不再续签 |
+| Network Grant | 接收本机 WireGuard 公钥，签发一次性短时网络接入票据及活动成员/地址/候选路径描述；不接收或保存成员私钥 |
+| Network Policy | 仅受控运营配置接口维护全局 `DIRECT_ONLY / DIRECT_WITH_RELAY_FALLBACK / RELAY_ONLY` 及修订；普通用户、群主和群管理员无写权限 |
+| Path Coordination | 为当前成员分发授权 Peer、直连候选、Relay 票据和策略修订；处理路径迁移、回退与旧路径撤销，不依赖客户端自愿遵守 |
+| Revocation Coordinator | 消费权威撤销事件，关闭同步、移除 SFU 参与者、更新 Relay 拒绝集合、通知授权 Peer 撤销、取消租约；接口层同步执行当前资格校验 |
+| Message | 群文字历史消息、作者删除、管理员代删及 tombstone；群解散后产品内不可读 |
+| Audit | 只追加管理记录，记录操作者、目标、时间、操作、结果和关联 ID；不记录秘密，运营策略变更另留受控审计 |
+| Event & Sync | Outbox、WebSocket 事件、断线游标和全量校正；旧代次和旧策略修订事件对客户端无效 |
+| Capacity & Admission | 分离在线、在房、发言和中继指标；依据实测阈值实施背压/受控拒绝并返回通道级错误，不自动降低 12 人房间需求 |
+| Compatibility & Diagnostics | 返回候选/已验证支持矩阵及脱敏诊断标识；未执行项目保持未验证 |
+
+### 3. SFU、直连与 Rust Relay
+
+Relay 是独立 Rust 数据面进程，管理连接、数据报、背压和资源上限，不属于业务微服务拆分。控制面只通过版本化 Relay 管理协议下发授权、策略和撤销；Relay 不直接修改业务表。协议包含版本、活动/成员代次、租约、策略修订、目标映射和过期时间。
+
+- SFU 房间名使用不可猜测的活动映射，不使用群名称；参与者身份绑定账号、设备和成员代次。控制面仅通过服务端管理 API 创建/结束房间和移除参与者。
+- 自托管 SFU 的参与者移除不等同于旧 token 全面失效，因此撤销必须组合“移除参与者 + 短 TTL + 失权后绝不重新签发 + 活动/成员代次校验”。刷新凭据接口每次重新查权威资格。
+- 直连授权和控制信令经控制面签发；Peer 只接受当前公钥、代次和租约对应的握手。直连降低服务器游戏流量但不消除撤销风险，失权时由服务端通知仍在线的授权 Peer 删除旧 Peer，并测量对继续发送旧端点的实际强制边界。
+- Relay 会话由控制面签发的一次性票据激活，绑定 `activity_id + activity_generation + member_generation + device_id + lease_id + policy_revision + 本端虚拟 IP`。
+- 外层转发头包含目标虚拟 IP/目标成员映射；Relay 验证来源租约、目标租约、活动、代次和策略后按目标转发。目标映射必须由服务端下发并与当前成员匹配，客户端不能任意指定跨活动目标。
+- WireGuard 私钥仅在本机生成和保存，成员之间进行端到端加密；Relay 看到外层路由元数据和 WireGuard 密文，不持有解密密钥，也不读取内层明文来选择目标。
+- Relay 不配置系统 IP forwarding，不桥接物理网卡，不提供默认路由或互联网出口。撤销时同时拒绝来源和目标相关转发并关闭活动会话；直连和中继都随后移除 Peer，最后一个有效路径消失后清理 TUN。
+- 游戏中继策略不影响语音 SFU 路径。禁用游戏中继不表示语音直连，容量报表分别记录两类流量。
 
 ## 核心数据模型
 
-### 控制面 PostgreSQL（仅元数据）
+所有表使用不可猜测 ID、UTC 时间和必要的外键/检查约束；下列为核心字段而非最终 DDL。软删除状态不等于物理删除。所有唯一约束、索引和锁在数据库迁移中实现并测试。
 
-| 表/聚合 | 主要字段与约束 |
+| 表/对象 | 核心字段与约束 |
 | --- | --- |
-| users/auth_sessions/devices | 邮箱规范化唯一、验证/失效状态、密码 hash、设备公钥/状态、刷新凭据 hash；原始秘密不入日志 |
-| friend_requests/friendships | 双方账号规范化唯一、状态/版本；接受幂等 |
-| groups/group_members/invitations | 群名称/简介、头像不透明引用、角色/成员版本；邀请人及有效状态，接受幂等；群主唯一 |
-| owner_transfers/recovery_requests | 目标、状态、接受版本及脱敏证据引用；人工恢复无自动继任 |
-| rooms/activities | 群 ID、配置、密码 hash、房主、开放/删除；活动 ID/generation/status，结束不删房 |
-| account_activity/activity_members | 每账号唯一活动指针、设备、member_generation、active/grace/pending、心跳/保留期限；同活动账号唯一 |
-| transport_addresses/game_addresses/ip_history | 设备传输 IP、活动子网/IP、当前使用及历史候选；唯一约束和释放状态 |
-| authorization_versions/lease_issuance | 作用域版本、设备绑定、签发最晚截止、恢复纪元；屏障读取持久化上界 |
-| scope_counters/message_metadata | scope、不可猜测 message_id、单调 seq、作者/设备/代次、类型/声明大小、不透明 object_id、随机化 commitment、提交状态/删除版本；`(author_device,scope,client_message_id)` 唯一 |
-| attachment_reservations/logical_refs | 群、大小、状态、15 分钟期限、幂等键；有效预留+未删引用 ≤10 GiB；头像不计预算 |
-| replica_hints/receipts | scope/object_id/设备、短期在线提示；接收端签名 ACK 的最小状态，不能作为服务器验真落盘的保证 |
-| outbox/delivery_offsets/audit_logs | 同事务事件、按连接/消费者游标；管理记录操作者/目标/时间/动作/结果，只追加，产品 API 无写改删接口 |
+| `users` | `id, email_normalized UNIQUE, status(unverified/active/disabled), created_at`；邮箱规范化规则固定，账号失效是授权终止状态 |
+| `credentials` | `user_id, password_hash, email_verified_at, verification/reset_secret_hash, expires_at, attempts`；只存密码和验证码派生哈希，不存明文秘密 |
+| `auth_sessions` | `id, user_id, device_id, refresh_token_hash, expires_at, revoked_at, generation`；刷新令牌轮换并检测重放，登出/失权按范围撤销 |
+| `devices` | `id, user_id, platform, arch, public_metadata, created_at, last_seen_at`；设备标识不等于房间活动授权 |
+| `friendships` / `friend_requests` | 好友对使用规范化账号顺序唯一；申请具有 pending/accepted/rejected/cancelled 状态和幂等约束 |
+| `groups` | `id, name, avatar, description, owner_user_id, status(active/dissolved), dissolved_at`；解散后所有产品查询拒绝，不声称立即物理删除 |
+| `group_members` | `group_id, user_id, role(owner/admin/member), joined_at, left_at, status`；当前有效成员唯一，重入默认普通成员 |
+| `invitations` | `id, group_id, inviter_id, invitee_id/code_hash, status, accepted_at, revoked_at`；默认不过期，接受时复查邀请人及群状态 |
+| `owner_transfers` | `id, group_id, from_user, to_user, status, created_at, completed_at`；同群最多一个有效转让，目标须为当前成员 |
+| `owner_recovery_requests` | `id, group_id, requester, evidence_ref, status, reviewer, decision_reason`；仅人工有证据处理，争议时保持归属 |
+| `rooms` | `id, group_id, name, description, game_name, password_hash, owner_user_id, open_state, lifecycle, activity_id`；仅属一群，删除为终态 |
+| `activities` | `id, room_id, activity_generation, state(active/ending/ended), started_at, ended_at`；每房最多一个当前活动，结束不删除房间 |
+| `activity_members` | `activity_id, user_id, device_id, member_generation, state(active/grace/revoked/left), joined_at, grace_expires_at`；当前活动中账号唯一，active/grace 均占 12 人名额 |
+| `account_activity` | `user_id UNIQUE, activity_id, device_id, member_generation, operation_id`；全局单活动指针，切换只能在事务内替换 |
+| `connection_leases` | `id, activity_id, user_id, device_id, generations, policy_revision, voice_state, network_state, expires_at, revoked_at`；两类连接状态分开记录，撤销立即失效 |
+| `network_policy_revisions` | `revision UNIQUE, mode(direct_only/direct_with_relay_fallback/relay_only), existing_connection_action, effective_at, actor_ref, created_at`；全局首版单 active 修订，写操作仅受控运营通道 |
+| `activity_network_grants` | `id, activity_id, member_generations, policy_revision, allowed_paths, expires_at, revoked_at`；授权快照不允许客户端扩大路径 |
+| `network_peer_sessions` | `id, grant_id, peer_device_id, public_key_ref, path(direct/relay), state, established_at, closed_at`；只存公钥和路径状态，不存私钥，撤销与代次联动 |
+| `ip_allocations` | `activity_id, user_id, ipv4, allocated_at, released_at`；`(activity_id, ipv4)` 活跃唯一，用户当前地址唯一 |
+| `ip_history` | `room_id, user_id, last_ipv4, last_activity_id, updated_at`；仅作为重入偏好，不构成地址或权限保留 |
+| `messages` | `id, group_id, author_id, body, created_at, deleted_at, deleted_by, delete_kind`；群文字消息，删除为 tombstone，列表展示删除提示 |
+| `audit_logs` | `id, group_id, actor_id, target_type/id, action, result, occurred_at, correlation_id`；只追加，产品无更新/删除/清空接口，秘密字段禁止写入 |
+| `outbox_events` | `event_id UNIQUE, aggregate_id, type, payload_minimal, generation, occurred_at, delivered_at, attempts`；与业务事务同提交，消费者按 event_id 幂等 |
+| `idempotency_keys` | `actor/device, operation, key, request_hash, response_ref, expires_at` 唯一；同键不同请求体返回冲突 |
 
-正文完整性 commitment 使用客户端随机 nonce 与规范化信封计算 hash，nonce 仅随内容点对点传输，避免服务器直接对短文字做简单字典枚举。随机 ID/commitment 不等于完全消除元数据关联：账号、群、大小、时间及对端信息仍可见。对端目录返回受授权设备端点，控制面不为业务内容建立反向代理；注册邮箱与群名称/简介属于明确控制资料，不把聊天正文伪装成这些字段上传。控制面严格 DTO 白名单，不提供通用“opaque payload”字段或附件上传接口。
+### 地址与容量规则
 
-### 客户端 SQLite/文件库
+1. 每个活动建议使用独立 IPv4 `/27`，可覆盖 12 名成员及中继/保留地址；具体可用地址数、保留地址、MTU 和冲突处理由 SP-01/SP-02 验证后锁定。
+2. 每个客户端只配置自身虚拟 IP 和该活动 `/27` 路由，不修改系统默认网关、DNS 或物理 LAN 路由。
+3. 活跃分配由数据库唯一约束兜底；直连 Peer 与 Relay 都检查来源/目标、当前分配、代次和策略，防止伪造或跨房通信。
+4. 同活动有效恢复直接保持原分配；新加入/重入先锁地址空间，尝试历史地址，冲突则选择空闲地址。历史 IP 不跨房间授予连通性或身份。
+5. 第 12 个不同账号可占额，第 13 个被拒绝；并发加入必须在同一事务锁范围内完成计数与插入。
+6. 12 人是单房账号配额，不是服务器容量结论。服务器另行记录在线账号、在房账号、实际发言者、直连 Peer、中继会话和各方向字节数。
 
-消息表以账号+scope+message_id 唯一，保存 seq、作者、当前代次、正文或文件引用、commitment/nonce、收发状态；独立保存 tombstone 水位、资格快照、ACK、接收进度及本地清理时钟。各账号分库存储，退出关闭会话，不能切账号读旧库。对象以随机本地 ID 命名，不使用发送方路径/文件名。敏感元数据与内容加密，密钥由 OS 密钥库保护；仅密钥保护不等于抗已控制设备。
+### 删除与持久化
 
-接收临时文件有实际字节上限、校验状态、创建墙钟和累计运行时间。完整接收 → 独立校验 → 文件 fsync/原子重命名 → SQLite 事务持久提交 → ACK；中间崩溃通过日志/扫描收敛，未持久完成不得 ACK。ACK 丢失时同 ID 查询持久记录，不重建第二条消息。SQLite 与文件系统非单事务，使用 pending/committed 日志及启动修复，禁止先回 ACK 再异步落盘。
-
-本机内容预算候选默认每账号 20 GiB，系统空闲不足 1 GiB 或本机预算超限拒收新内容并提示；该值为 C 实现配置、不是需求新增强制配额，也不限制已保存历史读取。已接收历史不自动淘汰。用户清理需展示可能是最后副本的风险并明确确认；备份为用户控制的本地导出/恢复方案候选，不增加运营方云存储。OS 配额/实际 ENOSPC 无论预检如何都必须处理为失败。
+- 消息作者可删除本人消息，群主/管理员可删除本群任意消息；事务内设置 tombstone，并为管理员代删追加审计。原内容的数据库保留/清理策略在生产数据政策中另行确定。
+- 群解散使群、消息、邀请、房间和管理记录在产品内不可查看或恢复，同时撤销全部活动；物理删除、备份保留与法定留存不在首版自动承诺。
+- 管理记录仅当前群主/管理员按群只读。数据库角色和迁移流程限制应用更新/删除；后台防篡改和归档是生产准备事项，不提前宣称不可篡改。
 
 ## 接口契约
 
-### 1. 公共控制 API
+### 1. 通用约定
 
-HTTPS REST `/api/v1`，命令使用 `Idempotency-Key`、请求 ID 和资源版本；错误为 `code/message/field/retryable/current_version`，不含秘密。401 未认证，403 当前资格不足，409 状态/版本冲突，410 资源/活动终止，413 声明超限，429 限流，503 服务暂不可用；磁盘满等本地错误通过适配器同样结构化。过期游标返回 `SNAPSHOT_REQUIRED` 而不是空历史。
+- 基础路径 `/api/v1`；写请求使用 JSON 和 `Idempotency-Key`，时间使用 RFC 3339 UTC，ID 使用字符串。
+- 成功响应包含 `data` 和可选 `correlation_id`；错误包含稳定 `code`、可理解 `message`、是否可重试及 `correlation_id`，不返回堆栈或秘密。
+- 常用错误：`401 AUTH_REQUIRED`、`403 CURRENT_GRANT_REQUIRED`、`404 RESOURCE_NOT_AVAILABLE`、`409 GENERATION_STALE / CAPACITY_FULL / ROOM_PAUSED / IP_CONFLICT / OPERATION_CONFLICT / POLICY_STALE`、`410 ACTIVITY_ENDED`、`422 VALIDATION_FAILED`、`429 RATE_LIMITED`、`503 VOICE_CAPACITY_LIMITED / NETWORK_CAPACITY_LIMITED / DIRECT_UNAVAILABLE / RELAY_DISABLED`。
+- 为避免资源枚举，跨群/无资格资源可按安全策略返回 404；容量、暂停和密码错误仅对已通过基础群籍校验者返回。资源受限不暴露服务器规格，不错误显示为“房间 12 人已满”。
+- 访问令牌短时有效，桌面刷新令牌存操作系统安全存储；所有资格敏感操作即使令牌有效也重新查当前状态。
+- 活动命令响应返回 `activity_id, activity_generation, member_generation, device_id, lease_id, policy_revision, voice_state, network_state`；客户端不能用本地推测替代服务端结果。
 
-| API 范围 | 关键操作及授权 |
+### 2. HTTP API
+
+| 领域 | 方法与路径 | 契约要点 |
+| --- | --- | --- |
+| 注册/登录 | `POST /auth/register`、`POST /auth/verify-email`、`POST /auth/login`、`POST /auth/refresh`、`POST /auth/logout` | 真实/受控邮件验证；登录允许多端，但不自动获得房间活动；刷新令牌轮换，登出撤销当前会话 |
+| 找回 | `POST /auth/password/forgot`、`POST /auth/password/reset` | 只向已验证邮箱发起；响应防账号枚举，重置后按设计撤销旧会话 |
+| 用户/好友 | `GET /users/search`、`GET /friends`、`POST /friend-requests`、`POST /friend-requests/{id}/accept|reject`、`DELETE /friends/{user_id}` | 仅已验证账号；好友不改变群权限；重复命令幂等或明确冲突 |
+| 群组 | `POST /groups`、`GET/PATCH /groups/{id}`、`POST /groups/{id}/dissolve`、`GET /groups/{id}/members` | 修改/解散执行时校验群主或对应管理权限；解散同事务撤销全部活动资格 |
+| 邀请 | `POST /groups/{id}/invitations`、`POST /invitations/{id}/accept`、`DELETE /groups/{id}/invitations/{id}` | 当前成员可邀请；仅群主/管理员撤销；接受时复查邀请人、群、被邀请者和重复成员 |
+| 成员/权限 | `PATCH /groups/{id}/members/{user_id}`、`DELETE /groups/{id}/members/{user_id}`、`POST /groups/{id}/leave` | 角色矩阵由服务端执行；群主离开前须完成转让或解散；移出触发撤销 |
+| 群主治理 | `POST /groups/{id}/owner-transfers`、`POST /owner-transfers/{id}/accept|cancel`、`POST /groups/{id}/owner-recovery-requests` | 接受前原群主不变；人工恢复无自动继任接口 |
+| 房间 | `POST /groups/{id}/rooms`、`GET/PATCH/DELETE /rooms/{id}`、`POST /rooms/{id}/open|pause` | 配置持久化；密码修改不清退现有成员；暂停阻止所有新加入，删除终止全部会话和恢复 |
+| 活动管理 | `POST /rooms/{id}/activities`、`POST /activities/{id}/end` | 开始/结束增加活动代次；结束清退成员、终止语音与网络但保留房间配置和暂停状态 |
+| 加入/切换 | `POST /room-joins` | 请求含目标房间、设备、可选密码和幂等键；事务内执行目标预检、地址预留及原子切换；响应含新代次和独立连接描述 |
+| 恢复/退出 | `POST /activities/{id}/resume`、`POST /activities/{id}/leave` | 恢复校验同账号/设备/代次/60 秒租约及当前策略；退出立即撤销旧恢复，重复退出幂等 |
+| 活动视图 | `GET /activities/{id}`、`GET /activities/{id}/members` | 仅当前有效成员；返回真实成员、自己的/成员虚拟 IP 和独立状态，不返回任何秘密私钥 |
+| 语音凭据 | `POST /activities/{id}/voice-grants` | 每次重新校验资格；返回 SFU URL、房间限定短 TTL token、代次；失权后拒绝刷新 |
+| 网络凭据 | `POST /activities/{id}/network-grants` | 请求含设备、本机 WireGuard 公钥和代次；返回一次性票据、允许路径、策略修订、直连候选/Relay 地址、自身 IP、活动网段及成员 Peer；私钥不上传 |
+| 运营网络策略 | 受控管理通道 `GET/PUT /ops/network-policy`、`POST /ops/network-policy/{revision}/rollback` | 与普通 `/api/v1` 用户接口和凭据隔离；校验独立运营身份、修订和预期旧值，变更/回滚写 Outbox 与审计；生产启用另行授权 |
+| 消息 | `GET/POST /groups/{id}/messages`、`DELETE /messages/{id}` | 群文字消息，分页游标稳定；作者或群管理员按规则删除；失权后停止后续读取和同步 |
+| 管理记录 | `GET /groups/{id}/audit-logs` | 仅当前群主/管理员只读分页；无产品内写改删接口 |
+| 支持矩阵 | `GET /compatibility-matrix` | 分开返回候选、已验证和未验证项及验证证据引用，不将游戏互通与系统互通混同 |
+
+`|accept|reject` 等表示对应独立动作端点，实际路由在 OpenAPI 中展开，不使用竖线作为字面 URL。
+
+### 3. WebSocket 同步
+
+- 连接：`GET /api/v1/ws?cursor=...`，使用短期访问凭据；服务端每条连接持续校验会话和同步范围。
+- 事件信封：`event_id, group_id?, activity_id?, activity_generation?, member_generation?, policy_revision?, sequence, type, occurred_at, payload`。
+- 事件类型至少包括 `message.created/deleted`、`member.changed`、`room.changed`、`activity.changed`、`network_policy.changed`、`network_path.changed`、`lease.revoked`、`voice.revoked`、`network.revoked`、`resync.required`。
+- 客户端按活动代次、策略修订和 sequence 去重；旧代次/旧策略事件丢弃。游标不可用或服务端无法证明连续时执行 `resync.required`，重新拉取权威快照。
+- WebSocket 断线不自动等于活动退出；60 秒租约由独立心跳和连接状态判定。失权后服务端关闭同步，重连仍须通过当前权限检查。
+- 100 人在线压测固定心跳、状态变更、消息读写、重连和补同步频率；不能以空连接或无事件同步冒充业务在线容量。
+
+### 4. UI 与 Rust Client Core 契约
+
+Tauri Command/Event 是首选候选，序列化 schema 带 `protocol_version, request_id, activity_id?, member_generation?, device_id?`。命令异步返回明确回执；核心在应用任何迟到结果前重新核对当前活动、设备、请求和代次。
+
+| 命令/事件 | 契约要点 |
 | --- | --- |
-| `/auth/register,verify,login,logout,password-resets` | 邮件验证/找回、会话轮换；未验证只可必要账号操作，找回不绕邮箱 |
-| `/friends/requests`、`/friends`、`/users/search` | 搜索限频、防枚举，好友申请接受/拒绝/删除；只返回有权在线摘要 |
-| `/groups`、`/{id}/members,invitations,ownership-transfers` | 当前资格事务校验；群主退出前完成转让或解散，待转让不提前改归属 |
-| `/groups/{id}/rooms`、`/rooms/{id}` | 创建/配置/暂停/指定房主/结束/删除；密码仅写不回传 |
-| `/room-joins`、`/activity-transfers`、`/activities/{id}/resume,leave,heartbeat` | 统一加入、目标预检、占额和单设备；返回 pending barrier/active 与代次，不将入房当 NAT 成功 |
-| `/authorization/refresh`、`/snapshots`、`/events` | 绑定设备 nonce、快照游标及当前版本，签发短期 capability；WSS 仅元数据/撤销 |
-| `/scopes/{scope}/messages` | 仅登记/分页读取白名单元数据，按 seq 稳定分页；无正文入参或响应 |
-| `/attachment-reservations`、`/{id}/cancel` | 声明类型/大小/目标，原子预留，拒绝过期/失权；不接文件块 |
-| `/scopes/{scope}/messages/{id}` DELETE | 作者或可访问当前范围的群主/管理员；同事务 tombstone、预算释放和代删审计 |
-| `/replica-hints`、`/receipts` | 当前资格可上报最小候选目录/签名 ACK，限量和短期提示，不能代理正文 |
-| `/groups/{id}/avatar-reference`、`/audit` | 头像仅提交已本机校验的引用及类型/大小，字节由对端取；审计当前管理者只读 |
+| `session.login/logout/restore`、`social.*`、`group.*`、`room.*` | UI 只提交用户输入；核心调用服务端并以权威快照更新，秘密不进入事件日志 |
+| `activity.join/leave/switch/resume`、`channel.retry` | 携带目标、设备、请求和幂等键；语音/网络独立状态，不因一个失败取消另一个 |
+| `voice.set_mute/receive/volume`、`audio.select/test/start/stop`、`audio.set_processing` | 返回设备权限、处理可用性、测试和失败状态；UI 不直接访问麦克风或声明 DSP 成功 |
+| `message.send/delete` | 只支持群文字；返回发送中/权威成功/失败及 tombstone，不添加附件队列 |
+| `state.snapshot/changed`、`channel.failed/recovered` | 状态包含可信原因、可重试性、当前策略修订的公开结果，不暴露秘密或基础设施细节 |
 
-scope 是受校验类型：group(group_id) 或 activity(activity_id,generation)，不能由任意字符串拼接跨范围。房间元数据/正文均要求当前活动成员；群管理员/房主未入活动不得旁路读。退房/被踢保留仍有效群内容权，退群才撤销整群同步。头像缺副本使用占位和暂不可用，不把群初始字母当真实已同步头像。
+普通 UI 无 `network.set_path` 或运营策略命令；复核工具、模拟计时器和故障注入不编译进正式产品。
 
-### 2. 本地 IPC 和点对点协议
+### 5. 本地 Network Helper IPC
 
-- IPC 使用 OS 身份验证的命名管道/Unix socket 与安装实例随机握手；白名单方法为 `GetState, ApplySignedSnapshot, RefreshLease, JoinTun, LeaveTun, SendScopedFrame, OpenAuthorizedObject, AudioControl` 等，不接受 shell 命令、任意路由、任意 URL/路径或导入任意证书。签名验证在 Helper，Renderer 不能自称管理员授权。
-- 协议握手绑定设备身份、scope、成员版本、双方 capability 和当前快照游标。内容帧分为 manifest、chunk(offset,length)、ACK、cancel、error；单 chunk 候选 64 KiB，实际大小受限，续传再次按当前授权和 tombstone 校验。文件名与附言仅在点对点信封中，转义展示，不用于路径。
-- Peer 目录返回候选设备传输 IP；只有真实握手和应用探测成功才算可达。探测带超时、退避、随机抖动和速率上限；Lighthouse 在线不等于 Peer 连通。目录提示失效不删除本机合法历史。
-- 本地 UI 用受控协议 `weavora-media:` 读取，只接受不透明对象 ID；每次打开/Range 校验当前许可，播放持有可撤销句柄。撤销关闭句柄/流并清理播放器缓冲/视图；验证既有播放不因一次 URL 校验无限续用。不允许 Renderer 直接 file:// 读取库路径或将 capability 放 query string。
+传输使用 Windows 命名管道、macOS/Linux 仅本机受限 Unix Socket；对端进程/用户校验、文件权限和协议版本检查全部通过后才可用。消息采用长度受限的版本化 JSON 或等价 schema，不使用 shell 命令。
 
-### 3. 消息提交、同步与收据
+| 方法/事件 | 输入与结果 | 安全限制 |
+| --- | --- | --- |
+| `helper.get_capabilities` | 返回 Helper/协议版本、TUN/直连/中继能力、权限和平台错误 | 不将“可调用”显示为“三平台已验证” |
+| `network.start` | 一次性票据、活动/代次/租约、策略修订、允许路径、自身 IP、`/27`、直连候选/Relay、成员 Peer、本机私钥的安全内存引用；返回真实启动状态 | 校验 schema、长度、过期时间、网段和目标白名单；只允许活动网段和票据路径，不接受默认路由/自定义命令 |
+| `network.update_peers` | 当前代次、策略修订及新增/移除 Peer、候选地址或 Relay 映射 | 仅接受控制面已授权成员和允许路径，旧代次/旧策略拒绝 |
+| `network.migrate_path` | 当前授权、源/目标路径和 request_id | 仅允许策略规定迁移；禁止回退不能转 Relay，强制中继不能直连；迟到结果无效 |
+| `network.stop` | 活动、代次、租约和 request_id | 幂等停止并清理 TUN、路由、Peer、直连和 Relay；清理失败返回可诊断错误 |
+| `network.status` / `network.retry` | 返回未连接/连接中/已连接/策略受限/断开/重试中/失败及错误码 | 状态来自 Helper 和实际传输，不由 UI 假定，不提供终端路径选择 |
+| `network.event` | 上报地址冲突、权限不足、TUN/路由失败、直连失败、Relay 断开、策略/代次失效 | 事件不包含私钥、令牌或完整敏感配置 |
 
-1. 作者本机检查长度/媒体，持久保存内容及稳定 `client_message_id`，先显示本机保存/待同步。无控制面时只能保留本机草稿，不能创建权威消息或对端投递。
-2. 有控制面且资格有效，附件先取得逻辑预留。提交仅元数据，服务端在群/活动/预算锁下分配 ID/seq，校验代次、预留期限、频率和幂等键，原子提交引用及 Outbox；文本只登记承诺/长度。此时 UI 仍为待同步。
-3. 对端先同步元数据与删除水位，再取得内容。独立验证 scope/当前供给端与接收端资格、实际字节/类型、commitment 和作者签名信封。副本提供者可以不是作者，作者离线不阻止合法副本供给；签名公钥使用控制面历史设备密钥记录验证原始作者，但历史密钥不授予当前供给/接收权限。通过 fsync/存储事务后签发 ACK，带 message_id/commitment/接收设备/代次。不能信“发送端已扫描”。
-4. 至少一个授权对端持久 ACK 才显示对端已接收，另有未完成接收端则显示部分送达并列出范围；提交时以群成员资格版本或活动成员快照定义收件账号集合，ACK 来自该账号当前有效设备，设备多开不扩大收件人数。后加入成员是历史补同步，不追溯改变原收据含义；已退群/退出活动的目标标资格终止，不伪造成送达。控制面保存接收集合的版本引用和最小例外状态，不复制正文。在线可达与持有副本是两个状态，不用在线人数推断送达。签名 ACK 在受控端证明行为，无法证明恶意客户端真实写盘。
-5. 同 ID 重发、ACK 丢失/重复、乱序按持久记录和权威 seq 收敛。未拿到正文的元数据条目显示暂不可用/待同步占位，已删条目只显 tombstone；分页不足或副本离线不得伪造空会话。收到早于当前 tombstone 的旧内容直接丢弃。
-6. 群历史本地默认长期保留、在线授权成员间按缺口拉取；不强制每条在所有设备永久复制。最近内容可对在线成员主动同步，历史附件按需拉取；无可达副本保持缺失。副本上线先完成快照屏障再广告目录。最后副本丢失无法恢复，服务器不补造内容。
-
-### 4. 附件、头像、配额与清理
-
-图片 JPEG/PNG/WebP ≤10 MiB、≤2000 万像素，拒绝动画/SVG/GIF；发送端隔离完整解码重编码移除元数据，接收端独立校验。视频 MP4/H.264、可选 AAC，≤100 MiB、≤120 秒、≤1920×1080，收发端检查实际格式、轨道和完整性，不承诺任意转码。文字及附言 1～4000 Unicode 码点，纯文本；附件可无附言。头像沿用同等图片安全路径，具体 UI 上传控件在开发落地。
-
-探测 Worker 无外网、最小目录/句柄访问，CPU/内存/时间上限与取消可中止。收到坏文件、探测超时、路径越界或声明/实际不符时拒绝，不生成“已接收”。安装包固定编解码依赖并核对许可证，不能执行系统 PATH 中任意 ffprobe 或将文件名拼 shell。
-
-每设备最多 2 个出站附件任务，任务内多个接收端子流共享背压；控制面每账号每分钟最多 10 次初始化，文字每账号每会话每秒 5 条、突发 10。重复同键不重复占额/计费；明显滥用重复请求仍限速。群预算只计未删引用+有效预留，≤10 GiB，副本数不重复计，头像除外。以群预算行锁+预留唯一键确保并发不超限；取消/过期/删除同事务幂等释放，不能借跨群额度。
-
-未提交草稿及相应授权 15 分钟绝对过期，短期 capability 仍须持续刷新；15 分钟不允许离线持续通信。已登记消息的续传重新申请当前引用资格，不再当作过期草稿。取消未提交预留立即不可读并取消所有子流，已有提交消息必须走删除，不能用取消撤回已经接收的消息。提交结果不明按原幂等键查询，不产生第二条或提前释放已提交预算。
-
-临时对象累计运行 24 小时内清理；存储墙钟创建时刻与可恢复的累计运行记账，运行期间周期清理，关机跨墙钟 24 小时则启动后先清理再开放内容服务。时间倒退/记账损坏时按保守策略清理临时文件而不删已接收历史。取消立即撤销读取，物理清理不是授权机制。磁盘满、崩溃、并发清理与重试须真实测试。
+Helper 崩溃或 IPC 断开时，UI 将网络标为失败/未知并可独立重试，不中断语音；重启 Helper 必须重新验证当前票据、代次和策略，不能自动复活已撤销会话。
 
 ## 安全与权限设计
 
-### 1. 认证、治理及数据最小化
+### 1. 客户端与服务端基线
 
-登录密码及房间密码采用经基准校准的 Argon2id hash、每项随机盐；验证码/找回凭据只保存 hash，短期有效、限次数及频率，成功一次消费。访问凭据短期有效，刷新凭据轮换/重用检测；OS 密钥库保存客户端秘密。未验证账号接口白名单，任何客户端声明的 role/group 不作为授权依据。
+- Tauri 候选容器只开放最小白名单能力，WebView 不加载远程产品内容；校验 Command 来源、参数、导航、新窗口和权限请求，使用严格 CSP。若改用 Electron 对照方案，也必须启用 `contextIsolation`/sandbox、关闭 Node integration 并只暴露最小 preload API。
+- 密码使用 Argon2id 等适配风险的慢哈希及独立盐；房间密码独立哈希，不写入日志。验证码和找回令牌短时、限次、只存哈希并限流。
+- 外部流量全程 TLS；服务间 API 使用独立服务凭据和最小权限。语音 token、网络票据、刷新令牌、SFU/Relay 管理密钥和运营策略凭据分权保管，不能共用。
+- 日志默认结构化脱敏，禁止记录密码、验证码、完整令牌、私钥和房间密码；网络诊断只保留必要 IP/设备/错误关联信息。生产密钥管理和日志保留期待专项配置。
+- 登录、验证码、找回、邀请、加入、信令、凭据签发和运营策略接口均限流；错误不泄露不必要账号存在性或跨群资源信息。
 
-群主/管理员/成员/房主按批准矩阵执行：所有群成员可邀；仅群主/管理员可撤销待接受邀请；群主唯一，主动转让目标须接受。房主权限只限房间，不授予代删他人消息或群记录读取权。房间管理员免密码不免暂停/容量/群籍。恢复申请只收脱敏依据，由人类核实，争议不变更。
+### 2. 授权矩阵
 
-日志采用字段白名单，禁止请求体和 token/验证码/密码/正文/文件名原文；审计只记录操作者、目标 ID、时间、动作、结果。控制面不提供自由文本遥测载荷；错误堆栈和客户端诊断导出脱敏且由用户主动操作。数据库备份只含控制元数据，恢复须保留 tombstone/授权版本，不能回滚删除后直接开放旧状态。
+| 操作 | 普通成员 | 房间房主 | 群管理员 | 群主 |
+| --- | --- | --- | --- | --- |
+| 邀请当前好友/用户 | 可以 | 按其群角色 | 可以 | 可以 |
+| 撤销待接受邀请 | 不可以 | 不可以 | 可以 | 可以 |
+| 修改群资料/管理普通成员 | 不可以 | 不可以 | 按矩阵可以，不能管理群主或同级 | 可以 |
+| 查看只读管理记录 | 不可以 | 不可以 | 可以 | 可以 |
+| 创建房间 | 仅按已批准群管理权限 | 不额外获得创建权 | 可以 | 可以 |
+| 管理本人拥有的房间 | 若被指定为房主则可 | 可以 | 可以管理本群房间 | 可以 |
+| 指定房主 | 不可以 | 不因此获得群权限 | 按群管理规则 | 可直接指定当前有效成员 |
+| 转让/解散群 | 不可以 | 不可以 | 不可以 | 可以 |
+| 管理员免房间密码 | 不适用 | 房主本人按当前规则 | 可以 | 可以 |
+| 修改运营网络策略或选择连接路径 | 不可以 | 不可以 | 不可以 | 不可以 |
+| 绕过 12 人、暂停、群籍、策略或账号状态 | 不可以 | 不可以 | 不可以 | 不可以 |
 
-### 2. 网络与本地攻击面
+所有表格权限仍需执行时检查；房间权限不反向授予群权限，好友关系不进入该矩阵。运营策略写接口不在普通用户 API 和群管理界面中暴露。
 
-Nebula CA 私钥与线上签发子密钥隔离；上线 CA/设备证书签发在控制面内部管理，不新增在线业务服务。证书轮换/失效不可代替应用短租约。Lighthouse 对端发现可能暴露设备端点元数据，仅允许产品签发身份访问，限频、防扫描，不称强群级发现隐私。应用 Gate 始终限制群/活动。
+### 3. 撤销与隔离
 
-Helper 在 Nebula 解密后、任何连接跟踪快速路径之前做授权；不以静态证书 group 或一次握手决定永久权限。IP 内层源只能是发送成员活动 IP、目标只能是当前同活动本机 IP，禁止物理 LAN 转发、默认出口及来源伪造。TUN/用户态网栈崩溃关闭路由和 Gate，未完成恢复不能保留可用旧规则。
+1. 权威事务先取消成员资格、增加代次、撤销租约并写入 Outbox；后续 REST、WebSocket、语音凭据和网络凭据立即因当前资格失败。
+2. Revocation Coordinator 并行调用 SFU RemoveParticipant、Relay deny/disconnect、授权 Peer 撤销通知和 WebSocket close；失败按指数退避重试并报警，不能因一次投递失败把资格恢复。
+3. Relay 每个数据报均使用内存中的当前租约/代次/策略/目标映射；收到撤销立即拒绝来源和目标通信。直连 Peer 只接受当前授权握手，收到撤销删除旧 Peer；服务端无法直接接触离线对端时，必须把这一限制写入威胁模型和实测结果，不能宣称仅靠客户端自愿断开即完成强制撤销。
+4. SFU 使用短 TTL、参与者移除和禁止续签组合；客户端收到撤销后停止发布/订阅并清理音频，但服务端措施不依赖客户端配合。
+5. 服务端确认失权后 5 秒内完成语音、网络和同步撤销是验收目标。Outbox 极端积压、媒体服务不可用、离线直连 Peer 等情况必须暴露失败和告警，不能虚报达成。
+6. 不同活动使用独立 SFU 房间、直连授权集合、Relay 会话集合、地址空间和授权代次；即使虚拟 IP 数值相同，也不能跨活动转发。
+7. Helper 只配置活动 `/27`；操作系统防火墙是否允许本机服务经该接口被访问由平台配置和用户授权决定，产品不宣称“仅限游戏流量”。
 
-Electron `contextIsolation`、sandbox、关闭 Node integration、严格 CSP、导航/外链白名单；只暴露窄 preload API。内容/音频/探测 Worker 非管理员。特权服务只创建/删除受控 TUN 和路由，拒绝任意脚本；安装/卸载校验制品签名和预期路径。用户本机主动开放的服务可能对同房成员可达，产品提示该真实范围，不宣称只开放游戏。
+### 4. 密钥和地址生命周期
 
-### 3. 删除、撤销及灾难恢复
-
-删除提交事务写 tombstone、递增 scope auth/version、释放逻辑引用并追加代删记录；刷新签发旧版本停止。在线受控端立即停流，未收到事件端最晚租约截止关门。重连先同步删除水位再供给内容。活动结束/房间删除撤销活动内容，群籍仍有效时群内容可用；解散撤销整群，账号失效撤销全部。产品不恢复已终止活动历史，后台物理清理另行批准，不宣称远程抹除副本。
-
-数据库恢复可能复活旧授权/tombstone，恢复规程必须封闭签发、生成恢复纪元、核验追加审计/删除备份连续性；确认最新已提交删除状态后才重新开放。无法确认时保持受影响范围关闭并人工处理，不以旧备份自动恢复可读。客户端导入备份也先同步当前权威状态。5 秒目标含受控本地读取及播放句柄，不只新 HTTP 请求。
+- 每台设备在本地生成 WireGuard 私钥，优先使用操作系统安全存储或受限文件；仅公钥上传。撤销/切换时删除旧 Peer，重入可轮换密钥并必须建立全新会话。
+- 服务端、Relay 和日志不接触 WireGuard 私钥。SFU/Relay 管理密钥仅服务端持有，桌面端只获取最小范围短期凭据。
+- IP 不是身份或权限。所有 Peer 更新与转发均同时校验账号、设备、活动、成员代次、租约和策略修订，不能仅凭曾拥有某 IP 获得访问。
 
 ## 部署及运行方案
 
-### 1. 两类在线服务的配置基线
+### 1. 首版环境拓扑
 
-| 部署单元 | 网络/数据 | 运行规则 |
+- 首台 2 核/2 GB/Debian/5 Mbit/s 上候选部署一套 Java/Spring Boot 控制面、一套 PostgreSQL、一套单节点 SFU 和一套独立 Rust Relay；反向代理统一终止外部 TLS。该共置是待验证的资源约束，不是已证明可行的容量结论；首版不承诺高可用。
+- Java 进程固定支持的运行时版本、堆上限和 CPU/内存限制；PostgreSQL、SFU、Relay、代理和操作系统也分别设置资源预算并保留峰值余量。禁止依赖开发机默认 JVM 参数、持续 swap 或未授权第二台服务器。
+- 单节点 SFU 不引入 Redis；未来多节点媒体或 Relay 水平扩展需另做一致性、资源和容量设计，并获得运营方决定。
+- 控制面与 PostgreSQL 仅通过受限内网/本机访问；仅公开必要 HTTPS、WebSocket、WebRTC、直连信令和 Relay 端口。具体端口、防火墙、NAT 类型、STUN/TURN/连通性在部署 PoC 验证。
+- 生产部署、服务器购买、带宽升级、域名、证书、邮件账号和签名证书均需另行授权；当前不执行采购或生产部署。
+
+### 2. 桌面发布
+
+| 平台 | 候选安装/更新 | 权限与验证要求 |
 | --- | --- | --- |
-| Java 控制面 + 内部 PostgreSQL | 对外 HTTPS/WSS 443；DB 内网/本机 | 进程内 Outbox/授权/清理任务；不启动媒体/Relay/上传服务；认证、事件和证书签发保持职责模块化 |
-| Lighthouse | 公网 UDP 4242 候选；不启用管理公网端口 | `am_lighthouse: true`、`tun.disabled: true`、`relay.am_relay: false`、`relay.use_relays: false`、空 relay 地址列表；无业务 TUN 路由或存储卷 |
-| 客户端 | 公网到控制面及 Lighthouse；Peer UDP 直连 | `relay.am_relay: false`、`relay.use_relays: false`，禁止客户端充当内容/游戏通用中继；封装校验只允许当前目标；不配置 unsafe_routes |
+| Windows 10 22H2/11 x64 | Tauri NSIS/MSI 候选 + 签名 updater | 安装/升级 Helper 需要管理员授权，普通运行 UI 不提升；验证 WebView2 前置条件、TUN、路由、杀软兼容、卸载清理 |
+| macOS 13+ Intel/Apple Silicon | DMG + ZIP；签名/公证后 updater | Helper 通过受限 LaunchDaemon/授权安装运行；自动更新需有效签名，WebView、utun 和权限流程待实测 |
+| Ubuntu 22.04/24.04 x86_64 | AppImage/deb 候选 + 对应更新路径 | Helper 由受限 systemd 服务运行；WebKitGTK、桌面环境、安装授权、TUN 和更新差异记入支持矩阵 |
 
-同一机器可共置两类服务，但不能把媒体代理隐藏在控制面。公网防火墙只开必要控制端口，Peer 业务端点不得指向运营方 IP。配置 CI 应拒绝 Relay 默认 true、非空 relays、未知外联内容代理、上传 API/正文 DTO 和服务器媒体卷；运行抓包/磁盘扫描最终证明，不能只凭配置判断无业务内容。
+- 客户端与 Helper 必须版本兼容；安装器进行签名校验和原子升级，升级失败可回滚，Helper 不得因 UI 更新留下无权限孤儿进程。
+- 卸载清理本机 TUN、路由、Helper 和按产品政策清理本地凭据；卸载不等于删除服务端账号、群或消息。
+- 支持矩阵记录系统版本、架构、Linux 发行版/桌面环境、WebView 依赖、权限条件、客户端/Helper 版本及已测游戏版本。候选项不得标成通过。
 
-### 2. 客户端带宽、优先级与音频
+### 3. 容量模型与验证方案
 
-16 人全网状，每发言端向最多 15 端发送。Opus 32 kbit/s、20 ms 帧时单发言端音频载荷约 480 kbit/s 上行；若另按每包 100 字节封装估算，额外约 600 kbit/s，总约 1.08 Mbit/s，实际 Nebula/网络开销须抓包测量。全部发言时每端接收/混音 15 路，服务器不代混音或转发。
+5 Mbit/s 按十进制约 625 kB/s，仅用于模型；实际出网、入网或共享口径须在 P0 核实。暂留建议 20% 出网余量后，约 4 Mbit/s 由业务同步、语音、游戏中继及协议开销共享；安装包和更新单独限速、计量，不默认存在外部 CDN。
 
-语音头绑定活动/成员代次和序号/时间戳，RTP 重排/重放窗口受限；候选抖动缓冲 40～120 ms、Opus FEC/PLC、按丢包/RTT 调整码率，不以可靠重传追赶过期音频。说话状态由实际音频能量/媒体事件派生，开麦不等于说话。静音不发采集帧，关闭接收停止本地播放/解码；成员音量只本地作用，总音量/设备选择在 Audio Worker 执行。
+语音 SFU 出网模型为 `Σ s × (n−1) × r_online`，其中 `n` 为房间听说成员、`s` 为实际发言者、`r_online` 是含 RTP/UDP/IP、加密、FEC、重传和 DTX 实测结果的每路线上码率。仅以 32 kbit/s Opus 载荷举例：12 人 1 人发言为 352 kbit/s，2 人发言为 704 kbit/s，12 人同时发言为 4.224 Mbit/s；这些不是实测值，也未包含游戏、同步和协议开销。
 
-调度优先控制撤销/租约及语音，其次游戏，附件最低；所有出站子流共同限速，默认附件总上限候选 1 MiB/s，链路排队/丢包升高立即降速甚至暂停，保留用户手动限额。未知家庭上行不能假定 1 MiB/s 安全，必须有排队延迟/发送失败反馈及渐进探测。重试指数退避带抖动，禁止失败时改走服务器。内核 UDP 队列、用户态 TCP 和游戏争用仍需 SP-04/07 证明，不能只靠业务队列优先级宣称不挤占。
+| 负载级别 | 固定场景与测量 | 通过结论边界 |
+| --- | --- | --- |
+| C0 环境基线 | 核实 Debian/地域/带宽方向；空载与固定业务负载下记录各进程 RSS/CPU、网络、文件句柄和数据库连接 | 只证明环境及测量方法有效 |
+| C1 100 人在线 | 100 个已验证账号持续建议 60 分钟，固定心跳、在线变化、群消息读写、断线补同步；建议核心成功率≥99%、p95≤1 秒 | 只证明控制面在线容量，不证明语音或游戏中继 |
+| C2 单房极限 | 12 人、多人及 12 人同时发言，游戏并行，直连和强制中继分别测试建议 60 分钟 | 给出单房语音/网络实际上限；超预算不得降低 12 人要求后宣称通过 |
+| C3 100 人分房 | 8 个 12 人房和 1 个 4 人房，分别固定每房发言者、直连比例、代表游戏中继流量与更新开销 | 给出全站混合负载边界；不能从 C1 推断全功能 100 人 |
+| C4 背压与降级 | 达到实测阈值时限制新语音/中继授权、限速更新并保留控制面和另一健康通道 | 验证受控拒绝、准确错误和恢复，不静默降低音质或绕过策略 |
 
-### 3. 运维、更新及支持矩阵
+游戏流量按每成员实际上下行、包率、重传、WireGuard/QUIC 开销和中继双向放大计量；直连只减少服务器 Relay 流量，不减少客户端带宽。测试保存负载脚本、原始指标、上下行抓包/计数、错误率、时延、CPU/RSS/OOM、GC 和媒体质量。结果若不足，提交“实测活动上限、增加带宽、调整媒体/中继部署”选项给运营方，不自动扩容或缩减目标。
 
-默认仅发布准备。控制面备份/恢复、签名密钥轮换、Lighthouse 地址变更和客户端升级有独立回退步骤；不运行生产部署或生产数据修改。协议版本握手拒绝不兼容，Helper/UI/Worker 版本一致后才能开放网络。升级前暂停新传输并保护本机存储；数据库迁移前备份，失败关 Gate，回退不得把旧代次重新当有效。
+### 4. 语音质量设计
 
-候选平台按批准需求记录：Windows 10 22H2/Windows 11 x64、macOS 13+ Intel/Apple Silicon、Ubuntu 22.04/24.04 x86_64；Electron/驱动若不支持某基线必须报告冲突并重评审，不能静默删平台。当前这些均未实机验证。安装/更新/卸载分别记录系统、架构、权限、驱动、文件保留策略、签名和失败提示；卸载不等于删除控制面账号或其他设备副本。
+- 采集后候选处理顺序为设备回声参考对齐 → AEC → 降噪 → 高通/必要滤波 → AGC 与限幅 → VAD/DTX → Opus 编码；播放侧处理成员独立音量、总音量与输出限幅。实际顺序和参数由 SDK 能力与 A/B 录音调整，避免重复开启客户端和 SDK 的同类处理。
+- 能力可用时降噪默认开启；麦克风权限、设备采集、处理链和 SFU 连接分开报告。处理不可用不得阻止用户获知真实状态，也不得伪称降噪已生效。
+- 真实设备覆盖安静、键盘、风扇、游戏外放和双人重叠发言，边运行代表游戏边通话，对降噪开关保留同步参考录音；建议安静关键词听辨≥95%、噪声≥90%，无持续吞字、金属音、削波或啸叫。
+- 正常受控网络端到端口到耳 p95 建议≤200 ms；另测 1%/3% 丢包和 20/50 ms 抖动，记录清晰度、卡顿、延迟分布、客户端 CPU/RSS 和游戏资源竞争。门槛沿用已批准 AC-040，样本和听辨方法在测试计划中固定。
+- 音质不达标时先定位采集、回声参考、处理链、抖动缓冲和编码，不以盲目低码率掩盖问题；12 人多人叠音和弱网结果与容量报告关联。
+
+### 5. 运营策略与迁移语义
+
+首版全局候选默认 `DIRECT_WITH_RELAY_FALLBACK`，但最终默认模式、代表 NAT 范围和是否启用 `RELAY_ONLY` 须运营方确认，当前不视为已选定生产策略。
+
+1. `DIRECT_ONLY`：票据不含可用 Relay 授权；直连失败准确返回 `DIRECT_UNAVAILABLE`，禁止任何游戏载荷经 Relay。
+2. `DIRECT_WITH_RELAY_FALLBACK`：先直连，只有当前票据允许且直连达到固定超时/失败条件才回退；回退建立后撤销旧直连授权，避免双路径重复流量。
+3. `RELAY_ONLY`：只签发 Relay 路径，不尝试直连； Relay 不可用时真实失败，不私自回退直连。
+4. 策略变更生成单调递增修订。新握手立即使用新修订；新策略禁止的已有路径立即停止并清理。仍被允许的路径可保留，但后续 Peer/票据刷新使用新修订；需要迁移时先建立新路径再原子切换，失败按新策略保持可用旧路径或明确断开。
+5. 回滚同样生成新修订，不复活旧代次、旧票据或已撤销 Peer。迁移期间失权优先于路径建立，任何迟到直连/中继结果均不能恢复资格。
+6. 运营策略仅控制游戏虚拟网络；语音 SFU 路径单独记录和验收。普通客户只看到可信连接结果、受限原因和重试能力。
+
+### 6. 配置、观测与备份
+
+- 配置通过环境变量/受限密钥存储注入，仓库不保存真实秘密。Flyway 数据库迁移单向版本化并在发布前备份；记录迁移版本、执行结果和前向补偿/恢复预案。
+- 指标至少包括 API 错误、在线/在房/发言/直连/中继分档容量、活动占额、代次/策略冲突、Outbox 延迟、撤销耗时、JVM 堆/线程/GC 停顿、各进程 RSS/CPU、数据库连接池、SFU 参与者/音频质量、Relay 会话/吞吐/丢包/拒绝、客户端音频处理和 Helper 启动/路由错误。
+- 日志使用 `correlation_id + activity_id + user/device 伪标识` 关联，不记录秘密；针对撤销失败、Relay/SFU 不可达、容量饱和和 Outbox 积压配置告警。
+- PostgreSQL 备份、恢复演练、物理删除和保留政策在生产准备阶段批准。首版只承诺产品重启后的持久化，不将“有数据库”写成“已有灾难恢复”。
+- 可用性目标：网络恢复且资格有效时，可用服务于 15 秒内自动恢复或明确失败并可手动重试；语音和网络分别计时，不要求同时成功。
 
 ## 技术风险和待验证事项
 
-所有 SP 为未执行 PoC；本轮静态资料核验及文档门禁不算运行通过。D 先登记这些可运行小任务，E 执行；核心路线失败有限修复，需改变基线则重新评审。
+> 下表所有 SP 当前均为“未执行/待验证”。PoC 通过只证明对应原型条件，不替代三平台安装、12 人 60 分钟、100 人在线、游戏兼容、真实音质或安全验收。
 
-| 标识 | 风险/阻断项 | 最小真实验证及失败处理 |
-| --- | --- | --- |
-| SP-01 | Nebula v1.12.0 + 私有网栈/TUN Gate，Go 工具链、三平台权限 | 固定源码/依赖；双端真实 TCP/UDP，游戏 TUN 与群通道隔离，所有快速路径可撤销；失败停止集成路线，不开放原始全网 TUN |
-| SP-02 | 群未入房同步与跨房隔离、活动 IP/迟到包 | 同群不同房可同步内容，跨房/跨群游戏及语音失败，伪造帧/旧代次/IP 复用/分片不能绕过；不通过不接正式 UI |
-| SP-03 | 原生真实语音及三平台设备 | 真实采集/播放、多发言、静音/关闭接收/音量、拔出/权限拒绝；16 路混音及依赖失败归因；不得用录制模拟状态代替真实交互 |
-| SP-04 | 3 秒租约、1 秒刷新、5 秒撤销、切换屏障 | 延迟/丢事件、长连接/Range/既有播放、签发撤销竞争、双设备、休眠/时钟倒退/服务重启；记录服务提交到最后可收发/读取时刻；未达为发布阻断，不延长 TTL 掩盖 |
-| SP-05 | 消息落盘、ACK、缺口、副本可用和最后副本丢失 | 双端/三端重启、清空一端、全离线、最后副本丢失；fsync 崩溃点、丢 ACK、重复/乱序/旧 tombstone 不复活；无在线副本准确占位 |
-| SP-06 | 接收端媒体安全、逻辑预算及本地磁盘 | 恶意发送端绕过自检仍拒绝坏文件/超限/脚本/路径/超时，10 GiB 并发预留不超配，磁盘满/15 分钟/24 小时规则及关机启动清理真实执行 |
-| SP-07 | NAT/带宽/16 人 60 分钟 | 同 LAN、常见 NAT、双端受限 NAT/CGNAT、禁 UDP/防火墙逐成员矩阵；可达路径并行音频/游戏/附件，记录每端资源/带宽/RTT/丢包；不可达明确失败，无中继 |
-| SP-08 | 两服务约束及服务器无正文证明 | 仅控制面+Lighthouse+内部 DB；两端及服务器抓包、路由、磁盘/日志/DB 检查文字/头像/图片/视频/语音/游戏流向；检查 Relay 显式关闭，不称零控制流量 |
-| SP-09 | Java/PostgreSQL 事务、预算、撤销持久化与容量 | 真 DB 并发加入/切房/争抢/预算，控制面重启及备份恢复，不超 16/双活动；压测短租约刷新吞吐及尾延迟；不兼容可禁虚拟线程，不降低一致性 |
-| SP-10 | 邮件/凭据/日志 | 真实或受控邮箱验证找回、防枚举/限流、秘密扫描；缺渠道保持未验证，不自动显示验证码冒充邮件 |
-| SP-11 | 安装更新、签名/许可证、平台/游戏支持 | 各候选系统实装/升级/卸载、数据保持、Helper/Worker 版本兼容；驱动及编解码分发许可清单；无证书/设备不标通过 |
-| SP-12 | 批准 UI 接真实异步事件 | 本机待同步/传输中/部分送达/失败、缺失占位、逐成员可达、voice waiting、内联错误与焦点、取消和未授权状态；模拟回归不替代真实接口证据 |
+| 标识 | 风险与待验证问题 | 最小验证与通过证据 | 失败处理 |
+| --- | --- | --- | --- |
+| SP-01 三平台 TUN/权限 | 候选 Rust WireGuard、自定义传输、真实 TUN、`/27` 路由及 Helper 权限在 Windows/macOS/Linux 未实测 | 各候选系统创建网卡，完成真实 TCP/UDP，确认默认路由/DNS/物理 LAN 未改变；记录管理员/root 授权、安装、卸载和崩溃清理 | 分平台修复 Helper/安装方式；未通过平台标未验证，不得缩减交付范围后仍宣称全平台 |
+| SP-02 Rust Relay/隔离/撤销/IP | Rust Relay 外层目标映射与端到端 WireGuard、中继转发、12 地址规划、冲突、即时撤销和历史 IP 优先恢复未验证 | 两端及多成员经 Rust Relay 互通；跨房/伪造目标失败；Relay 无私钥；撤销后已有/新建转发失败；恢复与重入地址符合 REQ-015；记录吞吐、CPU/RSS 和时延 | 调整传输、转发索引、地址锁、背压和拒绝集合；QUIC 候选不可用时评估其他 UDP 封装或 TLS 流及队头阻塞 |
+| SP-03 真实音频、设备与音质 | Tauri/Rust 核心、候选 SFU SDK 与音频处理链在真实设备、游戏并行和多人叠音下未验证 | 真实音频发布/收听；AEC/降噪 A/B 录音与听辨；静音、设备测试、音量、权限、拔出和切换；完成 AC-040 场景并记录延迟、CPU/RSS、弱网质量 | 修复设备/处理边界或替换具体 SDK；必要时比较 Electron 对照，但不能用模拟音频、SDK 名称或低码率替代验收 |
+| SP-04 独立故障与恢复 | 语音/网络故障隔离、60 秒保留、15 秒恢复目标、迟到连接和双活动未验证 | 分别停止 SFU、Relay、Helper、直连和网络；另一项继续；并发切房/设备争抢仅一个活动；保留/超时和旧代次行为符合需求 | 修正状态机、心跳和事务；记录目标未达项，不以手动刷新掩盖失败 |
+| SP-05 真实邮件 | 外部邮件账号、域名、投递、限流和找回链路未接入 | 在受控真实邮箱完成注册验证和找回，检查过期、错误次数、防枚举与日志脱敏；保存脱敏投递证据 | 邮件保持待接入/未验证；不能用自动显示验证码或模拟邮件宣称通过 |
+| SP-06 发布与更新 | Tauri 候选安装包、Helper 签名安装、macOS 签名公证和各平台更新未验证 | 每个标为通过的平台实际安装、更新、卸载，更新后数据与 Helper 兼容，权限和失败提示有证据；记录包体、WebView 依赖与许可证 | 缺少证书或设备则标待接入/未验证；容器关键能力失败时提交对照 ADR，不发布伪造通过矩阵 |
+| SP-07 容量与撤销时延 | 12 人 60 分钟、100 人在线/分房、5 秒撤销、15 秒恢复、Relay 带宽、整机 CPU/RSS 和 SFU 资源尚无数据 | 按 C0～C4 在目标 2 核/2 GB/Debian/5 Mbit/s 运行真实语音、虚拟网络、游戏/测试流量和业务负载，保存资源、媒体、丢包、上下行、时延和撤销证据 | 依据数据调参并提交实测上限和资源选项；未达目标如实报告，不自动扩容、降配或修改证据 |
+| SP-08 Relay 元数据与媒体信任 | Relay 可见外层目标元数据，SFU 可接触媒体明文；直连暴露对端网络地址 | 威胁模型、配置检查和抓包证明无默认路由/明文虚拟网络泄漏；记录直连地址暴露、日志秘密扫描和撤销边界 | 最小化外层元数据和日志；安全文案准确描述信任边界，不宣称未实现的端到端语音加密 |
+| SP-09 Java/MyBatis 控制面集成与资源 | Java 21+ 虚拟线程、MyBatis、Flyway、连接池、SFU 管理 API 在 2 GB 共置环境的兼容性和余量未验证 | 运行控制面 PoC 和 C0/C1；以真实 PostgreSQL 验证显式锁、事务连接边界、第 13 人拒绝、单活动/IP 唯一、回滚及 Outbox 原子性；检查 `#{}` 绑定、超时/背压、ThreadLocal、迁移版本和 SFU 撤销；保存各进程峰值和 OOM 数据 | 固定受支持运行时和依赖；修正 SQL/锁/映射或停用虚拟线程，服务端实质替换须独立 ADR；不以 Mock 或降低一致性要求代替真实数据库验证 |
+| SP-10 Rust 客户端垂直切片 | Rust 核心、Tauri Command/Event、媒体、Helper IPC、状态恢复和三平台构建组合未验证 | 完成登录、入房、真实音频、真实 TUN、双通道状态、退出清理的最小切片；比较候选包体、CPU/RSS、许可证和团队维护记录，满足 AC-043 | 保持候选状态并修复；若引入 Go 或改用 Electron，说明必要性、替代成本与证据后重新评审 |
+| SP-11 直连/中继策略 | NAT 穿透、禁止回退、强制中继、在途策略迁移、回滚和旧端点强制撤销未验证 | 覆盖 AC-041/042 全矩阵，以两端及服务器流量证明路径；变更、断网、失权和迟到握手均符合代次/策略；记录无法强制的离线直连边界 | 调整信令、票据和 Peer 撤销；禁止路径有流量即失败，不依赖客户端自觉，不把语音路径混入游戏策略结论 |
+| SP-12 设计资产生产适配 | 现有 UI 的模拟域、定时成功和复核工具可能误进正式产品 | 保留原型/UI 文件摘要与视觉回归；命令/事件差异清单覆盖 CA-01～CA-12，正式构建不含模拟授权、故障注入和设备假数据 | 仅修复适配层；必要 UI 变化单独追踪并重审，不重做视觉风格或复用旧审批 |
 
-### 环境现状与准入
+### 验证环境缺口
 
-2026-10-30 本机实际探测：默认 Java `1.8.0_131`，Node `v24.20.0`；PATH 未找到 Go 或 Docker，只说明默认命令，不扫描无关目录。Java 8 低于候选 Java 21，Go 需满足固定 Nebula 模块工具链；本轮不安装工具、不下载二进制、不运行缺失业务工程的虚假构建。尚无 macOS/Linux 实机、邮件渠道、签名/公证证书或新 P2P 运行证据。
-
-C 批准后 D 的前置任务顺序：环境/依赖固定 → SP-01/02/04/08 网络隔离与撤销 → SP-03/07 音频及带宽 → SP-09 控制事务与 SP-05/06 存储媒体 → SP-10/11/12 真实交付。可独立工作并行实施，但未通过核心验证不将页面完成当产品完成。所有任务沿用 REQ/AC，包含测试命令、依赖、完成定义、回退及证据；PoC 不改变需求范围，不自动增加第三类在线服务。
+当前没有已接入的外部邮件账号、代码签名/公证证书及已记录的 macOS/Linux 实机验证结果；也没有 Tauri/Rust 垂直切片、Java 控制面/Rust Relay PoC、三平台 TUN、真实音频、12 人容量、100 人在线或直连/中继证据。这些项目全部保持“待接入/未验证”，不得以单元测试、Mock、原型浏览器测试或仅 Windows 结果替代。
 
 ## 关键技术决策
 
-| ADR | 决策及状态 | 理由/后果 |
+| ADR | 决策 | 理由与后果 |
 | --- | --- | --- |
-| ADR-001 | 延续 Electron/React/TypeScript，待运行验证 | 复用批准 UI，业务逻辑由真实接口驱动，原型包装不是生产架构 |
-| ADR-002 | 替代旧 LiveKit：客户端 Opus 网状语音 | 两服务约束；客户端承担 15 路发送/接收和混音风险，无 SFU 回退 |
-| ADR-003 | 保留 Java 21 模块化单体 + PostgreSQL | 用户指定 Java，事务/锁/约束维护当前资格，不为首版引入服务集群 |
-| ADR-004 | 保留持久房间与临时活动分离 | 结束不删配置，活动代次阻止旧历史/旧连接复活 |
-| ADR-005 | 替代独立底层：各状态机共享隧道依赖 | 隧道先于语音，音频故障不影响可用隧道，部分可达不虚报全员成功 |
-| ADR-006 | 替代 wireguard-go：Nebula 私有传输网栈 + 特权窄 Helper | Lighthouse 语义匹配，原生版本不承担业务授权；用户态集成风险需先验证 |
-| ADR-007 | 撤销旧 Java Relay：仅直连、所有节点显式禁 Relay | 降低运营方内容带宽，接受 NAT 不可达，不以客户端转发暗补中继 |
-| ADR-008 | 群应用范围与活动游戏封装分离 | 未入房可同步群内容，跨房游戏/语音不能借群籍访问；旧代次封装可拒绝 |
-| ADR-009 | `/27` 活动地址 + 独立设备传输地址 | 游戏 IP 满足恢复/历史优先规则，不强套 Nebula 证书 IP 为活动 IP |
-| ADR-010 | 保留事务/Outbox/代次，增加短租约 Gate 与到期屏障 | DB 单活动不足以证明旧数据面停止；代价是每秒控制流量及故障时可用性下降 |
-| ADR-011 | 保留只追加管理记录与 tombstone，正文迁到客户端 | 删除权威元数据不依赖持有端在线，不宣称远程物理抹除 |
-| ADR-012 | 三平台与真实证据决定支持矩阵 | 缺环境不降范围，也不伪造兼容性 |
-| ADR-013 | Java 控制面保持版本化边界，语言替换无首版任务 | 不为未来 Rust 预留重复实现，需性能证据与独立变更决策 |
-| ADR-014 | 替代旧 SFU/Relay 撤销 ACK：最晚旧租约到期屏障 | 不相信离线旧端 ACK 或长期证书，受控路径关门后才激活新设备 |
-| ADR-015 | 按 B2 交接接真实状态 | 对端落盘与元数据登记分开，模拟标识不能进入正式成功判据 |
-| ADR-016 | 替代服务器媒体：本机持久化 + 在线授权副本 | 无在线副本暂不可用，最后副本丢失不保证恢复；ACK 必须在完整校验持久化之后 |
-| ADR-017 | 控制面逻辑 10 GiB 与各端物理预算分开 | 多副本不重复计费，磁盘满拒收不静默删历史，控制面不接文件验证字节 |
-| ADR-018 | 固定版本/依赖及失败重评审 | 静态官方资料不证明集成可用；核心 PoC 失败不自动引入中继或放宽撤销 |
+| ADR-001 | Rust Client Core + Tauri 候选容器 + 复用现有 UI | 符合团队 Rust 能力和 REQ-028，避免重做设计资产；系统 WebView、媒体、包体、更新与三平台组合须 SP-03/06/10 定案，Electron 仅作有证据的对照 |
+| ADR-002 | 自托管 WebRTC SFU，LiveKit 首选候选，不自研 SFU | 复用成熟多人媒体能力；具体 SDK/DSP 由真实音质定案，接受 SFU 运维和媒体信任边界，撤销采用组合措施 |
+| ADR-003 | Java 21+、Spring Boot 模块化单体 + MyBatis + PostgreSQL + Flyway | 原服务端不因客户端评估自动重写；按用户决定以 MyBatis XML 显式控制事务 SQL/行锁，Flyway 管理 DDL 版本，覆盖单活动、12 人容量、地址和 Outbox；接受 SQL/映射维护成本，2 GB 资源及真实并发由 SP-07/09 验证 |
+| ADR-004 | 持久房间与临时活动分表分状态 | 结束活动不丢配置；活动代次使旧凭据和迟到事件失效，删除房间才终止全部恢复 |
+| ADR-005 | 语音和网络双控制通道、双状态机 | 加入后并行自动连接，可独立失败和重试；共同受权威活动撤销约束 |
+| ADR-006 | 独立 Rust 特权 Helper + 候选 Rust WireGuard + 真实 TUN | UI 不持有管理员/root 权限；窄 IPC 限制攻击面并匹配团队能力，候选库维护、安全、许可证及平台适配须验证，不默认引入 Go |
+| ADR-007 | Rust Relay + 运营控制的直连/回退/强制中继 | 直连降低服务器流量，中继提供受限网络路径；三种模式均由服务端票据和策略修订约束，普通客户无开关，撤销和 NAT 风险由 SP-11 验证 |
+| ADR-008 | WireGuard 端到端密文，外层显式目标映射 | Relay 无需私钥或明文转发网卡；外层目标元数据和直连地址暴露成为明确隐私边界，映射必须由服务端授权 |
+| ADR-009 | 每活动 `/27` + 历史 IP 优先恢复 | 满足 12 人地址和最小路由；有效恢复必须保持，普通重入仅在不冲突且安全时优先恢复，复用不继承权限 |
+| ADR-010 | 事务 + 行锁 + 唯一约束 + Outbox + 代次/策略修订 | 防止双活动、超额、地址冲突、旧路径和撤销丢事件；消费者必须幂等并处理重试/积压 |
+| ADR-011 | 管理记录只追加，群文字消息 tombstone，群解散仅产品不可见 | 满足审计和删除展示；不将逻辑状态夸大为物理删除或后台不可篡改，不引入媒体附件范围 |
+| ADR-012 | 三平台同为发布目标，证据决定支持矩阵 | 不用单平台测试推断其他平台；缺设备、证书或邮件渠道时明确未验证，不伪造发布结论 |
+| ADR-013 | 在线、在房、发言和中继分档容量，受控背压 | 在 2 核/2 GB/5 Mbit/s 下分别验证 100 人在线、12 人满房和分房混合负载；一档不能替代另一档，资源不足提交运营决策而不暗改目标 |
+| ADR-014 | 客户端成熟音频处理链 + 真实设备质量门禁 | 优先 AEC/降噪/AGC/VAD 并避免重复处理；以 AC-040 听辨、延迟、弱网和资源结果定案，不以 SDK 或连接成功替代音质 |
+| ADR-015 | 原型/UI 资产保留，生产仅复用呈现和状态契约 | 保留视觉风格和已批准交互；模拟授权、故障注入和定时器不进入正式构建，必要增量单独追踪和评审 |
 
 ## 需求追踪
 
-| REQ | 设计模块/关键约束 | 验收与风险验证 |
+| 需求标识 | 设计模块/决策 | 验证方式 |
 | --- | --- | --- |
-| REQ-001 | Identity、邮件/验证/找回与会话 | AC-001；SP-10 |
-| REQ-002 | devices/account_activity、唯一账号活动、设备屏障 | AC-002、AC-037；SP-04/09 |
-| REQ-003 | Social、好友 API，无私聊或群权限旁路 | AC-003；SP-12 |
-| REQ-004 | Group、头像引用、客户端群内容、缺失占位 | AC-004、AC-029、AC-045；SP-05/06 |
-| REQ-005 | Invitation 事务、撤销/邀请人失群籍及幂等接受 | AC-005、AC-006；SP-09 |
-| REQ-006 | Ownership、接受前归属不变、人工恢复 | AC-007；SP-09/12 |
-| REQ-007 | 当前权限、群/房主矩阵、scope Gate | AC-008；SP-02/04/09 |
-| REQ-008 | 持久 rooms、房主失群籍接管、离线不接管 | AC-009；SP-09 |
-| REQ-009 | 16 人含 grace/pending、暂停、密码豁免边界 | AC-010、AC-011、AC-013；SP-09 |
-| REQ-010 | Room/Activity 分离、结束/删除及历史终止 | AC-012；SP-04/05 |
-| REQ-011 | 统一加入/切房/恢复、60 秒保留及代次屏障 | AC-014～AC-016、AC-035、AC-037；SP-04/09 |
-| REQ-012 | Audio Worker、Opus 网状发送/混音、部分可达 | AC-017、AC-034、AC-035、AC-044、AC-046；SP-03/07/08 |
-| REQ-013 | PortAudio/libopus、设备及本地音量/静音 | AC-018、AC-036；SP-03 |
-| REQ-014 | 活动 TUN、IP 分配、真实 TCP/UDP | AC-020、AC-023、AC-031、AC-034；SP-01/02/07 |
-| REQ-015 | 作用域隔离、IP 历史优先、安全复用新代次 | AC-021、AC-022；SP-02/04 |
-| REQ-016 | 无默认路由/物理 LAN 转发，同房本机服务范围 | AC-023、AC-024；SP-01/02 |
-| REQ-017 | 隧道先于语音、独立音频失败与共享依赖 | AC-019、AC-025、AC-046；SP-03/07/12 |
-| REQ-018 | 当前版本/短租约 Gate、在途/既有流撤销 | AC-026；SP-04 |
-| REQ-019 | Message Metadata、本机正文、tombstone/代删 | AC-027、AC-038～AC-043、AC-045、AC-047；SP-04/05/06 |
-| REQ-020 | 只追加 Audit、当前管理者读取 | AC-028；SP-09/10 |
-| REQ-021 | 控制元数据备份与客户端落盘、解散不可读 | AC-029、AC-038～AC-040、AC-045、AC-047；SP-05/09 |
-| REQ-022 | 签名安装/更新/卸载及平台/游戏矩阵 | AC-030、AC-031；SP-11 |
-| REQ-023 | 控制/隧道/音频/逐成员实际状态与恢复 | AC-024、AC-032、AC-035；SP-04/07/12 |
-| REQ-024 | 最小 DTO、密钥、日志/审计脱敏及隔离 Worker | AC-033；SP-06/08/10 |
-| REQ-025 | activity scope、当前成员、结束终止房间历史 | AC-038、AC-040、AC-042、AC-045；SP-02/04/05 |
-| REQ-026 | 点对点图片/视频、独立校验落盘后可读 | AC-039、AC-040、AC-043、AC-045；SP-05/06/08 |
-| REQ-027 | 预留/幂等、限量、15 分钟/24 小时、本地清理 | AC-040～AC-043、AC-033、AC-047；SP-04/06 |
-| REQ-028 | 仅 Java 控制面及 Lighthouse，禁全部内容 Relay | AC-044、AC-046；SP-07/08 |
-| REQ-029 | 本机待同步/传输/ACK/部分/失败、缺口及重连屏障 | AC-045、AC-047、AC-048；SP-02/04/05/12 |
+| REQ-001 | Identity & Session、Auth API、凭据安全设计；SP-05 | AC-001：真实/受控邮件注册、验证、登录退出、已验证邮箱找回及无绕进入口 |
+| REQ-002 | `users/auth_sessions/account_activity`、Activity Coordinator、ADR-003/004 | AC-002、AC-037：未验证接口拒绝，多端登录但并发仅单活动单设备 |
+| REQ-003 | Social、好友 API、`friendships/friend_requests` | AC-003：好友全流程、无私聊、好友不授予群/房权限 |
+| REQ-004 | Group & Invitation、Message、`groups/group_members/messages` | AC-004、AC-029：群资料/群文字消息/房间重启保持，仅邀请入群且无公开搜索 |
+| REQ-005 | Group & Invitation、邀请事务及状态约束 | AC-005、AC-006：邀请撤销/失效、幂等接受、邀请人退群和重入角色边界 |
+| REQ-006 | Ownership、`owner_transfers/owner_recovery_requests` | AC-007：转让接受前不变，群主退出限制，争议恢复不自动继任 |
+| REQ-007 | 授权矩阵、执行时校验、Revocation Coordinator | AC-008：逐角色接口测试、跨权限/旧页面/旧会话拒绝 |
+| REQ-008 | Room Administration、`rooms`、房主接管规则 | AC-009：配置持久化、失群籍接管、普通离线不接管、有效指定 |
+| REQ-009 | Activity Coordinator、12 人容量事务、开放/密码规则 | AC-010、AC-011、AC-013：12/13 人、保留占额、暂停、免密码边界及重入 |
+| REQ-010 | Room/Activity 状态机、`rooms/activities`、ADR-004 | AC-012：结束清退但保房，删除终止会话与恢复，空房不自动删除 |
+| REQ-011 | Activity Coordinator、`account_activity/connection_leases`、代次与 Outbox | AC-014～AC-016、AC-035、AC-037：切房/恢复/争抢、60 秒保留和迟到结果拒绝 |
+| REQ-012 | 候选 SFU、Voice Controller、Audio Processing、ADR-002/014 | AC-017、AC-034、AC-035、AC-040：12 端真实音频、多人发言、状态、扰动、长会话与真实音质 |
+| REQ-013 | Audio Device & Processing、Voice Adapter、UI 设备状态 | AC-018、AC-036、AC-040：设备选择/测试/音量/静音及权限、拔出、切换和处理质量 |
+| REQ-014 | Rust Network Helper、候选 Rust WireGuard、TUN、Address & Lease、直连/Relay | AC-020、AC-023、AC-031、AC-034：真实 TCP/UDP、IP 展示复制、三平台与容量 |
+| REQ-015 | 活动隔离、`ip_allocations/ip_history`、代次、ADR-008/009 | AC-021、AC-022：跨房失败、有效恢复保 IP、安全可用时重入优先恢复及全新授权 |
+| REQ-016 | Helper 路由白名单、直连/Relay 无转发/默认路由、ADR-006/008 | AC-023、AC-024：本机服务可达，互联网不代理、物理 LAN 不转发及错误提示 |
+| REQ-017 | Voice/Network Controller 双状态机、独立 Grant、ADR-005 | AC-019、AC-025：分别注入故障，另一项保持并独立重试 |
+| REQ-018 | Revocation Coordinator、SFU 移除、直连 Peer/Relay deny、租约/代次 | AC-026、AC-042：各失权场景下已有/新建语音、直连、中继、同步和恢复在目标内撤销 |
+| REQ-019 | Message、群文字 `messages` tombstone、Audit | AC-027：历史保持、作者/管理员删除边界、提示和代删记录 |
+| REQ-020 | Audit、`audit_logs`、只读 API | AC-028：字段完整、当前管理员可读、普通/失权/跨群及写改删失败 |
+| REQ-021 | PostgreSQL 持久化、群解散状态、备份边界、ADR-011 | AC-029：重启保持，解散产品内不可见且不声称未验证物理删除 |
+| REQ-022 | Tauri bundler/updater 候选、Helper 安装、支持矩阵 | AC-030、AC-031、AC-043：按矩阵实际安装/更新/卸载与三平台互通，记录权限、游戏版本和选型证据 |
+| REQ-023 | Event & Sync、双状态机、Helper 事件、Compatibility & Diagnostics | AC-024、AC-032、AC-035：真实分域状态、错误、自动/手动恢复及未验证标识 |
+| REQ-024 | 安全基线、密钥分权、脱敏日志、最小 UI/Helper IPC | AC-033：日志/管理记录秘密扫描，传输、存储和越权安全检查 |
+| REQ-025 | Capacity & Admission、C0～C4 分层容量模型、分域指标和背压；ADR-013、SP-07/09 | AC-038、AC-039：目标单机 100 人在线、12 人满房和 100 人分房分别压测，记录协议/重传/同步/更新及真实资源边界 |
+| REQ-026 | Audio Device & Processing、客户端 AEC/降噪/AGC/VAD、语音质量设计；ADR-014、SP-03 | AC-040：真实设备游戏并行、降噪 A/B、听辨、多人叠音、延迟、CPU 和弱网测试 |
+| REQ-027 | Network Policy、Path Coordination、策略修订、直连/Relay 票据和迁移；ADR-007、SP-11 | AC-041、AC-042：运营三模式、无客户开关、路径抓包、禁止回退、策略切换/回滚及撤销隔离 |
+| REQ-028 | Rust Client Core/Helper/Relay、Tauri 候选对比、现有 UI 资产适配；ADR-001/006/015、SP-06/10/12 | AC-043、AC-044：候选比较与三平台最小验证、依赖许可证/维护成本；保留资产摘要和差异清单，必要变更重新评审 |
 
-### C 阶段评审与交接
+### 验收入口
 
-同一 AI 顺序承担 system_architect、specialist_designer、architecture_reviewer，未调用子代理或将角色切换称为独立多人审查。复核从已批准 29 项 REQ 和 48 项 AC 出发，覆盖两服务、客户端内容、群/活动隔离、当前授权、切换屏障、迟到包、媒体安全和本地持久化；详见 `docs/03b-architecture-review.md`。本文的接口/数据/部署均为待批准设计，SP-01～SP-12 全部未执行。CLI C 门禁只核对结构、追踪及批准输入，不证明真实可行性。
-
-下一步 C 人工批准后进入 D，登记环境与风险验证任务；不执行 approve、Git 提交/分支/推送或生产部署。核心路线不满足隔离/撤销/两服务约束时有限修复并重评审，不将风险留到发布后补做。
+- 功能与接口测试必须沿用 REQ/AC 标识；安全测试增加水平越权、跨活动、旧代次、旧策略、重复请求和并发争抢。
+- SP-01～SP-12 的输出是架构风险验证证据；AC-001～AC-044 的通过仍需后续完整测试与发布证据，两者不能相互替代。
+- 开发规划优先安排 SP-10 垂直切片及 SP-01/02/03/06/09 的阻塞性 PoC，再锁定具体依赖；C1 在线容量与 C2/C3 媒体/网络容量分别设门禁。
+- 任何架构变更影响已批准需求、权限边界或验收目标时，必须返回需求影响评估；只改变实现且保持基线摘要时，按工作流重新提交当前架构审批。

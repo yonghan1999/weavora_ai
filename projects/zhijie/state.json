@@ -3,23 +3,25 @@
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "name": "织界",
-  "stage": "E_IMPLEMENTATION",
+  "stage": "H_RELEASE",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-10-31T02:17:23Z",
-  "retry_counts": {},
+  "updated_at": "2026-11-05T01:20:09Z",
+  "retry_counts": {
+    "E_IMPLEMENTATION": 0
+  },
   "max_retries": 3,
   "approvals": [
     {
       "schema_version": 1,
-      "approval_id": "APR-B-0ebffa236a4e",
+      "approval_id": "APR-B-2d95f3450d2e",
       "workflow_id": "WF-zhijie",
       "project_id": "zhijie",
       "stage": "B_REQUIREMENTS",
       "stage_name": "需求分析与评审",
-      "requested_at": "2026-10-30T05:44:38Z",
-      "requested_by": "codex-requirements-analyst",
-      "baseline_digest": "930c3479678860f60613bb33a20a6064286f1325aec0ed71866dd0336e22c2f4",
+      "requested_at": "2026-10-26T03:33:29Z",
+      "requested_by": "product-reviewer",
+      "baseline_digest": "44ef7a9a5991a0950b5f298c11f8ae57c319304e4c7705fbcadcd97e37f4e5bd",
       "decision": "approved",
       "documents": [
         "docs/02-requirements.md"
@@ -44,23 +46,23 @@
         "rejected",
         "changes_requested"
       ],
-      "human_command": "python zhijie.py approve zhijie --approval-id APR-B-0ebffa236a4e --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+      "human_command": "python zhijie.py approve zhijie --approval-id APR-B-2d95f3450d2e --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
       "decision_reason": "批准当前基线",
-      "decided_at": "2026-10-30T05:52:17Z",
+      "decided_at": "2026-10-26T03:40:46Z",
       "decided_by": "han",
       "decision_source": "explicit_human_cli",
-      "verified_baseline_digest": "930c3479678860f60613bb33a20a6064286f1325aec0ed71866dd0336e22c2f4"
+      "verified_baseline_digest": "44ef7a9a5991a0950b5f298c11f8ae57c319304e4c7705fbcadcd97e37f4e5bd"
     },
     {
       "schema_version": 1,
-      "approval_id": "APR-B1-15e3bfc1a414",
+      "approval_id": "APR-B1-0a966826ab18",
       "workflow_id": "WF-zhijie",
       "project_id": "zhijie",
       "stage": "B1_PROTOTYPE",
       "stage_name": "产品原型设计与评审",
-      "requested_at": "2026-10-30T06:04:57Z",
-      "requested_by": "codex-product-designer",
-      "baseline_digest": "c07383892d558fd21859ef0c6a2c9c943868144e507cf3a50951869163e144d4",
+      "requested_at": "2026-10-28T03:17:34Z",
+      "requested_by": "product-designer",
+      "baseline_digest": "d728aafee05870ce2950e43c1ef08ca0698d5184d4a4332db21dcf37fa1ef7ff",
       "decision": "approved",
       "documents": [
         "docs/02-requirements.md",
@@ -89,23 +91,23 @@
         "rejected",
         "changes_requested"
       ],
-      "human_command": "python zhijie.py approve zhijie --approval-id APR-B1-15e3bfc1a414 --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+      "human_command": "python zhijie.py approve zhijie --approval-id APR-B1-0a966826ab18 --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
       "decision_reason": "批准当前基线",
-      "decided_at": "2026-10-30T06:06:34Z",
+      "decided_at": "2026-10-28T05:35:30Z",
       "decided_by": "han",
       "decision_source": "explicit_human_cli",
-      "verified_baseline_digest": "c07383892d558fd21859ef0c6a2c9c943868144e507cf3a50951869163e144d4"
+      "verified_baseline_digest": "d728aafee05870ce2950e43c1ef08ca0698d5184d4a4332db21dcf37fa1ef7ff"
     },
     {
       "schema_version": 1,
-      "approval_id": "APR-B2-9fb61c0498c2",
+      "approval_id": "APR-B2-de9ff485a1ed",
       "workflow_id": "WF-zhijie",
       "project_id": "zhijie",
       "stage": "B2_UI",
       "stage_name": "UI 视觉设计与评审",
-      "requested_at": "2026-10-30T06:21:54Z",
-      "requested_by": "codex-ui-designer",
-      "baseline_digest": "f86dfd731963866e8982ee6b0630cc3502ee90dd322e2242a60b4cc65ff5d8b4",
+      "requested_at": "2026-10-28T08:25:34Z",
+      "requested_by": "ui-designer",
+      "baseline_digest": "3d2b5c9973e26e63c87c927993dd5ef497ee3069576f57868db2f0dcccf3b94b",
       "decision": "approved",
       "documents": [
         "docs/02-requirements.md",
@@ -136,23 +138,156 @@
         "rejected",
         "changes_requested"
       ],
-      "human_command": "python zhijie.py approve zhijie --approval-id APR-B2-9fb61c0498c2 --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+      "human_command": "python zhijie.py approve zhijie --approval-id APR-B2-de9ff485a1ed --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
       "decision_reason": "批准当前基线",
-      "decided_at": "2026-10-30T06:22:40Z",
+      "decided_at": "2026-10-28T09:34:36Z",
       "decided_by": "han",
       "decision_source": "explicit_human_cli",
-      "verified_baseline_digest": "f86dfd731963866e8982ee6b0630cc3502ee90dd322e2242a60b4cc65ff5d8b4"
+      "verified_baseline_digest": "3d2b5c9973e26e63c87c927993dd5ef497ee3069576f57868db2f0dcccf3b94b"
     },
     {
       "schema_version": 1,
-      "approval_id": "APR-C-de7690895f4e",
+      "approval_id": "APR-B-20096b7e6994",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "stage": "B_REQUIREMENTS",
+      "stage_name": "需求分析与评审",
+      "requested_at": "2026-11-02T07:00:52Z",
+      "requested_by": "requirements-analyst",
+      "baseline_digest": "99c82f0a9e7eb679bb481e407f9f06e5370f2fbfd3120e0a854ac8e0c26d8528",
+      "decision": "approved",
+      "documents": [
+        "docs/02-requirements.md"
+      ],
+      "summary": "请审批需求分析与评审基线；批准仅适用于当前文件摘要。",
+      "important_decisions": "以所列需求、设计、发布或验收文档中的决策为准。",
+      "risks_and_impacts": "风险、已知问题和未验证事项见所列文档；基线变化后须重新审批。",
+      "acceptance_and_checks": {
+        "stage": "B_REQUIREMENTS",
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "checks": [
+          "文档结构：docs/02-requirements.md",
+          "需求唯一标识与验收标准",
+          "人工审批状态与基线一致性"
+        ],
+        "evidence": []
+      },
+      "allowed_decisions": [
+        "approved",
+        "rejected",
+        "changes_requested"
+      ],
+      "human_command": "python zhijie.py approve zhijie --approval-id APR-B-20096b7e6994 --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+      "decision_reason": "批准当前基线",
+      "decided_at": "2026-11-02T07:13:31Z",
+      "decided_by": "han",
+      "decision_source": "explicit_human_cli",
+      "verified_baseline_digest": "99c82f0a9e7eb679bb481e407f9f06e5370f2fbfd3120e0a854ac8e0c26d8528"
+    },
+    {
+      "schema_version": 1,
+      "approval_id": "APR-B1-9853248be4b2",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "stage": "B1_PROTOTYPE",
+      "stage_name": "产品原型设计与评审",
+      "requested_at": "2026-11-02T07:48:18Z",
+      "requested_by": "product-designer",
+      "baseline_digest": "02fba4931bbf8d39dff70a8e80d3180227f73a876afa5324a56f7526e3d18ef6",
+      "decision": "approved",
+      "documents": [
+        "docs/02-requirements.md",
+        "docs/02a-prototype.md",
+        "workspace/design/prototype/index.html"
+      ],
+      "summary": "请审批产品原型设计与评审基线；批准仅适用于当前文件摘要。",
+      "important_decisions": "以所列需求、设计、发布或验收文档中的决策为准。",
+      "risks_and_impacts": "风险、已知问题和未验证事项见所列文档；基线变化后须重新审批。",
+      "acceptance_and_checks": {
+        "stage": "B1_PROTOTYPE",
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "checks": [
+          "文档结构：docs/02a-prototype.md",
+          "文档结构：workspace/design/prototype/index.html",
+          "需求—产品原型追踪",
+          "可点击原型结构与本地链接：workspace/design/prototype/index.html",
+          "人工审批状态与基线一致性"
+        ],
+        "evidence": []
+      },
+      "allowed_decisions": [
+        "approved",
+        "rejected",
+        "changes_requested"
+      ],
+      "human_command": "python zhijie.py approve zhijie --approval-id APR-B1-9853248be4b2 --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+      "decision_reason": "批准当前基线",
+      "decided_at": "2026-11-02T07:50:16Z",
+      "decided_by": "han",
+      "decision_source": "explicit_human_cli",
+      "verified_baseline_digest": "02fba4931bbf8d39dff70a8e80d3180227f73a876afa5324a56f7526e3d18ef6"
+    },
+    {
+      "schema_version": 1,
+      "approval_id": "APR-B2-8309098ad14a",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "stage": "B2_UI",
+      "stage_name": "UI 视觉设计与评审",
+      "requested_at": "2026-11-02T08:39:21Z",
+      "requested_by": "ui-designer",
+      "baseline_digest": "f1792b4b1dd2453be3f40889c59e7037b1ec99948178be38b8c36e737b3f1193",
+      "decision": "approved",
+      "documents": [
+        "docs/02-requirements.md",
+        "docs/02a-prototype.md",
+        "docs/02b-ui.md",
+        "workspace/design/prototype/index.html",
+        "workspace/design/ui/index.html"
+      ],
+      "summary": "请审批UI 视觉设计与评审基线；批准仅适用于当前文件摘要。",
+      "important_decisions": "以所列需求、设计、发布或验收文档中的决策为准。",
+      "risks_and_impacts": "风险、已知问题和未验证事项见所列文档；基线变化后须重新审批。",
+      "acceptance_and_checks": {
+        "stage": "B2_UI",
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "checks": [
+          "文档结构：docs/02b-ui.md",
+          "文档结构：workspace/design/ui/index.html",
+          "需求—UI 设计追踪",
+          "可点击原型结构与本地链接：workspace/design/ui/index.html",
+          "人工审批状态与基线一致性"
+        ],
+        "evidence": []
+      },
+      "allowed_decisions": [
+        "approved",
+        "rejected",
+        "changes_requested"
+      ],
+      "human_command": "python zhijie.py approve zhijie --approval-id APR-B2-8309098ad14a --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+      "decision_reason": "批准当前基线",
+      "decided_at": "2026-11-02T08:41:02Z",
+      "decided_by": "han",
+      "decision_source": "explicit_human_cli",
+      "verified_baseline_digest": "f1792b4b1dd2453be3f40889c59e7037b1ec99948178be38b8c36e737b3f1193"
+    },
+    {
+      "schema_version": 1,
+      "approval_id": "APR-C-23e94d4bc1d3",
       "workflow_id": "WF-zhijie",
       "project_id": "zhijie",
       "stage": "C_DESIGN",
       "stage_name": "架构与详细设计",
-      "requested_at": "2026-10-30T06:36:37Z",
-      "requested_by": "codex-architecture-reviewer",
-      "baseline_digest": "addabfe11a58f52d7057ca166d5c0d953d5eda394f85de17388bd3512c022114",
+      "requested_at": "2026-11-03T02:00:48Z",
+      "requested_by": "kimi",
+      "baseline_digest": "c6a3587a5b974d79509dee48b5b1c057b36b4094b5fc1f0633221cd1a068a80d",
       "decision": "approved",
       "documents": [
         "docs/02-requirements.md",
@@ -182,12 +317,12 @@
         "rejected",
         "changes_requested"
       ],
-      "human_command": "python zhijie.py approve zhijie --approval-id APR-C-de7690895f4e --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+      "human_command": "python zhijie.py approve zhijie --approval-id APR-C-23e94d4bc1d3 --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
       "decision_reason": "批准当前基线",
-      "decided_at": "2026-10-30T08:04:46Z",
+      "decided_at": "2026-11-03T06:04:11Z",
       "decided_by": "han",
       "decision_source": "explicit_human_cli",
-      "verified_baseline_digest": "addabfe11a58f52d7057ca166d5c0d953d5eda394f85de17388bd3512c022114"
+      "verified_baseline_digest": "c6a3587a5b974d79509dee48b5b1c057b36b4094b5fc1f0633221cd1a068a80d"
     }
   ],
   "history": [
@@ -1346,22 +1481,22 @@
       "human_authorization": false
     },
     {
-      "event": "requirements_rebaseline",
+      "event": "requirements_reopened",
       "workflow_id": "WF-zhijie",
       "project_id": "zhijie",
       "from_stage": "C_DESIGN",
       "from_status": "in_progress",
       "stage": "B_REQUIREMENTS",
-      "at": "2026-10-29T02:36:39Z",
-      "actor": "codex-workflow-operator",
+      "to_status": "in_progress",
+      "at": "2026-11-02T02:22:38Z",
+      "actor": "codex",
       "role": "workflow_operator",
-      "reason": "用户明确决定首版纳入真实房间聊天及群房间图片视频消息，补齐需求与验收并重新人工评审",
+      "reason": "总经理明确要求退回需求分析：单台5 Mbit服务器、初期100人在线；游戏语音降噪和清晰人声；优先评估Rust客户端与网络逻辑；中继由运营方选择且用户无感；保留现有UI和原型风格资产",
       "invalidated_approval_ids": [
         "APR-B-2d95f3450d2e",
         "APR-B1-0a966826ab18",
         "APR-B2-de9ff485a1ed"
       ],
-      "invalidated_request_id": null,
       "human_authorization": false
     },
     {
@@ -1372,8 +1507,40 @@
       "stage": "B_REQUIREMENTS",
       "from": "in_progress",
       "to": "awaiting_approval",
-      "at": "2026-10-29T02:39:24Z",
-      "actor": "codex-requirements-analyst",
+      "at": "2026-11-02T05:30:27Z",
+      "actor": "requirements-analyst",
+      "role": "requirements_analyst",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/02-requirements.md"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B_REQUIREMENTS",
+      "from": "awaiting_approval",
+      "to": "in_progress",
+      "at": "2026-11-02T06:59:47Z",
+      "actor": "requirements-analyst",
+      "role": "requirements_analyst",
+      "reason": "用户明确将房间人数上限从16人调整为12人；同步验收边界、语音容量测算和设计文档后重新提交",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "B_REQUIREMENTS",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-11-02T07:00:52Z",
+      "actor": "requirements-analyst",
       "role": "requirements_analyst",
       "reason": "提交人工审批",
       "evidence": [
@@ -1389,12 +1556,12 @@
       "stage": "B_REQUIREMENTS",
       "from": "awaiting_approval",
       "to": "approved",
-      "at": "2026-10-29T03:35:50Z",
+      "at": "2026-11-02T07:13:31Z",
       "actor": "han",
       "role": "human_approver",
       "reason": "人工明确批准",
       "evidence": [
-        "approvals/APR-B-680256ccfed2.decision.json"
+        "approvals/APR-B-20096b7e6994.decision.json"
       ],
       "human_authorization": true
     },
@@ -1406,7 +1573,7 @@
       "stage": "B1_PROTOTYPE",
       "from": "approved",
       "to": "in_progress",
-      "at": "2026-10-29T03:35:50Z",
+      "at": "2026-11-02T07:13:31Z",
       "actor": "han",
       "role": "human_approver",
       "reason": "进入产品原型设计与评审",
@@ -1421,8 +1588,8 @@
       "stage": "B1_PROTOTYPE",
       "from": "in_progress",
       "to": "awaiting_approval",
-      "at": "2026-10-29T03:55:28Z",
-      "actor": "codex-product-designer",
+      "at": "2026-11-02T07:48:18Z",
+      "actor": "product-designer",
       "role": "product_designer",
       "reason": "提交人工审批",
       "evidence": [
@@ -1440,12 +1607,12 @@
       "stage": "B1_PROTOTYPE",
       "from": "awaiting_approval",
       "to": "approved",
-      "at": "2026-10-29T05:46:51Z",
+      "at": "2026-11-02T07:50:16Z",
       "actor": "han",
       "role": "human_approver",
       "reason": "人工明确批准",
       "evidence": [
-        "approvals/APR-B1-03de6cadbc08.decision.json"
+        "approvals/APR-B1-9853248be4b2.decision.json"
       ],
       "human_authorization": true
     },
@@ -1457,7 +1624,7 @@
       "stage": "B2_UI",
       "from": "approved",
       "to": "in_progress",
-      "at": "2026-10-29T05:46:51Z",
+      "at": "2026-11-02T07:50:16Z",
       "actor": "han",
       "role": "human_approver",
       "reason": "进入UI 视觉设计与评审",
@@ -1472,7 +1639,7 @@
       "stage": "B2_UI",
       "from": "in_progress",
       "to": "awaiting_approval",
-      "at": "2026-10-29T06:06:03Z",
+      "at": "2026-11-02T08:39:21Z",
       "actor": "ui-designer",
       "role": "ui_designer",
       "reason": "提交人工审批",
@@ -1493,12 +1660,12 @@
       "stage": "B2_UI",
       "from": "awaiting_approval",
       "to": "approved",
-      "at": "2026-10-30T02:08:59Z",
+      "at": "2026-11-02T08:41:02Z",
       "actor": "han",
       "role": "human_approver",
       "reason": "人工明确批准",
       "evidence": [
-        "approvals/APR-B2-ee54105fb9a3.decision.json"
+        "approvals/APR-B2-8309098ad14a.decision.json"
       ],
       "human_authorization": true
     },
@@ -1510,7 +1677,7 @@
       "stage": "C_DESIGN",
       "from": "approved",
       "to": "in_progress",
-      "at": "2026-10-30T02:08:59Z",
+      "at": "2026-11-02T08:41:02Z",
       "actor": "han",
       "role": "human_approver",
       "reason": "进入架构与详细设计",
@@ -1525,170 +1692,15 @@
       "stage": "C_DESIGN",
       "from": "in_progress",
       "to": "awaiting_approval",
-      "at": "2026-10-30T02:19:52Z",
-      "actor": "architecture-reviewer",
-      "role": "architecture_reviewer",
-      "reason": "提交人工审批",
-      "evidence": [
-        "docs/02-requirements.md",
-        "docs/02a-prototype.md",
-        "docs/02b-ui.md",
-        "docs/03-architecture.md",
-        "workspace/design/prototype/index.html",
-        "workspace/design/ui/index.html"
-      ],
-      "human_authorization": false
-    },
-    {
-      "event": "state_transition",
-      "workflow_id": "WF-zhijie",
-      "project_id": "zhijie",
-      "task_id": null,
-      "stage": "C_DESIGN",
-      "from": "awaiting_approval",
-      "to": "in_progress",
-      "at": "2026-10-30T05:33:36Z",
-      "actor": "system-architect",
+      "at": "2026-11-02T08:51:43Z",
+      "actor": "kimi",
       "role": "system_architect",
-      "reason": "用户要求仅保留控制面与 Lighthouse，业务流量经虚拟局域网客户端直连，撤回原 LiveKit/Relay/媒体存储架构审批以评估影响",
-      "evidence": [],
-      "human_authorization": false
-    },
-    {
-      "event": "requirements_rebaseline",
-      "workflow_id": "WF-zhijie",
-      "project_id": "zhijie",
-      "from_stage": "C_DESIGN",
-      "from_status": "in_progress",
-      "stage": "B_REQUIREMENTS",
-      "at": "2026-10-30T05:36:34Z",
-      "actor": "codex-workflow-operator",
-      "role": "workflow_operator",
-      "reason": "用户明确要求仅控制面和 Lighthouse，所有业务内容经虚拟局域网直传；用户已选择客户端保存、在线副本同步、无在线副本时暂不可用，需重定义持久化、语音故障域和媒体验收",
-      "invalidated_approval_ids": [
-        "APR-B-680256ccfed2",
-        "APR-B1-03de6cadbc08",
-        "APR-B2-ee54105fb9a3"
-      ],
-      "invalidated_request_id": null,
-      "human_authorization": false
-    },
-    {
-      "event": "state_transition",
-      "workflow_id": "WF-zhijie",
-      "project_id": "zhijie",
-      "task_id": null,
-      "stage": "B_REQUIREMENTS",
-      "from": "in_progress",
-      "to": "awaiting_approval",
-      "at": "2026-10-30T05:44:38Z",
-      "actor": "codex-requirements-analyst",
-      "role": "requirements_analyst",
-      "reason": "提交人工审批",
-      "evidence": [
-        "docs/02-requirements.md"
-      ],
-      "human_authorization": false
-    },
-    {
-      "event": "state_transition",
-      "workflow_id": "WF-zhijie",
-      "project_id": "zhijie",
-      "task_id": null,
-      "stage": "B_REQUIREMENTS",
-      "from": "awaiting_approval",
-      "to": "approved",
-      "at": "2026-10-30T05:52:17Z",
-      "actor": "han",
-      "role": "human_approver",
-      "reason": "人工明确批准",
-      "evidence": [
-        "approvals/APR-B-0ebffa236a4e.decision.json"
-      ],
-      "human_authorization": true
-    },
-    {
-      "event": "state_transition",
-      "workflow_id": "WF-zhijie",
-      "project_id": "zhijie",
-      "task_id": null,
-      "stage": "B1_PROTOTYPE",
-      "from": "approved",
-      "to": "in_progress",
-      "at": "2026-10-30T05:52:17Z",
-      "actor": "han",
-      "role": "human_approver",
-      "reason": "进入产品原型设计与评审",
-      "evidence": [],
-      "human_authorization": false
-    },
-    {
-      "event": "state_transition",
-      "workflow_id": "WF-zhijie",
-      "project_id": "zhijie",
-      "task_id": null,
-      "stage": "B1_PROTOTYPE",
-      "from": "in_progress",
-      "to": "awaiting_approval",
-      "at": "2026-10-30T06:04:57Z",
-      "actor": "codex-product-designer",
-      "role": "product_designer",
-      "reason": "提交人工审批",
-      "evidence": [
-        "docs/02-requirements.md",
-        "docs/02a-prototype.md",
-        "workspace/design/prototype/index.html"
-      ],
-      "human_authorization": false
-    },
-    {
-      "event": "state_transition",
-      "workflow_id": "WF-zhijie",
-      "project_id": "zhijie",
-      "task_id": null,
-      "stage": "B1_PROTOTYPE",
-      "from": "awaiting_approval",
-      "to": "approved",
-      "at": "2026-10-30T06:06:34Z",
-      "actor": "han",
-      "role": "human_approver",
-      "reason": "人工明确批准",
-      "evidence": [
-        "approvals/APR-B1-15e3bfc1a414.decision.json"
-      ],
-      "human_authorization": true
-    },
-    {
-      "event": "state_transition",
-      "workflow_id": "WF-zhijie",
-      "project_id": "zhijie",
-      "task_id": null,
-      "stage": "B2_UI",
-      "from": "approved",
-      "to": "in_progress",
-      "at": "2026-10-30T06:06:34Z",
-      "actor": "han",
-      "role": "human_approver",
-      "reason": "进入UI 视觉设计与评审",
-      "evidence": [],
-      "human_authorization": false
-    },
-    {
-      "event": "state_transition",
-      "workflow_id": "WF-zhijie",
-      "project_id": "zhijie",
-      "task_id": null,
-      "stage": "B2_UI",
-      "from": "in_progress",
-      "to": "awaiting_approval",
-      "at": "2026-10-30T06:21:54Z",
-      "actor": "codex-ui-designer",
-      "role": "ui_designer",
       "reason": "提交人工审批",
       "evidence": [
         "docs/02-requirements.md",
         "docs/02a-prototype.md",
         "docs/02b-ui.md",
+        "docs/03-architecture.md",
         "workspace/design/prototype/index.html",
         "workspace/design/ui/index.html"
       ],
@@ -1699,30 +1711,13 @@
       "workflow_id": "WF-zhijie",
       "project_id": "zhijie",
       "task_id": null,
-      "stage": "B2_UI",
-      "from": "awaiting_approval",
-      "to": "approved",
-      "at": "2026-10-30T06:22:40Z",
-      "actor": "han",
-      "role": "human_approver",
-      "reason": "人工明确批准",
-      "evidence": [
-        "approvals/APR-B2-9fb61c0498c2.decision.json"
-      ],
-      "human_authorization": true
-    },
-    {
-      "event": "state_transition",
-      "workflow_id": "WF-zhijie",
-      "project_id": "zhijie",
-      "task_id": null,
       "stage": "C_DESIGN",
-      "from": "approved",
+      "from": "awaiting_approval",
       "to": "in_progress",
-      "at": "2026-10-30T06:22:40Z",
-      "actor": "han",
-      "role": "human_approver",
-      "reason": "进入架构与详细设计",
+      "at": "2026-11-03T01:58:14Z",
+      "actor": "kimi",
+      "role": "system_architect",
+      "reason": "用户决定将控制面持久化方案更新为 MyBatis，并补充迁移与并发验证设计",
       "evidence": [],
       "human_authorization": false
     },
@@ -1734,9 +1729,9 @@
       "stage": "C_DESIGN",
       "from": "in_progress",
       "to": "awaiting_approval",
-      "at": "2026-10-30T06:36:37Z",
-      "actor": "codex-architecture-reviewer",
-      "role": "architecture_reviewer",
+      "at": "2026-11-03T02:00:48Z",
+      "actor": "kimi",
+      "role": "system_architect",
       "reason": "提交人工审批",
       "evidence": [
         "docs/02-requirements.md",
@@ -1756,12 +1751,12 @@
       "stage": "C_DESIGN",
       "from": "awaiting_approval",
       "to": "approved",
-      "at": "2026-10-30T08:04:46Z",
+      "at": "2026-11-03T06:04:11Z",
       "actor": "han",
       "role": "human_approver",
       "reason": "人工明确批准",
       "evidence": [
-        "approvals/APR-C-de7690895f4e.decision.json"
+        "approvals/APR-C-23e94d4bc1d3.decision.json"
       ],
       "human_authorization": true
     },
@@ -1773,7 +1768,7 @@
       "stage": "D_PLANNING",
       "from": "approved",
       "to": "in_progress",
-      "at": "2026-10-30T08:04:46Z",
+      "at": "2026-11-03T06:04:11Z",
       "actor": "han",
       "role": "human_approver",
       "reason": "进入开发规划",
@@ -1788,8 +1783,8 @@
       "stage": "D_PLANNING",
       "from": "in_progress",
       "to": "approved",
-      "at": "2026-10-31T02:17:23Z",
-      "actor": "han",
+      "at": "2026-11-04T03:13:25Z",
+      "actor": "tech-lead",
       "role": "tech_lead",
       "reason": "自动质量门禁通过",
       "evidence": [],
@@ -1803,10 +1798,251 @@
       "stage": "E_IMPLEMENTATION",
       "from": "approved",
       "to": "in_progress",
-      "at": "2026-10-31T02:17:23Z",
-      "actor": "han",
+      "at": "2026-11-04T03:13:25Z",
+      "actor": "tech-lead",
       "role": "tech_lead",
       "reason": "进入编码实现",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-002",
+      "stage": "E_IMPLEMENTATION",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-04T07:01:37Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "任务 TASK-002 命令失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261104T070135Z-60841f2a.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-002",
+      "stage": "E_IMPLEMENTATION",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-04T07:05:02Z",
+      "actor": "developer",
+      "role": "workflow_operator",
+      "reason": "第 1 次重试：修复 Windows POSIX 命令执行支持",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-012",
+      "stage": "E_IMPLEMENTATION",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-04T10:38:45Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "任务 TASK-012 命令失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261104T103825Z-0324d4bb.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-012",
+      "stage": "E_IMPLEMENTATION",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-04T10:41:50Z",
+      "actor": "developer",
+      "role": "workflow_operator",
+      "reason": "第 2 次重试：修复 Relay 撤销与迟到注册竞态",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-015",
+      "stage": "E_IMPLEMENTATION",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-04T11:15:33Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "任务 TASK-015 命令失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261104T111513Z-ffcabc6d.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-015",
+      "stage": "E_IMPLEMENTATION",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-04T11:16:01Z",
+      "actor": "developer",
+      "role": "workflow_operator",
+      "reason": "第 3 次重试：修复 Logback 消息转换器编译",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-015",
+      "stage": "E_IMPLEMENTATION",
+      "from": "in_progress",
+      "to": "blocked",
+      "at": "2026-11-04T11:17:31Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "任务 TASK-015 命令失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261104T111711Z-f492c7c8.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-015",
+      "stage": "E_IMPLEMENTATION",
+      "from": "blocked",
+      "to": "in_progress",
+      "at": "2026-11-05T00:59:41Z",
+      "actor": "han",
+      "role": "human_approver",
+      "reason": "人工确认解除阻塞；重置当前阶段重试预算",
+      "evidence": [],
+      "human_authorization": true
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "E_IMPLEMENTATION",
+      "from": "in_progress",
+      "to": "approved",
+      "at": "2026-11-05T01:11:28Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "自动质量门禁通过",
+      "evidence": [
+        "tests/evidence/EXEC-20261104T040314Z-b12c7525.json",
+        "tests/evidence/EXEC-20261104T070513Z-1183982d.json",
+        "tests/evidence/EXEC-20261104T071228Z-737184cb.json",
+        "tests/evidence/EXEC-20261104T072033Z-1e221d86.json",
+        "tests/evidence/EXEC-20261104T074837Z-f99f9de5.json",
+        "tests/evidence/EXEC-20261104T080007Z-2d506080.json",
+        "tests/evidence/EXEC-20261104T081020Z-80ed363b.json",
+        "tests/evidence/EXEC-20261104T082610Z-a39f9195.json",
+        "tests/evidence/EXEC-20261104T084814Z-20f9dd33.json",
+        "tests/evidence/EXEC-20261104T100521Z-2b132793.json",
+        "tests/evidence/EXEC-20261104T102532Z-7a49b028.json",
+        "tests/evidence/EXEC-20261104T104211Z-9f047261.json",
+        "tests/evidence/EXEC-20261104T110016Z-70e6242a.json",
+        "tests/evidence/EXEC-20261104T110440Z-423a2906.json",
+        "tests/evidence/EXEC-20261105T010335Z-8f22bfea.json",
+        "tests/evidence/EXEC-20261105T010708Z-06f92a49.json",
+        "tests/evidence/EXEC-20261105T011021Z-e82b41e4.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "approved",
+      "to": "in_progress",
+      "at": "2026-11-05T01:11:28Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "进入开发自测",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "in_progress",
+      "to": "approved",
+      "at": "2026-11-05T01:15:17Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "自动质量门禁通过",
+      "evidence": [
+        "tests/evidence/EXEC-20261105T011337Z-ae6fc342.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "G_INDEPENDENT_TEST",
+      "from": "approved",
+      "to": "in_progress",
+      "at": "2026-11-05T01:15:17Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "进入独立测试与质量验收",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "G_INDEPENDENT_TEST",
+      "from": "in_progress",
+      "to": "approved",
+      "at": "2026-11-05T01:20:09Z",
+      "actor": "independent-tester",
+      "role": "test_engineer",
+      "reason": "自动质量门禁通过",
+      "evidence": [
+        "tests/evidence/EXEC-20261105T011815Z-f0b369f0.json",
+        "tests/evidence/EXEC-20261105T011815Z-f0b369f0.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "H_RELEASE",
+      "from": "approved",
+      "to": "in_progress",
+      "at": "2026-11-05T01:20:09Z",
+      "actor": "independent-tester",
+      "role": "test_engineer",
+      "reason": "进入发布准备",
       "evidence": [],
       "human_authorization": false
     }
@@ -1827,5 +2063,10 @@
       "docs/02-requirements.md",
       "docs/03-architecture.md"
     ]
-  }
+  },
+  "invalidated_approval_ids": [
+    "APR-B-2d95f3450d2e",
+    "APR-B1-0a966826ab18",
+    "APR-B2-de9ff485a1ed"
+  ]
 }

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "results": [
+    {
+      "schemaVersion": 1,
+      "scenarioId": "C1",
+      "execution": {"status": "not_run", "durationSeconds": 0, "command": null},
+      "metrics": null,
+      "evidence": [],
+      "conclusion": {"status": "not_run", "reason": "100 verified accounts have not been run on the target server"}
+    },
+    {
+      "schemaVersion": 1,
+      "scenarioId": "C2",
+      "execution": {"status": "not_run", "durationSeconds": 0, "command": null},
+      "metrics": null,
+      "evidence": [],
+      "conclusion": {"status": "not_run", "reason": "12-person audio and game traffic have not been measured"}
+    },
+    {
+      "schemaVersion": 1,
+      "scenarioId": "C3",
+      "execution": {"status": "not_run", "durationSeconds": 0, "command": null},
+      "metrics": null,
+      "evidence": [],
+      "conclusion": {"status": "not_run", "reason": "100 accounts distributed across nine rooms have not been measured"}
+    },
+    {
+      "schemaVersion": 1,
+      "scenarioId": "C0",
+      "execution": {"status": "completed", "durationSeconds": 60, "command": ["fixture-adapter", "--contract-only"]},
+      "metrics": null,
+      "evidence": ["fixtures/host-inventory.json"],
+      "conclusion": {"status": "metrics_required", "reason": "Fixture validates schema only and is not a measured environment result"}
+    }
+  ]
+}

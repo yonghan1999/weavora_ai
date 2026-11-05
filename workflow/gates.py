@@ -355,7 +355,8 @@ def _check_previous_approvals(engine, project_id: str, stage_id: str, result: Ga
     required = [item for item in order[:index] if engine.stages[item]["approval"]]
     if include_current and engine.stages[stage_id]["approval"]:
         required.append(stage_id)
-    approvals = state.get("approvals", [])
+    approvals = [item for item in state.get("approvals", [])
+                 if item.get("approval_id") not in state.get("invalidated_approval_ids", [])]
     for required_stage in required:
         matching = [item for item in approvals if item.get("stage") == required_stage and item.get("decision") == "approved"]
         if not matching:

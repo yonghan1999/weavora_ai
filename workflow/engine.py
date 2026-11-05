@@ -72,7 +72,7 @@ def tree_digest(root: Path) -> str:
     if not root.exists():
         return digest.hexdigest()
     for path in sorted(item for item in root.rglob("*") if item.is_file()):
-        if "__pycache__" in path.parts or ".git" in path.parts:
+        if any(part in {"__pycache__", ".git", "target", "node_modules", "dist"} for part in path.parts):
             continue
         digest.update(path.relative_to(root).as_posix().encode("utf-8"))
         digest.update(b"\0")
@@ -125,6 +125,16 @@ def file_lock(path: Path, timeout: float = 10.0):
 
 
 MAX_CAPTURE_BYTES = 1_000_000
+
+
+def shell_invocation(command: str, platform_name: str | None = None, bash_path: str | None = None) -> tuple[str | list[str], bool, str]:
+    if (platform_name or os.name) == "nt":
+        bash = bash_path if bash_path is not None else shutil.which("bash")
+        if bash:
+            return [bash, "-o", "pipefail", "-c", command], False, "bash -o pipefail -c"
+        # /d 禁止注册表 AutoRun 干扰命令结果；仍支持用户显式提供的 shell 语法。
+        return ["cmd.exe", "/d", "/s", "/c", command], False, "cmd.exe /d /s /c"
+    return command, True, "default shell"
 
 
 def read_captured_output(path: Path) -> tuple[str, bool]:
@@ -593,6 +603,49 @@ class Engine:
                 self.save(project_id, state)
             return state
 
+    def reopen_requirements(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
+        """开发前按用户明确变更重开需求，不删除资产或改写历史审批。"""
+        if role != "workflow_operator" or not actor.strip() or not reason.strip():
+            raise WorkflowError("重开需求须由 workflow_operator 提供执行者和用户变更原因。")
+        with self.lock(project_id):
+            state = self.load(project_id)
+            if state["stage"] not in {"B1_PROTOTYPE", "B2_UI", "C_DESIGN"} or state["status"] not in {
+                "in_progress", "awaiting_approval", "rejected", "paused", "failed", "awaiting_retry", "blocked",
+            }:
+                raise WorkflowError("仅支持开发前的原型、UI 或架构阶段重开需求；其他阶段须单独评估。")
+            pending = self.current_approval_request(project_id, required=False)
+            invalidated = set(state.get("invalidated_approval_ids", []))
+            invalidated.update(item["approval_id"] for item in state.get("approvals", []))
+            if pending:
+                invalidated.add(pending["approval_id"])
+            event = {
+                "event": "requirements_reopened",
+                "workflow_id": state["workflow_id"],
+                "project_id": project_id,
+                "from_stage": state["stage"],
+                "from_status": state["status"],
+                "stage": "B_REQUIREMENTS",
+                "to_status": "in_progress",
+                "at": utc_now(),
+                "actor": actor,
+                "role": role,
+                "reason": reason.strip(),
+                "invalidated_approval_ids": sorted(invalidated),
+                "human_authorization": False,
+            }
+            state["stage"] = "B_REQUIREMENTS"
+            state["status"] = "in_progress"
+            state["resume_status"] = None
+            state["active_task_id"] = None
+            state["retry_counts"] = {}
+            state["invalidated_approval_ids"] = sorted(invalidated)
+            state.setdefault("history", []).append(event)
+            state["history"] = state["history"][-200:]
+            self.save(project_id, state)
+            self.audit(project_id, event)
+            (self.project_dir(project_id) / "approvals/current.json").unlink(missing_ok=True)
+            return state
+
     def migrate(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
         """将需求已批准、架构在途的旧项目显式迁移到含 B1/B2 的当前流程。"""
         with self.lock(project_id):
@@ -604,6 +657,7 @@ class Engine:
             approvals = [
                 item for item in state.get("approvals", [])
                 if item.get("stage") == "B_REQUIREMENTS" and item.get("decision") == "approved"
+                and item.get("approval_id") not in state.get("invalidated_approval_ids", [])
             ]
             if not approvals:
                 raise WorkflowError("迁移前必须存在已批准的需求基线。")
@@ -696,6 +750,28 @@ class Engine:
                 raise WorkflowError("重试次数耗尽，工作流已阻塞。")
             state["retry_counts"][stage] = count
             self.transition(project_id, state, "in_progress", actor, role, f"第 {count} 次重试：{reason}")
+            return state
+
+    def unblock(self, project_id: str, actor: str, confirmation: str) -> dict[str, Any]:
+        if confirmation != HUMAN_CONFIRMATION:
+            raise WorkflowError("缺少明确人工确认。解除阻塞只能由人类执行。")
+        if not actor.strip() or actor.strip().lower() in {"ai", "agent", "assistant", "system", "bot"}:
+            raise WorkflowError("解除阻塞的执行者必须是具体的人类，不能是 AI 或系统角色。")
+        with self.lock(project_id):
+            state = self.load(project_id)
+            if state["status"] != "blocked":
+                raise WorkflowError("只有已阻塞的工作流可以人工解除阻塞。")
+            stage = state["stage"]
+            state.setdefault("retry_counts", {})[stage] = 0
+            task_id = state.get("active_task_id")
+            if task_id:
+                tasks_path = self.project_dir(project_id) / "tasks/tasks.json"
+                data = read_json(tasks_path)
+                task = next((item for item in data["tasks"] if item["id"] == task_id), None)
+                if task and task["attempts"] >= task.get("max_attempts", 3):
+                    task["attempts"] = 0
+                    atomic_json(tasks_path, data)
+            self.transition(project_id, state, "in_progress", actor, "human_approver", "人工确认解除阻塞；重置当前阶段重试预算", human_authorization=True)
             return state
 
     def cancel(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
@@ -811,15 +887,7 @@ class Engine:
         started = utc_now()
         workspace = self.project_dir(project_id) / "workspace"
         before = tree_digest(workspace)
-        if os.name == "nt":
-            # /d 禁止注册表 AutoRun 干扰命令结果；仍支持用户显式提供的 shell 语法。
-            invocation: str | list[str] = ["cmd.exe", "/d", "/s", "/c", command]
-            use_shell = False
-            shell_mode = "cmd.exe /d /s /c"
-        else:
-            invocation = command
-            use_shell = True
-            shell_mode = "default shell"
+        invocation, use_shell, shell_mode = shell_invocation(command)
         temporary_root = self.root / "var" / "tmp"
         temporary_root.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temporary_root) as directory:

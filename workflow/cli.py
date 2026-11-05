@@ -26,6 +26,7 @@ def parser() -> argparse.ArgumentParser:
     for name, help_text in [
         ("submit", "执行当前阶段门禁并提交"),
         ("revise", "撤回待审批或驳回后重新进入修改"),
+        ("reopen-requirements", "按用户范围变更退回需求分析，保留历史与设计资产"),
         ("migrate", "将符合条件的既有项目显式迁移到当前流程"),
         ("rebaseline", "架构在途时返回需求分析，重新评审变更基线"),
         ("pause", "暂停并持久化状态"),
@@ -40,7 +41,7 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--actor", required=True)
         if name not in {"archive"}:
             command.add_argument("--role", default="workflow_operator")
-        if name in {"revise", "migrate", "rebaseline", "pause", "fail", "retry", "cancel"}:
+        if name in {"revise", "reopen-requirements", "migrate", "rebaseline", "pause", "fail", "retry", "cancel"}:
             command.add_argument("--reason", required=True)
         if name == "fail":
             command.add_argument("--retryable", action="store_true")
@@ -52,6 +53,11 @@ def parser() -> argparse.ArgumentParser:
     command.add_argument("--actor", required=True, help="具体人类决策者姓名或标识")
     command.add_argument("--human-confirm", required=True, help=f"人工确认值：{HUMAN_CONFIRMATION}")
     command.add_argument("--reason", default="", help="驳回或要求修改时必填")
+
+    command = sub.add_parser("unblock", help="【仅限人类】解除重试耗尽造成的阻塞")
+    command.add_argument("project_id")
+    command.add_argument("--actor", required=True, help="具体人类执行者姓名或标识")
+    command.add_argument("--human-confirm", required=True, help=f"人工确认值：{HUMAN_CONFIRMATION}")
 
     command = sub.add_parser("add-task", help="添加可执行开发任务")
     command.add_argument("project_id")
@@ -67,14 +73,14 @@ def parser() -> argparse.ArgumentParser:
     command.add_argument("task_id")
     command.add_argument("--actor", required=True)
     command.add_argument("--role", default="developer")
-    command.add_argument("--command", required=True)
+    command.add_argument("--command", dest="exec_command", required=True)
     command.add_argument("--timeout", type=int, default=120)
 
     command = sub.add_parser("add-check", help="配置阶段自动化检查")
     command.add_argument("project_id")
     command.add_argument("--check-id", required=True)
     command.add_argument("--stage", required=True)
-    command.add_argument("--command", required=True)
+    command.add_argument("--command", dest="exec_command", required=True)
     command.add_argument("--optional", action="store_true")
 
     command = sub.add_parser("verify", help="真实运行构建或测试检查")
@@ -120,8 +126,12 @@ def dispatch(args: argparse.Namespace) -> Any:
         return engine.submit(args.project_id, args.actor, args.role)
     if args.command == "approve":
         return engine.approve(args.project_id, args.approval_id, args.decision, args.actor, args.human_confirm, args.reason)
+    if args.command == "unblock":
+        return engine.unblock(args.project_id, args.actor, args.human_confirm)
     if args.command == "revise":
         return engine.revise(args.project_id, args.actor, args.role, args.reason)
+    if args.command == "reopen-requirements":
+        return engine.reopen_requirements(args.project_id, args.actor, args.role, args.reason)
     if args.command == "migrate":
         return engine.migrate(args.project_id, args.actor, args.role, args.reason)
     if args.command == "rebaseline":
@@ -150,9 +160,9 @@ def dispatch(args: argparse.Namespace) -> Any:
         }
         return engine.add_task(args.project_id, task)
     if args.command == "task-run":
-        return engine.run_task(args.project_id, args.task_id, args.actor, args.role, args.command, args.timeout)
+        return engine.run_task(args.project_id, args.task_id, args.actor, args.role, args.exec_command, args.timeout)
     if args.command == "add-check":
-        return engine.add_check(args.project_id, args.check_id, args.stage, args.command, not args.optional)
+        return engine.add_check(args.project_id, args.check_id, args.stage, args.exec_command, not args.optional)
     if args.command == "verify":
         return engine.verify(args.project_id, args.check_id, args.actor, args.role, args.case_id, args.timeout)
     if args.command == "add-test":

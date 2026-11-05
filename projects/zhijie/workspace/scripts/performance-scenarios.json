@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "resourceBudget": {
+    "cpuCores": 2,
+    "memoryMiB": 2048,
+    "upstreamKbitPerSecond": 5120,
+    "downstreamKbitPerSecond": 5120
+  },
+  "scenarios": [
+    {
+      "id": "C0",
+      "capacityClass": "environment_baseline",
+      "accounts": 0,
+      "rooms": [],
+      "durationSeconds": 60,
+      "workloads": ["idle", "fixed-control-plane"],
+      "acceptanceIds": [],
+      "evidenceRequirements": ["host-inventory", "process-cpu-rss", "network-counters", "file-handles", "database-connections"]
+    },
+    {
+      "id": "C1",
+      "capacityClass": "control_plane_online",
+      "accounts": 100,
+      "rooms": [],
+      "durationSeconds": 3600,
+      "workloads": ["verified-accounts", "heartbeat", "presence-changes", "group-message-read-write", "catch-up-sync"],
+      "acceptanceIds": ["AC-038"],
+      "successThresholds": {"operationSuccessRatePercent": 99, "p95LatencyMs": 1000},
+      "evidenceRequirements": ["load-parameters", "raw-operations", "cpu-rss", "network-up-down", "error-rate", "latency"]
+    },
+    {
+      "id": "C2",
+      "capacityClass": "single_full_room_media_and_game",
+      "accounts": 12,
+      "rooms": [{"members": 12}],
+      "speakerCounts": [1, 2, 12],
+      "networkModes": ["direct", "relay_only"],
+      "durationSeconds": 3600,
+      "workloads": ["bidirectional-audio", "simultaneous-speakers", "virtual-network", "representative-game"],
+      "acceptanceIds": ["AC-034", "AC-039"],
+      "evidenceRequirements": ["audio-recordings", "game-traffic", "media-quality", "cpu-rss-oom", "network-up-down", "revocation-latency"]
+    },
+    {
+      "id": "C3",
+      "capacityClass": "distributed_rooms_mixed_load",
+      "accounts": 100,
+      "rooms": [{"members": 12, "count": 8}, {"members": 4, "count": 1}],
+      "speakerCounts": [1, 2, 12],
+      "networkModes": ["direct", "relay_only"],
+      "durationSeconds": 3600,
+      "workloads": ["per-room-fixed-speakers", "direct-ratio", "representative-game-relay", "control-plane", "updates"],
+      "acceptanceIds": ["AC-039"],
+      "evidenceRequirements": ["room-distribution", "per-room-speakers", "traffic-overhead", "media-quality", "cpu-rss-oom", "network-up-down"]
+    },
+    {
+      "id": "C4",
+      "capacityClass": "backpressure_and_degradation",
+      "accounts": 100,
+      "rooms": [],
+      "durationSeconds": 3600,
+      "workloads": ["measured-threshold", "reject-new-voice-or-relay-grants", "rate-limit-updates", "preserve-control-plane", "preserve-healthy-channel"],
+      "acceptanceIds": ["AC-038", "AC-039"],
+      "requiresMeasuredThresholdFrom": ["C1", "C2", "C3"],
+      "evidenceRequirements": ["threshold-source", "admission-rejections", "accurate-errors", "independent-channel-health", "recovery"]
+    }
+  ]
+}

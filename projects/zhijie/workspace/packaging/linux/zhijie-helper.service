@@ -1,0 +1,17 @@
+[Unit]
+Description=Zhijie restricted network helper
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/zhijie/zhijie-helper
+Environment=ZHIJIE_HELPER_SOCKET=/run/zhijie/helper-v1.sock
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

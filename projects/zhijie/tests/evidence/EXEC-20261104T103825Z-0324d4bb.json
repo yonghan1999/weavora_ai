@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261104T103825Z-0324d4bb",
+  "project_id": "zhijie",
+  "started_at": "2026-11-04T10:38:03Z",
+  "finished_at": "2026-11-04T10:38:25Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "cargo test -p zhijie-relay",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 101,
+  "timed_out": false,
+  "stdout": "\nrunning 2 tests\ntest tests::real_udp_datagrams_forward_ciphertext_between_authorized_room_members ... ok\ntest tests::cross_activity_disabled_and_revoked_sessions_are_not_forwarded ... FAILED\n\nfailures:\n\n---- tests::cross_activity_disabled_and_revoked_sessions_are_not_forwarded stdout ----\n\nthread 'tests::cross_activity_disabled_and_revoked_sessions_are_not_forwarded' (27792) panicked at network\\relay\\src\\tests.rs:80:5:\nassertion failed: b.recv_from(&mut buffer).is_err()\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\n\nfailures:\n    tests::cross_activity_disabled_and_revoked_sessions_are_not_forwarded\n\ntest result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s\n\n",
+  "stdout_truncated": false,
+  "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.40s\n     Running unittests src\\lib.rs (target\\debug\\deps\\zhijie_relay-73015e8b4d0f4ab3.exe)\nerror: test failed, to rerun pass `-p zhijie-relay --lib`\n",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "a4c6d278a85fa6713093785bd731eef43ad0b7a17e72bd96358adaa1a1a2fe2c",
+  "tree_digest_after": "a4c6d278a85fa6713093785bd731eef43ad0b7a17e72bd96358adaa1a1a2fe2c",
+  "task_id": "TASK-012"
+}

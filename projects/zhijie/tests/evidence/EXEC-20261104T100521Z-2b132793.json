@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261104T100521Z-2b132793",
+  "project_id": "zhijie",
+  "started_at": "2026-11-04T09:57:12Z",
+  "finished_at": "2026-11-04T10:05:21Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "cargo test -p zhijie-voice && npm --prefix desktop/ui test",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "\nrunning 2 tests\ntest tests::disconnect_and_revoke_do_not_require_a_connected_session ... ok\ntest tests::voice_settings_are_local_and_validated ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\n> @zhijie/desktop-ui@0.1.0 test\n> node --test tests/*.test.js\n\n✔ bridge sends real versioned desktop commands without a mock fallback (19.3872ms)\n✔ production store publishes authoritative snapshots (0.4137ms)\n✔ desktop adapter exposes the versioned command protocol (3.9735ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 173.4637\n",
+  "stdout_truncated": false,
+  "stderr": "    Blocking waiting for file lock on artifact directory\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 30s\n     Running unittests src\\lib.rs (target\\debug\\deps\\zhijie_voice-1884d5a95e67450a.exe)\n   Doc-tests zhijie_voice\n",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "be28f9a5ed65dfe05884c1160c03be9504e5442f0ee33ae663429980a42ba327",
+  "tree_digest_after": "722d92f51a2c2fe129f04cea22144ee5a3365fb98b40bda26f9e9bc788c4c0fb",
+  "task_id": "TASK-010"
+}

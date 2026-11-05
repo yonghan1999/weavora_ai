@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.weavora.zhijie.controlplane.activity.ActivityMapper">
+    <resultMap id="AccountActivity" type="app.weavora.zhijie.controlplane.activity.AccountActivity">
+        <constructor>
+            <idArg column="user_id" javaType="String"/><arg column="activity_id" javaType="String"/>
+            <arg column="device_id" javaType="String"/><arg column="member_generation" javaType="Long"/>
+            <arg column="operation_id" javaType="String"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="ActivityMember" type="app.weavora.zhijie.controlplane.activity.ActivityMember">
+        <constructor>
+            <idArg column="activity_id" javaType="String"/><idArg column="user_id" javaType="String"/>
+            <arg column="device_id" javaType="String"/><arg column="member_generation" javaType="Long"/>
+            <arg column="state" javaType="app.weavora.zhijie.controlplane.activity.MemberState"/>
+            <arg column="joined_at" javaType="java.time.Instant"/><arg column="grace_expires_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="ConnectionLease" type="app.weavora.zhijie.controlplane.activity.ConnectionLease">
+        <constructor>
+            <idArg column="id" javaType="String"/><arg column="activity_id" javaType="String"/>
+            <arg column="user_id" javaType="String"/><arg column="device_id" javaType="String"/>
+            <arg column="activity_generation" javaType="Long"/><arg column="member_generation" javaType="Long"/>
+            <arg column="policy_revision" javaType="Long"/>
+            <arg column="voice_state" javaType="app.weavora.zhijie.controlplane.activity.ChannelState"/>
+            <arg column="network_state" javaType="app.weavora.zhijie.controlplane.activity.ChannelState"/>
+            <arg column="expires_at" javaType="java.time.Instant"/><arg column="revoked_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="IpAllocation" type="app.weavora.zhijie.controlplane.activity.IpAllocation">
+        <constructor>
+            <idArg column="activity_id" javaType="String"/><idArg column="user_id" javaType="String"/>
+            <arg column="ipv4" javaType="String"/><arg column="allocated_at" javaType="java.time.Instant"/>
+            <arg column="released_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="IpHistory" type="app.weavora.zhijie.controlplane.activity.IpHistory">
+        <constructor>
+            <idArg column="room_id" javaType="String"/><idArg column="user_id" javaType="String"/>
+            <arg column="last_ipv4" javaType="String"/><arg column="last_activity_id" javaType="String"/>
+            <arg column="updated_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+
+    <select id="lockUser" resultType="String">SELECT id FROM users WHERE id = #{userId} FOR UPDATE</select>
+    <select id="findRoomForUpdate" resultMap="app.weavora.zhijie.controlplane.room.RoomMapper.Room">
+        SELECT * FROM rooms WHERE id = #{roomId} FOR UPDATE
+    </select>
+    <select id="findActivityForUpdate" resultMap="app.weavora.zhijie.controlplane.room.RoomMapper.Activity">
+        SELECT * FROM activities WHERE id = #{activityId} FOR UPDATE
+    </select>
+    <select id="findAccountActivity" resultMap="AccountActivity">SELECT * FROM account_activity WHERE user_id = #{userId}</select>
+    <insert id="upsertAccountActivity" parameterType="app.weavora.zhijie.controlplane.activity.AccountActivity">
+        INSERT INTO account_activity (user_id, activity_id, device_id, member_generation, operation_id)
+        VALUES (#{userId}, #{activityId}, #{deviceId}, #{memberGeneration}, #{operationId})
+        ON CONFLICT (user_id) DO UPDATE SET activity_id = EXCLUDED.activity_id, device_id = EXCLUDED.device_id,
+            member_generation = EXCLUDED.member_generation, operation_id = EXCLUDED.operation_id
+    </insert>
+    <delete id="deleteAccountActivity">DELETE FROM account_activity WHERE user_id = #{userId}</delete>
+    <select id="countOccupied" resultType="int">
+        SELECT COUNT(DISTINCT user_id) FROM activity_members WHERE activity_id = #{activityId} AND state IN ('ACTIVE', 'GRACE')
+    </select>
+    <select id="findMember" resultMap="ActivityMember">
+        SELECT * FROM activity_members WHERE activity_id = #{activityId} AND user_id = #{userId}
+    </select>
+    <select id="listMembers" resultMap="ActivityMember">
+        SELECT * FROM activity_members WHERE activity_id = #{activityId} ORDER BY joined_at, user_id
+    </select>
+    <insert id="upsertMember" parameterType="app.weavora.zhijie.controlplane.activity.ActivityMember">
+        INSERT INTO activity_members (activity_id, user_id, device_id, member_generation, state, joined_at, grace_expires_at)
+        VALUES (#{activityId}, #{userId}, #{deviceId}, #{memberGeneration}, #{state}, #{joinedAt}, #{graceExpiresAt})
+        ON CONFLICT (activity_id, user_id) DO UPDATE SET device_id = EXCLUDED.device_id,
+            member_generation = EXCLUDED.member_generation, state = EXCLUDED.state, grace_expires_at = EXCLUDED.grace_expires_at
+    </insert>
+    <select id="findLatestLease" resultMap="ConnectionLease">
+        SELECT * FROM connection_leases WHERE activity_id = #{activityId} AND user_id = #{userId}
+        ORDER BY member_generation DESC, expires_at DESC LIMIT 1
+    </select>
+    <select id="findLease" resultMap="ConnectionLease">SELECT * FROM connection_leases WHERE id = #{leaseId}</select>
+    <insert id="insertLease" parameterType="app.weavora.zhijie.controlplane.activity.ConnectionLease">
+        INSERT INTO connection_leases (id, activity_id, user_id, device_id, activity_generation, member_generation,
+            policy_revision, voice_state, network_state, expires_at, revoked_at)
+        VALUES (#{id}, #{activityId}, #{userId}, #{deviceId}, #{activityGeneration}, #{memberGeneration},
+            #{policyRevision}, #{voiceState}, #{networkState}, #{expiresAt}, #{revokedAt})
+    </insert>
+    <update id="updateLease" parameterType="app.weavora.zhijie.controlplane.activity.ConnectionLease">
+        UPDATE connection_leases SET voice_state = #{voiceState}, network_state = #{networkState},
+            expires_at = #{expiresAt}, revoked_at = #{revokedAt} WHERE id = #{id}
+    </update>
+    <select id="listActiveAddresses" resultType="String">
+        SELECT ipv4 FROM ip_allocations WHERE activity_id = #{activityId} AND released_at IS NULL
+    </select>
+    <select id="findAddress" resultMap="IpAllocation">
+        SELECT * FROM ip_allocations WHERE activity_id = #{activityId} AND user_id = #{userId}
+    </select>
+    <insert id="upsertAddress" parameterType="app.weavora.zhijie.controlplane.activity.IpAllocation">
+        INSERT INTO ip_allocations (activity_id, user_id, ipv4, allocated_at, released_at)
+        VALUES (#{activityId}, #{userId}, #{ipv4}, #{allocatedAt}, #{releasedAt})
+        ON CONFLICT (activity_id, user_id) DO UPDATE SET ipv4 = EXCLUDED.ipv4,
+            allocated_at = EXCLUDED.allocated_at, released_at = EXCLUDED.released_at
+    </insert>
+    <update id="releaseAddress">
+        UPDATE ip_allocations SET released_at = #{releasedAt} WHERE activity_id = #{activityId} AND user_id = #{userId}
+    </update>
+    <select id="findIpHistory" resultMap="IpHistory">
+        SELECT * FROM ip_history WHERE room_id = #{roomId} AND user_id = #{userId}
+    </select>
+    <insert id="upsertIpHistory" parameterType="app.weavora.zhijie.controlplane.activity.IpHistory">
+        INSERT INTO ip_history (room_id, user_id, last_ipv4, last_activity_id, updated_at)
+        VALUES (#{roomId}, #{userId}, #{lastIpv4}, #{lastActivityId}, #{updatedAt})
+        ON CONFLICT (room_id, user_id) DO UPDATE SET last_ipv4 = EXCLUDED.last_ipv4,
+            last_activity_id = EXCLUDED.last_activity_id, updated_at = EXCLUDED.updated_at
+    </insert>
+    <select id="listExpiredGrace" resultMap="ActivityMember">
+        SELECT * FROM activity_members WHERE state = 'GRACE' AND grace_expires_at &lt;= #{now}
+    </select>
+    <select id="findGroupId" resultType="String">
+        SELECT r.group_id FROM activities a JOIN rooms r ON r.id = a.room_id WHERE a.id = #{activityId}
+    </select>
+    <select id="listActiveByGroup" resultMap="ActivityMember">
+        SELECT m.* FROM activity_members m JOIN activities a ON a.id = m.activity_id
+        JOIN rooms r ON r.id = a.room_id
+        WHERE r.group_id = #{groupId} AND m.state IN ('ACTIVE', 'GRACE')
+    </select>
+</mapper>

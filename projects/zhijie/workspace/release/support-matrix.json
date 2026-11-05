@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-04",
+  "platforms": [
+    {
+      "platform": "windows",
+      "system": "Windows 10 22H2/11 x64",
+      "architecture": "x86_64",
+      "webViewDependency": "WebView2",
+      "permissions": "管理员仅用于安装/升级 Helper",
+      "shellBuild": "checked_on_windows",
+      "installUpdateUninstall": "unverified",
+      "realVoiceAndTun": "unverified",
+      "testedGames": [],
+      "evidence": []
+    },
+    {
+      "platform": "macos",
+      "system": "macOS 13+ Intel/Apple Silicon",
+      "architecture": "x86_64/arm64",
+      "webViewDependency": "WKWebView",
+      "permissions": "授权安装 LaunchDaemon",
+      "shellBuild": "unverified",
+      "installUpdateUninstall": "unverified",
+      "realVoiceAndTun": "unverified",
+      "testedGames": [],
+      "evidence": []
+    },
+    {
+      "platform": "linux",
+      "system": "Ubuntu 22.04/24.04 x86_64",
+      "architecture": "x86_64",
+      "webViewDependency": "WebKitGTK",
+      "desktopEnvironment": "unverified",
+      "permissions": "systemd Helper 服务",
+      "shellBuild": "unverified",
+      "installUpdateUninstall": "unverified",
+      "realVoiceAndTun": "unverified",
+      "testedGames": [],
+      "evidence": []
+    }
+  ],
+  "note": "候选或构建检查不代表安装、真实音频、TUN、游戏互通或跨平台验收通过。"
+}

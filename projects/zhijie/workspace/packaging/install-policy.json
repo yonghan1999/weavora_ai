@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "clientHelperProtocol": 1,
+  "upgradeRequiresCompatibleHelper": true,
+  "failedUpgrade": "restore-previous-client-and-helper",
+  "uninstall": {
+    "removeOwnedTunAndRoutes": true,
+    "removeDefaultRoute": false,
+    "removePhysicalLanRoutes": false,
+    "deleteServerData": false,
+    "removeLocalCredentials": "according-to-product-policy"
+  },
+  "productionSigningAuthorized": false
+}

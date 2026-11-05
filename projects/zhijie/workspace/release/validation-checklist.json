@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {"id": "windows-install-signing-audio-tun", "category": "platform", "status": "unverified", "reason": "No real installation, signing, audio or TUN acceptance evidence"},
+    {"id": "macos-install-signing-audio-tun", "category": "platform", "status": "unverified", "reason": "No macOS device or signing evidence"},
+    {"id": "linux-install-audio-tun", "category": "platform", "status": "unverified", "reason": "No Linux device acceptance evidence"},
+    {"id": "cross-platform-games", "category": "games", "status": "unverified", "reason": "No tested game versions or cross-platform traffic evidence"},
+    {"id": "production-signing-update", "category": "signing", "status": "unverified", "reason": "No production certificates or updater authorization"},
+    {"id": "audio-ab-ac040", "category": "audio", "status": "unverified", "reason": "No real-device A/B recordings or listening results"},
+    {"id": "capacity-c0-c4", "category": "capacity", "status": "unverified", "reason": "No target-server C0-C4 measured results"},
+    {"id": "local-contract-and-evidence-index", "category": "local_contract", "status": "checked", "reason": "Only schemas, configuration, hashes and local test evidence are checked"}
+  ]
+}

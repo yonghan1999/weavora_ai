@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261104T102532Z-7a49b028",
+  "project_id": "zhijie",
+  "started_at": "2026-11-04T10:25:06Z",
+  "finished_at": "2026-11-04T10:25:32Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "cargo test -p zhijie-helper",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "\nrunning 5 tests\ntest tests::default_route_expired_grant_and_invalid_key_never_reach_system_backend ... ok\ntest tests::backend_failure_is_reported_without_connected_state ... ok\ntest tests::valid_start_and_stop_have_real_backend_lifecycle ... ok\ntest tests::stale_generation_and_forbidden_path_are_rejected ... ok\ntest tests::ipc_server_performs_a_real_length_delimited_local_socket_round_trip ... ok\n\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+  "stdout_truncated": false,
+  "stderr": "warning: fields `device` and `socket` are never read\n  --> network\\helper\\src\\system.rs:25:5\n   |\n24 | struct SystemNetworkSession {\n   |        -------------------- fields in this struct\n25 |     device: tun::Device,\n   |     ^^^^^^\n26 |     socket: UdpSocket,\n   |     ^^^^^^\n   |\n   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: fields `virtual_ipv4`, `public_key`, `endpoint`, and `tunn` are never read\n  --> network\\helper\\src\\system.rs:33:5\n   |\n32 | struct PeerTunnel {\n   |        ---------- fields in this struct\n33 |     virtual_ipv4: String,\n   |     ^^^^^^^^^^^^\n34 |     public_key: PublicKey,\n   |     ^^^^^^^^^^\n35 |     endpoint: Option<std::net::SocketAddr>,\n   |     ^^^^^^^^\n36 |     tunn: Tunn,\n   |     ^^^^\n\nwarning: method `encapsulate` is never used\n   --> network\\helper\\src\\system.rs:104:12\n    |\n103 | impl SystemNetworkSession {\n    | ------------------------- method in this implementation\n104 |     pub fn encapsulate(\n    |            ^^^^^^^^^^^\n\nwarning: `zhijie-helper` (lib) generated 3 warnings\nwarning: `zhijie-helper` (lib test) generated 3 warnings (3 duplicates)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.37s\n     Running unittests src\\lib.rs (target\\debug\\deps\\zhijie_helper-4cc9aae908985062.exe)\n     Running unittests src\\main.rs (target\\debug\\deps\\zhijie_helper-fa74a1e58ac22afd.exe)\n   Doc-tests zhijie_helper\n",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "807aceacd5ffe61ce805ba6b6344199abc1a57ecff83ed63d988c14ac2dc56c0",
+  "tree_digest_after": "807aceacd5ffe61ce805ba6b6344199abc1a57ecff83ed63d988c14ac2dc56c0",
+  "task_id": "TASK-011"
+}

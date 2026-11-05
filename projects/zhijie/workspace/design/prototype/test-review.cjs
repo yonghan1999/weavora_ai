@@ -15,7 +15,7 @@ module.exports = async ({ evaluate, click, assert, delay, command, screenshot })
   assert('邀请码不能绕过暂停且保留输入', await evaluate('!state.joined&&!!state.modal&&state.toast.includes("暂停")'));
   await click('modal-close');
   await evaluate('rooms.find(room=>room.id==="weekend").open=true;enterRoom("star")');await delay(800);
-  await evaluate('rooms.find(room=>room.id==="weekend").members=Array.from({length:16},(_,index)=>({name:"容量成员"+index,ip:"10.66.0."+(index+10),voice:"connected"}));enterRoom("weekend")');
+  await evaluate('rooms.find(room=>room.id==="weekend").members=Array.from({length:12},(_,index)=>({name:"容量成员"+index,ip:"10.66.0."+(index+10),voice:"connected"}));enterRoom("weekend")');
   assert('满房切换失败保留旧活动', await evaluate('state.roomId==="star"&&state.joined&&state.toast.includes("已满")'));
   await evaluate('rooms.find(room=>room.id==="weekend").members=[];state.reviewRoles.expedition="member";rooms.find(room=>room.id==="weekend").password="room-secret";showJoinRoom("weekend")');
   await evaluate('document.getElementById("room-password").value="wrong"');await click('confirm-join');
@@ -33,7 +33,7 @@ module.exports = async ({ evaluate, click, assert, delay, command, screenshot })
   await click('voice-retry');await delay(600);
   assert('语音独立重试后恢复', await evaluate('state.voice==="connected"&&state.network==="connected"'));
   await evaluate('state.outcomes.network="虚拟IP冲突";retryChannel("network")');await delay(600);
-  assert('网络失败使语音等待且不暴露可用地址', await evaluate('state.network==="failed"&&state.voice==="waiting"&&!document.querySelector(".member-ip-list")'));
+  assert('网络失败不影响语音且不暴露可用地址', await evaluate('state.network==="failed"&&state.voice==="connected"&&!document.querySelector(".member-ip-list")'));
   await click('network-retry');await delay(600);
   await evaluate('disconnectActivity();window.retainedIp=myMember(currentRoom()).ip;currentRoom().open=false;recoverActivity()');await delay(600);
   assert('暂停房间保留期恢复不当作新加入且IP不变', await evaluate('state.joined&&state.network==="connected"&&myMember(currentRoom()).ip===window.retainedIp'));
@@ -134,10 +134,10 @@ module.exports = async ({ evaluate, click, assert, delay, command, screenshot })
   assert('正常用户管理页无模拟身份切换',await evaluate('!document.querySelector("[data-change=review-role]")'));
   await click('modal-close');await evaluate('state.view="lobby";render();document.querySelector("[data-action=create-room]").focus()');await click('create-room');await click('modal-close');
   assert('关闭对话框焦点返回触发按钮',await evaluate('document.activeElement.dataset.action==="create-room"&&!document.getElementById("app").inert'));
-  await evaluate('rooms[0].members=Array.from({length:15},(_,index)=>({name:"容量"+index,voice:"connected",ip:"10.66.0."+(index+10)}));enterRoom("weekend")');await delay(800);
-  assert('第16个账号可加入且不重复占额',await evaluate('currentRoom().members.length===16&&enterRoom("weekend")&&currentRoom().members.length===16'));
+  await evaluate('rooms[0].members=Array.from({length:11},(_,index)=>({name:"容量"+index,voice:"connected",ip:"10.66.0."+(index+10)}));enterRoom("weekend")');await delay(800);
+  assert('第12个账号可加入且不重复占额',await evaluate('currentRoom().members.length===12&&enterRoom("weekend")&&currentRoom().members.length===12'));
   await evaluate('leaveRoom();rooms[0].members.push({name:"最后成员",voice:"connected",ip:"10.66.0.99"});enterRoom("weekend")');
-  assert('第17个账号被拒绝',await evaluate('!state.joined&&state.toast.includes("已满")'));
+  assert('第13个账号被拒绝',await evaluate('!state.joined&&state.toast.includes("已满")'));
   await evaluate('rooms[0].members=[];enterRoom("weekend")');await delay(800);
   await evaluate('showRoomSettings("weekend")');await click('pause-room');await evaluate('showRoomSettings("weekend")');await click('end-room');await click('confirm-end-room');
   assert('结束暂停房间后保留暂停与持久配置',await evaluate('!state.joined&&!rooms[0].open&&rooms[0].members.length===0'));

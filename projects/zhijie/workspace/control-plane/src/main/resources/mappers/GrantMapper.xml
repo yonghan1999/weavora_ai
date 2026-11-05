@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.weavora.zhijie.controlplane.grant.GrantMapper">
+    <resultMap id="ActivityGrant" type="app.weavora.zhijie.controlplane.grant.ActivityGrant">
+        <constructor>
+            <idArg column="id" javaType="String"/><arg column="activity_id" javaType="String"/>
+            <arg column="user_id" javaType="String"/><arg column="lease_id" javaType="String"/>
+            <arg column="member_generation" javaType="Long"/><arg column="policy_revision" javaType="Long"/>
+            <arg column="kind" javaType="String"/><arg column="token_hash" javaType="String"/>
+            <arg column="public_key" javaType="String"/><arg column="allowed_paths" javaType="String"/>
+            <arg column="expires_at" javaType="java.time.Instant"/>
+            <arg column="revoked_at" javaType="java.time.Instant"/><arg column="created_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <insert id="insert" parameterType="app.weavora.zhijie.controlplane.grant.ActivityGrant">
+        INSERT INTO activity_grants (id, activity_id, user_id, lease_id, member_generation, policy_revision,
+            kind, token_hash, public_key, allowed_paths, expires_at, revoked_at, created_at)
+        VALUES (#{id}, #{activityId}, #{userId}, #{leaseId}, #{memberGeneration}, #{policyRevision},
+            #{kind}, #{tokenHash}, #{publicKey}, #{allowedPaths}, #{expiresAt}, #{revokedAt}, #{createdAt})
+    </insert>
+    <select id="findById" resultMap="ActivityGrant">SELECT * FROM activity_grants WHERE id = #{grantId}</select>
+    <select id="findByTokenHash" resultMap="ActivityGrant">
+        SELECT * FROM activity_grants WHERE token_hash = #{tokenHash}
+    </select>
+    <update id="revoke">UPDATE activity_grants SET revoked_at = #{revokedAt} WHERE id = #{grantId}</update>
+    <update id="revokeMember">
+        UPDATE activity_grants SET revoked_at = #{revokedAt}
+        WHERE activity_id = #{activityId} AND user_id = #{userId} AND revoked_at IS NULL
+    </update>
+    <update id="revokeLease">
+        UPDATE activity_grants SET revoked_at = #{revokedAt} WHERE lease_id = #{leaseId} AND revoked_at IS NULL
+    </update>
+    <select id="countActive" resultType="int">
+        SELECT COUNT(*) FROM activity_grants WHERE kind = #{kind} AND revoked_at IS NULL AND expires_at &gt; NOW()
+    </select>
+</mapper>

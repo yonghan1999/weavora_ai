@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "platform": "windows",
+  "helperBinary": "zhijie-helper.exe",
+  "serviceName": "ZhijieNetworkHelper",
+  "protocolVersion": 1,
+  "installRequires": "administrator-consent",
+  "normalUiElevation": false,
+  "namedPipe": "\\\\.\\pipe\\zhijie-helper-v1",
+  "onUpgrade": "stop-helper-replace-binary-start-compatible-version",
+  "onUninstall": ["stop-service", "remove-tun-and-owned-routes", "remove-service-binary"],
+  "signatureRequired": true,
+  "status": "candidate_not_signed_or_installed"
+}

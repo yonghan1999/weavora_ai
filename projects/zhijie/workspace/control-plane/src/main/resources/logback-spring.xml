@@ -1,0 +1,11 @@
+<configuration>
+    <conversionRule conversionWord="safeMessage" class="app.weavora.zhijie.controlplane.observability.MaskingMessageConverter"/>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{ISO8601} %-5level [%X{correlation_id:-}] %logger{36} - %safeMessage%n</pattern>
+        </encoder>
+    </appender>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

@@ -113,6 +113,54 @@ INTERACTIVE_HTML = """<!doctype html>
 """
 
 
+class CliParserTests(unittest.TestCase):
+    def test_execution_command_does_not_replace_subcommand(self):
+        from workflow.cli import parser
+
+        task_args = parser().parse_args([
+            "task-run", "demo", "TASK-001", "--actor", "developer", "--command", "node test.js",
+        ])
+        self.assertEqual(task_args.command, "task-run")
+        self.assertEqual(task_args.exec_command, "node test.js")
+
+        check_args = parser().parse_args([
+            "add-check", "demo", "--check-id", "self-test", "--stage", "F_SELF_TEST",
+            "--command", "npm test",
+        ])
+        self.assertEqual(check_args.command, "add-check")
+        self.assertEqual(check_args.exec_command, "npm test")
+
+        unblock_args = parser().parse_args([
+            "unblock", "demo", "--actor", "人类评审", "--human-confirm", HUMAN_CONFIRMATION,
+        ])
+        self.assertEqual(unblock_args.command, "unblock")
+        self.assertEqual(unblock_args.human_confirm, HUMAN_CONFIRMATION)
+
+    def test_windows_uses_bash_for_posix_project_commands_when_available(self):
+        from workflow.engine import shell_invocation
+
+        invocation, use_shell, mode = shell_invocation("./mvnw test", "nt", "C:/Git/bin/bash.exe")
+        self.assertEqual(invocation, ["C:/Git/bin/bash.exe", "-o", "pipefail", "-c", "./mvnw test"])
+        self.assertFalse(use_shell)
+        self.assertEqual(mode, "bash -o pipefail -c")
+
+    def test_tree_digest_excludes_generated_dependency_and_build_directories(self):
+        from workflow.engine import tree_digest
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "src").mkdir()
+            (root / "src/main.txt").write_text("source", encoding="utf-8")
+            (root / "target/generated").mkdir(parents=True)
+            (root / "target/generated/output.bin").write_bytes(b"generated")
+            (root / "node_modules/package").mkdir(parents=True)
+            (root / "node_modules/package/index.js").write_text("dependency", encoding="utf-8")
+            original = tree_digest(root)
+            self.assertEqual(original, tree_digest(root))
+            (root / "src/main.txt").write_text("changed", encoding="utf-8")
+            self.assertNotEqual(original, tree_digest(root))
+
+
 class CleanCheckoutTests(unittest.TestCase):
     def test_missing_temporary_root_is_created(self):
         with tempfile.TemporaryDirectory() as clean_checkout:
@@ -203,6 +251,57 @@ class WorkflowTests(unittest.TestCase):
         (base / document).write_text(content, encoding="utf-8")
         (base / html).parent.mkdir(parents=True, exist_ok=True)
         (base / html).write_text(INTERACTIVE_HTML, encoding="utf-8")
+
+    def test_reopen_requirements_preserves_assets_and_invalidates_old_approvals(self):
+        request = self.submit_requirements()
+        self.approve(request["approval_id"])
+        self.write_design("B1_PROTOTYPE")
+        pending = self.engine.submit(self.project_id, "designer", "product_designer")["request"]
+        base = self.engine.project_dir(self.project_id)
+        paths = [base / relative for relative in self.engine.approval_files(self.project_id, "B1_PROTOTYPE")]
+        paths += list((base / "approvals").glob("APR-*.json"))
+        before = {path: path.read_bytes() for path in paths}
+        reopened = self.engine.reopen_requirements(
+            self.project_id, "operator", "workflow_operator", "用户要求根据带宽限制重新分析需求",
+        )
+        self.assertEqual((reopened["stage"], reopened["status"]), ("B_REQUIREMENTS", "in_progress"))
+        self.assertEqual(reopened["approvals"][0]["approval_id"], request["approval_id"])
+        self.assertIn(request["approval_id"], reopened["invalidated_approval_ids"])
+        self.assertIn(pending["approval_id"], reopened["invalidated_approval_ids"])
+        self.assertIsNone(self.engine.current_approval_request(self.project_id, required=False))
+        for path, content in before.items():
+            self.assertEqual(path.read_bytes(), content)
+        # 即使需求内容未变，旧批准也不能满足新一轮原型门禁。
+        gate = check_stage(self.engine, self.project_id, "B1_PROTOTYPE")
+        self.assertIn("缺少人工批准记录：B_REQUIREMENTS", gate.errors)
+        new_request = self.engine.submit(self.project_id, "analyst", "requirements_analyst")["request"]
+        self.assertNotEqual(new_request["approval_id"], request["approval_id"])
+        self.approve(new_request["approval_id"])
+        self.assertTrue(check_stage(self.engine, self.project_id, "B1_PROTOTYPE").ok)
+        event = next(item for item in self.engine.load(self.project_id)["history"]
+                     if item["event"] == "requirements_reopened")
+        self.assertEqual(event["from_stage"], "B1_PROTOTYPE")
+        self.assertFalse(event["human_authorization"])
+
+    def test_reopen_requirements_rejects_invalid_context_without_changes(self):
+        base = self.engine.project_dir(self.project_id)
+        before = (base / "state.json").read_bytes()
+        for role, reason in [("developer", "用户要求变更"), ("workflow_operator", " "),
+                             ("workflow_operator", "当前已是需求阶段")]:
+            with self.assertRaises(WorkflowError):
+                self.engine.reopen_requirements(self.project_id, "operator", role, reason)
+            self.assertEqual((base / "state.json").read_bytes(), before)
+
+    def test_reopen_requirements_rolls_back_on_audit_failure(self):
+        request = self.submit_requirements()
+        self.approve(request["approval_id"])
+        base = self.engine.project_dir(self.project_id)
+        before = (base / "state.json").read_bytes()
+        from unittest.mock import patch
+        with patch.object(self.engine, "audit", side_effect=OSError("模拟审计写入失败")):
+            with self.assertRaises(OSError):
+                self.engine.reopen_requirements(self.project_id, "operator", "workflow_operator", "用户变更")
+        self.assertEqual((base / "state.json").read_bytes(), before)
 
     def test_installation_and_json_contracts(self):
         result = check_installation()
@@ -393,6 +492,48 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.engine.load(self.project_id)["status"], "failed")
         self.engine.retry(self.project_id, "operator", "workflow_operator", "外部条件已恢复")
         self.assertEqual(self.engine.load(self.project_id)["status"], "in_progress")
+
+    def test_human_unblock_resets_retry_budget_and_preserves_history(self):
+        state = self.engine.load(self.project_id)
+        state["stage"] = "D_PLANNING"
+        self.engine.save(self.project_id, state)
+        self.engine.add_task(self.project_id, {
+            "id": "TASK-001", "title": "验证人工解除阻塞", "requirement_ids": ["REQ-001"], "depends_on": [],
+            "input": "输入", "output": "输出", "acceptance": "验收", "test": "python --version", "rollback": "回退",
+        })
+        tasks_path = self.engine.project_dir(self.project_id) / "tasks/tasks.json"
+        tasks = json.loads(tasks_path.read_text(encoding="utf-8"))
+        tasks["tasks"][0].update({"status": "failed", "attempts": 3, "evidence": ["tests/evidence/previous.json"]})
+        atomic_json(tasks_path, tasks)
+        state = self.engine.load(self.project_id)
+        state.update({"stage": "E_IMPLEMENTATION", "status": "blocked", "active_task_id": "TASK-001"})
+        state["retry_counts"] = {"E_IMPLEMENTATION": 3}
+        self.engine.save(self.project_id, state)
+        base = self.engine.project_dir(self.project_id)
+        state_before = (base / "state.json").read_bytes()
+        audit_before = (base / "audit.jsonl").read_bytes()
+
+        with self.assertRaisesRegex(WorkflowError, "人工确认"):
+            self.engine.unblock(self.project_id, "人类评审", "wrong")
+        with self.assertRaisesRegex(WorkflowError, "具体的人类"):
+            self.engine.unblock(self.project_id, "ai", HUMAN_CONFIRMATION)
+        self.assertEqual((base / "state.json").read_bytes(), state_before)
+        self.assertEqual((base / "audit.jsonl").read_bytes(), audit_before)
+
+        unblocked = self.engine.unblock(self.project_id, "人类评审", HUMAN_CONFIRMATION)
+        self.assertEqual(unblocked["status"], "in_progress")
+        self.assertEqual(unblocked["retry_counts"]["E_IMPLEMENTATION"], 0)
+        event = unblocked["history"][-1]
+        self.assertEqual((event["from"], event["to"]), ("blocked", "in_progress"))
+        self.assertTrue(event["human_authorization"])
+        self.assertEqual(event["actor"], "人类评审")
+        audit = [json.loads(line) for line in (base / "audit.jsonl").read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(audit[-1], event)
+        task = json.loads(tasks_path.read_text(encoding="utf-8"))["tasks"][0]
+        self.assertEqual(task["attempts"], 0)
+        self.assertEqual(task["evidence"], ["tests/evidence/previous.json"])
+        with self.assertRaisesRegex(WorkflowError, "只有已阻塞"):
+            self.engine.unblock(self.project_id, "人类评审", HUMAN_CONFIRMATION)
 
     def test_pause_resume_persists_status(self):
         self.submit_requirements()

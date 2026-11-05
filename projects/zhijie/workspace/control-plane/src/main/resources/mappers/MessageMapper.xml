@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.weavora.zhijie.controlplane.message.MessageMapper">
+    <resultMap id="GroupMessage" type="app.weavora.zhijie.controlplane.message.GroupMessage">
+        <constructor>
+            <idArg column="id" javaType="String"/><arg column="group_id" javaType="String"/>
+            <arg column="author_id" javaType="String"/><arg column="body" javaType="String"/>
+            <arg column="created_at" javaType="java.time.Instant"/><arg column="deleted_at" javaType="java.time.Instant"/>
+            <arg column="deleted_by" javaType="String"/>
+            <arg column="delete_kind" javaType="app.weavora.zhijie.controlplane.message.DeleteKind"/>
+        </constructor>
+    </resultMap>
+    <insert id="insert" parameterType="app.weavora.zhijie.controlplane.message.GroupMessage">
+        INSERT INTO messages (id, group_id, author_id, body, created_at, deleted_at, deleted_by, delete_kind)
+        VALUES (#{id}, #{groupId}, #{authorId}, #{body}, #{createdAt}, #{deletedAt}, #{deletedBy}, #{deleteKind})
+    </insert>
+    <select id="findById" resultMap="GroupMessage">SELECT * FROM messages WHERE id = #{messageId}</select>
+    <update id="update" parameterType="app.weavora.zhijie.controlplane.message.GroupMessage">
+        UPDATE messages SET deleted_at = #{deletedAt}, deleted_by = #{deletedBy}, delete_kind = #{deleteKind}
+        WHERE id = #{id} AND deleted_at IS NULL
+    </update>
+    <select id="list" resultMap="GroupMessage">
+        SELECT * FROM messages WHERE group_id = #{groupId}
+        <if test="before != null">AND created_at &lt; #{before}</if>
+        ORDER BY created_at DESC, id DESC LIMIT #{limit}
+    </select>
+</mapper>

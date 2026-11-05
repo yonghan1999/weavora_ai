@@ -1,0 +1,8 @@
+target/
+**/target/
+node_modules/
+**/node_modules/
+**/dist/
+desktop/shell/gen/
+*.log
+.DS_Store

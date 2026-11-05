@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.0",
+  "clientHelperProtocol": 1,
+  "artifactClass": "release_configuration_not_installer",
+  "artifacts": [
+    {
+      "path": "desktop/shell/tauri.conf.json",
+      "artifactClass": "configuration",
+      "bytes": 782,
+      "sha256": "53a0fef54c7035c447250112122811862949aec5d6adfe6f179012e3eb450f1f"
+    },
+    {
+      "path": "packaging/install-policy.json",
+      "artifactClass": "configuration",
+      "bytes": 415,
+      "sha256": "f39bbdad1edffa94405526df0107c63fb8feb457056e25360562fa0a558f9ce0"
+    },
+    {
+      "path": "packaging/windows/helper-install.json",
+      "artifactClass": "configuration",
+      "bytes": 516,
+      "sha256": "7e501decf7b5cf71e01c553a9b988d05f4c41e0a066d4ccea6cb02d5fdef070a"
+    },
+    {
+      "path": "packaging/macos/app.weavora.zhijie.helper.plist",
+      "artifactClass": "configuration",
+      "bytes": 506,
+      "sha256": "6898dae1136cb7bb4051fc4fd2c7d26ca4494db75f8f89bc0ea275f6e87f32a1"
+    },
+    {
+      "path": "packaging/linux/zhijie-helper.service",
+      "artifactClass": "configuration",
+      "bytes": 377,
+      "sha256": "02451a2f2bfc91c09720a6d025dbbd66ae9a9be7a600baf4255321128b9adbfe"
+    },
+    {
+      "path": "release/support-matrix.json",
+      "artifactClass": "configuration",
+      "bytes": 1371,
+      "sha256": "b3a4faaa1abfd79585937e87ea3255268292cce74d77321fcb212c5adec44ca0"
+    }
+  ]
+}

@@ -20,7 +20,7 @@
   "development_failure_and_retry_verified": true,
   "independent_defect_and_regression_verified": true,
   "archive_verified": true,
-  "archive_sha256": "621f16730b0756602dfdbb31e675ef95b82051306f7450b20d2f7eff32e327c0",
+  "archive_sha256": "f6b96b0ed57b4c0b017806e7be45e78964c5801be18af98c5544ebe3788ad579",
   "archive_file_count": 47,
   "real_command_evidence_count": 6,
   "entry_command_exit_codes": [

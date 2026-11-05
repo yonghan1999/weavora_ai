@@ -1,47 +1,4 @@
-const baseUi = { render, renderModal, toast, focusModal, networkPanel, groupsView, friendsView, settingsView, roomView, mediaPreview, updateMediaTransfer, messageReceipt, playerTile, membersPanel };
-
-function uiMemberVoice(member) {
-  return state.network !== 'connected' ? 'waiting' : member.name === me ? state.voice : member.voice;
-}
-
-playerTile = function(member) {
-  const voice = uiMemberVoice(member);
-  const html = baseUi.playerTile({ ...member, voice, speaking: voice === 'connected' && member.speaking });
-  return voice === 'connected' ? html : html.replace('player-tile speaking', 'player-tile');
-};
-
-membersPanel = function() {
-  if (state.network === 'connected') return baseUi.membersPanel();
-  return baseUi.membersPanel().replace(/语音已连接|语音未连接/g, channelLabel('voice', 'waiting'));
-};
-
-messageReceipt = function(message) {
-  return baseUi.messageReceipt(message).replace('class="message-receipt"', `class="message-receipt" data-delivery="${esc(message.delivery || '')}"`);
-};
-
-mediaPreview = function(media) {
-  const preview = baseUi.mediaPreview(media);
-  if (!media || media.type !== 'image' || state.pendingMedia === media) return preview;
-  return `<button type="button" class="media-open" data-action="view-media" data-url="${esc(media.url)}" data-name="${esc(media.name)}" aria-label="查看图片 ${esc(media.name)}">${preview}</button>`;
-};
-
-updateMediaTransfer = function() {
-  baseUi.updateMediaTransfer();
-  const transfer = document.getElementById('media-transfer');
-  const modal = transfer?.closest('.modal');
-  if (!modal || !state.mediaDraft) return;
-  modal.classList.add('media-modal');
-  modal.dataset.mediaStatus = state.mediaDraft.status;
-  transfer.dataset.status = state.mediaDraft.status;
-};
-
-document.addEventListener('click',event => {
-  const trigger = event.target.closest('[data-action="view-media"]');
-  if (!trigger) return;
-  const name = trigger.dataset.name || '图片';
-  openModal('查看图片',esc(name),`<div class="media-viewer"><img class="message-media" src="${esc(trigger.dataset.url)}" alt="${esc(name)}"></div>`,'<button class="button primary" data-action="modal-close">关闭</button>');
-  document.querySelector('.modal')?.classList.add('media-viewer-modal');
-});
+const baseUi = { render, renderModal, toast, focusModal, networkPanel, groupsView, friendsView, settingsView, roomView };
 
 function uiHeading(title, description, actions = '', eyebrow = '') {
   return `<div class="page-heading"><div>${eyebrow ? `<div class="eyebrow">${esc(eyebrow)}</div>` : ''}<h1>${esc(title)}</h1><p>${esc(description)}</p></div>${actions ? `<div class="heading-actions">${actions}</div>` : ''}</div>`;
@@ -54,12 +11,12 @@ function uiAvatarStack(names, limit = 3) {
 roomCard = function(room) {
   const current = state.joined && room.id === state.roomId;
   const group = groups.find(item => item.id === room.groupId);
-  const full = room.members.length >= 16;
+  const full = room.members.length >= ROOM_CAPACITY;
   const availability = !room.open ? '暂停加入' : full ? '房间已满' : room.members.length ? '活动中' : '等待队友';
   const names = room.members.map(member => member.name);
   const action = current ? 'open-room' : 'join-room';
   const label = current ? '回到房间' : state.joined ? '切换房间' : '加入房间';
-  return `<article class="room-card ${current ? 'is-current' : ''}"><div class="room-cover ${room.cover}"><span class="game-chip">${esc(room.game)}</span><span class="room-capacity" aria-label="${names.length} 人，最多 16 人">${names.length} / 16</span></div><div class="room-body"><div class="room-provenance">${icon('messages',13)} ${esc(group?.name || '群组')}</div><div class="room-title-row"><h3>${esc(room.name)}</h3>${canManageRoom(room) ? `<button class="icon-button" data-action="room-settings" data-room="${esc(room.id)}" aria-label="管理 ${esc(room.name)}">${icon('more',17)}</button>` : ''}</div><p class="room-description">${esc(room.desc)}</p><div class="room-presence"><span class="availability ${room.open && !full ? 'available' : 'unavailable'}"><i></i>${availability}</span>${room.password ? `<span class="password-label">${icon('shield',12)} 需密码</span>` : ''}</div><div class="room-footer">${names.length ? uiAvatarStack(names) : '<span class="room-waiting">还没有人，等你开场</span>'}<button class="button small ${current ? 'primary' : ''}" data-action="${action}" data-room="${esc(room.id)}" aria-label="${label} ${esc(room.name)}">${label}${icon('arrow',14)}</button></div></div></article>`;
+  return `<article class="room-card ${current ? 'is-current' : ''}"><div class="room-cover ${room.cover}"><span class="game-chip">${esc(room.game)}</span><span class="room-capacity" aria-label="${names.length} 人，最多 ${ROOM_CAPACITY} 人">${names.length} / ${ROOM_CAPACITY}</span></div><div class="room-body"><div class="room-provenance">${icon('messages',13)} ${esc(group?.name || '群组')}</div><div class="room-title-row"><h3>${esc(room.name)}</h3>${canManageRoom(room) ? `<button class="icon-button" data-action="room-settings" data-room="${esc(room.id)}" aria-label="管理 ${esc(room.name)}">${icon('more',17)}</button>` : ''}</div><p class="room-description">${esc(room.desc)}</p><div class="room-presence"><span class="availability ${room.open && !full ? 'available' : 'unavailable'}"><i></i>${availability}</span>${room.password ? `<span class="password-label">${icon('shield',12)} 需密码</span>` : ''}</div><div class="room-footer">${names.length ? uiAvatarStack(names) : '<span class="room-waiting">还没有人，等你开场</span>'}<button class="button small ${current ? 'primary' : ''}" data-action="${action}" data-room="${esc(room.id)}" aria-label="${label} ${esc(room.name)}">${label}${icon('arrow',14)}</button></div></div></article>`;
 };
 
 activeHero = function() {
@@ -101,7 +58,7 @@ roomView = function() {
   const html = baseUi.roomView();
   const room = currentRoom();
   if (!room) return html;
-  return html.replace('<div class="party-grid">',`<div class="stage-heading"><div><span class="stage-label">语音房间</span><h2>队友已就位</h2></div><span>${room.members.length} / 16 人</span></div><div class="party-grid">`);
+  return html.replace('<div class="party-grid">',`<div class="stage-heading"><div><span class="stage-label">语音房间</span><h2>队友已就位</h2></div><span>${room.members.length} / ${ROOM_CAPACITY} 人</span></div><div class="party-grid">`);
 };
 
 focusModal = function() {
@@ -176,7 +133,7 @@ render = function() {
     if (button.dataset.name) button.setAttribute('aria-label',`邀请 ${button.dataset.name} 组队`);
   });
   document.querySelectorAll('.status-chip').forEach(element => {
-    element.dataset.connection = /已连接/.test(element.textContent) ? 'connected' : /等待虚拟网络|连接中|重试中/.test(element.textContent) ? 'pending' : 'other';
+    element.dataset.connection = /已连接/.test(element.textContent) ? 'connected' : /连接中|重试中/.test(element.textContent) ? 'pending' : 'other';
   });
 };
 

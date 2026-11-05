@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.weavora.zhijie.controlplane.group.GroupMapper">
+    <resultMap id="Group" type="app.weavora.zhijie.controlplane.group.Group">
+        <constructor>
+            <idArg column="id" javaType="String"/><arg column="name" javaType="String"/>
+            <arg column="avatar" javaType="String"/><arg column="description" javaType="String"/>
+            <arg column="owner_user_id" javaType="String"/>
+            <arg column="status" javaType="app.weavora.zhijie.controlplane.group.GroupStatus"/>
+            <arg column="created_at" javaType="java.time.Instant"/><arg column="dissolved_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="GroupMember" type="app.weavora.zhijie.controlplane.group.GroupMember">
+        <constructor>
+            <idArg column="group_id" javaType="String"/><idArg column="user_id" javaType="String"/>
+            <arg column="role" javaType="app.weavora.zhijie.controlplane.group.GroupRole"/>
+            <arg column="status" javaType="app.weavora.zhijie.controlplane.group.MemberStatus"/>
+            <arg column="joined_at" javaType="java.time.Instant"/><arg column="left_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="GroupInvitation" type="app.weavora.zhijie.controlplane.group.GroupInvitation">
+        <constructor>
+            <idArg column="id" javaType="String"/><arg column="group_id" javaType="String"/>
+            <arg column="inviter_id" javaType="String"/><arg column="invitee_id" javaType="String"/>
+            <arg column="status" javaType="app.weavora.zhijie.controlplane.group.InvitationStatus"/>
+            <arg column="created_at" javaType="java.time.Instant"/><arg column="accepted_at" javaType="java.time.Instant"/>
+            <arg column="revoked_at" javaType="java.time.Instant"/><arg column="invalidated_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <resultMap id="OwnerTransfer" type="app.weavora.zhijie.controlplane.group.OwnerTransfer">
+        <constructor>
+            <idArg column="id" javaType="String"/><arg column="group_id" javaType="String"/>
+            <arg column="from_user_id" javaType="String"/><arg column="to_user_id" javaType="String"/>
+            <arg column="status" javaType="app.weavora.zhijie.controlplane.group.GovernanceStatus"/>
+            <arg column="created_at" javaType="java.time.Instant"/><arg column="completed_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findGroup" resultMap="Group">SELECT * FROM groups WHERE id = #{groupId}</select>
+    <select id="listGroupsForUser" resultMap="Group">
+        SELECT g.* FROM groups g JOIN group_members m ON m.group_id = g.id
+        WHERE m.user_id = #{userId} AND m.status = 'ACTIVE' AND g.status = 'ACTIVE' ORDER BY g.created_at
+    </select>
+    <insert id="insertGroup" parameterType="app.weavora.zhijie.controlplane.group.Group">
+        INSERT INTO groups (id, name, avatar, description, owner_user_id, status, created_at, dissolved_at)
+        VALUES (#{id}, #{name}, #{avatar}, #{description}, #{ownerUserId}, #{status}, #{createdAt}, #{dissolvedAt})
+    </insert>
+    <update id="updateGroup" parameterType="app.weavora.zhijie.controlplane.group.Group">
+        UPDATE groups SET name = #{name}, avatar = #{avatar}, description = #{description},
+            owner_user_id = #{ownerUserId}, status = #{status}, dissolved_at = #{dissolvedAt} WHERE id = #{id}
+    </update>
+
+    <select id="findMember" resultMap="GroupMember">
+        SELECT * FROM group_members WHERE group_id = #{groupId} AND user_id = #{userId}
+    </select>
+    <select id="listActiveMembers" resultMap="GroupMember">
+        SELECT * FROM group_members WHERE group_id = #{groupId} AND status = 'ACTIVE' ORDER BY joined_at
+    </select>
+    <insert id="insertMember" parameterType="app.weavora.zhijie.controlplane.group.GroupMember">
+        INSERT INTO group_members (group_id, user_id, role, status, joined_at, left_at)
+        VALUES (#{groupId}, #{userId}, #{role}, #{status}, #{joinedAt}, #{leftAt})
+        ON CONFLICT (group_id, user_id) DO UPDATE SET role = EXCLUDED.role, status = EXCLUDED.status,
+            joined_at = EXCLUDED.joined_at, left_at = EXCLUDED.left_at
+    </insert>
+    <update id="updateMember" parameterType="app.weavora.zhijie.controlplane.group.GroupMember">
+        UPDATE group_members SET role = #{role}, status = #{status}, joined_at = #{joinedAt}, left_at = #{leftAt}
+        WHERE group_id = #{groupId} AND user_id = #{userId}
+    </update>
+    <update id="deactivateAllMembers">
+        UPDATE group_members SET status = 'REMOVED', left_at = #{leftAt}
+        WHERE group_id = #{groupId} AND status = 'ACTIVE'
+    </update>
+
+    <insert id="insertInvitation" parameterType="app.weavora.zhijie.controlplane.group.GroupInvitation">
+        INSERT INTO invitations (id, group_id, inviter_id, invitee_id, status, created_at, accepted_at, revoked_at, invalidated_at)
+        VALUES (#{id}, #{groupId}, #{inviterId}, #{inviteeId}, #{status}, #{createdAt}, #{acceptedAt}, #{revokedAt}, #{invalidatedAt})
+    </insert>
+    <select id="findInvitation" resultMap="GroupInvitation">SELECT * FROM invitations WHERE id = #{invitationId}</select>
+    <update id="updateInvitation" parameterType="app.weavora.zhijie.controlplane.group.GroupInvitation">
+        UPDATE invitations SET status = #{status}, accepted_at = #{acceptedAt}, revoked_at = #{revokedAt},
+            invalidated_at = #{invalidatedAt} WHERE id = #{id}
+    </update>
+    <select id="listPendingInvitationsByInviter" resultMap="GroupInvitation">
+        SELECT * FROM invitations WHERE group_id = #{groupId} AND inviter_id = #{inviterId} AND status = 'PENDING'
+    </select>
+    <update id="invalidateAllPendingInvitations">
+        UPDATE invitations SET status = 'INVALIDATED', invalidated_at = #{invalidatedAt}
+        WHERE group_id = #{groupId} AND status = 'PENDING'
+    </update>
+
+    <select id="findPendingTransfer" resultMap="OwnerTransfer">
+        SELECT * FROM owner_transfers WHERE group_id = #{groupId} AND status = 'PENDING'
+    </select>
+    <select id="findPendingTransferById" resultMap="OwnerTransfer">
+        SELECT * FROM owner_transfers WHERE id = #{transferId} AND status = 'PENDING'
+    </select>
+    <insert id="insertTransfer" parameterType="app.weavora.zhijie.controlplane.group.OwnerTransfer">
+        INSERT INTO owner_transfers (id, group_id, from_user_id, to_user_id, status, created_at, completed_at)
+        VALUES (#{id}, #{groupId}, #{fromUserId}, #{toUserId}, #{status}, #{createdAt}, #{completedAt})
+    </insert>
+    <update id="updateTransfer" parameterType="app.weavora.zhijie.controlplane.group.OwnerTransfer">
+        UPDATE owner_transfers SET status = #{status}, completed_at = #{completedAt} WHERE id = #{id}
+    </update>
+    <update id="cancelPendingTransfers">
+        UPDATE owner_transfers SET status = 'CANCELLED', completed_at = #{completedAt}
+        WHERE group_id = #{groupId} AND status = 'PENDING'
+    </update>
+    <insert id="insertRecoveryRequest" parameterType="app.weavora.zhijie.controlplane.group.OwnerRecoveryRequest">
+        INSERT INTO owner_recovery_requests
+            (id, group_id, requester_id, evidence_ref, status, reviewer_id, decision_reason, created_at)
+        VALUES (#{id}, #{groupId}, #{requesterId}, #{evidenceRef}, #{status}, #{reviewerId}, #{decisionReason}, #{createdAt})
+    </insert>
+</mapper>
