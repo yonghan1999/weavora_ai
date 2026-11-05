@@ -1,35 +1,40 @@
 # 发布准备：织界
 
-> 填写要求：默认只准备发布，不部署生产。版本和制品须先由 release-set 记录真实哈希。
-
 ## 发布版本及变更说明
 
-{{VERSION_AND_CHANGELOG}}
+候选版本 `0.1.0`，代码版本 `tree-b070236aa74142612a11f05ec05279acebd693ae2edad770233808e61582982d`。本版本准备包含账号/社交/群组/持久房间、活动代次与恢复、双通道控制、Rust 客户端核心/Helper/Relay、桌面 UI 适配、安装更新配置、观测与受控降级，以及容量、音质、跨平台证据工具。代码版本和制品 SHA-256 以 `release.json` 为唯一记录；本次只准备发布材料，不表示已发布。
 
 ## 构建产物或制品获取方式
 
-{{ARTIFACTS_AND_HASHES}}
+登记制品为 `workspace/release/manifest.json`、`workspace/release/support-matrix.json`、`workspace/release/evidence-index.json` 和 `workspace/release/design-asset-diff.json`，均由 `release-set` 对真实文件记录哈希。`manifest.json` 的类型是 `release_configuration_not_installer`，列出安装/更新配置摘要；当前没有构建或签名后的 Windows、macOS、Linux 安装包，不将这些 JSON 称为可安装程序。
 
 ## 部署和配置说明
 
-{{DEPLOYMENT_AND_CONFIGURATION}}
+未执行生产部署。目标架构仍为单控制面、自托管 SFU、可选 Relay 与受限 Helper；初期资源预算 2 核、2 GB、Debian、5 Mbit/s。生产配置、证书、邮件、SFU、数据库备份和运营路径默认值必须由部署评审另行确认，不自动扩容、不修改生产数据。
 
 ## 数据迁移方案
 
-{{MIGRATION_OR_NOT_APPLICABLE_WITH_REASON}}
+控制面使用 Flyway V1～V8 单向迁移，真实嵌入式 PostgreSQL 17.5 已验证全新迁移、迁移后重启和关键并发路径。生产升级前须备份并单独评审数据量、锁与回退；禁止原地改写已执行迁移或物理删除业务数据。当前未执行生产数据迁移。
 
 ## 安全检查结果
 
-{{SECURITY_CHECK_RESULTS}}
+当前代码树自测覆盖认证/会话、执行时权限、跨房隔离、旧代次、撤销、日志秘密脱敏、Helper 白名单及 Relay 授权。未执行外部渗透、生产密钥/证书、真实 TUN 与系统路由核验。依赖清单仍有 `unreviewed` 许可证项，维护责任和法律义务待审核，不能视为许可证合规已完成。
 
 ## 已知问题列表
 
-{{KNOWN_ISSUES_OR_NONE}}
+- 外部邮件、真实 SFU 音质/设备、真实 TUN/直连/Relay 组合未验收。
+- 三平台安装、签名、更新、卸载、游戏版本和跨平台互通未实测。
+- C0～C4 容量、12 人 60 分钟、100 人在线/分房及 AC-040 听辨未实测，工具夹具不构成通过证据。
+- 候选 Tauri/LiveKit 及运营默认路径未由完整 SP 证据定案；构建存在 JDK 动态代理与 Rust 未读字段警告。
+- 没有开放的工作流缺陷；上述均为明确保留的验证或许可证缺口。
 
 ## 回滚或恢复方案
 
-{{ROLLBACK_OR_RECOVERY}}
+本次未部署，无需生产回滚。后续部署如失败，应停止新版本接入，恢复部署前应用制品和配置，并按已验证备份执行数据恢复或前向补偿；不得回滚为关闭授权、撤销、隔离或容量检查。客户端退出/失权须清理自身会话、TUN、路由与 Peer，不修改默认路由、DNS 或物理 LAN。
 
 ## 发布检查清单
 
-{{RELEASE_CHECKLIST}}
+- `0.1.0` 版本、当前代码树与四类登记制品哈希由 H 门禁核验。
+- F/G/H 完整本地回归均须绑定各自阶段与当前代码树，REQ-001～REQ-028 用例可追踪且无开放缺陷。
+- 支持矩阵、验证清单和证据索引公开全部未验证项；59 个已跟踪设计资产摘要无差异。
+- H 批准只表示发布材料与已知风险已评审，不授权生产部署、签名、标签、远程推送或最终验收。

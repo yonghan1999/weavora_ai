@@ -1,6 +1,29 @@
 {
   "schema_version": 1,
-  "version": null,
-  "code_version": null,
-  "artifacts": []
+  "version": "0.1.0",
+  "code_version": "tree-b070236aa74142612a11f05ec05279acebd693ae2edad770233808e61582982d",
+  "artifacts": [
+    {
+      "path": "release/manifest.json",
+      "sha256": "178425ea9585766edd49f4dd7f627fc3a7797bcdeff0d3ddfab6c995cc8a070d",
+      "bytes": 1406
+    },
+    {
+      "path": "release/support-matrix.json",
+      "sha256": "b3a4faaa1abfd79585937e87ea3255268292cce74d77321fcb212c5adec44ca0",
+      "bytes": 1371
+    },
+    {
+      "path": "release/evidence-index.json",
+      "sha256": "131ce2541ee57bcd5c52caf0b0cc2c7312d0cce4c14f98cabc913e6d87a7f328",
+      "bytes": 1692
+    },
+    {
+      "path": "release/design-asset-diff.json",
+      "sha256": "bf949ab3530d0c4e739d65c6d4ab19d6d2d9220fd5298826a737267122e590a7",
+      "bytes": 193
+    }
+  ],
+  "prepared_at": "2026-11-05T01:20:56Z",
+  "production_deployment": "not_performed"
 }
