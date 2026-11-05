@@ -37,12 +37,13 @@
       "expected": "完整本地自动化回归退出码 0；不代表未实测的外部服务、平台、音质或容量验收通过",
       "status": "passed",
       "evidence": [
-        "tests/evidence/EXEC-20261105T011815Z-f0b369f0.json"
+        "tests/evidence/EXEC-20261105T011815Z-f0b369f0.json",
+        "tests/evidence/EXEC-20261105T012243Z-4a785d17.json"
       ],
-      "last_evidence": "tests/evidence/EXEC-20261105T011815Z-f0b369f0.json",
-      "last_evidence_sha256": "999af115f4f3d01b14da54965f4ffecc9543dbd2dfa37081d518ca63e086c0ee",
-      "last_check_id": "independent-full-regression",
-      "last_check_stage": "G_INDEPENDENT_TEST"
+      "last_evidence": "tests/evidence/EXEC-20261105T012243Z-4a785d17.json",
+      "last_evidence_sha256": "68ec47a0671797e9e461b46493bf0ddb99fe787eeda07aa28dac0b2b03c5f004",
+      "last_check_id": "release-full-regression",
+      "last_check_stage": "H_RELEASE"
     }
   ]
 }

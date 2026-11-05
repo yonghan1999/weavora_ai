@@ -3,10 +3,10 @@
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "name": "织界",
-  "stage": "H_RELEASE",
+  "stage": "I_ACCEPTANCE",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-11-05T01:20:09Z",
+  "updated_at": "2026-11-05T05:22:44Z",
   "retry_counts": {
     "E_IMPLEMENTATION": 0
   },
@@ -323,6 +323,57 @@
       "decided_by": "han",
       "decision_source": "explicit_human_cli",
       "verified_baseline_digest": "c6a3587a5b974d79509dee48b5b1c057b36b4094b5fc1f0633221cd1a068a80d"
+    },
+    {
+      "schema_version": 1,
+      "approval_id": "APR-H-632ee4199bfd",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "stage": "H_RELEASE",
+      "stage_name": "发布准备",
+      "requested_at": "2026-11-05T01:24:33Z",
+      "requested_by": "release-manager",
+      "baseline_digest": "c1990d5fa36cbc84189dac9f7a4cb082fa5e9dfdfcda8b20892f13ed95f1e57b",
+      "decision": "approved",
+      "documents": [
+        "docs/07-test-report.md",
+        "docs/08-release.md",
+        "release.json",
+        "tests/cases.json",
+        "tests/defects.json"
+      ],
+      "summary": "请审批发布准备基线；批准仅适用于当前文件摘要。",
+      "important_decisions": "以所列需求、设计、发布或验收文档中的决策为准。",
+      "risks_and_impacts": "风险、已知问题和未验证事项见所列文档；基线变化后须重新审批。",
+      "acceptance_and_checks": {
+        "stage": "H_RELEASE",
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "checks": [
+          "文档结构：docs/08-release.md",
+          "JSON 格式：release.json",
+          "需求—用例—执行—缺陷追踪",
+          "H_RELEASE 必需构建/自动化测试",
+          "发布制品、版本、最终回归及回滚材料",
+          "人工审批状态与基线一致性"
+        ],
+        "evidence": [
+          "tests/evidence/EXEC-20261105T012243Z-4a785d17.json",
+          "tests/evidence/EXEC-20261105T012243Z-4a785d17.json"
+        ]
+      },
+      "allowed_decisions": [
+        "approved",
+        "rejected",
+        "changes_requested"
+      ],
+      "human_command": "python zhijie.py approve zhijie --approval-id APR-H-632ee4199bfd --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION",
+      "decision_reason": "批准当前基线",
+      "decided_at": "2026-11-05T05:22:44Z",
+      "decided_by": "han",
+      "decision_source": "explicit_human_cli",
+      "verified_baseline_digest": "c1990d5fa36cbc84189dac9f7a4cb082fa5e9dfdfcda8b20892f13ed95f1e57b"
     }
   ],
   "history": [
@@ -2043,6 +2094,59 @@
       "actor": "independent-tester",
       "role": "test_engineer",
       "reason": "进入发布准备",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "H_RELEASE",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-11-05T01:24:33Z",
+      "actor": "release-manager",
+      "role": "release_manager",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/07-test-report.md",
+        "docs/08-release.md",
+        "release.json",
+        "tests/cases.json",
+        "tests/defects.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "H_RELEASE",
+      "from": "awaiting_approval",
+      "to": "approved",
+      "at": "2026-11-05T05:22:44Z",
+      "actor": "han",
+      "role": "human_approver",
+      "reason": "人工明确批准",
+      "evidence": [
+        "approvals/APR-H-632ee4199bfd.decision.json"
+      ],
+      "human_authorization": true
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "I_ACCEPTANCE",
+      "from": "approved",
+      "to": "in_progress",
+      "at": "2026-11-05T05:22:44Z",
+      "actor": "han",
+      "role": "human_approver",
+      "reason": "进入最终验收与归档",
       "evidence": [],
       "human_authorization": false
     }

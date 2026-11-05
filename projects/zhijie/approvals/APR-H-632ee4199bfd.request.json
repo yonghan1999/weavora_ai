@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "approval_id": "APR-H-632ee4199bfd",
+  "workflow_id": "WF-zhijie",
+  "project_id": "zhijie",
+  "stage": "H_RELEASE",
+  "stage_name": "发布准备",
+  "requested_at": "2026-11-05T01:24:33Z",
+  "requested_by": "release-manager",
+  "baseline_digest": "c1990d5fa36cbc84189dac9f7a4cb082fa5e9dfdfcda8b20892f13ed95f1e57b",
+  "decision": null,
+  "documents": [
+    "docs/07-test-report.md",
+    "docs/08-release.md",
+    "release.json",
+    "tests/cases.json",
+    "tests/defects.json"
+  ],
+  "summary": "请审批发布准备基线；批准仅适用于当前文件摘要。",
+  "important_decisions": "以所列需求、设计、发布或验收文档中的决策为准。",
+  "risks_and_impacts": "风险、已知问题和未验证事项见所列文档；基线变化后须重新审批。",
+  "acceptance_and_checks": {
+    "stage": "H_RELEASE",
+    "ok": true,
+    "errors": [],
+    "warnings": [],
+    "checks": [
+      "文档结构：docs/08-release.md",
+      "JSON 格式：release.json",
+      "需求—用例—执行—缺陷追踪",
+      "H_RELEASE 必需构建/自动化测试",
+      "发布制品、版本、最终回归及回滚材料",
+      "人工审批状态与基线一致性"
+    ],
+    "evidence": [
+      "tests/evidence/EXEC-20261105T012243Z-4a785d17.json",
+      "tests/evidence/EXEC-20261105T012243Z-4a785d17.json"
+    ]
+  },
+  "allowed_decisions": [
+    "approved",
+    "rejected",
+    "changes_requested"
+  ],
+  "human_command": "python zhijie.py approve zhijie --approval-id APR-H-632ee4199bfd --decision approved --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION"
+}
