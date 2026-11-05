@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261105T010708Z-06f92a49",
+  "project_id": "zhijie",
+  "started_at": "2026-11-05T01:06:42Z",
+  "finished_at": "2026-11-05T01:07:08Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "node scripts/test-performance.mjs --validate-fixtures",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "C0-C4 parameters, result schemas, long-session budgets and audio evidence requirements are valid; all capacity acceptance remains unverified.\n",
+  "stdout_truncated": false,
+  "stderr": "",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "94e228da7c875992c036d2ba9c825893221ab19a669934e1483d6648460ce434",
+  "tree_digest_after": "94e228da7c875992c036d2ba9c825893221ab19a669934e1483d6648460ce434",
+  "task_id": "TASK-016"
+}

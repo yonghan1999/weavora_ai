@@ -413,10 +413,14 @@
       "acceptance": "负载参数和结果模式经自动化校验，明确100在线、满房和分房不能互相替代；未实测不生成通过结论",
       "test": "node scripts/test-performance.mjs --validate-fixtures",
       "rollback": "移除新增负载工具和未验证结果，保留原始实测数据，不修改验收阈值",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261105T010708Z-06f92a49.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261105T010708Z-06f92a49.json",
+      "last_evidence_sha256": "3dc6fa4b7a8a28c859bf33c3b5a9e88a0dbc49acaa996777586d0e9c3bc5e992"
     },
     {
       "id": "TASK-017",
