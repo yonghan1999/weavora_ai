@@ -11,10 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class RevocationDispatcher {
     private final OutboxRepository repository;
     private final List<RevocationTarget> targets;
+    private final app.weavora.zhijie.controlplane.observability.ObservationService observations;
 
-    public RevocationDispatcher(OutboxRepository repository, List<RevocationTarget> targets) {
+    public RevocationDispatcher(OutboxRepository repository, List<RevocationTarget> targets,
+                                app.weavora.zhijie.controlplane.observability.ObservationService observations) {
         this.repository = repository;
         this.targets = targets;
+        this.observations = observations;
     }
 
     @Transactional
@@ -27,6 +30,8 @@ public class RevocationDispatcher {
                 List<RevocationTarget> applicable = targets.stream().filter(target -> target.supports(event.type())).toList();
                 for (RevocationTarget target : applicable) target.deliver(event);
                 repository.markDelivered(event.eventId());
+                observations.recordOutboxDelivered();
+                observations.recordRevocation("outbox", "delivered");
                 delivered++;
             } catch (RuntimeException exception) {
                 repository.recordFailure(event.eventId());

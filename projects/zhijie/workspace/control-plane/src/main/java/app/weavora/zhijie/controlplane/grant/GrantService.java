@@ -30,11 +30,13 @@ public class GrantService {
     private final Clock clock;
     private final String voiceUrl;
     private final app.weavora.zhijie.controlplane.network.NetworkPolicyService policies;
+    private final app.weavora.zhijie.controlplane.observability.AdmissionService admission;
 
     public GrantService(GrantRepository repository, ActivityRepository activities, IdentityService identity,
                         CredentialProtector credentials, VoiceGateway voiceGateway, Clock clock,
                         @org.springframework.beans.factory.annotation.Value("${zhijie.voice.url:ws://127.0.0.1:7880}") String voiceUrl,
-                        app.weavora.zhijie.controlplane.network.NetworkPolicyService policies) {
+                        app.weavora.zhijie.controlplane.network.NetworkPolicyService policies,
+                        app.weavora.zhijie.controlplane.observability.AdmissionService admission) {
         this.repository = repository;
         this.activities = activities;
         this.identity = identity;
@@ -43,12 +45,14 @@ public class GrantService {
         this.clock = clock;
         this.voiceUrl = voiceUrl;
         this.policies = policies;
+        this.admission = admission;
     }
 
     @Transactional
     public VoiceGrantResponse voice(String userId, String activityId) {
         ActivityMember member = currentMember(userId, activityId);
         ConnectionLease lease = currentLease(member);
+        admission.admit("VOICE");
         if (!voiceGateway.isAvailable()) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "VOICE_CAPACITY_LIMITED", "语音服务尚未接入或不可用", true);
         }
@@ -62,6 +66,7 @@ public class GrantService {
     public NetworkGrantResponse network(String userId, String activityId, String publicKey) {
         ActivityMember member = currentMember(userId, activityId);
         ConnectionLease lease = currentLease(member);
+        admission.admit("NETWORK");
         if (publicKey == null || publicKey.isBlank()) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_FAILED", "必须提供本机 WireGuard 公钥", false);
         }

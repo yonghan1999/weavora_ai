@@ -30,4 +30,7 @@
     <update id="revokeLease">
         UPDATE activity_grants SET revoked_at = #{revokedAt} WHERE lease_id = #{leaseId} AND revoked_at IS NULL
     </update>
+    <select id="countActive" resultType="int">
+        SELECT COUNT(*) FROM activity_grants WHERE kind = #{kind} AND revoked_at IS NULL AND expires_at &gt; NOW()
+    </select>
 </mapper>

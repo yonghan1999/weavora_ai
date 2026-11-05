@@ -26,7 +26,9 @@ class RevocationDispatcherTest {
                 if (attempts.getAndIncrement() == 0) throw new IllegalStateException("temporary");
             }
         };
-        RevocationDispatcher dispatcher = new RevocationDispatcher(repository, List.of(target));
+        RevocationDispatcher dispatcher = new RevocationDispatcher(repository, List.of(target),
+                new app.weavora.zhijie.controlplane.observability.ObservationService(
+                        new io.micrometer.core.instrument.simple.SimpleMeterRegistry()));
 
         assertThat(dispatcher.dispatchPending().failed()).isEqualTo(1);
         verify(repository).recordFailure("event");

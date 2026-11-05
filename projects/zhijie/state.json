@@ -6,9 +6,9 @@
   "stage": "E_IMPLEMENTATION",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-11-04T11:05:00Z",
+  "updated_at": "2026-11-05T01:03:55Z",
   "retry_counts": {
-    "E_IMPLEMENTATION": 2
+    "E_IMPLEMENTATION": 0
   },
   "max_retries": 3,
   "approvals": [
@@ -1868,6 +1868,70 @@
       "reason": "第 2 次重试：修复 Relay 撤销与迟到注册竞态",
       "evidence": [],
       "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-015",
+      "stage": "E_IMPLEMENTATION",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-04T11:15:33Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "任务 TASK-015 命令失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261104T111513Z-ffcabc6d.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-015",
+      "stage": "E_IMPLEMENTATION",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-04T11:16:01Z",
+      "actor": "developer",
+      "role": "workflow_operator",
+      "reason": "第 3 次重试：修复 Logback 消息转换器编译",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-015",
+      "stage": "E_IMPLEMENTATION",
+      "from": "in_progress",
+      "to": "blocked",
+      "at": "2026-11-04T11:17:31Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "任务 TASK-015 命令失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261104T111711Z-f492c7c8.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-015",
+      "stage": "E_IMPLEMENTATION",
+      "from": "blocked",
+      "to": "in_progress",
+      "at": "2026-11-05T00:59:41Z",
+      "actor": "han",
+      "role": "human_approver",
+      "reason": "人工确认解除阻塞；重置当前阶段重试预算",
+      "evidence": [],
+      "human_authorization": true
     }
   ],
   "resume_status": null,

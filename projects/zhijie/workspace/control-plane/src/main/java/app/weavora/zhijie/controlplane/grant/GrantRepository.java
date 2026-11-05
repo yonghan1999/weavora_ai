@@ -10,4 +10,5 @@ public interface GrantRepository {
     void revoke(String grantId, Instant revokedAt);
     void revokeMember(String activityId, String userId, Instant revokedAt);
     void revokeLease(String leaseId, Instant revokedAt);
+    int countActive(String kind);
 }

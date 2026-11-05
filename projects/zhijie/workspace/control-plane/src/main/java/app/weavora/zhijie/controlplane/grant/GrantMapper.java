@@ -13,4 +13,5 @@ public interface GrantMapper {
     void revoke(@Param("grantId") String grantId, @Param("revokedAt") Instant revokedAt);
     void revokeMember(@Param("activityId") String activityId, @Param("userId") String userId, @Param("revokedAt") Instant revokedAt);
     void revokeLease(@Param("leaseId") String leaseId, @Param("revokedAt") Instant revokedAt);
+    int countActive(String kind);
 }

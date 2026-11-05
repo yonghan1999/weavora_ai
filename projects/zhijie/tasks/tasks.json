@@ -382,10 +382,16 @@
       "acceptance": "日志和审计秘密扫描、限流、过时事件、背压及故障告警自动化测试通过；不暴露服务器秘密",
       "test": "./mvnw -q -pl control-plane -am test && cargo test --workspace && npm --prefix desktop/ui test",
       "rollback": "恢复上一观测和限流配置，保留撤销与授权安全控制，不通过关闭安全检查回退",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 3,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261104T111513Z-ffcabc6d.json",
+        "tests/evidence/EXEC-20261104T111711Z-f492c7c8.json",
+        "tests/evidence/EXEC-20261105T010335Z-8f22bfea.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261105T010335Z-8f22bfea.json",
+      "last_evidence_sha256": "4e2894e18530dafda4e7c599450789a072b03b01ca1c3293a4baa0e1fe23d738"
     },
     {
       "id": "TASK-016",
