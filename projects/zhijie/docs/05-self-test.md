@@ -1,31 +1,29 @@
 # 开发自测报告：织界
 
-> 填写要求：引用真实证据路径；无法执行的检查必须标为“未验证”并说明原因。
-
 ## 构建或运行检查
 
-{{BUILD_OR_RUN_RESULTS}}
+2026-11-05 在 Windows 工作区以 OpenJDK 25、Maven Wrapper、固定 Rust 工具链和 Node 24 执行完整自测。Maven 控制面及依赖模块、Cargo 全 workspace、桌面 UI、双通道垂直切片均实际运行，退出码 0。证据：`tests/evidence/EXEC-20261105T011337Z-ae6fc342.json`。
 
 ## 自动化测试
 
-{{AUTOMATED_TEST_RESULTS}}
+同一证据覆盖真实嵌入式 PostgreSQL 17.5 的 Flyway V1～V8 迁移、关键并发与重启测试，Rust 核心/Helper/Relay/语音测试，UI 测试，以及发布配置、性能夹具和兼容性证据索引检查。执行前后代码树 SHA-256 均为 `b070236aa74142612a11f05ec05279acebd693ae2edad770233808e61582982d`。
 
 ## 异常与边界检查
 
-{{EXCEPTION_AND_BOUNDARY_RESULTS}}
+覆盖第 13 人拒绝、设备争抢、跨活动隔离、旧代次/迟到结果、独立通道故障与恢复、撤销、过期授权、禁止路径和日志脱敏。C0～C4 与音频 A/B 仅校验工具和结果模式；目标机容量、真实音质、外部邮件与三平台实机能力未执行，保持未验证。
 
 ## 设计符合性
 
-{{DESIGN_COMPLIANCE}}
+59 个已跟踪 B1/B2 设计资产与基线摘要一致，未修改原型/UI 资产。实现保持 Rust 客户端/Helper/Relay、Java/MyBatis/PostgreSQL 控制面、双通道状态与运营路径策略边界。依赖许可证和维护缺口仍公开记录。
 
 ## 安全检查
 
-{{SECURITY_REVIEW}}
+自动化测试覆盖凭据与房间秘密脱敏、授权容量门禁、越权/跨房隔离、Relay 撤销和 Helper 请求边界。未执行外部安全渗透、生产证书、真实 TUN 与生产部署，不作相关通过声明。构建存在 JDK 动态代理和 Rust 未读字段警告，但未导致测试失败。
 
 ## 未完成实现检查
 
-{{PLACEHOLDER_AND_TODO_REVIEW}}
+TASK-001～TASK-017 均已完成登记命令并绑定有效证据；无开放缺陷。真实外部服务、目标设备、容量/听辨和许可证审核不是已完成能力，已分别列入测试计划、支持矩阵、验证清单及维护记录，不以占位结果代替。
 
 ## 结论与证据
 
-{{SELF_TEST_CONCLUSION_AND_EVIDENCE}}
+当前代码树的本地开发自测门禁通过，可进入独立回归；不等于 AC-001～AC-044 全部验收或生产发布就绪。主证据：`tests/evidence/EXEC-20261105T011337Z-ae6fc342.json`，退出码 0，角色 `self_tester`，阶段 F。
