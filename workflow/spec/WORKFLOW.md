@@ -29,7 +29,7 @@
 - `submit` 仅接受 `in_progress`，先运行门禁；需审批时进入 `awaiting_approval`，否则自动进入下一阶段。
 - `approved` 是审计中可追踪的瞬时状态，随后进入下一阶段或 `completed`。
 - 人工驳回进入 `rejected`，用 `revise` 修改后可重新提交，新旧审批均保留。
-- 命令失败进入 `awaiting_retry`；`retry` 有有限次数，耗尽进入 `blocked`。
+- 命令失败进入 `awaiting_retry`；`retry` 有有限次数，耗尽进入 `blocked`。只有人类执行带明确确认值的 `unblock` 才可解除阻塞，重置当前阶段及已耗尽活动任务的重试预算，并保留全部失败证据和历史；该操作不是阶段审批，不跳过质量门禁。
 - `pause` 保存恢复前状态；`resume` 读取 JSON 状态恢复，不依赖对话记忆。
 - `cancelled` 和 `completed` 是终态。
 

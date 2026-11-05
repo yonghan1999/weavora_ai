@@ -130,6 +130,12 @@ class CliParserTests(unittest.TestCase):
         self.assertEqual(check_args.command, "add-check")
         self.assertEqual(check_args.exec_command, "npm test")
 
+        unblock_args = parser().parse_args([
+            "unblock", "demo", "--actor", "人类评审", "--human-confirm", HUMAN_CONFIRMATION,
+        ])
+        self.assertEqual(unblock_args.command, "unblock")
+        self.assertEqual(unblock_args.human_confirm, HUMAN_CONFIRMATION)
+
     def test_windows_uses_bash_for_posix_project_commands_when_available(self):
         from workflow.engine import shell_invocation
 
@@ -426,6 +432,48 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.engine.load(self.project_id)["status"], "failed")
         self.engine.retry(self.project_id, "operator", "workflow_operator", "外部条件已恢复")
         self.assertEqual(self.engine.load(self.project_id)["status"], "in_progress")
+
+    def test_human_unblock_resets_retry_budget_and_preserves_history(self):
+        state = self.engine.load(self.project_id)
+        state["stage"] = "D_PLANNING"
+        self.engine.save(self.project_id, state)
+        self.engine.add_task(self.project_id, {
+            "id": "TASK-001", "title": "验证人工解除阻塞", "requirement_ids": ["REQ-001"], "depends_on": [],
+            "input": "输入", "output": "输出", "acceptance": "验收", "test": "python --version", "rollback": "回退",
+        })
+        tasks_path = self.engine.project_dir(self.project_id) / "tasks/tasks.json"
+        tasks = json.loads(tasks_path.read_text(encoding="utf-8"))
+        tasks["tasks"][0].update({"status": "failed", "attempts": 3, "evidence": ["tests/evidence/previous.json"]})
+        atomic_json(tasks_path, tasks)
+        state = self.engine.load(self.project_id)
+        state.update({"stage": "E_IMPLEMENTATION", "status": "blocked", "active_task_id": "TASK-001"})
+        state["retry_counts"] = {"E_IMPLEMENTATION": 3}
+        self.engine.save(self.project_id, state)
+        base = self.engine.project_dir(self.project_id)
+        state_before = (base / "state.json").read_bytes()
+        audit_before = (base / "audit.jsonl").read_bytes()
+
+        with self.assertRaisesRegex(WorkflowError, "人工确认"):
+            self.engine.unblock(self.project_id, "人类评审", "wrong")
+        with self.assertRaisesRegex(WorkflowError, "具体的人类"):
+            self.engine.unblock(self.project_id, "ai", HUMAN_CONFIRMATION)
+        self.assertEqual((base / "state.json").read_bytes(), state_before)
+        self.assertEqual((base / "audit.jsonl").read_bytes(), audit_before)
+
+        unblocked = self.engine.unblock(self.project_id, "人类评审", HUMAN_CONFIRMATION)
+        self.assertEqual(unblocked["status"], "in_progress")
+        self.assertEqual(unblocked["retry_counts"]["E_IMPLEMENTATION"], 0)
+        event = unblocked["history"][-1]
+        self.assertEqual((event["from"], event["to"]), ("blocked", "in_progress"))
+        self.assertTrue(event["human_authorization"])
+        self.assertEqual(event["actor"], "人类评审")
+        audit = [json.loads(line) for line in (base / "audit.jsonl").read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(audit[-1], event)
+        task = json.loads(tasks_path.read_text(encoding="utf-8"))["tasks"][0]
+        self.assertEqual(task["attempts"], 0)
+        self.assertEqual(task["evidence"], ["tests/evidence/previous.json"])
+        with self.assertRaisesRegex(WorkflowError, "只有已阻塞"):
+            self.engine.unblock(self.project_id, "人类评审", HUMAN_CONFIRMATION)
 
     def test_pause_resume_persists_status(self):
         self.submit_requirements()

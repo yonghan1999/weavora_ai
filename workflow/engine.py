@@ -710,6 +710,28 @@ class Engine:
             self.transition(project_id, state, "in_progress", actor, role, f"第 {count} 次重试：{reason}")
             return state
 
+    def unblock(self, project_id: str, actor: str, confirmation: str) -> dict[str, Any]:
+        if confirmation != HUMAN_CONFIRMATION:
+            raise WorkflowError("缺少明确人工确认。解除阻塞只能由人类执行。")
+        if not actor.strip() or actor.strip().lower() in {"ai", "agent", "assistant", "system", "bot"}:
+            raise WorkflowError("解除阻塞的执行者必须是具体的人类，不能是 AI 或系统角色。")
+        with self.lock(project_id):
+            state = self.load(project_id)
+            if state["status"] != "blocked":
+                raise WorkflowError("只有已阻塞的工作流可以人工解除阻塞。")
+            stage = state["stage"]
+            state.setdefault("retry_counts", {})[stage] = 0
+            task_id = state.get("active_task_id")
+            if task_id:
+                tasks_path = self.project_dir(project_id) / "tasks/tasks.json"
+                data = read_json(tasks_path)
+                task = next((item for item in data["tasks"] if item["id"] == task_id), None)
+                if task and task["attempts"] >= task.get("max_attempts", 3):
+                    task["attempts"] = 0
+                    atomic_json(tasks_path, data)
+            self.transition(project_id, state, "in_progress", actor, "human_approver", "人工确认解除阻塞；重置当前阶段重试预算", human_authorization=True)
+            return state
+
     def cancel(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
         with self.lock(project_id):
             state = self.load(project_id)

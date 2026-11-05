@@ -53,6 +53,11 @@ def parser() -> argparse.ArgumentParser:
     command.add_argument("--human-confirm", required=True, help=f"人工确认值：{HUMAN_CONFIRMATION}")
     command.add_argument("--reason", default="", help="驳回或要求修改时必填")
 
+    command = sub.add_parser("unblock", help="【仅限人类】解除重试耗尽造成的阻塞")
+    command.add_argument("project_id")
+    command.add_argument("--actor", required=True, help="具体人类执行者姓名或标识")
+    command.add_argument("--human-confirm", required=True, help=f"人工确认值：{HUMAN_CONFIRMATION}")
+
     command = sub.add_parser("add-task", help="添加可执行开发任务")
     command.add_argument("project_id")
     command.add_argument("--task-id", required=True)
@@ -120,6 +125,8 @@ def dispatch(args: argparse.Namespace) -> Any:
         return engine.submit(args.project_id, args.actor, args.role)
     if args.command == "approve":
         return engine.approve(args.project_id, args.approval_id, args.decision, args.actor, args.human_confirm, args.reason)
+    if args.command == "unblock":
+        return engine.unblock(args.project_id, args.actor, args.human_confirm)
     if args.command == "revise":
         return engine.revise(args.project_id, args.actor, args.role, args.reason)
     if args.command == "reopen-requirements":
