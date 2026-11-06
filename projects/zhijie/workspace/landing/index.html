@@ -1,18 +1,19 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="织界 WEAVORA：为固定小队打造的语音与虚拟局域网工具。">
-  <meta name="theme-color" content="#0b0d0f">
+  <meta name="theme-color" content="#0b0e0c">
   <title>织界 WEAVORA · 和熟悉的人，随时玩到一起</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="page-shell">
-    <header class="site-header">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="container header-inner">
       <a class="brand" href="#top" aria-label="织界 WEAVORA 首页">
-        <span class="brand-mark" aria-hidden="true"><i></i><b></b></span>
+        <span class="brand-mark" aria-hidden="true"><i></i></span>
         <span class="brand-name">织界 <small>WEAVORA</small></span>
       </a>
       <nav class="site-nav" aria-label="主导航">
@@ -20,73 +21,171 @@
         <a href="#how">怎么工作</a>
         <a href="#platforms">支持平台</a>
       </nav>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav">菜单</button>
-    </header>
-
-    <nav id="mobile-nav" class="mobile-nav" aria-label="移动端主导航">
-      <a href="#why">为什么织界</a><a href="#how">怎么工作</a><a href="#platforms">支持平台</a>
+      <a class="header-cta" href="#how">了解产品 <span aria-hidden="true">↗</span></a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="打开菜单">
+        <span></span><span></span>
+      </button>
+    </div>
+    <nav id="mobile-nav" class="mobile-nav" aria-label="移动端主导航" hidden>
+      <a href="#why">为什么织界</a>
+      <a href="#how">怎么工作</a>
+      <a href="#platforms">支持平台</a>
     </nav>
+  </header>
 
-    <main id="top">
-      <section class="hero section-pad">
-        <div class="hero-copy">
-          <p class="eyebrow"><span class="pulse-dot"></span>给固定小队的下一张桌子</p>
-          <h1>和熟悉的人，<br><em>随时玩到一起。</em></h1>
-          <p class="hero-lede">织界正在设计一个把语音、群组和虚拟局域网放在一起的安静空间。</p>
-          <div class="hero-actions">
-            <a class="button button-secondary" href="#how">了解使用方式 <span aria-hidden="true">↘</span></a>
+  <main id="main">
+    <section id="top" class="hero container">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="status-dot"></span>固定小队的专属游戏空间</p>
+        <h1><span>和熟悉的人，</span><span class="accent">随时玩到一起。</span></h1>
+        <p class="hero-lede">把长期群组、语音和虚拟局域网放在同一个空间。下一次开局，不必再重新找到彼此。</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#how">看看怎么玩 <span aria-hidden="true">↘</span></a>
+          <a class="text-link" href="#why">为什么做织界 <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="hero-meta" aria-label="产品状态">
+          <span><i class="status-dot"></i>开发阶段预览</span>
+          <span>Windows</span>
+          <span>macOS</span>
+          <span>Linux</span>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="织界房间界面设计示意">
+        <div class="stage-grid" aria-hidden="true"></div>
+        <div class="stage-glow" aria-hidden="true"></div>
+        <div class="product-window">
+          <div class="window-bar">
+            <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            <span>WEAVORA / 产品界面示意</span>
+            <span class="window-status"><i></i>预览</span>
           </div>
-          <p class="hero-note"><span class="status-dot"></span>Windows · macOS · Linux　<span class="note-divider">·</span>　开发阶段预览</p>
-        </div>
-        <div class="hero-visual" aria-label="织界房间界面预览">
-          <div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div>
-          <div class="visual-card card-back"><span class="card-kicker">ROOM / 04</span><strong>今晚开黑</strong><small>房间界面示意</small></div>
-          <div class="visual-card card-front">
-            <div class="card-top"><span class="card-kicker">界面示意</span><span class="live-pill"><i></i>预览</span></div>
-            <div class="room-title"><strong>午夜列车</strong><small>群组 / 远方小队</small></div>
-            <div class="player-row"><div class="mini-avatars"><span class="avatar avatar-a">林</span><span class="avatar avatar-b">K</span><span class="avatar avatar-c">7</span><span class="avatar avatar-d">+</span></div><span class="player-count">4 / 16 位成员</span></div>
-            <div class="card-divider"></div>
-            <div class="connection-row"><span><i class="connection-icon voice-icon">⌁</i>语音</span><strong>开发中</strong><span class="connection-bar"><b></b><b></b><b></b><b></b></span></div>
-            <div class="connection-row"><span><i class="connection-icon network-icon">⊙</i>虚拟网络</span><strong>开发中</strong><span class="connection-bar"><b></b><b></b><b></b><b></b></span></div>
-            <div class="ip-row"><span>虚拟 IP</span><code>界面示意</code></div>
+          <div class="app-layout">
+            <aside class="app-sidebar" aria-label="示意群组导航">
+              <div class="app-brand"><span class="brand-mark small" aria-hidden="true"><i></i></span><strong>织界</strong></div>
+              <p class="app-label">你的群组</p>
+              <div class="group-item active"><span class="group-avatar">远</span><div><strong>远方小队</strong><small>4 位成员在线</small></div></div>
+              <div class="group-item"><span class="group-avatar muted">周末</span><div><strong>周末放映室</strong><small>8 位成员</small></div></div>
+              <p class="app-label rooms-label">游戏房间</p>
+              <div class="room-link active"><span>#</span>午夜列车<i></i></div>
+              <div class="room-link"><span>#</span>今晚开黑</div>
+              <div class="sidebar-user"><span class="avatar avatar-a">林</span><div><strong>林间风</strong><small>在线</small></div><span aria-hidden="true">•••</span></div>
+            </aside>
+            <div class="room-main">
+              <div class="room-heading">
+                <div><p>远方小队 / 游戏房间</p><h2>午夜列车</h2></div>
+                <span class="room-count">4 / 16</span>
+              </div>
+              <div class="member-stack" aria-label="四位房间成员">
+                <div class="member"><span class="avatar avatar-a">林</span><strong>林间风</strong><small><i></i>房间中</small></div>
+                <div class="member"><span class="avatar avatar-b">K</span><strong>Kira</strong><small><i></i>房间中</small></div>
+                <div class="member"><span class="avatar avatar-c">7</span><strong>七号玩家</strong><small><i></i>房间中</small></div>
+                <div class="member"><span class="avatar avatar-d">+</span><strong>等待朋友</strong><small>私密邀请</small></div>
+              </div>
+              <div class="connection-card">
+                <div class="connection-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M5 11v1a7 7 0 0 0 14 0v-1M12 19v3M8 22h8"/></svg>
+                </div>
+                <div><strong>语音连接</strong><small>和队友保持在同一个房间</small></div>
+                <span class="dev-badge">开发中</span>
+              </div>
+              <div class="connection-card">
+                <div class="connection-icon violet" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4V2M12 22v-2M4 12H2M22 12h-2"/></svg>
+                </div>
+                <div><strong>虚拟网络</strong><small>为游戏连接减少一层折腾</small></div>
+                <span class="dev-badge">开发中</span>
+              </div>
+              <p class="preview-note"><span></span>本界面仅展示产品方向，非实际功能状态</p>
+            </div>
           </div>
-          <div class="signal signal-one"></div><div class="signal signal-two"></div><div class="signal signal-three"></div>
         </div>
-      </section>
+        <div class="floating-tag"><span class="status-dot"></span><div><strong>老地方，还是你们</strong><small>长期群组 · 固定小队</small></div></div>
+      </div>
+    </section>
 
-      <section class="trust-strip section-pad" aria-label="产品特点">
-        <p>为那些每周都会聚在一起的人设计</p>
-        <div class="trust-items"><span>长期群组方向</span><i></i><span>最多 16 人房间</span><i></i><span>语音 + 虚拟局域网方向</span><i></i><span>跨平台目标</span></div>
-      </section>
+    <section class="principles" aria-label="产品设计方向">
+      <div class="container principles-inner">
+        <p>为每一支固定小队而设计</p>
+        <ul>
+          <li>长期群组</li>
+          <li>最多 16 人房间</li>
+          <li>语音 + 虚拟网络</li>
+          <li>跨桌面平台</li>
+        </ul>
+      </div>
+    </section>
 
-      <section id="why" class="why section-block">
-        <div class="section-intro"><p class="eyebrow">WHY WEAVORA</p><h2>少一点折腾，<br><span>多一点一起玩。</span></h2><p>产品方向是保留长期群组与房间，让固定小队下次回来时还能接着使用。</p></div>
-        <div class="feature-grid">
-          <article class="feature-card feature-large"><div class="feature-icon icon-network">⌁</div><p class="feature-index">01 / CONNECT</p><h3>进入房间，<br>连接体验更简单。</h3><p>计划在进入房间后提供语音与虚拟局域网能力，具体连接体验以实际开发结果为准。</p><div class="feature-line"></div><span class="feature-caption">产品设计方向</span></article>
-          <article class="feature-card"><div class="feature-icon icon-group">✦</div><p class="feature-index">02 / GATHER</p><h3>固定小队，<br>一直都在。</h3><p>计划围绕长期群组组织消息、成员和房间，让固定小队更容易继续上次的活动。</p><span class="feature-number">02</span></article>
-          <article class="feature-card feature-dark"><div class="feature-icon icon-quiet">◌</div><p class="feature-index">03 / FOCUS</p><h3>安静的空间，<br>只留给你们。</h3><p>计划采用私密邀请与清晰权限，专注服务固定小队的使用场景。</p><span class="feature-number">03</span></article>
-        </div>
-      </section>
+    <section id="why" class="section container why">
+      <div class="section-heading split-heading">
+        <div><p class="eyebrow">LESS SETUP. MORE PLAY.</p><h2>少一点折腾，<br><span>多一点一起玩。</span></h2></div>
+        <p>重要的不是再加一个聊天工具，而是让已经熟悉的人有一个一直能回来的地方。织界围绕长期群组组织成员、房间与连接体验。</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card feature-group">
+          <div class="feature-top"><span class="feature-number">01</span><span class="feature-label">STAY TOGETHER</span></div>
+          <div class="feature-copy"><h3>一个群组，<br>一直是你们。</h3><p>不必每次重新拉人。围绕长期群组保留熟悉的成员与房间，下次回来时接着玩。</p></div>
+          <div class="group-visual" aria-hidden="true">
+            <div class="group-visual-head"><span class="group-avatar">远</span><div><strong>远方小队</strong><small>固定小队 · 长期群组</small></div><span>•••</span></div>
+            <div class="group-room"><span><i></i>午夜列车</span><div class="tiny-avatars"><b class="avatar-a">林</b><b class="avatar-b">K</b><b class="avatar-c">7</b></div></div>
+            <div class="group-room"><span><i></i>今晚开黑</span><small>房间</small></div>
+          </div>
+        </article>
+        <article class="feature-card feature-connect">
+          <div class="feature-top"><span class="feature-number">02</span><span class="feature-label">PLAY IN ONE PLACE</span></div>
+          <div class="connection-orbit" aria-hidden="true"><span>语音</span><i></i><span>游戏</span><i></i><span>网络</span></div>
+          <div class="feature-copy"><h3>进入房间，<br>就该开始玩了。</h3><p>把语音与虚拟局域网能力放进同一个房间，目标是把时间留给游戏，而不是连接设置。</p></div>
+        </article>
+        <article class="feature-card feature-private">
+          <div class="feature-top"><span class="feature-number">03</span><span class="feature-label">JUST YOUR PEOPLE</span></div>
+          <div class="private-symbol" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="14" width="20" height="15" rx="5"/><path d="M10 14V9a6 6 0 0 1 12 0v5M16 20v4"/></svg></div>
+          <div class="feature-copy"><h3>安静的空间，<br>只留给熟人。</h3><p>以私密邀请和清晰权限为设计方向，让每一次相聚都发生在熟悉的人之间。</p></div>
+        </article>
+      </div>
+    </section>
 
-      <section id="how" class="how section-pad section-block">
-        <div class="how-heading"><p class="eyebrow">HOW IT WORKS</p><h2>三步，回到<br><span>同一张桌子。</span></h2></div>
-        <div class="steps">
-          <div class="step"><span class="step-num">01</span><div><h3>加入群组</h3><p>产品设想：通过朋友邀请进入长期空间。</p></div><span class="step-arrow">↘</span></div>
-          <div class="step"><span class="step-num">02</span><div><h3>进入房间</h3><p>产品设想：在群组中选择或创建本次游戏房间。</p></div><span class="step-arrow">↘</span></div>
-          <div class="step"><span class="step-num">03</span><div><h3>开始游戏</h3><p>语音与虚拟网络仍在开发中，本页仅展示产品方向。</p></div><span class="step-arrow">↗</span></div>
-        </div>
-      </section>
+    <section id="how" class="section container">
+      <div class="how-panel">
+        <div class="how-heading"><p class="eyebrow">BACK TO THE TABLE</p><h2>三步，回到<br>同一张桌子。</h2><p>从朋友邀请到进入游戏，流程应该简单得不用解释。</p></div>
+        <ol class="steps">
+          <li><span class="step-number">01</span><div class="step-icon" aria-hidden="true">↙</div><h3>加入群组</h3><p>通过朋友邀请，进入属于你们的长期空间。</p></li>
+          <li><span class="step-number">02</span><div class="step-icon" aria-hidden="true">#</div><h3>进入房间</h3><p>选择或创建本次游戏房间，看到谁已经来了。</p></li>
+          <li><span class="step-number">03</span><div class="step-icon" aria-hidden="true">↗</div><h3>开始游戏</h3><p>语音和虚拟网络仍在开发中，本页展示产品方向。</p></li>
+        </ol>
+      </div>
+    </section>
 
-      <section id="platforms" class="platforms section-pad section-block">
-        <div><p class="eyebrow">MADE FOR YOUR SETUP</p><h2>面向三大<br><span>桌面平台。</span></h2></div>
-        <div class="platform-panel"><div class="platform-item"><span class="platform-symbol">⊞</span><div><strong>Windows</strong><small>Windows 10 及以上</small></div><span class="platform-state">开发中</span></div><div class="platform-item"><span class="platform-symbol">●</span><div><strong>macOS</strong><small>Apple Silicon / Intel</small></div><span class="platform-state">开发中</span></div><div class="platform-item"><span class="platform-symbol">◈</span><div><strong>Linux</strong><small>主流发行版</small></div><span class="platform-state">开发中</span></div><p class="platform-footnote">Windows、macOS 和 Linux 版本仍在开发中，具体支持范围以实际发布为准。 </p></div>
-      </section>
+    <section id="platforms" class="section container platforms">
+      <div class="section-heading split-heading">
+        <div><p class="eyebrow">YOUR SETUP, YOUR SQUAD</p><h2>不同电脑，<br><span>同一支队伍。</span></h2></div>
+        <p>以 Windows、macOS 和 Linux 为跨平台目标。各版本仍在开发中，具体支持范围以实际发布为准。</p>
+      </div>
+      <div class="platform-grid">
+        <article class="platform-card"><span class="platform-icon" aria-hidden="true">⊞</span><div><h3>Windows</h3><p>Windows 10 及以上</p></div><span class="dev-badge">开发中</span></article>
+        <article class="platform-card"><span class="platform-icon apple" aria-hidden="true">●</span><div><h3>macOS</h3><p>Apple Silicon / Intel</p></div><span class="dev-badge">开发中</span></article>
+        <article class="platform-card"><span class="platform-icon" aria-hidden="true">◈</span><div><h3>Linux</h3><p>主流发行版</p></div><span class="dev-badge">开发中</span></article>
+      </div>
+    </section>
 
-      <section class="closing section-pad section-block"><p class="eyebrow">YOUR PARTY, YOUR PLACE</p><h2>下一局，<br><em>还是你们。</em></h2><p class="closing-note">织界仍在设计与实现中。</p></section>
-    </main>
+    <section class="section container closing">
+      <div class="closing-panel">
+        <div class="closing-orbit" aria-hidden="true"></div>
+        <p class="eyebrow">YOUR PARTY. YOUR PLACE.</p>
+        <h2>下一局，<br><span>还是你们。</span></h2>
+        <p>织界仍在设计与实现中。<br>但我想让每一次相聚，都更简单一点。</p>
+        <a class="button button-primary" href="#top">回到顶部 <span aria-hidden="true">↑</span></a>
+      </div>
+    </section>
+  </main>
 
-    <footer class="site-footer section-pad"><a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"><i></i><b></b></span><span class="brand-name">织界 <small>WEAVORA</small></span></a><p>为固定小队而生的游戏空间。</p><div class="footer-links"><a href="#why">产品</a><a href="#platforms">支持平台</a></div><span class="copyright">© 2026 WEAVORA</span></footer>
-  </div>
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a class="brand" href="#top" aria-label="织界 WEAVORA 首页"><span class="brand-mark" aria-hidden="true"><i></i></span><span class="brand-name">织界 <small>WEAVORA</small></span></a>
+      <p>为固定小队而生的游戏空间。</p>
+      <div class="footer-links"><a href="#why">产品</a><a href="#platforms">支持平台</a></div>
+      <span class="copyright">© 2026 WEAVORA</span>
+    </div>
+  </footer>
   <script src="script.js"></script>
 </body>
 </html>
