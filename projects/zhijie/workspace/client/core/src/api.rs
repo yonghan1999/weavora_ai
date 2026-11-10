@@ -54,6 +54,27 @@ pub struct ControlPlaneClient {
 }
 
 impl ControlPlaneClient {
+    pub async fn product_request(
+        &self,
+        token: Option<&str>,
+        method: &str,
+        path: &str,
+        body: serde_json::Value,
+    ) -> Result<serde_json::Value, ClientError> {
+        let method = reqwest::Method::from_bytes(method.as_bytes())
+            .map_err(|error| ClientError::InvalidResponse(error.to_string()))?;
+        let mut request = self
+            .http
+            .request(method, format!("{}{}", self.base_url, path));
+        if let Some(token) = token {
+            request = request.bearer_auth(token);
+        }
+        if !body.is_null() {
+            request = request.json(&body);
+        }
+        decode(request.send().await.map_err(transport)?).await
+    }
+
     pub fn new(base_url: impl Into<String>) -> Result<Self, ClientError> {
         let http = reqwest::Client::builder()
             .connect_timeout(std::time::Duration::from_secs(5))

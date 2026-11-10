@@ -1,0 +1,264 @@
+/* 桌面适配仅补充容器行为；产品令牌与组件样式由已批准设计源文件提供。 */
+html,
+body,
+#app {
+  height: 100%;
+  min-height: 0;
+}
+.desktop-app {
+  height: 100dvh;
+  min-height: 0;
+  grid-template-rows: 64px minmax(0, 1fr);
+}
+.desktop-titlebar {
+  padding: 0 0 0 22px;
+  gap: 0;
+  position: relative;
+  z-index: 2;
+}
+.titlebar-drag {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  align-self: stretch;
+  flex: 1;
+  min-width: 0;
+  cursor: default;
+}
+.titlebar-drag .brand {
+  flex: none;
+}
+.desktop-titlebar .top-actions {
+  gap: 0;
+  height: 100%;
+  margin-left: 0;
+}
+.desktop-titlebar .window-controls {
+  height: 100%;
+  margin: 0;
+}
+.desktop-titlebar .window-controls button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 100%;
+  color: var(--muted);
+  border-radius: 0;
+}
+.desktop-titlebar .window-controls button:hover {
+  background: var(--panel-3);
+  color: var(--text);
+}
+.desktop-titlebar .window-controls [data-window="close"]:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+.desktop-auth {
+  height: auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 32px 16px;
+}
+.auth-submit {
+  width: 100%;
+  margin-top: 16px !important;
+}
+.auth-card .auth-links {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.auth-card .auth-links button {
+  padding: 0;
+}
+.auth-card .inline-feedback:empty {
+  display: none;
+}
+.runtime-note {
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.content-shell {
+  position: relative;
+}
+.service-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--danger);
+  color: var(--danger);
+  padding: 10px 20px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.content-shell:has(> .service-error) > .main-scroll,
+.content-shell:has(> .service-error) > .content-grid,
+.content-shell:has(> .service-error) > .room-layout {
+  padding-top: 62px;
+}
+.voice-now {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  min-width: 0;
+}
+.voice-now strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+  display: block;
+}
+.management-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+.group-chat-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 302px;
+  min-height: 0;
+}
+.group-chat-layout .group-chat {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.group-chat-head h1 {
+  font-size: 20px;
+  margin: 0 0 6px;
+}
+.group-chat-head p {
+  margin: 0;
+  color: var(--muted);
+}
+.group-room-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 12px 0;
+}
+.room-side {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.room-side .chat-scroll {
+  flex: 1;
+  min-height: 0;
+}
+.room-side .network-panel {
+  overflow: auto;
+}
+.room-side .chat-compose {
+  flex: none;
+}
+.friend-copy,
+.message-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.room-body h3,
+.group-card h3,
+.group-chat-head h1,
+.room-heading h1 {
+  overflow-wrap: anywhere;
+}
+.settings-content {
+  min-width: 0;
+}
+.settings-layout {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 24px;
+}
+.settings-content p {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.modal .ui-empty {
+  padding: 24px 16px;
+}
+.invite-id {
+  user-select: text;
+  overflow-wrap: anywhere;
+  color: var(--accent);
+}
+#toast:not(:empty) {
+  position: fixed;
+  z-index: 40;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-2);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+}
+@media (max-width: 900px) {
+  .desktop-titlebar .window-title {
+    display: none;
+  }
+  .group-chat-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .desktop-titlebar .connection-pill {
+    display: none;
+  }
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .desktop-titlebar {
+    padding-left: 16px;
+  }
+  .titlebar-drag .brand {
+    width: auto;
+  }
+  .brand-name small {
+    display: none;
+  }
+  .desktop-titlebar .window-controls button {
+    width: 40px;
+  }
+  .group-chat-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .group-chat-layout > .right-panel {
+    display: none;
+  }
+  .voice-now strong {
+    max-width: 130px;
+  }
+  .voice-right {
+    display: none;
+  }
+  .heading-actions {
+    flex-wrap: wrap;
+  }
+  .desktop-auth {
+    padding: 20px 16px;
+  }
+  .auth-card {
+    padding: 24px;
+  }
+  .desktop-app {
+    grid-template-rows: 56px minmax(0, 1fr);
+  }
+  .desktop-titlebar .brand-mark {
+    width: 28px;
+  }
+}

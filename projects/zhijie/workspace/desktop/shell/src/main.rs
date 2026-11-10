@@ -2,9 +2,7 @@
 
 use std::sync::Mutex;
 use tauri::State;
-use zhijie_core::{
-    AuthTokens, Channel, ClientCore, ClientError, ClientSnapshot, ControlPlaneClient,
-};
+use zhijie_core::{AuthTokens, ClientCore, ClientError, ClientSnapshot, ControlPlaneClient};
 
 struct AppState {
     client: ControlPlaneClient,
@@ -81,9 +79,6 @@ async fn activity_join(
     operation_id: String,
     state: State<'_, AppState>,
 ) -> Result<ClientSnapshot, String> {
-    state
-        .core
-        .begin_activity(operation_id.clone(), room_id.clone(), device_id.clone());
     let result = state
         .client
         .join(
@@ -94,15 +89,12 @@ async fn activity_join(
             &operation_id,
         )
         .await
-        .map_err(|error| {
-            state
-                .core
-                .channel_failed(&room_id, Channel::Voice, error_code(error.clone()));
-            state
-                .core
-                .channel_failed(&room_id, Channel::Network, error_code(error.clone()));
-            error_code(error)
-        })?;
+        .map_err(error_code)?;
+    // 服务端切换成功后再替换本地活动；失败切换不得破坏原房间快照。
+    state.voice.disconnect().await;
+    state
+        .core
+        .begin_activity(operation_id.clone(), room_id, device_id);
     state.core.apply_activity_result(&operation_id, result);
     Ok(state.core.snapshot())
 }
@@ -118,8 +110,117 @@ async fn session_logout(state: State<'_, AppState>) -> Result<ClientSnapshot, St
         state.core.clear_activity(&activity.activity_id);
     }
     state.voice.disconnect().await;
+    state
+        .client
+        .product_request(
+            None,
+            "POST",
+            "/api/v1/auth/logout",
+            serde_json::json!({"accessToken": state.access_token()?}),
+        )
+        .await
+        .map_err(error_code)?;
     *state.session.lock().expect("session lock") = None;
     state.core.session_changed(None);
+    Ok(state.core.snapshot())
+}
+
+// 只允许固定产品资源；不向 WebView 暴露任意 URL、请求头或会话令牌。
+#[tauri::command]
+async fn product_request(
+    resource: String,
+    id: Option<String>,
+    body: Option<serde_json::Value>,
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
+    let (method, path, public) = product_route(&resource, id.as_deref())?;
+    let token = if public {
+        None
+    } else {
+        Some(state.access_token()?)
+    };
+    state
+        .client
+        .product_request(
+            token.as_deref(),
+            method,
+            &path,
+            body.unwrap_or(serde_json::Value::Null),
+        )
+        .await
+        .map_err(error_code)
+}
+
+fn product_route(resource: &str, id: Option<&str>) -> Result<(&'static str, String, bool), String> {
+    let keyed = |prefix: &str, suffix: &str| -> Result<String, String> {
+        let value = id.ok_or("INVALID_RESOURCE_ID")?;
+        if value.is_empty()
+            || value.len() > 128
+            || !value
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || c == b'-')
+        {
+            return Err("INVALID_RESOURCE_ID".into());
+        }
+        Ok(format!("/api/v1/{prefix}/{value}{suffix}"))
+    };
+    let (method, path, public) = match resource {
+        "register" => ("POST", "/api/v1/auth/register".into(), true),
+        "verify" => ("POST", "/api/v1/auth/verify-email".into(), true),
+        "forgot" => ("POST", "/api/v1/auth/password/forgot".into(), true),
+        "reset" => ("POST", "/api/v1/auth/password/reset".into(), true),
+        "friends" => ("GET", "/api/v1/friends".into(), false),
+        "friend-search" => {
+            let query: String = id
+                .unwrap_or("")
+                .bytes()
+                .map(|b| format!("%{b:02X}"))
+                .collect();
+            if query.len() > 768 {
+                return Err("INVALID_RESOURCE_ID".into());
+            }
+            ("GET", format!("/api/v1/users/search?query={query}"), false)
+        }
+        "friend-request" => ("POST", "/api/v1/friend-requests".into(), false),
+        "friend-accept" => ("POST", keyed("friend-requests", "/accept")?, false),
+        "friend-reject" => ("POST", keyed("friend-requests", "/reject")?, false),
+        "friend-delete" => ("DELETE", keyed("friends", "")?, false),
+        "heartbeat" => ("POST", "/api/v1/presence/heartbeat".into(), false),
+        "group-create" => ("POST", "/api/v1/groups".into(), false),
+        "group-update" => ("PATCH", keyed("groups", "")?, false),
+        "group-members" => ("GET", keyed("groups", "/members")?, false),
+        "group-invite" => ("POST", keyed("groups", "/invitations")?, false),
+        "invitation-accept" => ("POST", keyed("invitations", "/accept")?, false),
+        "group-leave" => ("POST", keyed("groups", "/leave")?, false),
+        "group-dissolve" => ("POST", keyed("groups", "/dissolve")?, false),
+        "audit" => ("GET", keyed("groups", "/audit-logs")?, false),
+        "room-create" => ("POST", keyed("groups", "/rooms")?, false),
+        "room-update" => ("PATCH", keyed("rooms", "")?, false),
+        "room-open" => ("POST", keyed("rooms", "/open")?, false),
+        "room-pause" => ("POST", keyed("rooms", "/pause")?, false),
+        "room-delete" => ("DELETE", keyed("rooms", "")?, false),
+        "activity-start" => ("POST", keyed("rooms", "/activities")?, false),
+        "activity-end" => ("POST", keyed("activities", "/end")?, false),
+        "activity-members" => ("GET", keyed("activities", "/members")?, false),
+        "messages" => ("GET", keyed("groups", "/messages")?, false),
+        "message-send" => ("POST", keyed("groups", "/messages")?, false),
+        "message-delete" => ("DELETE", keyed("messages", "")?, false),
+        _ => return Err("RESOURCE_NOT_ALLOWED".into()),
+    };
+    Ok((method, path, public))
+}
+
+#[tauri::command]
+async fn activity_leave(state: State<'_, AppState>) -> Result<ClientSnapshot, String> {
+    if let Some(activity) = state.core.snapshot().activity {
+        state
+            .client
+            .leave(&state.access_token()?, &activity.activity_id)
+            .await
+            .map_err(error_code)?;
+        state.voice.disconnect().await;
+        state.core.clear_activity(&activity.activity_id);
+    }
     Ok(state.core.snapshot())
 }
 
@@ -211,6 +312,8 @@ fn main() {
         .manage(AppState::new())
         .invoke_handler(tauri::generate_handler![
             session_login,
+            product_request,
+            activity_leave,
             group_list,
             room_list,
             activity_join,
@@ -226,4 +329,31 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("failed to run 织界");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::product_route;
+
+    #[test]
+    fn product_routes_reject_arbitrary_paths_and_path_injection() {
+        assert!(product_route("https://example.com", None).is_err());
+        for id in ["../ops", "a/b", "a?admin=true", "", "a%2fb"] {
+            assert!(product_route("group-members", Some(id)).is_err());
+        }
+        assert_eq!(
+            product_route("group-members", Some("group-123")).unwrap(),
+            ("GET", "/api/v1/groups/group-123/members".into(), false)
+        );
+    }
+
+    #[test]
+    fn only_authentication_resources_allow_anonymous_access() {
+        assert!(product_route("register", None).unwrap().2);
+        assert!(!product_route("friends", None).unwrap().2);
+        let (_, path, _) =
+            product_route("friend-search", Some("a+b@example.test&admin=true")).unwrap();
+        assert!(!path.contains('&'));
+        assert!(!path.contains('@'));
+    }
 }

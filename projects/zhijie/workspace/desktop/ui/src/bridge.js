@@ -17,7 +17,12 @@ export class CoreBridge {
   }
 
   join(roomId, deviceId, password, operationId) {
-    return this.invoke("activity_join", { roomId, deviceId, password, operationId });
+    return this.invoke("activity_join", {
+      roomId,
+      deviceId,
+      password,
+      operationId,
+    });
   }
 
   logout() {
@@ -51,22 +56,38 @@ export class CoreBridge {
   snapshot() {
     return this.invoke("state_snapshot");
   }
+
+  request(resource, id = null, body = null) {
+    return this.invoke("product_request", { resource, id, body });
+  }
+
+  leave() {
+    return this.invoke("activity_leave");
+  }
 }
 
 export class ProductionStore extends EventTarget {
   constructor() {
     super();
-    this.state = { userId: null, activity: null, service: "DISCONNECTED", lastErrorCode: null, voice: null };
+    this.state = {
+      userId: null,
+      activity: null,
+      service: "DISCONNECTED",
+      lastErrorCode: null,
+      voice: null,
+    };
   }
 
   apply(snapshot) {
-    if (!snapshot || typeof snapshot !== "object") throw new Error("INVALID_SERVER_RESPONSE");
-    this.state = snapshot;
+    if (!snapshot || typeof snapshot !== "object")
+      throw new Error("INVALID_SERVER_RESPONSE");
+    this.state = { ...snapshot, voice: this.state.voice };
     this.dispatchEvent(new Event("changed"));
   }
 
   applyVoice(snapshot) {
-    if (!snapshot || typeof snapshot !== "object") throw new Error("INVALID_SERVER_RESPONSE");
+    if (!snapshot || typeof snapshot !== "object")
+      throw new Error("INVALID_SERVER_RESPONSE");
     this.state = { ...this.state, voice: snapshot };
     this.dispatchEvent(new Event("changed"));
   }
