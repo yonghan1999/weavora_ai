@@ -1,6 +1,7 @@
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
 use tokio::net::TcpStream;
+use tokio_tungstenite::tungstenite::{client::IntoClientRequest, http::header::AUTHORIZATION};
 use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 #[derive(Deserialize)]
@@ -54,7 +55,18 @@ mod tests {
         let address = listener.local_addr().unwrap();
         let server = tokio::spawn(async move {
             let (stream, _) = listener.accept().await.unwrap();
-            let mut socket = tokio_tungstenite::accept_async(stream).await.unwrap();
+            use tokio_tungstenite::tungstenite::handshake::server::Request;
+            let mut socket =
+                tokio_tungstenite::accept_hdr_async(stream, |request: &Request, response| {
+                    assert_eq!(
+                        request.uri().path_and_query().unwrap().as_str(),
+                        "/api/v1/ws?cursor=1"
+                    );
+                    assert_eq!(request.headers()[AUTHORIZATION], "Bearer test-token");
+                    Ok(response)
+                })
+                .await
+                .unwrap();
             socket.send(Message::Text(text.into())).await.unwrap();
         });
         let mut client = SyncConnection::connect(&format!("http://{address}"), "test-token", 1)
@@ -182,16 +194,22 @@ impl SyncConnection {
         address.set_fragment(None);
         address
             .query_pairs_mut()
-            .append_pair("access_token", token)
             .append_pair("cursor", &cursor.to_string());
-        // 传输错误可能包含带令牌的 URL，只返回固定错误码。
-        let (socket, _) = tokio::time::timeout(
-            std::time::Duration::from_secs(5),
-            connect_async(address.as_str()),
-        )
-        .await
-        .map_err(|_| "SYNC_CONNECT_TIMEOUT")?
-        .map_err(|_| "SYNC_CONNECT_FAILED")?;
+        let mut request = address
+            .as_str()
+            .into_client_request()
+            .map_err(|_| "SYNC_ENDPOINT_INVALID")?;
+        let mut bearer: tokio_tungstenite::tungstenite::http::HeaderValue =
+            format!("Bearer {token}")
+                .parse()
+                .map_err(|_| "SYNC_CREDENTIAL_INVALID")?;
+        bearer.set_sensitive(true);
+        request.headers_mut().insert(AUTHORIZATION, bearer);
+        let (socket, _) =
+            tokio::time::timeout(std::time::Duration::from_secs(5), connect_async(request))
+                .await
+                .map_err(|_| "SYNC_CONNECT_TIMEOUT")?
+                .map_err(|_| "SYNC_CONNECT_FAILED")?;
         Ok(Self(socket))
     }
 

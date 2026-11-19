@@ -5,6 +5,7 @@ import app.weavora.zhijie.controlplane.common.ApiException;
 import java.net.URI;
 import java.util.Map;
 import org.springframework.stereotype.Component;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
@@ -29,7 +30,13 @@ public class SyncWebSocketHandler extends TextWebSocketHandler {
         try {
             URI uri = session.getUri();
             Map<String, String> parameters = UriComponentsBuilder.fromUri(uri).build().getQueryParams().toSingleValueMap();
-            var binding = identity.authenticateSession("Bearer " + parameters.getOrDefault("access_token", ""));
+            var headers = session.getHandshakeHeaders().get(HttpHeaders.AUTHORIZATION);
+            if (headers != null && headers.size() != 1) {
+                session.close(new CloseStatus(1008, "ACCESS_TOKEN_INVALID"));
+                return;
+            }
+            var binding = identity.authenticateSession(headers == null
+                    ? "Bearer " + parameters.getOrDefault("access_token", "") : headers.getFirst());
             long cursor;
             try { cursor = Long.parseLong(parameters.getOrDefault("cursor", "0")); }
             catch (NumberFormatException invalid) {

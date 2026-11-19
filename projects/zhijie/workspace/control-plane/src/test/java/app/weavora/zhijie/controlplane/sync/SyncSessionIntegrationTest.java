@@ -77,7 +77,8 @@ class SyncSessionIntegrationTest {
     }
 
     private static WebSocket open(HttpClient http, String entry, String token, long cursor, Listener listener) throws Exception {
-        return http.newWebSocketBuilder().buildAsync(URI.create(entry + "/api/v1/ws?access_token=" + token + "&cursor=" + cursor), listener).get(5, TimeUnit.SECONDS);
+        return http.newWebSocketBuilder().header("Authorization", "Bearer " + token)
+                .buildAsync(URI.create(entry + "/api/v1/ws?cursor=" + cursor), listener).get(5, TimeUnit.SECONDS);
     }
 
     private static void awaitMessage(Listener listener, ObjectMapper json, String id) throws Exception {
