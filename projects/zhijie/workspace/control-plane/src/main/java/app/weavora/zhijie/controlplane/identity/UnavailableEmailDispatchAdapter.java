@@ -3,8 +3,10 @@ package app.weavora.zhijie.controlplane.identity;
 import app.weavora.zhijie.controlplane.common.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Component
+@ConditionalOnProperty(name = "zhijie.mail.enabled", havingValue = "false", matchIfMissing = true)
 public class UnavailableEmailDispatchAdapter implements EmailDispatchPort {
     @Override
     public boolean isAvailable() {
