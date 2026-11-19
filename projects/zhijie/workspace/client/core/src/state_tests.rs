@@ -75,3 +75,37 @@ fn protocol_requires_current_version_and_request_id() {
     request.protocol_version = 99;
     assert_eq!(request.validate(), Err("PROTOCOL_VERSION_UNSUPPORTED"));
 }
+
+#[test]
+fn losing_session_clears_activity_and_rejects_late_join_response() {
+    let core = ClientCore::default();
+    core.session_changed(Some("user".into()));
+    core.begin_activity("request".into(), "activity".into(), "device".into());
+    core.apply_activity_result("request", result());
+    core.session_changed(None);
+    assert!(core.snapshot().activity.is_none());
+    assert_eq!(core.snapshot().service, ChannelStatus::Disconnected);
+    assert!(!core.apply_activity_result("request", result()));
+    core.session_changed(Some("other-user".into()));
+    assert!(core.snapshot().activity.is_none());
+}
+
+#[test]
+fn another_account_cannot_accept_the_old_join_and_each_join_completes_once() {
+    let core = ClientCore::default();
+    core.session_changed(Some("first".into()));
+    core.begin_activity("old".into(), "room".into(), "device".into());
+    core.session_changed(Some("second".into()));
+    core.begin_activity("new".into(), "room".into(), "device".into());
+    assert!(!core.apply_activity_result("old", result()));
+    let mut unrelated = result();
+    unrelated.device_id = "another-device".into();
+    assert!(!core.apply_activity_result("new", unrelated));
+    assert!(core.apply_activity_result("new", result()));
+    core.revoke("activity", 2);
+    assert!(!core.apply_activity_result("new", result()));
+    assert_eq!(
+        core.snapshot().activity.unwrap().network,
+        ChannelStatus::Revoked
+    );
+}

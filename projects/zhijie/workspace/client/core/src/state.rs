@@ -4,30 +4,44 @@ use crate::model::{ActivityContext, ActivityResult, ChannelStatus, ClientSnapsho
 
 #[derive(Clone, Default)]
 pub struct ClientCore {
-    snapshot: Arc<Mutex<ClientSnapshot>>,
-    pending: Arc<Mutex<Option<PendingActivity>>>,
+    state: Arc<Mutex<ActivityState>>,
 }
 
-#[derive(Clone)]
-struct PendingActivity {
-    request_id: String,
+#[derive(Default)]
+struct ActivityState {
+    snapshot: ClientSnapshot,
+    pending_request: Option<String>,
 }
 
 impl ClientCore {
     pub fn snapshot(&self) -> ClientSnapshot {
-        self.snapshot.lock().expect("client state lock").clone()
+        self.state
+            .lock()
+            .expect("client state lock")
+            .snapshot
+            .clone()
     }
 
     pub fn session_changed(&self, user_id: Option<String>) {
-        let mut snapshot = self.snapshot.lock().expect("client state lock");
+        let mut state = self.state.lock().expect("client state lock");
+        if state.snapshot.user_id != user_id || user_id.is_none() {
+            state.snapshot.activity = None;
+            state.pending_request = None;
+        }
+        let snapshot = &mut state.snapshot;
+        snapshot.service = if user_id.is_some() {
+            ChannelStatus::Connected
+        } else {
+            ChannelStatus::Disconnected
+        };
         snapshot.user_id = user_id;
-        snapshot.service = ChannelStatus::Connected;
         snapshot.last_error_code = None;
     }
 
     pub fn begin_activity(&self, request_id: String, activity_id: String, device_id: String) {
-        *self.pending.lock().expect("pending activity lock") = Some(PendingActivity { request_id });
-        self.snapshot.lock().expect("client state lock").activity = Some(ActivityContext {
+        let mut state = self.state.lock().expect("client state lock");
+        state.pending_request = Some(request_id);
+        state.snapshot.activity = Some(ActivityContext {
             activity_id,
             activity_generation: 0,
             member_generation: 0,
@@ -40,21 +54,22 @@ impl ClientCore {
     }
 
     pub fn apply_activity_result(&self, request_id: &str, result: ActivityResult) -> bool {
-        let pending = self.pending.lock().expect("pending activity lock").clone();
-        if !pending.is_some_and(|item| item.request_id == request_id) {
+        let mut state = self.state.lock().expect("client state lock");
+        if state.pending_request.as_deref() != Some(request_id) {
             return false;
         }
-        let mut snapshot = self.snapshot.lock().expect("client state lock");
-        let Some(current) = snapshot.activity.as_ref() else {
+        let Some(current) = state.snapshot.activity.as_ref() else {
             return false;
         };
-        if (current.activity_generation > 0 && current.activity_id != result.activity_id)
+        if current.device_id != result.device_id
+            || (current.activity_generation > 0 && current.activity_id != result.activity_id)
             || current.activity_generation > result.activity_generation
             || current.member_generation > result.member_generation
         {
             return false;
         }
-        snapshot.activity = Some(ActivityContext {
+        state.pending_request = None;
+        state.snapshot.activity = Some(ActivityContext {
             activity_id: result.activity_id,
             activity_generation: result.activity_generation,
             member_generation: result.member_generation,
@@ -64,12 +79,13 @@ impl ClientCore {
             voice: result.voice_state,
             network: result.network_state,
         });
-        snapshot.last_error_code = None;
+        state.snapshot.last_error_code = None;
         true
     }
 
     pub fn channel_failed(&self, activity_id: &str, channel: Channel, error_code: String) {
-        let mut snapshot = self.snapshot.lock().expect("client state lock");
+        let mut state = self.state.lock().expect("client state lock");
+        let snapshot = &mut state.snapshot;
         let Some(activity) = snapshot
             .activity
             .as_mut()
@@ -85,7 +101,8 @@ impl ClientCore {
     }
 
     pub fn retry_channel(&self, activity_id: &str, channel: Channel) {
-        let mut snapshot = self.snapshot.lock().expect("client state lock");
+        let mut state = self.state.lock().expect("client state lock");
+        let snapshot = &mut state.snapshot;
         let Some(activity) = snapshot
             .activity
             .as_mut()
@@ -100,7 +117,8 @@ impl ClientCore {
     }
 
     pub fn revoke(&self, activity_id: &str, member_generation: u64) {
-        let mut snapshot = self.snapshot.lock().expect("client state lock");
+        let mut state = self.state.lock().expect("client state lock");
+        let snapshot = &mut state.snapshot;
         let Some(activity) = snapshot.activity.as_mut().filter(|item| {
             item.activity_id == activity_id && item.member_generation == member_generation
         }) else {
@@ -111,14 +129,15 @@ impl ClientCore {
     }
 
     pub fn clear_activity(&self, activity_id: &str) {
-        let mut snapshot = self.snapshot.lock().expect("client state lock");
-        if snapshot
+        let mut state = self.state.lock().expect("client state lock");
+        if state
+            .snapshot
             .activity
             .as_ref()
             .is_some_and(|item| item.activity_id == activity_id)
         {
-            snapshot.activity = None;
-            *self.pending.lock().expect("pending activity lock") = None;
+            state.snapshot.activity = None;
+            state.pending_request = None;
         }
     }
 }
