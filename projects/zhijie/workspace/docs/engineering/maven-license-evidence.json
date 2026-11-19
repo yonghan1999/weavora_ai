@@ -1,0 +1,3946 @@
+{
+  "schemaVersion": 1,
+  "scope": "offline_maven_license_evidence",
+  "snapshotSha256": "1d4b1b0e6ee5aecfe475270a7837624ddac9dcf95528840b0b41ce9d2e6d9391",
+  "reviewStatus": "unreviewed",
+  "releaseApproved": false,
+  "limitations": [
+    "POM declarations are not a legal determination",
+    "Parent declarations are inherited without executing Maven model interpolation",
+    "JAR documents are indexed, not interpreted or approved",
+    "Shaded dependencies, native archives and full distribution obligations require separate review",
+    "Missing local cache inputs remain explicit; no network downloads"
+  ],
+  "summary": {
+    "dependencies": 107,
+    "withDeclarations": 107,
+    "withEmbeddedDocuments": 81,
+    "reviewed": 0
+  },
+  "dependencies": [
+    {
+      "coordinate": "ch.qos.logback:logback-classic:jar:1.5.18:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Public License - v 1.0",
+          "url": "http://www.eclipse.org/legal/epl-v10.html"
+        },
+        {
+          "name": "GNU Lesser General Public License",
+          "url": "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "ch/qos/logback/logback-classic/1.5.18/logback-classic-1.5.18.pom",
+          "sha256": "d557cd2ab23de4a47ece870642162a9f94739fcd0b1c313e27832514ee203833"
+        },
+        {
+          "path": "ch/qos/logback/logback-parent/1.5.18/logback-parent-1.5.18.pom",
+          "sha256": "53c3e21b123bbd38a301b40d0d814094ead47a1023d21d613cc748d70e7b9c69"
+        }
+      ],
+      "jar": {
+        "path": "ch/qos/logback/logback-classic/1.5.18/logback-classic-1.5.18.jar",
+        "sha256": "3e1533d0321f8815eef46750aee0111b41554f9a4644c3c4d2d404744b09f60f",
+        "bytes": 306760,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "ch.qos.logback:logback-core:jar:1.5.18:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Public License - v 1.0",
+          "url": "http://www.eclipse.org/legal/epl-v10.html"
+        },
+        {
+          "name": "GNU Lesser General Public License",
+          "url": "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "ch/qos/logback/logback-core/1.5.18/logback-core-1.5.18.pom",
+          "sha256": "c77247297d5d9bb9e04e92d4c82e75c6e8eabe245436892f9114335b8b790c83"
+        },
+        {
+          "path": "ch/qos/logback/logback-parent/1.5.18/logback-parent-1.5.18.pom",
+          "sha256": "53c3e21b123bbd38a301b40d0d814094ead47a1023d21d613cc748d70e7b9c69"
+        }
+      ],
+      "jar": {
+        "path": "ch/qos/logback/logback-core/1.5.18/logback-core-1.5.18.jar",
+        "sha256": "85139e7b57b464f8e5e36326dd81317648bed199ccc4f98cd42585f8d7571027",
+        "bytes": 627250,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-annotations:jar:2.19.2:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.pom",
+          "sha256": "4950161ae0ad66c6b37bc2aed12d21c6579e17796dbfce988b19b8d0c223a5c9"
+        }
+      ],
+      "jar": {
+        "path": "com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.jar",
+        "sha256": "e516743a316dcf83c572ffc9cb6e8c5e8c134880c8c5155b02f7b34e9c5dc3cf",
+        "bytes": 79309,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11358,
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 738,
+            "sha256": "612b14bc77c944ce229cbba0d14919162cfea8ed802cbf06a8e865e032d03201",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-core:jar:2.19.2:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.pom",
+          "sha256": "81f6ad230946f3c53d818c19fe5ee111c1fa331b915c4bda8d0182e6b4ffd650"
+        }
+      ],
+      "jar": {
+        "path": "com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.jar",
+        "sha256": "aa77eaf29293a868c47372194f7c5287d77d9370b04ea25d3fffc1e4904b5880",
+        "bytes": 591418,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11358,
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 1227,
+            "sha256": "0a0042db627fe915c6a1d9ef74927af5081446063e8888494be6718d692dd2b8",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.core:jackson-databind:jar:2.19.2:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.pom",
+          "sha256": "d8a79b7502b69bf250684c190a9882389226686d5d962906756d81cd5b243b82"
+        }
+      ],
+      "jar": {
+        "path": "com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.jar",
+        "sha256": "0a1bd4e9b0d670e632d40ee8c625ad376233502f03c2f5889baea95d025b47a7",
+        "bytes": 1679351,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11358,
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 738,
+            "sha256": "612b14bc77c944ce229cbba0d14919162cfea8ed802cbf06a8e865e032d03201",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.dataformat:jackson-dataformat-toml:jar:2.19.2:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/fasterxml/jackson/dataformat/jackson-dataformat-toml/2.19.2/jackson-dataformat-toml-2.19.2.pom",
+          "sha256": "890f76242d08e49c6346f17067c38c592990fdfb61b824fc5aec98a84817606c"
+        }
+      ],
+      "jar": {
+        "path": "com/fasterxml/jackson/dataformat/jackson-dataformat-toml/2.19.2/jackson-dataformat-toml-2.19.2.jar",
+        "sha256": "74ec2f9c4404a7b8fc1e236d94be8e4ed8aaba93623153a57595cc081c1a9ec1",
+        "bytes": 56196,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 319,
+            "sha256": "d1f251b48fae92a9f15d68673c7933bcda0cdcc889062c3e34df1f517adbddb5",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 681,
+            "sha256": "5828ffe74ea0ee4bf896654026f05fed1ead1d22acd577cc1eec9be0bc0de1ed",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.19.2:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.19.2/jackson-datatype-jdk8-2.19.2.pom",
+          "sha256": "bb691a620b593e0368ef3ace89f9dcd5d63756d5e5bc05ddc9acb78a1fcdcbe7"
+        },
+        {
+          "path": "com/fasterxml/jackson/module/jackson-modules-java8/2.19.2/jackson-modules-java8-2.19.2.pom",
+          "sha256": "a3cc32c145b962be39504f8536cac62124ebcb5ad5032d930bc724fdf94e82a4"
+        },
+        {
+          "path": "com/fasterxml/jackson/jackson-base/2.19.2/jackson-base-2.19.2.pom",
+          "sha256": "ffbefd67953994a775d9026cb1c16f92ba81d1c1c1317ee8a2b99ae009d26143"
+        }
+      ],
+      "jar": {
+        "path": "com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.19.2/jackson-datatype-jdk8-2.19.2.jar",
+        "sha256": "6055fef10756e8bd1b0e8807aa1d881338c63ca95d59271e1da4922b9a17581e",
+        "bytes": 36217,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 330,
+            "sha256": "bc3d1a9b9fe02f5b9186447ca2896a63015e5e626eccfdda6a04bd7d71be3ce0",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 610,
+            "sha256": "7347397a0665f6898b32894a1869a514251abef7da7620902b0e57c5026cf1ed",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.19.2:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.19.2/jackson-datatype-jsr310-2.19.2.pom",
+          "sha256": "b1ae4da23cf0fe29a15d6502e177297c0b2c629dcd969cb64457d554b65a712f"
+        },
+        {
+          "path": "com/fasterxml/jackson/module/jackson-modules-java8/2.19.2/jackson-modules-java8-2.19.2.pom",
+          "sha256": "a3cc32c145b962be39504f8536cac62124ebcb5ad5032d930bc724fdf94e82a4"
+        },
+        {
+          "path": "com/fasterxml/jackson/jackson-base/2.19.2/jackson-base-2.19.2.pom",
+          "sha256": "ffbefd67953994a775d9026cb1c16f92ba81d1c1c1317ee8a2b99ae009d26143"
+        }
+      ],
+      "jar": {
+        "path": "com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.19.2/jackson-datatype-jsr310-2.19.2.jar",
+        "sha256": "9709f43e0fa5625633ee66db6c078fb1e8c7ca02092696ba95ea785dbf0fa6a1",
+        "bytes": 136961,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 331,
+            "sha256": "66ea9c8987b1674aababbcc24f61c83ab4fb7baf3af1d701caf0a3aaea97fa92",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 610,
+            "sha256": "7347397a0665f6898b32894a1869a514251abef7da7620902b0e57c5026cf1ed",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.fasterxml.jackson.module:jackson-module-parameter-names:jar:2.19.2:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/fasterxml/jackson/module/jackson-module-parameter-names/2.19.2/jackson-module-parameter-names-2.19.2.pom",
+          "sha256": "6876cce6f44de9202b4667d0b9226190a96609cb786768cb521c90f938d2b441"
+        },
+        {
+          "path": "com/fasterxml/jackson/module/jackson-modules-java8/2.19.2/jackson-modules-java8-2.19.2.pom",
+          "sha256": "a3cc32c145b962be39504f8536cac62124ebcb5ad5032d930bc724fdf94e82a4"
+        },
+        {
+          "path": "com/fasterxml/jackson/jackson-base/2.19.2/jackson-base-2.19.2.pom",
+          "sha256": "ffbefd67953994a775d9026cb1c16f92ba81d1c1c1317ee8a2b99ae009d26143"
+        }
+      ],
+      "jar": {
+        "path": "com/fasterxml/jackson/module/jackson-module-parameter-names/2.19.2/jackson-module-parameter-names-2.19.2.jar",
+        "sha256": "5cafef98759b40a418631e91257930a5e30abc162d9a690c1e365dbbdacdfecb",
+        "bytes": 10394,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 337,
+            "sha256": "a09ba3adcfdcac2d7e31b89e8e7799cec96d7303dc82c0bb3d38d8a352d41d19",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 610,
+            "sha256": "7347397a0665f6898b32894a1869a514251abef7da7620902b0e57c5026cf1ed",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.fasterxml:classmate:jar:1.7.0:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/fasterxml/classmate/1.7.0/classmate-1.7.0.pom",
+          "sha256": "64711adef0ec92f1f6cdaa7b2eac06b2e5667a4a6991ecfb8bfac46681d5b931"
+        }
+      ],
+      "jar": {
+        "path": "com/fasterxml/classmate/1.7.0/classmate-1.7.0.jar",
+        "sha256": "cb868f231c5cceb89d795ea00e6e1b7a93b8f4ac1ce1d8be76dde322dff4a046",
+        "bytes": 68899,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 301,
+            "sha256": "7d8d549eb31995fe67822c860acc7ac3dd958a03a5a71aef4069033e7df72d94",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 223,
+            "sha256": "1a8c67aaade274bc7bf06a7044571ab280d59fe3686941b6499b2176a072ea6d",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.jayway.jsonpath:json-path:jar:2.9.0:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0.pom",
+          "sha256": "0c2537dde9bf9dc2a2c7967300fc13bc5229d192677fcb88b6fd89966936643f"
+        }
+      ],
+      "jar": {
+        "path": "com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0.jar",
+        "sha256": "11a9ee6f88bb31f1450108d1cf6441377dec84aca075eb6bb2343be157575bea",
+        "bytes": 276633,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.vaadin.external.google:android-json:jar:0.0.20131108.vaadin1:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.pom",
+          "sha256": "2ff6c17d9c060b89cd7ef18fa480ae2446eba86855a633f3892837fc3b848fef"
+        }
+      ],
+      "jar": {
+        "path": "com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar",
+        "sha256": "dfb7bae2f404cfe0b72b4d23944698cb716b7665171812a0a4d0f5926c0fac79",
+        "bytes": 18279,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "com.zaxxer:HikariCP:jar:6.3.3:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "com/zaxxer/HikariCP/6.3.3/HikariCP-6.3.3.pom",
+          "sha256": "244efe009ef5300bad308de418cb29083de278c10bae816c59daaa281981fce5"
+        }
+      ],
+      "jar": {
+        "path": "com/zaxxer/HikariCP/6.3.3/HikariCP-6.3.3.jar",
+        "sha256": "709f378c05756280939ce50fc1b1f1a53bb8e1899dc1b249f21f12703640b48b",
+        "bytes": 171931,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "commons-codec:commons-codec:jar:1.18.0:test",
+      "scope": "test",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "commons-codec/commons-codec/1.18.0/commons-codec-1.18.0.pom",
+          "sha256": "74b916da4b0384c619e6dd4c18defe8aa4387f795205253cfb4bbb2f458cddce"
+        },
+        {
+          "path": "org/apache/commons/commons-parent/79/commons-parent-79.pom",
+          "sha256": "628df30148acd3c491cfcb6b73c7ae4b5989e5526ab13a2f428dea5d4ad10d7a"
+        },
+        {
+          "path": "org/apache/apache/33/apache-33.pom",
+          "sha256": "d78bd8524c5f8380a190a6525686629a95dfe512df21111383a6d8c0923a4415"
+        }
+      ],
+      "jar": {
+        "path": "commons-codec/commons-codec/1.18.0/commons-codec-1.18.0.jar",
+        "sha256": "ba005f304cef92a3dede24a38ad5ac9b8afccf0d8f75839d6c1338634cf7f6e4",
+        "bytes": 373045,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11358,
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 175,
+            "sha256": "b64933ee1d36d14659156223a2604edadb60bffdd465d5368ff422d7689db5fb",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "commons-io:commons-io:jar:2.21.0:test",
+      "scope": "test",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "commons-io/commons-io/2.21.0/commons-io-2.21.0.pom",
+          "sha256": "ae47795e721803ec8ff1deed74be28a811a02713bd5a3ab0ac67c2b58cb635ab"
+        },
+        {
+          "path": "org/apache/commons/commons-parent/91/commons-parent-91.pom",
+          "sha256": "d2f8b6fd4800b6aaf120f5a38226d5f9d5fc6db837af99e2f9b33067868b9872"
+        },
+        {
+          "path": "org/apache/apache/35/apache-35.pom",
+          "sha256": "ea297dcd114136e8b8e8b630230d52a76c2fc69f6c5db25d672b1857000728b8"
+        }
+      ],
+      "jar": {
+        "path": "commons-io/commons-io/2.21.0/commons-io-2.21.0.jar",
+        "sha256": "7d643a2afea8b058b762aa6fb90e5b256f6c729739f8b3784c3370ddc609e88d",
+        "bytes": 585274,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11360,
+            "sha256": "c1d1a38c99c48ccad170890ade6066e2e240bb6ce59861d4eb7f672eddd2a4c6",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 172,
+            "sha256": "b54b0db6c617273efff79ba193bb01b05eadcddfff55c24063b38b2acef714c3",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "io.micrometer:micrometer-commons:jar:1.15.4:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "io/micrometer/micrometer-commons/1.15.4/micrometer-commons-1.15.4.pom",
+          "sha256": "823c73a7776187e994b7c611be65908b26659a4127a5d989837223ff5fa4312a"
+        }
+      ],
+      "jar": {
+        "path": "io/micrometer/micrometer-commons/1.15.4/micrometer-commons-1.15.4.jar",
+        "sha256": "d9971273957d7cd695887cbc680772b75844bfcf3fa7017189171683798b9181",
+        "bytes": 49221,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11359,
+            "sha256": "62fb8a3a9621dc2388174caaabe9c2317b694bb9a1d46c98bcf5655b68f51be3",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 1734,
+            "sha256": "df207ca1a2ea3794caf112d7c1f024c87b4ddfe91d3f243977ad1d3cd085d538",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "io.micrometer:micrometer-core:jar:1.15.4:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "io/micrometer/micrometer-core/1.15.4/micrometer-core-1.15.4.pom",
+          "sha256": "62c9b2ae6e33c63043d66f3e8a7cdfb26bf2c88a02e5ad0da25fe7c42139cd33"
+        }
+      ],
+      "jar": {
+        "path": "io/micrometer/micrometer-core/1.15.4/micrometer-core-1.15.4.jar",
+        "sha256": "3178b8a0c0b120ac1f4ac8e0ced97e5c7397a6a39b5e29f2dfd6daf6626382cc",
+        "bytes": 864567,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11359,
+            "sha256": "62fb8a3a9621dc2388174caaabe9c2317b694bb9a1d46c98bcf5655b68f51be3",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 1734,
+            "sha256": "df207ca1a2ea3794caf112d7c1f024c87b4ddfe91d3f243977ad1d3cd085d538",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "io.micrometer:micrometer-jakarta9:jar:1.15.4:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "io/micrometer/micrometer-jakarta9/1.15.4/micrometer-jakarta9-1.15.4.pom",
+          "sha256": "660187b3bc79bc274b3c0ea7d3d2827fc360f5759714bb8101cfb74488bc0e53"
+        }
+      ],
+      "jar": {
+        "path": "io/micrometer/micrometer-jakarta9/1.15.4/micrometer-jakarta9-1.15.4.jar",
+        "sha256": "c9a3fbb2307b179dd0289c75e6a0e8e25150e870990e41c04870c7f7d0a3a8e9",
+        "bytes": 32833,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11359,
+            "sha256": "62fb8a3a9621dc2388174caaabe9c2317b694bb9a1d46c98bcf5655b68f51be3",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 1734,
+            "sha256": "df207ca1a2ea3794caf112d7c1f024c87b4ddfe91d3f243977ad1d3cd085d538",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "io.micrometer:micrometer-observation:jar:1.15.4:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "io/micrometer/micrometer-observation/1.15.4/micrometer-observation-1.15.4.pom",
+          "sha256": "178fb0db0000981251bbd9f0c6dfbcfef80437bc2f57698003ba9cdc23b3e015"
+        }
+      ],
+      "jar": {
+        "path": "io/micrometer/micrometer-observation/1.15.4/micrometer-observation-1.15.4.jar",
+        "sha256": "49693a239af0219384fd41f6cf5e48639e097c5da0f628433e1f9b7bf3120d1b",
+        "bytes": 75072,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11359,
+            "sha256": "62fb8a3a9621dc2388174caaabe9c2317b694bb9a1d46c98bcf5655b68f51be3",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 1734,
+            "sha256": "df207ca1a2ea3794caf112d7c1f024c87b4ddfe91d3f243977ad1d3cd085d538",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "io.zonky.test.postgres:embedded-postgres-binaries-darwin-amd64:jar:14.22.0:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "io/zonky/test/postgres/embedded-postgres-binaries-darwin-amd64/14.22.0/embedded-postgres-binaries-darwin-amd64-14.22.0.pom",
+          "sha256": "58bc497dbf27476b6b99002770b481ee1cb454ceafe79c95b71fb7a2f711770a"
+        }
+      ],
+      "jar": {
+        "path": "io/zonky/test/postgres/embedded-postgres-binaries-darwin-amd64/14.22.0/embedded-postgres-binaries-darwin-amd64-14.22.0.jar",
+        "sha256": "846e5bb797f372c8e370df51e4151f4e4237058e8c27cfcaf62aa93203a4c5b0",
+        "bytes": 28212448,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "io.zonky.test.postgres:embedded-postgres-binaries-linux-amd64-alpine:jar:14.22.0:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64-alpine/14.22.0/embedded-postgres-binaries-linux-amd64-alpine-14.22.0.pom",
+          "sha256": "dee306e56336b2d87f40fb2d53726e7723f612daeff15836ce1d0f923f8b13df"
+        }
+      ],
+      "jar": {
+        "path": "io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64-alpine/14.22.0/embedded-postgres-binaries-linux-amd64-alpine-14.22.0.jar",
+        "sha256": "e949c495cb77636f8d6097ecaa3397b02f3148e24efa73851801f76b53fc1eff",
+        "bytes": 14207880,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "io.zonky.test.postgres:embedded-postgres-binaries-linux-amd64:jar:14.22.0:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/14.22.0/embedded-postgres-binaries-linux-amd64-14.22.0.pom",
+          "sha256": "7f4ecfd9f98a336bffd20c71873476d77de24fa763d9f288f29760581340eb39"
+        }
+      ],
+      "jar": {
+        "path": "io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/14.22.0/embedded-postgres-binaries-linux-amd64-14.22.0.jar",
+        "sha256": "c7454ba6125d7c1fd3fa09aefe3a7bca7435c6b7caaf0252d3544b36a6df08ad",
+        "bytes": 14415851,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "io.zonky.test.postgres:embedded-postgres-binaries-windows-amd64:jar:17.5.0:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "io/zonky/test/postgres/embedded-postgres-binaries-windows-amd64/17.5.0/embedded-postgres-binaries-windows-amd64-17.5.0.pom",
+          "sha256": "1a14c133a08dfd39664451d8d96db538458dd13d996c6665195734574070666b"
+        }
+      ],
+      "jar": {
+        "path": "io/zonky/test/postgres/embedded-postgres-binaries-windows-amd64/17.5.0/embedded-postgres-binaries-windows-amd64-17.5.0.jar",
+        "sha256": "06ced3b3267c569ffb3f85544aac0075926dd81bf78bd5247abb1aa9fe994d6b",
+        "bytes": 23185666,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "io.zonky.test:embedded-postgres:jar:2.2.2:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "io/zonky/test/embedded-postgres/2.2.2/embedded-postgres-2.2.2.pom",
+          "sha256": "ea7da5e34763a338563019cf541e50438f927b52018fa275daddb3101fe375d8"
+        }
+      ],
+      "jar": {
+        "path": "io/zonky/test/embedded-postgres/2.2.2/embedded-postgres-2.2.2.jar",
+        "sha256": "9b1722ccfbfb441b7b1440edd35c1a229b173d82ab25d6111dd8642b48ba66fa",
+        "bytes": 60501,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "jakarta.activation:jakarta.activation-api:jar:2.1.4:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "EDL 1.0",
+          "url": "http://www.eclipse.org/org/documents/edl-v10.php",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "jakarta/activation/jakarta.activation-api/2.1.4/jakarta.activation-api-2.1.4.pom",
+          "sha256": "7577970dc09f1131a4a42769e1771ed062f08d22f40da3041ff3e16d5b2fdea8"
+        }
+      ],
+      "jar": {
+        "path": "jakarta/activation/jakarta.activation-api/2.1.4/jakarta.activation-api-2.1.4.jar",
+        "sha256": "c9db52100ce6c8aac95cc39075f95720d2e561b11f8051b81c121ad4effd7004",
+        "bytes": 67380,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 1638,
+            "sha256": "87eba02f8a415f1a25de6ca3ac6b5c77eb33f33f00ae5a5f9d6ee963147f7956",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.md",
+            "bytes": 2737,
+            "sha256": "9d80664e28e61982d66ea3f65474597088d71b76b4259f139bb44a7a184c26f2",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "jakarta.annotation:jakarta.annotation-api:jar:2.1.1:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "EPL 2.0",
+          "url": "http://www.eclipse.org/legal/epl-2.0",
+          "distribution": "repo"
+        },
+        {
+          "name": "GPL2 w/ CPE",
+          "url": "https://www.gnu.org/software/classpath/license.html",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.pom",
+          "sha256": "af650eca1de1b98741006acd82507e4408cffedd2fee33a0ea463d61508db7ec"
+        }
+      ],
+      "jar": {
+        "path": "jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar",
+        "sha256": "5f65fdaf424eee2b55e1d882ba9bb376be93fb09b37b808be6e22e8851c909fe",
+        "bytes": 26141,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 35084,
+            "sha256": "6e1f002892b81cbe0647019b150c8a056efc1add565671a4f8af629b6cd2cc7b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.md",
+            "bytes": 1452,
+            "sha256": "3852834ebb4c2e04ecc18c9d099a05eab72cbd6edf35fb191390be6306019b4c",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "jakarta.validation:jakarta.validation-api:jar:3.0.2:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2.pom",
+          "sha256": "0a7b9c6327968afe0d82f7cf4facbda7e157968c5808d69bcb8019863b298dc4"
+        }
+      ],
+      "jar": {
+        "path": "jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2.jar",
+        "sha256": "291c25e6910cc6a7ebd96d4c6baebf6d7c37676c5482c2d96146e901b62c1fc9",
+        "bytes": 93298,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "jakarta.xml.bind:jakarta.xml.bind-api:jar:4.0.2:test",
+      "scope": "test",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Distribution License - v 1.0",
+          "url": "http://www.eclipse.org/org/documents/edl-v10.php",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.pom",
+          "sha256": "ab7273e26a54824b3b7333d4956e6ecd26de13a5eb3d90ee63023193a92d72be"
+        },
+        {
+          "path": "jakarta/xml/bind/jakarta.xml.bind-api-parent/4.0.2/jakarta.xml.bind-api-parent-4.0.2.pom",
+          "sha256": "482cdb46d4dd2f5af7dc884c8a6de73ddffe6daf549ef36a6c077fd6e41eed08"
+        }
+      ],
+      "jar": {
+        "path": "jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.jar",
+        "sha256": "0d6bcfe47763e85047acf7c398336dc84ff85ebcad0a7cb6f3b9d3e981245406",
+        "bytes": 131033,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 1644,
+            "sha256": "dcbbdbb512a272b5f1e01e82225a23eba92406ec28f7b36e490057478d8d1570",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.md",
+            "bytes": 1697,
+            "sha256": "b8dab89e51c7aa1d7f355c1bebcdef97a8d4b4e4deb9d7307b9257c58aa0d7a0",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "net.bytebuddy:byte-buddy-agent:jar:1.17.7:test",
+      "scope": "test",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo",
+          "comments": "A business-friendly OSS license"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "net/bytebuddy/byte-buddy-agent/1.17.7/byte-buddy-agent-1.17.7.pom",
+          "sha256": "814ee42d6b0117f4b8d1eb6b1d62c16db4c0b597d83b3ad8daa5781eb145d7dc"
+        },
+        {
+          "path": "net/bytebuddy/byte-buddy-parent/1.17.7/byte-buddy-parent-1.17.7.pom",
+          "sha256": "8a57e20dcce00da71c33ef3e19d9dd858fe9d2042ca2e2bca27871700d52698c"
+        }
+      ],
+      "jar": {
+        "path": "net/bytebuddy/byte-buddy-agent/1.17.7/byte-buddy-agent-1.17.7.jar",
+        "sha256": "a9ba887dca252ad61b7d5153294f34e6f3bdf4b2736b04373d13615a695fc0ff",
+        "bytes": 366248,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 10140,
+            "sha256": "bb28c48e3e078166e91cfc2b6db7ffebb8a0973b9e23b3df060561292d8d69ec",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 570,
+            "sha256": "cfb119f8db2decb24e756fddec0e089029eaa73a7be594b2dd9676433d95d6e5",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "net.bytebuddy:byte-buddy:jar:1.17.7:test",
+      "scope": "test",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo",
+          "comments": "A business-friendly OSS license"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "net/bytebuddy/byte-buddy/1.17.7/byte-buddy-1.17.7.pom",
+          "sha256": "ee7fba8569c3bb5c1e91e5812fd9f4a0f31be27e568d5354e1adfd19119f97b3"
+        },
+        {
+          "path": "net/bytebuddy/byte-buddy-parent/1.17.7/byte-buddy-parent-1.17.7.pom",
+          "sha256": "8a57e20dcce00da71c33ef3e19d9dd858fe9d2042ca2e2bca27871700d52698c"
+        }
+      ],
+      "jar": {
+        "path": "net/bytebuddy/byte-buddy/1.17.7/byte-buddy-1.17.7.jar",
+        "sha256": "3575dcb8a98faf943d3c1595c47a16047c4fce8a83ebbb26262f1a2f67546357",
+        "bytes": 9015334,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 10293,
+            "sha256": "ad8b171905ffcdbf9bf0a5bbd2f08b7774219e1dabe760ef65fadef29cfbed26",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 570,
+            "sha256": "cfb119f8db2decb24e756fddec0e089029eaa73a7be594b2dd9676433d95d6e5",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "net.minidev:accessors-smart:jar:2.5.2:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo",
+          "comments": "All files under Apache 2"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "net/minidev/accessors-smart/2.5.2/accessors-smart-2.5.2.pom",
+          "sha256": "fd2203845ea4376c136d2760aea5f2069f96ff680871a430865e025a30fd8798"
+        }
+      ],
+      "jar": {
+        "path": "net/minidev/accessors-smart/2.5.2/accessors-smart-2.5.2.jar",
+        "sha256": "9b8a7bc43861d6156c021166d941fb7dddbe4463e2fa5ee88077e4b01452a836",
+        "bytes": 30358,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "net.minidev:json-smart:jar:2.5.2:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo",
+          "comments": "All files under Apache 2"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "net/minidev/json-smart/2.5.2/json-smart-2.5.2.pom",
+          "sha256": "421b3c00c83c2d30ad8e25071bfa8c4cf45ac47ba758b5f4364614b0ab8ba0f4"
+        }
+      ],
+      "jar": {
+        "path": "net/minidev/json-smart/2.5.2/json-smart-2.5.2.jar",
+        "sha256": "4fbdedb0105cedc7f766b95c297d2e88fb6a560da48f3bbaa0cc538ea8b7bf71",
+        "bytes": 122358,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-compress:jar:1.28.0:test",
+      "scope": "test",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.pom",
+          "sha256": "033f4c78d632da88d0eb8ead974fc14a264392cebf12ab6c68d6cea7adf0c64a"
+        },
+        {
+          "path": "org/apache/commons/commons-parent/85/commons-parent-85.pom",
+          "sha256": "d189ff2c0027e96bb65d31e6f227ed2af966169b36af1e973dd5ba08926dc7b5"
+        },
+        {
+          "path": "org/apache/apache/35/apache-35.pom",
+          "sha256": "ea297dcd114136e8b8e8b630230d52a76c2fc69f6c5db25d672b1857000728b8"
+        }
+      ],
+      "jar": {
+        "path": "org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.jar",
+        "sha256": "e1522945218456f3649a39bc4afd70ce4bd466221519dba7d378f2141a4642ca",
+        "bytes": 1117221,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11358,
+            "sha256": "51b88fd3e9e24edcdce1dd145a4fca2dcd12911407f00b06dfa6ff600f9733c1",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 178,
+            "sha256": "0d98967f0ab328af8d9d536aa9a5c684b5dd665657245f6ee6b5915affe811c0",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.apache.commons:commons-lang3:jar:3.17.0:test",
+      "scope": "test",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/apache/commons/commons-lang3/3.17.0/commons-lang3-3.17.0.pom",
+          "sha256": "351c6e4940e939b1f330df47f60f13ba383db81ee008181af541f3a2a6d2a56c"
+        },
+        {
+          "path": "org/apache/commons/commons-parent/73/commons-parent-73.pom",
+          "sha256": "4ed44560b07f8448479dfd1e83a422ba4e83e60b36e51b2871ac502a6d5c1bea"
+        },
+        {
+          "path": "org/apache/apache/33/apache-33.pom",
+          "sha256": "d78bd8524c5f8380a190a6525686629a95dfe512df21111383a6d8c0923a4415"
+        }
+      ],
+      "jar": {
+        "path": "org/apache/commons/commons-lang3/3.17.0/commons-lang3-3.17.0.jar",
+        "sha256": "6ee731df5c8e5a2976a1ca023b6bb320ea8d3539fbe64c8a1d5cb765127c33b4",
+        "bytes": 673587,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11358,
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 174,
+            "sha256": "73c3dd73ad54910699e4e364345798d083a9126b9799663d4bdce8d7468b7f66",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.apache.logging.log4j:log4j-api:jar:2.24.3:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/apache/logging/log4j/log4j-api/2.24.3/log4j-api-2.24.3.pom",
+          "sha256": "bc05de33533a1259adbacbfcc826cd66376a2d9c4ee53fb836009f44a45b8239"
+        }
+      ],
+      "jar": {
+        "path": "org/apache/logging/log4j/log4j-api/2.24.3/log4j-api-2.24.3.jar",
+        "sha256": "5b4a0a0cd0e751ded431c162442bdbdd53328d1f8bb2bae5fc1bbeee0f66d80f",
+        "bytes": 348513,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11358,
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 171,
+            "sha256": "6d95ce9a738c31425a584ee91eb6d9b6fbe18e351fb206b9f79104bcf7d7bf15",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.apache.logging.log4j:log4j-to-slf4j:jar:2.24.3:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/apache/logging/log4j/log4j-to-slf4j/2.24.3/log4j-to-slf4j-2.24.3.pom",
+          "sha256": "635e52e3474e7f4dc30d2ccbcb68a163888395e3c252961275d04e3db5f6e230"
+        }
+      ],
+      "jar": {
+        "path": "org/apache/logging/log4j/log4j-to-slf4j/2.24.3/log4j-to-slf4j-2.24.3.jar",
+        "sha256": "c7f2b0c612a4eb05b1587d1c880eb4cf5f4f53850676a8ede8da2b8fabb4f73f",
+        "bytes": 23834,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11358,
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 181,
+            "sha256": "a57ab7958eb6d37c460b0f64080c67ab184c4ffc97abdf06187168019c62b047",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.apache.tomcat.embed:tomcat-embed-core:jar:10.1.46:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/apache/tomcat/embed/tomcat-embed-core/10.1.46/tomcat-embed-core-10.1.46.pom",
+          "sha256": "4d95aaf0ee949f9d528fd900c39e49be29f8ab7042271e39440011ac1b6b532f"
+        }
+      ],
+      "jar": {
+        "path": "org/apache/tomcat/embed/tomcat-embed-core/10.1.46/tomcat-embed-core-10.1.46.jar",
+        "sha256": "7f8f6d269ce666ad6f317ef496f8fb4e5f4ae5432a7e91e44fc79285d549d929",
+        "bytes": 3641941,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 45256,
+            "sha256": "b15780b4c93aef25618df419dcde6cc9646f497c29fc615c1b67b6fa3bb26a65",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 821,
+            "sha256": "ada380c3e7e0798b5fe07f2b4442f8bd000d349cfa455f7e786855e80b16efee",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.apache.tomcat.embed:tomcat-embed-el:jar:10.1.46:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/apache/tomcat/embed/tomcat-embed-el/10.1.46/tomcat-embed-el-10.1.46.pom",
+          "sha256": "1bf6bb682391b88395150a90995cfd2b35bd66dfd20c5d7ef20f37383f1435b9"
+        }
+      ],
+      "jar": {
+        "path": "org/apache/tomcat/embed/tomcat-embed-el/10.1.46/tomcat-embed-el-10.1.46.jar",
+        "sha256": "5c69247d0984eb5f84756c067c22575d8f4afff07213e1d812bc5354d1b48173",
+        "bytes": 264304,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11358,
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 167,
+            "sha256": "f30098739cbd10c7d579d875682cfab1184b65280a231091b36fd7df660605db",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.apache.tomcat.embed:tomcat-embed-websocket:jar:10.1.46:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/apache/tomcat/embed/tomcat-embed-websocket/10.1.46/tomcat-embed-websocket-10.1.46.pom",
+          "sha256": "a587ebd0244fe477dac49d28fafc39abc63204608a48a058c24d1003d007fd47"
+        }
+      ],
+      "jar": {
+        "path": "org/apache/tomcat/embed/tomcat-embed-websocket/10.1.46/tomcat-embed-websocket-10.1.46.jar",
+        "sha256": "0cae02d5459deeaa8d0d67e534f2c3d5c9a5f759e40196307d189c5d2cf1b287",
+        "bytes": 283911,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11358,
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 167,
+            "sha256": "f30098739cbd10c7d579d875682cfab1184b65280a231091b36fd7df660605db",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.apiguardian:apiguardian-api:jar:1.1.2:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.pom",
+          "sha256": "32355081d109095c3d5d374d5a43b4f4c1b75d549e983ef50723e2772e5302a0"
+        }
+      ],
+      "jar": {
+        "path": "org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar",
+        "sha256": "b509448ac506d607319f182537f0b35d71007582ec741832a1f111e5b5b70b38",
+        "bytes": 6806,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11357,
+            "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.assertj:assertj-core:jar:3.27.4:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/assertj/assertj-core/3.27.4/assertj-core-3.27.4.pom",
+          "sha256": "9cb31c8004c84843d284c402a81453beea4509bfa778ff422a672f7e7cbf620c"
+        }
+      ],
+      "jar": {
+        "path": "org/assertj/assertj-core/3.27.4/assertj-core-3.27.4.jar",
+        "sha256": "cc69aa84f79356cb635c3f9ff3f86dff0f9d8ee7ef7b684a2c9a99804ff45008",
+        "bytes": 1398865,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.awaitility:awaitility:jar:4.2.2:test",
+      "scope": "test",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Apache 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/awaitility/awaitility/4.2.2/awaitility-4.2.2.pom",
+          "sha256": "86e59dbaa95f9759019b2b0ebab4bc9d6e0caa0b69fbea0fc053c0d206cec859"
+        },
+        {
+          "path": "org/awaitility/awaitility-parent/4.2.2/awaitility-parent-4.2.2.pom",
+          "sha256": "5f5db7a19a9032454794e24fe600ac7ded1426a28919dc4ac14c4aee168c5a25"
+        }
+      ],
+      "jar": {
+        "path": "org/awaitility/awaitility/4.2.2/awaitility-4.2.2.jar",
+        "sha256": "e831fee30ed401e2208f1bd5a0ef9add538d9cb1103c0e43216691b647bde9c6",
+        "bytes": 97249,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.bouncycastle:bcprov-jdk18on:jar:1.81:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Bouncy Castle Licence",
+          "url": "https://www.bouncycastle.org/licence.html",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/bouncycastle/bcprov-jdk18on/1.81/bcprov-jdk18on-1.81.pom",
+          "sha256": "203990122be0fdd34bf12d0b788c0655161386a8e858ba43f06e3709c2cc74cc"
+        }
+      ],
+      "jar": {
+        "path": "org/bouncycastle/bcprov-jdk18on/1.81/bcprov-jdk18on-1.81.jar",
+        "sha256": "249f396412b0c0ce67f25c8197da757b241b8be3ec4199386c00704a2457459b",
+        "bytes": 8948201,
+        "documents": [
+          {
+            "entry": "org/bouncycastle/LICENSE.class",
+            "bytes": 2001,
+            "sha256": "f9e6b01128a66b9887432db0397034793bcb1667770990c27fd4fd04ffc0c12a",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.checkerframework:checker-qual:jar:3.49.3:runtime",
+      "scope": "runtime",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The MIT License",
+          "url": "http://opensource.org/licenses/MIT",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/checkerframework/checker-qual/3.49.3/checker-qual-3.49.3.pom",
+          "sha256": "8be4017646285d9142c7fb226cfb80445c177dc7c1363b23d941fa6c9bb05dcf"
+        }
+      ],
+      "jar": {
+        "path": "org/checkerframework/checker-qual/3.49.3/checker-qual-3.49.3.jar",
+        "sha256": "367edbf2fe9f606c1fdb5a8ba6e1c9c27625993e1ff954e3868de70bcc6416b7",
+        "bytes": 238218,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 1126,
+            "sha256": "e90eaa08dea089df10f2bf7f9dba63a5f6237c01562c4741e2e86773e78582d5",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.eclipse.angus:angus-activation:jar:2.0.2:runtime",
+      "scope": "runtime",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "EDL 1.0",
+          "url": "http://www.eclipse.org/org/documents/edl-v10.php",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/eclipse/angus/angus-activation/2.0.2/angus-activation-2.0.2.pom",
+          "sha256": "75e5621a7dc858c996ee70c6b4d884d901d187836ce6c67120caf9547e6fc571"
+        },
+        {
+          "path": "org/eclipse/angus/angus-activation-project/2.0.2/angus-activation-project-2.0.2.pom",
+          "sha256": "af9188a10cb8aa4eb5ffe6d391f1ee2159f1ea4a7fd890ee698623e6f379d8f6"
+        }
+      ],
+      "jar": {
+        "path": "org/eclipse/angus/angus-activation/2.0.2/angus-activation-2.0.2.jar",
+        "sha256": "6dd3bcffc22bce83b07376a0e2e094e4964a3195d4118fb43e380ef35436cc1e",
+        "bytes": 27050,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 1638,
+            "sha256": "87eba02f8a415f1a25de6ca3ac6b5c77eb33f33f00ae5a5f9d6ee963147f7956",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.md",
+            "bytes": 1385,
+            "sha256": "203414df1bdc467ff3d2c53e44ed7a7b9bcba90067bd2f3442b1d509a308b21e",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.eclipse.angus:jakarta.mail:jar:2.0.4:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "EPL 2.0",
+          "url": "http://www.eclipse.org/legal/epl-2.0",
+          "distribution": "repo"
+        },
+        {
+          "name": "GPL2 w/ CPE",
+          "url": "https://www.gnu.org/software/classpath/license.html",
+          "distribution": "repo"
+        },
+        {
+          "name": "EDL 1.0",
+          "url": "http://www.eclipse.org/org/documents/edl-v10.php",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/eclipse/angus/jakarta.mail/2.0.4/jakarta.mail-2.0.4.pom",
+          "sha256": "42f4aab16d57c8ad020618fcdd264fa72b1bc1898bc56c737266c2bce6cab2c1"
+        },
+        {
+          "path": "org/eclipse/angus/all/2.0.4/all-2.0.4.pom",
+          "sha256": "fccd723109c5401e9534e6580429f1363ff5c846b4b1691386a6f1f7375ca10c"
+        }
+      ],
+      "jar": {
+        "path": "org/eclipse/angus/jakarta.mail/2.0.4/jakarta.mail-2.0.4.jar",
+        "sha256": "08ed261475491bbb615ecb8527a8e8ae6f7d507b6eba187061a5c630c53b0114",
+        "bytes": 724085,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 35081,
+            "sha256": "a8f94fd9e41984cfadc6d26821c21ed047e3bdf48c5af899d735287e7cddd997",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.md",
+            "bytes": 1677,
+            "sha256": "bba43e29c8098aaa07c2130d979f6d44a62f9ad51f8061c96bf6889ff5926819",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.flywaydb:flyway-core:jar:11.7.2:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://flywaydb.org/licenses/flyway-oss",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/flywaydb/flyway-core/11.7.2/flyway-core-11.7.2.pom",
+          "sha256": "86831f5b36ef4fdc39f4cffca7f9a5de23c64d0b4f7f1ef8b1715b333433000d"
+        },
+        {
+          "path": "org/flywaydb/flyway-parent/11.7.2/flyway-parent-11.7.2.pom",
+          "sha256": "3f1d1603d1ea1d876fbcd6570d054eb7f421bd2f61efdf8c459d859126d6b758"
+        }
+      ],
+      "jar": {
+        "path": "org/flywaydb/flyway-core/11.7.2/flyway-core-11.7.2.jar",
+        "sha256": "ff01fab3bcfd79e9345df191ecf82cbe1f9f65a757266158bd691564b1c1282c",
+        "bytes": 698198,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 575,
+            "sha256": "73332bc915a16b4ca4bb913d4a55b66e865c6ef0d5feb289063248556fab48b8",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.flywaydb:flyway-database-postgresql:jar:11.7.2:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://flywaydb.org/licenses/flyway-oss",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/flywaydb/flyway-database-postgresql/11.7.2/flyway-database-postgresql-11.7.2.pom",
+          "sha256": "1daf89be859c8f8a66661d88aff79da76382aa104e50b9071f37bc74d78d8b29"
+        },
+        {
+          "path": "org/flywaydb/flyway-parent/11.7.2/flyway-parent-11.7.2.pom",
+          "sha256": "3f1d1603d1ea1d876fbcd6570d054eb7f421bd2f61efdf8c459d859126d6b758"
+        }
+      ],
+      "jar": {
+        "path": "org/flywaydb/flyway-database-postgresql/11.7.2/flyway-database-postgresql-11.7.2.jar",
+        "sha256": "1d586e14ea772c75613df2c27ddc20f5c065e8a32283815338611af82e48f9a2",
+        "bytes": 47854,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.hamcrest:hamcrest:jar:3.0:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "BSD-3-Clause",
+          "url": "https://raw.githubusercontent.com/hamcrest/JavaHamcrest/master/LICENSE"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/hamcrest/hamcrest/3.0/hamcrest-3.0.pom",
+          "sha256": "4a04a68133bf32461f47b8a53c8ee9df4ce2f49a0dad9794bce8717bee5bac31"
+        }
+      ],
+      "jar": {
+        "path": "org/hamcrest/hamcrest/3.0/hamcrest-3.0.jar",
+        "sha256": "5d66b6a4a680755cb6ed7cb104fa7835ef644667586ff0737adeb977c39ecdbc",
+        "bytes": 126373,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 1509,
+            "sha256": "1710cf0fc79043bb1ea1e6b3af96a3e8def96c4239794a17b0b95966e75929b8",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.hdrhistogram:HdrHistogram:jar:2.2.2:runtime",
+      "scope": "runtime",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Public Domain, per Creative Commons CC0",
+          "url": "http://creativecommons.org/publicdomain/zero/1.0/",
+          "comments": "* This code was Written by Gil Tene of Azul Systems, and released to the\n                * public domain, as explained at http://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        {
+          "name": "BSD-2-Clause",
+          "url": "https://opensource.org/licenses/BSD-2-Clause"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/hdrhistogram/HdrHistogram/2.2.2/HdrHistogram-2.2.2.pom",
+          "sha256": "2623346537f706f22059b9117209cb0681b0241145b35c75d2c5e3ec41826766"
+        }
+      ],
+      "jar": {
+        "path": "org/hdrhistogram/HdrHistogram/2.2.2/HdrHistogram-2.2.2.jar",
+        "sha256": "22d1d4316c4ec13a68b559e98c8256d69071593731da96136640f864fa14fad8",
+        "bytes": 177206,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 2173,
+            "sha256": "ba550515c77c9e6f8b6a400381eacd3c47569297f8f27884801a95dff5309483",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.hibernate.validator:hibernate-validator:jar:8.0.3.Final:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/hibernate/validator/hibernate-validator/8.0.3.Final/hibernate-validator-8.0.3.Final.pom",
+          "sha256": "b8f6fd01f3c861d63a55a9cb726cb1776917aa37c58fedf7aca2ed692f4f739d"
+        }
+      ],
+      "jar": {
+        "path": "org/hibernate/validator/hibernate-validator/8.0.3.Final/hibernate-validator-8.0.3.Final.jar",
+        "sha256": "2ad24670fd08e21d3f43d3105d5326bd5ef6b01e819c5cd103823866b954517e",
+        "bytes": 1330712,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.jboss.logging:jboss-logging:jar:3.6.1.Final:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License 2.0",
+          "url": "https://repository.jboss.org/licenses/apache-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/jboss/logging/jboss-logging/3.6.1.Final/jboss-logging-3.6.1.Final.pom",
+          "sha256": "27cd88ab8e5946b8a7aa92644eb3732e35be281439ab07af71f898453ee7540d"
+        }
+      ],
+      "jar": {
+        "path": "org/jboss/logging/jboss-logging/3.6.1.Final/jboss-logging-3.6.1.Final.jar",
+        "sha256": "5e08a4b092dc85b337f0910a740571d8720cfa565fabd880a8caf94a657ca416",
+        "bytes": 61853,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.junit.jupiter:junit-jupiter-api:jar:5.12.2:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Public License v2.0",
+          "url": "https://www.eclipse.org/legal/epl-v20.html"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/junit/jupiter/junit-jupiter-api/5.12.2/junit-jupiter-api-5.12.2.pom",
+          "sha256": "566282166489bd40b12c3507b995e48f8e025e09a05e7d16dd2b98dc642cf7de"
+        }
+      ],
+      "jar": {
+        "path": "org/junit/jupiter/junit-jupiter-api/5.12.2/junit-jupiter-api-5.12.2.jar",
+        "sha256": "0b9ca728e4bcd9adc57f29deb9556ff9ed5e08b4e8843b875aba4e4e3e04f092",
+        "bytes": 233372,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE-notice.md",
+            "bytes": 316,
+            "sha256": "c7d843e0faf8a251278c9220f6b5326a42a01f08b855c1ec871bcef6211a7e2a",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 14235,
+            "sha256": "5aa4cd44c111add178d1c2e2fe36d58a484012c80167df925f826cd64d411bf0",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.junit.jupiter:junit-jupiter-engine:jar:5.12.2:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Public License v2.0",
+          "url": "https://www.eclipse.org/legal/epl-v20.html"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/junit/jupiter/junit-jupiter-engine/5.12.2/junit-jupiter-engine-5.12.2.pom",
+          "sha256": "3c719174509be9db1fa817ac63b78b21f1f67d068be471da3d04781bd4402aa3"
+        }
+      ],
+      "jar": {
+        "path": "org/junit/jupiter/junit-jupiter-engine/5.12.2/junit-jupiter-engine-5.12.2.jar",
+        "sha256": "f576c06b8accde9985063b8bc80526cb980eec24dee0b7221fc8ddd7ace65800",
+        "bytes": 292002,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE-notice.md",
+            "bytes": 316,
+            "sha256": "c7d843e0faf8a251278c9220f6b5326a42a01f08b855c1ec871bcef6211a7e2a",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 14235,
+            "sha256": "5aa4cd44c111add178d1c2e2fe36d58a484012c80167df925f826cd64d411bf0",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.junit.jupiter:junit-jupiter-params:jar:5.12.2:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Public License v2.0",
+          "url": "https://www.eclipse.org/legal/epl-v20.html"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/junit/jupiter/junit-jupiter-params/5.12.2/junit-jupiter-params-5.12.2.pom",
+          "sha256": "a5c7ef17cade7d5f74ab62072bbc6bc71cbd016806246bce425fcbbc1108493c"
+        }
+      ],
+      "jar": {
+        "path": "org/junit/jupiter/junit-jupiter-params/5.12.2/junit-jupiter-params-5.12.2.jar",
+        "sha256": "b219ffa949b90a71aa3b6c2b606456b82bca0b2089b7459c8ff461156ff59b0f",
+        "bytes": 601719,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE-notice.md",
+            "bytes": 316,
+            "sha256": "c7d843e0faf8a251278c9220f6b5326a42a01f08b855c1ec871bcef6211a7e2a",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/LICENSE-univocity-parsers.md",
+            "bytes": 9303,
+            "sha256": "d25d17d20162cce14cdbb467a0f6d75a35ba488a4144637b17392eaa8042c122",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 14235,
+            "sha256": "5aa4cd44c111add178d1c2e2fe36d58a484012c80167df925f826cd64d411bf0",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.junit.jupiter:junit-jupiter:jar:5.12.2:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Public License v2.0",
+          "url": "https://www.eclipse.org/legal/epl-v20.html"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/junit/jupiter/junit-jupiter/5.12.2/junit-jupiter-5.12.2.pom",
+          "sha256": "91ad8e4a4bf304232c941c9014ac91367beba131f1db58d5bfe499c790d46f17"
+        }
+      ],
+      "jar": {
+        "path": "org/junit/jupiter/junit-jupiter/5.12.2/junit-jupiter-5.12.2.jar",
+        "sha256": "3854b3ad434906b827fec474aa0d8da8b56e9e56d5fc7f2e20fc3f12ec4be894",
+        "bytes": 6366,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE-notice.md",
+            "bytes": 316,
+            "sha256": "c7d843e0faf8a251278c9220f6b5326a42a01f08b855c1ec871bcef6211a7e2a",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 14235,
+            "sha256": "5aa4cd44c111add178d1c2e2fe36d58a484012c80167df925f826cd64d411bf0",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.junit.platform:junit-platform-commons:jar:1.12.2:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Public License v2.0",
+          "url": "https://www.eclipse.org/legal/epl-v20.html"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/junit/platform/junit-platform-commons/1.12.2/junit-platform-commons-1.12.2.pom",
+          "sha256": "4f2b8a9065c909c6892d8622d553b6ab0a70321624499e3b69c1289f59ecc077"
+        }
+      ],
+      "jar": {
+        "path": "org/junit/platform/junit-platform-commons/1.12.2/junit-platform-commons-1.12.2.jar",
+        "sha256": "e683a01e85dfabea520c056ac6015a6162756e602ec653c0da85e233f0afbc18",
+        "bytes": 151859,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE-notice.md",
+            "bytes": 316,
+            "sha256": "c7d843e0faf8a251278c9220f6b5326a42a01f08b855c1ec871bcef6211a7e2a",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 14235,
+            "sha256": "5aa4cd44c111add178d1c2e2fe36d58a484012c80167df925f826cd64d411bf0",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.junit.platform:junit-platform-engine:jar:1.12.2:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Public License v2.0",
+          "url": "https://www.eclipse.org/legal/epl-v20.html"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/junit/platform/junit-platform-engine/1.12.2/junit-platform-engine-1.12.2.pom",
+          "sha256": "9480b18a7965769d0083c2cb71105423f5302a8f046bb2047e6dbff09f383490"
+        }
+      ],
+      "jar": {
+        "path": "org/junit/platform/junit-platform-engine/1.12.2/junit-platform-engine-1.12.2.jar",
+        "sha256": "cef0efcb5bd2e05e2b808d38bab5c655089c0c3001527376e74cb606a7911ec8",
+        "bytes": 255799,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE-notice.md",
+            "bytes": 316,
+            "sha256": "c7d843e0faf8a251278c9220f6b5326a42a01f08b855c1ec871bcef6211a7e2a",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/LICENSE.md",
+            "bytes": 14235,
+            "sha256": "5aa4cd44c111add178d1c2e2fe36d58a484012c80167df925f826cd64d411bf0",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.latencyutils:LatencyUtils:jar:2.0.3:runtime",
+      "scope": "runtime",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Public Domain, per Creative Commons CC0",
+          "url": "http://creativecommons.org/publicdomain/zero/1.0/",
+          "comments": "* This code was Written by Gil Tene of Azul Systems, and released to the\n                * public domain, as explained at http://creativecommons.org/publicdomain/zero/1.0/"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3.pom",
+          "sha256": "8f0c0153790b84af6c09316d569bd106ee0f008b9393e80ba478f5bf65738a28"
+        }
+      ],
+      "jar": {
+        "path": "org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3.jar",
+        "sha256": "a32a9ffa06b2f4e01c5360f8f9df7bc5d9454a5d373cd8f361347fa5a57165ec",
+        "bytes": 29779,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.mockito:mockito-core:jar:5.17.0:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "MIT",
+          "url": "https://opensource.org/licenses/MIT",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/mockito/mockito-core/5.17.0/mockito-core-5.17.0.pom",
+          "sha256": "d01cc14e7661c63047940a42f5073d4a0ecbe2a0ea5d2ea34204b4cc081e16a5"
+        }
+      ],
+      "jar": {
+        "path": "org/mockito/mockito-core/5.17.0/mockito-core-5.17.0.jar",
+        "sha256": "dff59ad8c61b026ef86cc113f94f2301eb06caaf81dec30c78a96a1a65595c5e",
+        "bytes": 709090,
+        "documents": [
+          {
+            "entry": "LICENSE",
+            "bytes": 1080,
+            "sha256": "fc37ea05c14706d13ec54d477a5c8c456aec1a5393779c683404b0151d04d7d7",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.mockito:mockito-junit-jupiter:jar:5.17.0:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "MIT",
+          "url": "https://opensource.org/licenses/MIT",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/mockito/mockito-junit-jupiter/5.17.0/mockito-junit-jupiter-5.17.0.pom",
+          "sha256": "01a5cfe9b9db92fd46499de80367bb26dade323fc31f870cc93f00acbc1646cd"
+        }
+      ],
+      "jar": {
+        "path": "org/mockito/mockito-junit-jupiter/5.17.0/mockito-junit-jupiter-5.17.0.jar",
+        "sha256": "5c5442f8aaaa8f03df03e4862a0d69205d1b41f5edbf7d5aa7a2486a61de49b7",
+        "bytes": 9395,
+        "documents": [
+          {
+            "entry": "LICENSE",
+            "bytes": 1080,
+            "sha256": "fc37ea05c14706d13ec54d477a5c8c456aec1a5393779c683404b0151d04d7d7",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.mybatis.spring.boot:mybatis-spring-boot-autoconfigure:jar:3.0.5:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/mybatis/spring/boot/mybatis-spring-boot-autoconfigure/3.0.5/mybatis-spring-boot-autoconfigure-3.0.5.pom",
+          "sha256": "52380d0234999948fe9aeb4ca8a518b6e76b998f09a5cfd6d667b227cf7bc39d"
+        },
+        {
+          "path": "org/mybatis/spring/boot/mybatis-spring-boot/3.0.5/mybatis-spring-boot-3.0.5.pom",
+          "sha256": "d59fc5a6b1050f3694c03a6a9f097d0c7899a52d78802401f4d2516846a718e3"
+        },
+        {
+          "path": "org/mybatis/mybatis-parent/50/mybatis-parent-50.pom",
+          "sha256": "fcdb600cd4f85803f7313cdd8d554d849c461814afd4928a4f60240f92e18e23"
+        }
+      ],
+      "jar": {
+        "path": "org/mybatis/spring/boot/mybatis-spring-boot-autoconfigure/3.0.5/mybatis-spring-boot-autoconfigure-3.0.5.jar",
+        "sha256": "2ea914d95ab0b9a8f7aaf59088d927855394c65f20ad1bc80c4d4fbd51b077a9",
+        "bytes": 37274,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.mybatis.spring.boot:mybatis-spring-boot-starter:jar:3.0.5:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/mybatis/spring/boot/mybatis-spring-boot-starter/3.0.5/mybatis-spring-boot-starter-3.0.5.pom",
+          "sha256": "fb1f23cb9b7761d27fbbb0e773e247295cd50b2c15b022e7ae93c7e649ee6539"
+        },
+        {
+          "path": "org/mybatis/spring/boot/mybatis-spring-boot/3.0.5/mybatis-spring-boot-3.0.5.pom",
+          "sha256": "d59fc5a6b1050f3694c03a6a9f097d0c7899a52d78802401f4d2516846a718e3"
+        },
+        {
+          "path": "org/mybatis/mybatis-parent/50/mybatis-parent-50.pom",
+          "sha256": "fcdb600cd4f85803f7313cdd8d554d849c461814afd4928a4f60240f92e18e23"
+        }
+      ],
+      "jar": {
+        "path": "org/mybatis/spring/boot/mybatis-spring-boot-starter/3.0.5/mybatis-spring-boot-starter-3.0.5.jar",
+        "sha256": "25e8f0a047a7c2140ded81ae92f3d31dcf84f220a99976ec5e59923e3d8e5183",
+        "bytes": 3669,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.mybatis:mybatis-spring:jar:3.0.5:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/mybatis/mybatis-spring/3.0.5/mybatis-spring-3.0.5.pom",
+          "sha256": "2304c7f12ed9f16977b296ca9b653436f6702faeba329442605ecbcfe2d2ad48"
+        },
+        {
+          "path": "org/mybatis/mybatis-parent/50/mybatis-parent-50.pom",
+          "sha256": "fcdb600cd4f85803f7313cdd8d554d849c461814afd4928a4f60240f92e18e23"
+        }
+      ],
+      "jar": {
+        "path": "org/mybatis/mybatis-spring/3.0.5/mybatis-spring-3.0.5.jar",
+        "sha256": "5a9bcbc3e6d7586a1a301177b9a355a4c46080c0c6a568b8c434fae027fa3e3b",
+        "bytes": 82680,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11360,
+            "sha256": "9818ec66553209eebf329d4bf4bc6c992e1ac340bd3314c25ee478b8ce2a7bac",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 1554,
+            "sha256": "7cc2d4990856298530585085301930d6f246c45f8e1c6c24d39395e1960d7afd",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.mybatis:mybatis:jar:3.5.19:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/mybatis/mybatis/3.5.19/mybatis-3.5.19.pom",
+          "sha256": "3e70093e8a67a7584154fd78b8c3846d742d9520b679b337429136dcad4ba271"
+        },
+        {
+          "path": "org/mybatis/mybatis-parent/48/mybatis-parent-48.pom",
+          "sha256": "36de4474dadcac931e24f8ead7c6bdd39a4232e02205201c1991e215d45371e4"
+        }
+      ],
+      "jar": {
+        "path": "org/mybatis/mybatis/3.5.19/mybatis-3.5.19.jar",
+        "sha256": "93eea616ae355751bd5fbabb57f0732713fbe79f3196f33c51a0aeeb4255862a",
+        "bytes": 1819063,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11562,
+            "sha256": "91b00d08eb9c5cb1bc6370d42b63c4874032caf26b9641bfab636827cff9c5d3",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 3390,
+            "sha256": "057c335c9565b5b8df6eb56ce585c99b248eb2c21f4ad29d4a8f71f373afaef8",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.objenesis:objenesis:jar:3.3:test",
+      "scope": "test",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/objenesis/objenesis/3.3/objenesis-3.3.pom",
+          "sha256": "ba0c40da2669a048b6e24ef7066a471f0fbcbfcc509e6a3e856ca4ddfa614ad3"
+        },
+        {
+          "path": "org/objenesis/objenesis-parent/3.3/objenesis-parent-3.3.pom",
+          "sha256": "305c384aa2f1e1c7fe53a96da41c3ec35243b97d428d24a8f779818cc10be4ff"
+        }
+      ],
+      "jar": {
+        "path": "org/objenesis/objenesis/3.3/objenesis-3.3.jar",
+        "sha256": "02dfd0b0439a5591e35b708ed2f5474eb0948f53abf74637e959b8e4ef69bfeb",
+        "bytes": 49423,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11358,
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE",
+            "bytes": 332,
+            "sha256": "f566b3e321dba2709b90b7d041c0dc4493c9df6f5a6832b488be1c37124d2190",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.opentest4j:opentest4j:jar:1.3.0:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.pom",
+          "sha256": "9bf7cffc410f3e8372c2522578df9ca56d9d43bd937e30948706c232a943b355"
+        }
+      ],
+      "jar": {
+        "path": "org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar",
+        "sha256": "48e2df636cab6563ced64dcdff8abb2355627cb236ef0bf37598682ddf742f1b",
+        "bytes": 14304,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 11358,
+            "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.ow2.asm:asm:jar:9.7.1:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "BSD-3-Clause",
+          "url": "https://asm.ow2.io/license.html"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/ow2/asm/asm/9.7.1/asm-9.7.1.pom",
+          "sha256": "7229b03b30a73ee91008072d9e4569a51d8547fae8c50f527841aef4c1b0baa8"
+        }
+      ],
+      "jar": {
+        "path": "org/ow2/asm/asm/9.7.1/asm-9.7.1.jar",
+        "sha256": "8cadd43ac5eb6d09de05faecca38b917a040bb9139c7edeb4cc81c740b713281",
+        "bytes": 126093,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.postgresql:postgresql:jar:42.7.7:runtime",
+      "scope": "runtime",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "BSD-2-Clause",
+          "url": "https://jdbc.postgresql.org/about/license.html",
+          "distribution": "repo",
+          "comments": "BSD-2-Clause, copyright PostgreSQL Global Development Group"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/postgresql/postgresql/42.7.7/postgresql-42.7.7.pom",
+          "sha256": "a8203b4c214dd76662d1521dc1969e518b33709f082fd9cd8138cff4c36940cc"
+        }
+      ],
+      "jar": {
+        "path": "org/postgresql/postgresql/42.7.7/postgresql-42.7.7.jar",
+        "sha256": "157963d60ae66d607e09466e8c0cdf8087e9cb20d0159899ffca96bca2528460",
+        "bytes": 1098916,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE",
+            "bytes": 1708,
+            "sha256": "1da220f88ea644d0ffb6e5fd9d3c26549e0cdfb39f12ac5421a1ff0a080f0874",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/licenses/com.ongres.scram/scram-client-3.1/META-INF/LICENSE",
+            "bytes": 1269,
+            "sha256": "7c89807167a03a92d2fbfc936aff4f87d8ce31434637381c89e38282c8c99198",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/licenses/com.ongres.scram/scram-common-3.1/META-INF/LICENSE",
+            "bytes": 1269,
+            "sha256": "7c89807167a03a92d2fbfc936aff4f87d8ce31434637381c89e38282c8c99198",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/licenses/com.ongres.stringprep/saslprep-2.2/META-INF/LICENSE",
+            "bytes": 1269,
+            "sha256": "5c49fc155ebccd206277e0d1f424aadbf365f0a9ccfb54d400d728a375d523f9",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/licenses/com.ongres.stringprep/stringprep-2.2/META-INF/LICENSE",
+            "bytes": 1269,
+            "sha256": "5c49fc155ebccd206277e0d1f424aadbf365f0a9ccfb54d400d728a375d523f9",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.skyscreamer:jsonassert:jar:1.5.3:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/skyscreamer/jsonassert/1.5.3/jsonassert-1.5.3.pom",
+          "sha256": "c6a880737b6b3c8a27d9a05c6048536a7a70bb350cb91dce2336b6710a2ba628"
+        }
+      ],
+      "jar": {
+        "path": "org/skyscreamer/jsonassert/1.5.3/jsonassert-1.5.3.jar",
+        "sha256": "719095c07d4203961320da593441d8b3b643c18eb1d81aa98ea933bb7eb351ba",
+        "bytes": 31077,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.slf4j:jul-to-slf4j:jar:2.0.17:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "MIT",
+          "url": "https://opensource.org/license/mit",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/slf4j/jul-to-slf4j/2.0.17/jul-to-slf4j-2.0.17.pom",
+          "sha256": "38c330a0ab5f093e562b52fb61aec630ae1c1f91406e3cf54775045e5ccf6c03"
+        },
+        {
+          "path": "org/slf4j/slf4j-parent/2.0.17/slf4j-parent-2.0.17.pom",
+          "sha256": "95cd71e852dfdb29126e58b7b939d57ec2b2e6024391852e0b545dee082bbf3b"
+        },
+        {
+          "path": "org/slf4j/slf4j-bom/2.0.17/slf4j-bom-2.0.17.pom",
+          "sha256": "f78d27b642b4b886eb839fc102b5cd9fe7f30f37599ffe68185be4e1609031e9"
+        }
+      ],
+      "jar": {
+        "path": "org/slf4j/jul-to-slf4j/2.0.17/jul-to-slf4j-2.0.17.jar",
+        "sha256": "a7afcd23b9cfd1475e55c94f943b808c5922035e7e2c2a5c65a487a4106bc538",
+        "bytes": 6349,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 1178,
+            "sha256": "4e7f90c86ab51278228bce153122f1d8df30149d13ce9ef524c8444a84c32dcc",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-api:jar:2.0.17:compile",
+      "scope": "compile",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "MIT",
+          "url": "https://opensource.org/license/mit",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.pom",
+          "sha256": "150c40287f7cecdc21b9380caac98e928c4f33c023db6b348df1c5ac977026bf"
+        },
+        {
+          "path": "org/slf4j/slf4j-parent/2.0.17/slf4j-parent-2.0.17.pom",
+          "sha256": "95cd71e852dfdb29126e58b7b939d57ec2b2e6024391852e0b545dee082bbf3b"
+        },
+        {
+          "path": "org/slf4j/slf4j-bom/2.0.17/slf4j-bom-2.0.17.pom",
+          "sha256": "f78d27b642b4b886eb839fc102b5cd9fe7f30f37599ffe68185be4e1609031e9"
+        }
+      ],
+      "jar": {
+        "path": "org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar",
+        "sha256": "7b751d952061954d5abfed7181c1f645d336091b679891591d63329c622eb832",
+        "bytes": 69908,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 1178,
+            "sha256": "4e7f90c86ab51278228bce153122f1d8df30149d13ce9ef524c8444a84c32dcc",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-actuator-autoconfigure:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-actuator-autoconfigure/3.5.6/spring-boot-actuator-autoconfigure-3.5.6.pom",
+          "sha256": "7881414a75c89004498879accd8f9ce53418d41d5c0ede0f075a3e58978aad43"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-actuator-autoconfigure/3.5.6/spring-boot-actuator-autoconfigure-3.5.6.jar",
+        "sha256": "f07fe4f10e0cca896537245a13ac450792102ce03733cd19509a0acc10e20df9",
+        "bytes": 834572,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-actuator:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-actuator/3.5.6/spring-boot-actuator-3.5.6.pom",
+          "sha256": "073a83472195c36b9a7e921026310428defa74a27c607ac63ee8634590f74908"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-actuator/3.5.6/spring-boot-actuator-3.5.6.jar",
+        "sha256": "b06143d365a337df5173119fe8d69424a7467b5ad4226034b7e6ed3a2b11c158",
+        "bytes": 703716,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-autoconfigure:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-autoconfigure/3.5.6/spring-boot-autoconfigure-3.5.6.pom",
+          "sha256": "05e51b4fb62dbe373d1a32af8b93be7dd45e692117697f5b86c8324c179d2abd"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-autoconfigure/3.5.6/spring-boot-autoconfigure-3.5.6.jar",
+        "sha256": "1f8284cefaffb3018d803e4c9cf065eaa88dc3e09a9aa2abea8e876981b1be7a",
+        "bytes": 2077508,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter-actuator:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter-actuator/3.5.6/spring-boot-starter-actuator-3.5.6.pom",
+          "sha256": "c71df3f61f1cbea76d2f05ec2c42211f44526b1ea68400145663e03cf5041842"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter-actuator/3.5.6/spring-boot-starter-actuator-3.5.6.jar",
+        "sha256": "b62bb449ec7845a282bcd081a94135e02177f2252e2bd33dbe46e0b97d047bd9",
+        "bytes": 4805,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter-jdbc:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter-jdbc/3.5.6/spring-boot-starter-jdbc-3.5.6.pom",
+          "sha256": "9ee4388cd81848a6dd716ce29b27d7aabb9b135b2c68c8120402ab47c5b8fc65"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter-jdbc/3.5.6/spring-boot-starter-jdbc-3.5.6.jar",
+        "sha256": "e89e116ca817ad1b2a3b42ce51a79fda0b37b746288416185098668b2c7ba4eb",
+        "bytes": 4770,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter-json:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter-json/3.5.6/spring-boot-starter-json-3.5.6.pom",
+          "sha256": "0094e2fb619a0dcec578646ad7ba40f28c7697f82ca69d9c1fa316237bdae7df"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter-json/3.5.6/spring-boot-starter-json-3.5.6.jar",
+        "sha256": "018087e3534c5a814c80a27d8557683ed936a95939fe4a3e18072d4a5efacf28",
+        "bytes": 4747,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter-logging:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter-logging/3.5.6/spring-boot-starter-logging-3.5.6.pom",
+          "sha256": "f51483162addb6a104d1fdd6286235a95e7883d8cd393d8e1d92abf0efb7972d"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter-logging/3.5.6/spring-boot-starter-logging-3.5.6.jar",
+        "sha256": "e6892def352e56ae612274b768cf29ebae71810433560b12c2177aaaa8362080",
+        "bytes": 4760,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter-mail:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter-mail/3.5.6/spring-boot-starter-mail-3.5.6.pom",
+          "sha256": "cfa82383b5f1b4e46c1bb86d50ae19ad8913ceac528abb24a00f4f07f7211cd6"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter-mail/3.5.6/spring-boot-starter-mail-3.5.6.jar",
+        "sha256": "e751727029e82cae211d89e331d524f3730f802d6f80ed5def44ad8c45727301",
+        "bytes": 4774,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter-test:jar:3.5.6:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter-test/3.5.6/spring-boot-starter-test-3.5.6.pom",
+          "sha256": "22fa0b94b6a6a8439afc16b0d8630847d3c805885e105006c1b08a2b3209adfc"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter-test/3.5.6/spring-boot-starter-test-3.5.6.jar",
+        "sha256": "c39acd1f64c1e649511d96854f6c595562c0dd2af4aa121903f496827792d5de",
+        "bytes": 4791,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter-tomcat:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter-tomcat/3.5.6/spring-boot-starter-tomcat-3.5.6.pom",
+          "sha256": "bf2c8aa5ca189c0a5f1e36898526a0e29d32fa99a83b63d72684246fba4d6d4b"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter-tomcat/3.5.6/spring-boot-starter-tomcat-3.5.6.jar",
+        "sha256": "9e07f572f288564e667c92267b280e0436bedca4593f13dac1f9550d6ca7ffa6",
+        "bytes": 4793,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter-validation:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter-validation/3.5.6/spring-boot-starter-validation-3.5.6.pom",
+          "sha256": "13b08a76e2b2a6b07d3b7addca8a1c6e4ac5a682600b1f416b530a9b941fdadd"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter-validation/3.5.6/spring-boot-starter-validation-3.5.6.jar",
+        "sha256": "0d17ce1b42d2a2a3cf69fd68c8554249693a7cbb6d6e963ba9a13adaea67103e",
+        "bytes": 4767,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter-web:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter-web/3.5.6/spring-boot-starter-web-3.5.6.pom",
+          "sha256": "14cbd9d05481e5b8b1f51b395081dc344eb883366ed90ccc8c553613dcb37a93"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter-web/3.5.6/spring-boot-starter-web-3.5.6.jar",
+        "sha256": "38730bcd885752824cdac20cbed8e6e43ff2f9827c3a2999bef49c82368ecf8c",
+        "bytes": 4803,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter-websocket:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter-websocket/3.5.6/spring-boot-starter-websocket-3.5.6.pom",
+          "sha256": "eeb0dd9564387044d01ece19519a7e5c40b3214c063715a4ec3fa818ad98207a"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter-websocket/3.5.6/spring-boot-starter-websocket-3.5.6.jar",
+        "sha256": "ba04c52a2be1a4d74532e5961a089569b856abdf3d42101d4cafd2e379578d94",
+        "bytes": 4783,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-starter:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-starter/3.5.6/spring-boot-starter-3.5.6.pom",
+          "sha256": "5f148de5dc5711a62891bf460117f206df53c0b4884622f41917f7f7d9942e99"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-starter/3.5.6/spring-boot-starter-3.5.6.jar",
+        "sha256": "7485ac46795f7e2c87252b285dfa0b9364a2b32f24a0aa20ebaee2a88b03b29b",
+        "bytes": 4768,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-test-autoconfigure:jar:3.5.6:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-test-autoconfigure/3.5.6/spring-boot-test-autoconfigure-3.5.6.pom",
+          "sha256": "6533a06d053bb53731aa167f4ee8be1ea419f2fc7ff07f96095e25d03cf0f384"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-test-autoconfigure/3.5.6/spring-boot-test-autoconfigure-3.5.6.jar",
+        "sha256": "6e07eee93656de2d5924406ccc7f57a02430eff9c4e3d54b0f9e3bb4188aa306",
+        "bytes": 229380,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot-test:jar:3.5.6:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot-test/3.5.6/spring-boot-test-3.5.6.pom",
+          "sha256": "8e19574db3a8448676d327df7a6e00b8c9bfe348326129f78c7abc0ea44af557"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot-test/3.5.6/spring-boot-test-3.5.6.jar",
+        "sha256": "494e0df0b9ccafa35b23fe6507ea03ef86c021bbae8f2fc57e3edbfb169539b9",
+        "bytes": 257029,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.boot:spring-boot:jar:3.5.6:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/boot/spring-boot/3.5.6/spring-boot-3.5.6.pom",
+          "sha256": "86c4b0a12a48ad43b62d17d27bed8b3c4d273e7498900d3292749c9c78aedbe1"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/boot/spring-boot/3.5.6/spring-boot-3.5.6.jar",
+        "sha256": "4e66f6f3152e148c028977c33ab12c91ae381701b5d9d9951882a84f05ff5fea",
+        "bytes": 1899229,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/NOTICE.txt",
+            "bytes": 210,
+            "sha256": "de8b5593e8b00f666af94462d786cfe8b98b5c31bb280b1ac28096203ea0da26",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework.security:spring-security-crypto:jar:6.5.5:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/security/spring-security-crypto/6.5.5/spring-security-crypto-6.5.5.pom",
+          "sha256": "5c3b156eb8cf1d82f5ca455d2c3da2358c014cc1fc70b32ca0ad65971745a6df"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/security/spring-security-crypto/6.5.5/spring-security-crypto-6.5.5.jar",
+        "sha256": "c969250ffcebcbfa18586ec2161e4f106d4cd1125f11a9b2e819f96e2aeff1c1",
+        "bytes": 104853,
+        "documents": [
+          {
+            "entry": "META-INF/LICENSE.txt",
+            "bytes": 11359,
+            "sha256": "7200000367e0e8b47822d563a5ddd2dd3a97cc05b32bd7dbcc7b4eeb92b76628",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-aop:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-aop/6.2.11/spring-aop-6.2.11.pom",
+          "sha256": "f3698a13d56ed7ec8483df97d15a9e15090996ac46304ad0ca6ed10ded23257a"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-aop/6.2.11/spring-aop-6.2.11.jar",
+        "sha256": "91e6cd420cd601a34dc41fc33364cfe77d40b6281ee472a0b72d43791f06a1dd",
+        "bytes": 420148,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-beans:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-beans/6.2.11/spring-beans-6.2.11.pom",
+          "sha256": "93e440a76963daf6ed68be22fbaee8a2384229d8be5fdc7abe94639e8d1892ec"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-beans/6.2.11/spring-beans-6.2.11.jar",
+        "sha256": "f9ba5dedee94947b11d930209ff1a12bbe9e28b1b4f73c5baeba2fb3fe32d08e",
+        "bytes": 890054,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-context-support:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-context-support/6.2.11/spring-context-support-6.2.11.pom",
+          "sha256": "c6039f3307f37be462399c9e01c3e64c5699fc209cdbd8d125f797865d5264a1"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-context-support/6.2.11/spring-context-support-6.2.11.jar",
+        "sha256": "1a339885901c46ba12807e736664d7a5035f9b1b2fc7d1ef1de6af2147dc536a",
+        "bytes": 175200,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-context:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-context/6.2.11/spring-context-6.2.11.pom",
+          "sha256": "7642915df1fabecb0252b9e663be262ac5a37d9e0a4c305aa33259043578f42c"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-context/6.2.11/spring-context-6.2.11.jar",
+        "sha256": "a2c732fce8b24ead7caf4a21a157167bce991048638805cf1277a5ed6a568057",
+        "bytes": 1358054,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-core:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-core/6.2.11/spring-core-6.2.11.pom",
+          "sha256": "fd6ac5809e9df63cb42970d588dca22943f34457dbbac4a2fe90e1f5ac625494"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-core/6.2.11/spring-core-6.2.11.jar",
+        "sha256": "a1de6ff2d88c05442468360b89f881b77ff7a393b8cd5b1d5758756b2e247f8a",
+        "bytes": 1968177,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-expression:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-expression/6.2.11/spring-expression-6.2.11.pom",
+          "sha256": "b09e665b60250e2235d4ec273152a45a86338439cc920939fc96d074e45da084"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-expression/6.2.11/spring-expression-6.2.11.jar",
+        "sha256": "0fd8753b1ad861019ab1e1cedbba82c1354bab0313f0c8509799edd3fc98bbb3",
+        "bytes": 317833,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-jcl:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-jcl/6.2.11/spring-jcl-6.2.11.pom",
+          "sha256": "ce013013792fc067ba0d266ca80d4cd356334883203475961339e2624e37d8b0"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-jcl/6.2.11/spring-jcl-6.2.11.jar",
+        "sha256": "a5d92923b658637c62c481dc44eab029afc1b816b10d8d0fda5ed63715f3cf85",
+        "bytes": 24540,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-jdbc:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-jdbc/6.2.11/spring-jdbc-6.2.11.pom",
+          "sha256": "5ed2015a4a13ab36b78b884604b85eb969f2d92c5361683d6d12489daa9a5ece"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-jdbc/6.2.11/spring-jdbc-6.2.11.jar",
+        "sha256": "01e63e0bb60859ba64279998fd1619b4ad8fad0f127cc84271c7652e00ee6a98",
+        "bytes": 472414,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-messaging:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-messaging/6.2.11/spring-messaging-6.2.11.pom",
+          "sha256": "3b410b2163d94f4bbe93b55a887d64c67ea66ef09982462c57394405f89a66b3"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-messaging/6.2.11/spring-messaging-6.2.11.jar",
+        "sha256": "531f64a113ed2295817b7af0566f9a8efbb1d9ee171f345b5254bbcae9383087",
+        "bytes": 618730,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-test:jar:6.2.11:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-test/6.2.11/spring-test-6.2.11.pom",
+          "sha256": "91185a1bf74fdaa0553e0d8394cd824b778bd92b105495923e5a727465fc6161"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-test/6.2.11/spring-test-6.2.11.jar",
+        "sha256": "a756fddb16c58475711e56245bdf3b31295b2cadec579f2deceff657377907f8",
+        "bytes": 1024646,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-tx:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-tx/6.2.11/spring-tx-6.2.11.pom",
+          "sha256": "72d36f6f06554ef92fd2793a8e02d46a041fbb4ff7630086e6a0619f6f21db52"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-tx/6.2.11/spring-tx-6.2.11.jar",
+        "sha256": "dd7eb3514a51c91e565a4ca1e7b170f7513b4da56d6f7821ac84cb32dc4fbb16",
+        "bytes": 285515,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-web:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-web/6.2.11/spring-web-6.2.11.pom",
+          "sha256": "b98bcf5f6ce4276350b45ba0b03c179d64cec3ac7c01fbcad69e065384965091"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-web/6.2.11/spring-web-6.2.11.jar",
+        "sha256": "b8a7000ac68dea59f208148bf40a1e02cf3f1f6c120e9eb6696d7d46f57d7ed0",
+        "bytes": 2090527,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-webmvc:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-webmvc/6.2.11/spring-webmvc-6.2.11.pom",
+          "sha256": "51a6e32e4705e0afeda734eeeebc40357a2627a07672bd672dd6be53e6aef40b"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-webmvc/6.2.11/spring-webmvc-6.2.11.jar",
+        "sha256": "c1949970b2702809fb85bafa1e3b3c6e68a8e69248e77cd77cde273fb24db139",
+        "bytes": 1091817,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.springframework:spring-websocket:jar:6.2.11:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/springframework/spring-websocket/6.2.11/spring-websocket-6.2.11.pom",
+          "sha256": "a08a5b6a749add598b04df5d12b1a55eb90a38adcd5c6321f309387462e497a7"
+        }
+      ],
+      "jar": {
+        "path": "org/springframework/spring-websocket/6.2.11/spring-websocket-6.2.11.jar",
+        "sha256": "0001b24adb8c9f8c07a71da522e27d673619a9694fd71e68a69fdbf91c9a665b",
+        "bytes": 444292,
+        "documents": [
+          {
+            "entry": "META-INF/license.txt",
+            "bytes": 15694,
+            "sha256": "3826b6af06dd7f9a82fa25a4359569a71b444f8489813abbc9803e7eb17fde8b",
+            "status": "indexed_not_reviewed"
+          },
+          {
+            "entry": "META-INF/notice.txt",
+            "bytes": 477,
+            "sha256": "cc00a811828235903e7549f1d6a87bb2b1b2efaa21022316cb28d9b80f5ff337",
+            "status": "indexed_not_reviewed"
+          }
+        ],
+        "status": "indexed"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.tukaani:xz:jar:1.11:test",
+      "scope": "test",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "0BSD",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/tukaani/xz/1.11/xz-1.11.pom",
+          "sha256": "7bd2fe2f145c8479824757ab76130c0815a7b55850714ef0c28b39bd5d692ca4"
+        }
+      ],
+      "jar": {
+        "path": "org/tukaani/xz/1.11/xz-1.11.jar",
+        "sha256": "0a4077f6aeae2865532a564807af8d30c26acc6f63b7928d93bd7ab1f2190449",
+        "bytes": 168803,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.xmlunit:xmlunit-core:jar:2.10.4:test",
+      "scope": "test",
+      "declarationStatus": "inherited_declaration",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/xmlunit/xmlunit-core/2.10.4/xmlunit-core-2.10.4.pom",
+          "sha256": "40c5517103cf152f087a3b6dcaaa530ece61f03d7f294491ff882d936bad065f"
+        },
+        {
+          "path": "org/xmlunit/xmlunit-parent/2.10.4/xmlunit-parent-2.10.4.pom",
+          "sha256": "83d83392b253c5bc07a512a08d8b794623e7d4c5bbbba0c4db91f4ce378091e2"
+        }
+      ],
+      "jar": {
+        "path": "org/xmlunit/xmlunit-core/2.10.4/xmlunit-core-2.10.4.jar",
+        "sha256": "208e0cee82aedd9183937e4b9ae44b83884179f724a706bef5795477acfcca91",
+        "bytes": 177639,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "org.yaml:snakeyaml:jar:2.4:compile",
+      "scope": "compile",
+      "declarationStatus": "declared",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "pomSources": [
+        {
+          "path": "org/yaml/snakeyaml/2.4/snakeyaml-2.4.pom",
+          "sha256": "e154a3231cd6cde68aabf274fd18964d49a9c1a5f5e9ed3bf471e9ae7bdf08e6"
+        }
+      ],
+      "jar": {
+        "path": "org/yaml/snakeyaml/2.4/snakeyaml-2.4.jar",
+        "sha256": "ef779af5d29a9dde8cc70ce0341f5c6f7735e23edff9685ceaa9d35359b7bb7f",
+        "bytes": 339825,
+        "documents": [],
+        "status": "no_embedded_license_documents"
+      },
+      "reviewStatus": "unreviewed"
+    }
+  ]
+}
