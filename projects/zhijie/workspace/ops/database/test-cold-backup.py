@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import shutil
 from pathlib import Path
 import tempfile
 import unittest
@@ -70,6 +71,31 @@ class ColdBackupTest(unittest.TestCase):
         self.assertEqual(backup.verify(self.destination), 2)
         with self.assertRaisesRegex(ValueError, "旧版清单"):
             backup.verify(self.destination, require_directories=True)
+        with self.assertRaisesRegex(ValueError, "旧版清单"):
+            backup.verify(self.destination, restored_data=self.source)
+
+    def test_restored_data_must_match_before_start(self):
+        (self.source / "pg_wal/archive_status").mkdir(parents=True)
+        backup.snapshot(self.source, self.destination)
+        restored = self.root / "restore"
+        shutil.copytree(self.destination / "data", restored)
+        self.assertEqual(backup.verify(self.destination, restored_data=restored), 2)
+        (restored / "pg_wal/archive_status").rmdir()
+        with self.assertRaisesRegex(ValueError, "恢复副本与备份不一致"):
+            backup.verify(self.destination, restored_data=restored)
+        (restored / "pg_wal/archive_status").mkdir()
+        (restored / "global/pg_control").write_bytes(b"changed")
+        with self.assertRaisesRegex(ValueError, "恢复副本与备份不一致"):
+            backup.verify(self.destination, restored_data=restored)
+        self.assertEqual(backup.verify(self.destination), 2)
+
+    def test_backup_itself_and_running_restore_are_rejected(self):
+        backup.snapshot(self.source, self.destination)
+        with self.assertRaisesRegex(ValueError, "独立于备份目录"):
+            backup.verify(self.destination, restored_data=self.destination / "data")
+        (self.source / "postmaster.pid").write_text("123\n")
+        with self.assertRaisesRegex(ValueError, "正常停止"):
+            backup.verify(self.destination, restored_data=self.source)
 
     def test_nested_destination_is_rejected_before_mutation(self):
         nested = self.source / "nested"

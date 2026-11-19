@@ -36,12 +36,12 @@ def stopped_source(path):
         raise ValueError("源库仍有 postmaster.pid；必须先正常停止并由管理员核实，工具不会删除锁文件")
 
 
-def verify(backup, *, require_directories=False):
+def verify(backup, *, require_directories=False, restored_data=None):
     metadata = json.loads((backup / "manifest.json").read_text(encoding="utf-8"))
     version = metadata.get("format")
     if version not in ("zhijie-postgres-cold-copy-v1", "zhijie-postgres-cold-copy-v2"):
         raise ValueError("备份格式不支持")
-    if require_directories and version == "zhijie-postgres-cold-copy-v1":
+    if (require_directories or restored_data is not None) and version == "zhijie-postgres-cold-copy-v1":
         raise ValueError("旧版清单未记录目录结构，只能核对文件")
     data = backup / "data"
     stopped_source(data)
@@ -50,6 +50,14 @@ def verify(backup, *, require_directories=False):
         raise ValueError("备份目录缺失或额外增加")
     if actual["files"] != metadata["files"]:
         raise ValueError("备份文件缺失、额外增加或摘要不一致")
+    if restored_data is not None:
+        restored = restored_data.resolve(strict=True)
+        archive = backup.resolve(strict=True)
+        if restored.is_relative_to(archive) or archive.is_relative_to(restored):
+            raise ValueError("恢复目录必须独立于备份目录")
+        stopped_source(restored_data)
+        if inventory(restored_data) != actual:
+            raise ValueError("恢复副本与备份不一致；不要启动数据库")
     return len(metadata["files"])
 
 
@@ -85,13 +93,15 @@ def main():
     check = commands.add_parser("verify")
     check.add_argument("--backup", type=Path, required=True)
     check.add_argument("--require-directories", action="store_true", help="要求清单可验证空目录；拒绝旧版仅文件清单")
+    check.add_argument("--restored-data", type=Path, help="启动前只读比对已复制的独立数据目录，包括空目录；要求 v2 清单")
     args = parser.parse_args()
     try:
         count = (snapshot(args.source, args.destination) if args.command == "snapshot"
-                 else verify(args.backup, require_directories=args.require_directories))
+                 else verify(args.backup, require_directories=args.require_directories, restored_data=args.restored_data))
     except (OSError, ValueError, KeyError) as error:
         parser.exit(1, f"冷备校验失败：{error}\n")
-    print(f"COLD_BACKUP_OK files={count}")
+    label = "COLD_RESTORE_COPY_OK" if args.command == "verify" and args.restored_data is not None else "COLD_BACKUP_OK"
+    print(f"{label} files={count}")
 
 
 if __name__ == "__main__":

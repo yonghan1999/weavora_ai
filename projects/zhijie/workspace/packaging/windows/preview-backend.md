@@ -4,7 +4,7 @@
 
 已分别验证同版重启，以及从上一版 `target/backend-cwd-20261120-035936/preview-backend.zip` 停库冷备迁入。两种情况下，恢复后均能登录、读取原有群/房间/消息，且使用认证头和旧查询参数的两个 WebSocket 客户端均收到同一条消息删除事件。记录见新 zip 旁的 `restart.log` 和 `upgrade.log`。已使用上一版的用户不必更换正在使用的目录；新版桌面使用认证头时，须先更新后端。
 
-**已有试用数据**：`target/backend-f67715c/preview-backend.zip` 为 140,633,165 字节，SHA-256 为 `1b24c669645ed6101ec9b23f87068c9750ffdfc13406537a5a9c881ac27c50b1`。仅更新桌面无需迁移后端。继续使用旧库时，启动和停止都应使用旧解压目录里的脚本。下述 `649e830` 是更早的留存候选。
+**已有试用数据**：`target/backend-f67715c/preview-backend.zip` 为 140,633,165 字节，SHA-256 为 `1b24c669645ed6101ec9b23f87068c9750ffdfc13406537a5a9c881ac27c50b1`。继续使用旧桌面和旧库时，启动和停止都应使用旧解压目录里的脚本。换用桌面 `3bbc939` 时，先将旧库迁入后端 `6a908d1`。下述 `649e830` 是更早的留存候选。
 
 在这台构建机的 `workspace` 下，`target/trial-649e830/preview-backend.zip` 是与桌面候选 `649e830` 同版的后端。它不是生产发布包。压缩包 SHA-256：`f8fd92f5be33f09e78082468cab5eb712254565c2ff688b91215cdb80fe98702`。只使用来源可信、摘要匹配的包；摘要本身不是签名。包内没有 JDK、账号、密码、试用数据库或桌面程序。
 
@@ -16,7 +16,19 @@
 
 按本机位置替换 JDK 路径。首次启动设置 `trial@example.test` 的密码；数据库只在解压目录内创建，重启保留。使用同一台机器上的桌面，控制面指向 `http://127.0.0.1:18829`。退出桌面后从解压目录执行 `& "./scripts/local-preview/stop.ps1"`。不需要 Maven、原构建目录或联网下载依赖。不要把已经启动过的目录（含数据库）当作干净包分发。邮件和语音沿用默认关闭配置，不为异机桌面开放端口。
 
-**保留旧试用数据。** 本机已验证从 `649e830` 升级到 `f67715c`。不要覆盖旧目录：先正常停止旧包并确认后端和数据库端口已释放，再从 `workspace` 执行 `python -B "ops/database/cold-backup.py" snapshot --source "<旧目录>/target/local-preview/postgres" --destination "<本人专用的新备份目录>"`。用 `python -B "ops/database/cold-backup.py" verify --backup "<备份目录>" --require-directories` 核对通过后，将备份内的 `data` 整个目录（含空目录）复制为全新解压目录下的 `target/local-preview/postgres`，再首次启动新包。若目的数据目录已存在则停止，不要合并两份数据库。保留旧目录和原备份；切回旧目录不会带回升级后才写入的数据。这不是任意 PostgreSQL 大版本间的升级办法。
+**保留旧试用数据。** 正常停止旧包，确认后端和数据库端口已释放，且迁移期间不会重新启动。从 `workspace` 执行：
+
+```powershell
+python -B "ops/database/cold-backup.py" snapshot --source "<旧目录>/target/local-preview/postgres" --destination "<本人专用的新备份目录>"
+```
+
+快照成功后，将备份内的 `data` 整个目录（含空目录）复制为全新解压目录下的 `target/local-preview/postgres`。若目的数据目录已存在则停止，不要覆盖或合并。**首次启动新包前**执行：
+
+```powershell
+python -B "ops/database/cold-backup.py" verify --backup "<备份目录>" --restored-data "<新目录>/target/local-preview/postgres"
+```
+
+只有出现 `COLD_RESTORE_COPY_OK` 才启动新包。这一步把备份和实际恢复目录的每个文件摘要及目录结构都与清单核对；验证失败不要启动。保留旧目录和原备份；切回旧目录不会带回升级后才写入的数据。这不是跨 PostgreSQL 主版本升级的方法。
 
 **复建与验证。** 对可信的干净 Windows 源码先执行本地试用说明中的 `test-compile` 和 `dependency:build-classpath`。然后从工具所在工作区运行：
 
