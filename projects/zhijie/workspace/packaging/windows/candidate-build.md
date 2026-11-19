@@ -2,7 +2,9 @@
 
 ## 本机试用（不安装）
 
-桌面候选 `5d5d283` 含历史消息删除修复。已从该提交的干净源码构建，核对安装包内八个产品文件，并通过便携目录只读自检。安装包 `target/trial-5d5d283/织界_0.1.0_x64-setup.exe` 为 12,075,144 字节，SHA-256：`86250186ea1d191f5d18ee855656dd5985f1b8e96c1b7a0967e5f5c239bd5314`。安装器未运行；普通用户试用不用双击它。
+桌面候选 `3f55ac4` 包含历史消息删除、语音和联机状态独立更新、联机页持续显示故障原因三项修复。安装包 `target/trial-3f55ac4/织界_0.1.0_x64-setup.exe` 为 12,076,935 字节，SHA-256：`f19f30a66d8e3b8fc53bb237e75de17bf272e7e58f220847a5632810dd40604b`。这是未签名候选包；普通用户试用无需运行安装器。
+
+从该提交导出的源码通过 11 项单测和 152 项无头浏览器检查。包内八个产品文件与构建输入逐个匹配，便携目录通过只读自检；三份修改过的界面脚本与 Git 内容一致，其编码后的字节也已在便携桌面程序内核对。记录位于 `target/win-3f55ac4/` 的 `browser.json`、`payload.log` 和 `exe-assets.log`。这些不是实际安装或通话验收。旧便携目录 `target/trial-5d5d283` 保留，可单独启动；两个版本不共享 WebView 试用目录，新版本可能需要重新登录。
 
 以下路径是本构建机 D 盘上的本地文件，不随 Git 下发。两个普通 PowerShell 窗口都从 `projects/zhijie/workspace` 开始。后端采用已核对摘要的 [`f67715c` 离线包](preview-backend.md)，已解压到新的专用目录，不覆盖旧试用数据。若已有试用服务占用端口，不要重复启动。
 
@@ -13,8 +15,8 @@
 
 ```powershell
 # 窗口二：先核对便携目录，再启动桌面，使用 trial@example.test 登录
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-5d5d283" --http-port 18829 --check-only
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-5d5d283" --http-port 18829
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-3f55ac4" --http-port 18829 --check-only
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-3f55ac4" --http-port 18829
 # 退出桌面后，仍从 workspace 停止本试用后端；数据库保留
 & "./target/trial-backend-f67715c/scripts/local-preview/stop.ps1"
 ```
