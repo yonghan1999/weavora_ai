@@ -1,0 +1,6 @@
+{
+  "desktopManifest": "target/trial-d26c0f9/manifest.json",
+  "desktopManifestSha256": "7ec11450737b47b7a4becf76d05e7eb1276813d84cada04c0c7b94fcd3b8ab1f",
+  "backendZip": "target/log-boundary-f5bbaac/preview-backend.zip",
+  "backendZipSha256": "b44c82c537d6cd6c99316e4dff672087ea19dbc23e3c3a577c26009aab71725b"
+}
