@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, existsSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { machine, release } from "node:os";
 import { resolve } from "node:path";
 
 const directory = mkdtempSync(resolve("target/validation-runners-"));
-for (const [name, selector] of [["compatibility", ["--platform", "windows"]], ["performance", ["--scenario", "C0"]]]) {
+const platforms = { win32: "windows", darwin: "macos", linux: "linux" };
+const localPlatform = platforms[process.platform];
+for (const [name, selector] of [["compatibility", ["--platform", localPlatform]], ["performance", ["--scenario", "C0"]]]) {
   for (const [condition, command, expected] of [
     ["success", [process.execPath, "-e", "process.stdout.write('adapter-output');process.stderr.write('adapter-diagnostic')"], 0],
     ["failure", [process.execPath, "-e", "process.stdout.write('before-failure');process.exit(7)"], 7],
@@ -15,6 +18,11 @@ for (const [name, selector] of [["compatibility", ["--platform", "windows"]], ["
     assert.equal(result.status, expected, `${name}/${condition}: wrapper must preserve adapter failure`);
     assert.ok(existsSync(output), `${name}/${condition}: failure must retain structured result`);
     const recorded = JSON.parse(readFileSync(output, "utf8"));
+    if (name === "compatibility") {
+      assert.equal(recorded.platform, localPlatform);
+      assert.deepEqual(recorded.host, { platform: process.platform, nodeArch: process.arch, machine: machine(), kernelRelease: release() });
+      if (condition === "success") assert.equal(recorded.status, "adapter_recorded_not_acceptance_verified");
+    }
     assert.notEqual(recorded.conclusion?.status, "passed");
     const exitCode = name === "performance" ? recorded.execution.exitCode : recorded.exitCode;
     assert.equal(exitCode, condition === "missing" ? null : expected);
@@ -32,7 +40,7 @@ for (const [name, selector] of [["compatibility", ["--platform", "windows"]], ["
     }
   }
   const marker = resolve(directory, `${name}-unexpected-adapter-start`);
-  const rerun = output => spawnSync(process.execPath, [`scripts/run-${name}.mjs`, ...selector, "--output", output,
+  const rerun = (output, selected = selector) => spawnSync(process.execPath, [`scripts/run-${name}.mjs`, ...selected, "--output", output,
     "--", process.execPath, "-e", "require('node:fs').writeFileSync(process.argv[1], 'ran')", marker], {encoding: "utf8"});
   const failedOutput = resolve(directory, `${name}-failure.json`);
   const artifacts = [failedOutput, `${failedOutput}.stdout.log`, `${failedOutput}.stderr.log`];
@@ -48,6 +56,15 @@ for (const [name, selector] of [["compatibility", ["--platform", "windows"]], ["
     assert.equal(existsSync(output + (suffix === ".stdout.log" ? ".stderr.log" : ".stdout.log")), false);
   }
   assert.equal(existsSync(marker), false, "An output conflict must stop the adapter before it starts");
+  if (name === "compatibility") {
+    for (const platform of Object.values(platforms).filter(value => value !== localPlatform)) {
+      const output = resolve(directory, `wrong-${platform}.json`);
+      const rejected = rerun(output, ["--platform", platform]);
+      assert.notEqual(rejected.status, 0);
+      assert.match(rejected.stderr, /Run the compatibility wrapper on the target OS/);
+      for (const path of [marker, output, `${output}.stdout.log`, `${output}.stderr.log`]) assert.equal(existsSync(path), false);
+    }
+  }
 }
 for (const code of [0, 7]) {
   const output = resolve(directory, `metrics-missing-${code}.json`);

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { machine, release } from "node:os";
 import { resolve } from "node:path";
 import { reserveValidationOutput } from "./validation-output.mjs";
 
@@ -9,6 +10,8 @@ const outputIndex = process.argv.indexOf("--output");
 assert.ok(separator > 0 && platformIndex > 0 && outputIndex > 0, "Usage: node scripts/run-compatibility.mjs --platform windows --output result.json -- adapter [args]");
 const platform = process.argv[platformIndex + 1];
 assert.ok(["windows", "macos", "linux"].includes(platform));
+const localPlatform = { win32: "windows", darwin: "macos", linux: "linux" }[process.platform];
+assert.equal(platform, localPlatform, `Run the compatibility wrapper on the target OS: requested ${platform}, local runtime is ${process.platform}`);
 const adapter = process.argv.slice(separator + 1);
 assert.ok(adapter.length > 0, "A real platform adapter command is required");
 const output = resolve(process.argv[outputIndex + 1]);
@@ -25,6 +28,7 @@ record.writeLogs(result.stdout, result.stderr);
 record.writeReport({
   schemaVersion: 1,
   platform,
+  host: { platform: process.platform, nodeArch: process.arch, machine: machine(), kernelRelease: release() },
   startedAt,
   command: adapter,
   exitCode: result.status,
