@@ -53,6 +53,10 @@ class GroupBrowserIntegrationTest {
     }
 
     private void runBrowser(ServletWebServerApplicationContext context, String password, String scenario) throws Exception {
+        runBrowser(context, password, scenario, null);
+    }
+
+    private void runBrowser(ServletWebServerApplicationContext context, String password, String scenario, Runnable onReady) throws Exception {
         var profile = Files.createTempDirectory(workspace.resolve("target"), "group-browser-" + scenario + "-");
         var browser = new ProcessBuilder("node", "tests/group-browser.mjs", profile.toString(), clientExecutable.toString())
                 .directory(ui.toFile()).redirectErrorStream(true).redirectOutput(profile.resolve("scenario.log").toFile()).start();
@@ -60,11 +64,38 @@ class GroupBrowserIntegrationTest {
             try (var input = browser.getOutputStream()) {
                 context.getBean(ObjectMapper.class).writeValue(input, Map.of("port", context.getWebServer().getPort(), "password", password, "scenario", scenario));
             }
+            if (onReady != null) {
+                var ready = profile.resolve("ready");
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
+                while (!Files.exists(ready) && browser.isAlive() && System.nanoTime() < deadline) Thread.sleep(100);
+                assertThat(ready).as("browser logged in: %s", profile).isRegularFile();
+                onReady.run();
+            }
             assertThat(browser.waitFor(250, TimeUnit.SECONDS)).as("browser deadline: %s", profile).isTrue();
             assertThat(browser.exitValue()).as("browser steps: %s", profile.resolve("scenario.log")).isZero();
         } finally {
             browser.descendants().forEach(ProcessHandle::destroyForcibly);
             browser.destroyForcibly();
+        }
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
+    void revokedDesktopSessionExplainsLossAndCanLoginAgain() throws Exception {
+        prepareClients();
+        try (var postgres = EmbeddedPostgres.start(); var context = start(postgres)) {
+            var identities = context.getBean(IdentityRepository.class);
+            String password = UUID.randomUUID().toString(), user = UUID.randomUUID().toString();
+            String hash = context.getBean(CredentialProtector.class).hashPassword(password);
+            identities.insertUser(new UserAccount(user, "owner@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            context.getBean(GroupService.class).createGroup(user, "会话恢复验证群", null, "");
+            var sql = context.getBean(JdbcTemplate.class);
+            runBrowser(context, password, "session-revoked", () -> {
+                assertThat(sql.queryForObject("SELECT count(*) FROM auth_sessions WHERE user_id=? AND revoked_at IS NULL", Integer.class, user)).isOne();
+                identities.revokeAllSessions(user, Instant.now());
+            });
+            assertThat(sql.queryForList("SELECT revoked_at IS NOT NULL FROM auth_sessions WHERE user_id=?", Boolean.class, user))
+                    .containsExactlyInAnyOrder(true, false);
         }
     }
 

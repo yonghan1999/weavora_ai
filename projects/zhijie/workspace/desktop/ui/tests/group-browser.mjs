@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -105,7 +105,7 @@ async function page(email, clientPort = port) {
     await wait('group list loaded', select('.group-list-toolbar') + ' !== null');
   }
   await login();
-  return { action, click, wait, submit, evaluate, async relogin() { await call('Page.reload'); await login(); } };
+  return { action, click, wait, submit, evaluate, login, async relogin() { await call('Page.reload'); await login(); } };
 }
 async function friendLifecycle(owner, member, link) {
   const inboxEmpty = `document.querySelector('[role=dialog]')?.textContent.includes('暂无好友申请')`;
@@ -222,6 +222,7 @@ try {
     } else { pending.get(message.id)?.(message); pending.delete(message.id); }
   };
   if (scenario === 'social') await socialScenario();
+  else if (scenario === 'session-revoked') await sessionRevoked();
   else if (scenario === 'history-delete') await historyDelete();
   else if (scenario === 'room-channels') await roomChannels();
   else {
@@ -239,6 +240,19 @@ try {
   if (browser.exitCode === null && browser.signalCode === null) browser.kill();
   await browserClosed;
   await rm(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 });
+}
+
+async function sessionRevoked() {
+  const client = await page('owner@example.test');
+  const groupVisible = `!!document.querySelector('[data-action=open-group]') && document.body.innerText.includes('会话恢复验证群')`;
+  await client.wait('private group loaded before revocation', groupVisible);
+  writeFileSync(join(process.argv[2], 'ready'), '', { flag: 'wx' });
+  await until('revoked native session returns to login', () => client.evaluate(`!!document.querySelector('.auth-card')`), 35000);
+  assert.equal(await client.evaluate(`document.querySelector('#feedback').textContent`), '登录状态已失效，请重新登录。');
+  assert.equal(await client.evaluate(`document.querySelector('[name=password]').value === '' && !document.querySelector('.rail') && !document.body.innerText.includes('会话恢复验证群')`), true);
+  await client.login();
+  await client.wait('new session can read the private group', groupVisible);
+  console.log('REVOKED_SESSION_EXPLAINED_AND_NEW_SESSION_READ_PRIVATE_GROUP');
 }
 
 async function historyDelete() {
