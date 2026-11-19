@@ -140,7 +140,8 @@ function groupView(s) {
       .filter((r) => r.groupId === g.id)
       .map(
         (r) =>
-          `<div class="group-room-item"><strong>${e(r.name)}</strong>${roomEntry(s, r)}</div>`,
+          `<div class="group-room-item"><strong>${e(r.name)}</strong>${r.openState === "PAUSED" && !(s.activity && s.roomId === r.id) && roomPermissions(s, r).manage
+            ? button("重新开放", "reopen-room", "small", `data-id="${e(r.id)}" ${s.busy ? "disabled" : ""}`) : roomEntry(s, r)}</div>`,
       )
       .join("") || '<div class="empty-state">暂无房间</div>'
   }${button("创建房间", "create-room", "ghost")}<div class="aside-divider"></div><div class="panel-title"><h2>群组成员</h2></div>${s.groupMembers.map((m) => `<div class="friend-item">${avatar(m.userId)}<span class="friend-copy"><strong>${e(m.userId === s.userId ? "我" : m.userId)}</strong><small>${{ OWNER: "群主", ADMIN: "管理员", MEMBER: "成员" }[m.role] || e(m.role)}</small><span class="member-presence">${m.presence === "ONLINE" ? "在线" : m.presence === "OFFLINE" ? "离线" : "状态未知"}</span></span></div>`).join("")}</aside></div>`;

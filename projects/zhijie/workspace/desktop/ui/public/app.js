@@ -214,6 +214,7 @@ const errors = {
   ACTIVITY_MEMBER_CHANGED: "成员已离开或重新加入，请刷新成员列表后重试。",
   VOICE_CAPACITY_LIMITED: "语音服务尚未接入或暂不可用。",
   ROOM_PASSWORD_REQUIRED: "请输入房间密码。",
+  ROOM_REOPEN_OUTSIDE_REQUIRED: "请先离开该房间，再在群页重新开放。",
   ROOM_PASSWORD_INVALID: "房间密码不正确。",
   ROOM_CAPACITY_LIMITED: "房间已满，请稍后再试。",
   RESOURCE_NOT_ALLOWED: "此操作尚未接入。",
@@ -921,7 +922,7 @@ const actions = {
         field("gameName", "游戏名称", "text", r.gameName, 'maxlength="80"') +
         field("description", "介绍", "text", r.description, 'maxlength="500"') +
         field("password", "新的房间密码（留空清除）", "password") +
-        `<div class="management-actions">${permissions.assign ? button("指定房主", "assign-room-owner") : ""}${button(r.openState === "OPEN" ? "暂停加入" : "开放加入", "toggle-room")}${button("结束活动", "end-activity", "danger")}${button("删除房间", "delete-room", "danger")}</div>` : `<div class="modal-note"><strong>${e(r.name)}</strong><p>${e(r.description)}</p><p>房主：${e(r.ownerUserId)}</p></div>`),
+        `<div class="management-actions">${permissions.assign ? button("指定房主", "assign-room-owner") : ""}${r.openState === "OPEN" ? button("暂停加入", "pause-room") : "<span>已暂停加入，请在房外的群页重新开放。</span>"}${button("结束活动", "end-activity", "danger")}${button("删除房间", "delete-room", "danger")}</div>` : `<div class="modal-note"><strong>${e(r.name)}</strong><p>${e(r.description)}</p><p>房主：${e(r.ownerUserId)}</p></div>`),
       permissions.manage ? async (data) => {
         await request(
           "room-update",
@@ -939,14 +940,18 @@ const actions = {
       "保存",
     );
   },
-  "toggle-room": () =>
+  "reopen-room": target => {
+    const room = s.rooms.find(item => item.id === target.dataset.id && item.groupId === s.groupId);
+    if (!room || room.openState !== "PAUSED" || (s.activity && s.roomId === room.id) || !roomPermissions(s, room).manage) return;
+    confirmation("重新开放房间", `允许成员再次加入「${room.name}」。此操作不会创建活动或替你加入。`, async () => {
+      await request("room-open", room.id, {});
+      await refresh();
+    });
+  },
+  "pause-room": () =>
     run(async () => {
       const r = s.rooms.find((r) => r.id === s.roomId);
-      await request(
-        r.openState === "OPEN" ? "room-pause" : "room-open",
-        r.id,
-        {},
-      );
+      await request("room-pause", r.id, {});
       closeDialog();
       await refresh();
     }),

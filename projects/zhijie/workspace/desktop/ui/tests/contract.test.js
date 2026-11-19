@@ -8,6 +8,25 @@ test("desktop adapter exposes the versioned command protocol", () => {
   assert.equal(COMMAND_PROTOCOL_VERSION, 1);
 });
 
+test("only current group managers outside the paused room see its reopen action", () => {
+  const room = { id: "room", groupId: "group", name: "目标房间", openState: "PAUSED" };
+  const state = { userId: "viewer", view: "group", groupId: "group", groups: [{ id: "group", name: "test" }],
+    rooms: [room], drafts: {}, groupMembers: [], messages: [] };
+  for (const [role, owner, expected] of [["OWNER", "other", true], ["ADMIN", "other", true],
+    ["MEMBER", "viewer", true], ["MEMBER", "other", false], [null, "viewer", false]]) {
+    state.groupMembers = role ? [{ userId: state.userId, role }] : [];
+    room.ownerUserId = owner;
+    assert.equal(renderApp(state).includes('data-action="reopen-room"'), expected);
+  }
+  state.groupMembers = [{ userId: state.userId, role: "ADMIN" }];
+  state.activity = { activityId: "activity" }; state.roomId = room.id;
+  assert.ok(!renderApp(state).includes('data-action="reopen-room"'));
+  state.roomId = "another-room";
+  assert.ok(renderApp(state).includes('data-action="reopen-room"'));
+  room.openState = "OPEN";
+  assert.ok(!renderApp(state).includes('data-action="reopen-room"'));
+});
+
 test("network panel explains only the current activity's unresolved fault", () => {
   const state = { userId: "viewer", view: "room", roomTab: "network", roomId: "r", groupId: "g",
     groups: [{id: "g", name: "group"}], rooms: [{id: "r", name: "room"}], members: [],
