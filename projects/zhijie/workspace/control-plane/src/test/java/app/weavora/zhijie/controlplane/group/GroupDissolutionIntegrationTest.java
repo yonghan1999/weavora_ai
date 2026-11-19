@@ -30,7 +30,7 @@ class GroupDissolutionIntegrationTest {
                 "--server.address=127.0.0.1", "--server.port=0", "--zhijie.scheduling.enabled=false",
                 "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
                 "--spring.datasource.username=postgres", "--spring.datasource.password=",
-                "--zhijie.voice.enabled=true", "--zhijie.voice.api-key=dissolution-test",
+                "--zhijie.voice.enabled=true", "--zhijie.voice.url=wss://voice.example.test", "--zhijie.voice.api-key=dissolution-test",
                 "--zhijie.voice.api-secret=controlled-dissolution-test-secret-123456789")) {
             var identities = context.getBean(IdentityRepository.class);
             var identity = context.getBean(IdentityService.class);

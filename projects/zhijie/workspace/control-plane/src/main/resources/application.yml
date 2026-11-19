@@ -37,7 +37,7 @@ zhijie:
     validation-per-second: ${ZHIJIE_RELAY_VALIDATION_PER_SECOND:1024}
   voice:
     enabled: ${ZHIJIE_VOICE_ENABLED:false}
-    url: ${ZHIJIE_VOICE_URL:ws://127.0.0.1:7880}
+    url: ${ZHIJIE_VOICE_URL:}
     admin-url: ${ZHIJIE_VOICE_ADMIN_URL:http://127.0.0.1:7880}
     api-key: ${ZHIJIE_VOICE_API_KEY:}
     api-secret: ${ZHIJIE_VOICE_API_SECRET:}

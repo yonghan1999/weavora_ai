@@ -56,7 +56,7 @@ class DisabledAccountIntegrationTest {
         try (var postgres = EmbeddedPostgres.start(); var context = application.run(
                 "--zhijie.scheduling.enabled=false", "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
                 "--spring.datasource.username=postgres", "--spring.datasource.password=",
-                "--zhijie.voice.enabled=true", "--zhijie.voice.api-key=disabled-test",
+                "--zhijie.voice.url=wss://voice.example.test", "--zhijie.voice.enabled=true", "--zhijie.voice.api-key=disabled-test",
                 "--zhijie.voice.api-secret=controlled-disabled-account-secret-123456789")) {
             var identities = context.getBean(IdentityRepository.class);
             var identity = context.getBean(IdentityService.class);

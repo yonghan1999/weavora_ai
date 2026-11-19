@@ -35,7 +35,8 @@ public class GrantService {
 
     public GrantService(GrantRepository repository, ActivityRepository activities, IdentityService identity,
                         CredentialProtector credentials, VoiceGateway voiceGateway, Clock clock,
-                        @org.springframework.beans.factory.annotation.Value("${zhijie.voice.url:ws://127.0.0.1:7880}") String voiceUrl,
+                        @org.springframework.beans.factory.annotation.Value("${zhijie.voice.url:}") String voiceUrl,
+                        @org.springframework.beans.factory.annotation.Value("${zhijie.voice.admin-url:http://127.0.0.1:7880}") String adminUrl,
                         app.weavora.zhijie.controlplane.network.NetworkPolicyService policies,
                         app.weavora.zhijie.controlplane.observability.AdmissionService admission,
                         app.weavora.zhijie.controlplane.group.GroupService groups) {
@@ -45,10 +46,40 @@ public class GrantService {
         this.credentials = credentials;
         this.voiceGateway = voiceGateway;
         this.clock = clock;
-        this.voiceUrl = voiceUrl;
+        this.voiceUrl = voiceGateway.isAvailable() ? requireSignalingUrl(voiceUrl, adminUrl) : "";
         this.policies = policies;
         this.admission = admission;
         this.groups = groups;
+    }
+
+    static String requireSignalingUrl(String value, String adminUrl) {
+        java.net.URI entry;
+        java.net.URI admin;
+        try {
+            entry = java.net.URI.create(value);
+            admin = java.net.URI.create(adminUrl);
+        } catch (IllegalArgumentException invalid) {
+            throw new IllegalArgumentException("VOICE_SIGNALING_URL_INVALID");
+        }
+        String host = entry.getHost();
+        boolean local = isLoopback(host);
+        boolean secure = "wss".equalsIgnoreCase(entry.getScheme());
+        if (host == null || (!secure && !(local && "ws".equalsIgnoreCase(entry.getScheme())))
+                || entry.getRawUserInfo() != null || entry.getRawQuery() != null || entry.getRawFragment() != null
+                || !(entry.getPath().isEmpty() || entry.getPath().equals("/"))
+                || entry.getPort() == 0 || entry.getPort() > 65535) {
+            throw new IllegalArgumentException("VOICE_SIGNALING_URL_INVALID");
+        }
+        int port = entry.getPort() == -1 ? (secure ? 443 : 80) : entry.getPort();
+        int adminPort = admin.getPort() == -1 ? ("https".equalsIgnoreCase(admin.getScheme()) ? 443 : 80) : admin.getPort();
+        if (port == adminPort && (host.equalsIgnoreCase(admin.getHost()) || local && isLoopback(admin.getHost()))) {
+            throw new IllegalArgumentException("VOICE_SIGNALING_PROXY_REQUIRED");
+        }
+        return value;
+    }
+
+    private static boolean isLoopback(String host) {
+        return "127.0.0.1".equals(host) || "localhost".equalsIgnoreCase(host) || "[::1]".equals(host);
     }
 
     @Transactional
