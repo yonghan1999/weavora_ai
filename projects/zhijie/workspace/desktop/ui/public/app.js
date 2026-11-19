@@ -57,7 +57,7 @@ async function refreshRuntime() {
     if (s.busy || epoch !== current || s.userId !== userId || s.activity !== activity) return;
     if (!snapshot.userId) {
       clearSession();
-      Object.assign(s, snapshot);
+      Object.assign(s, snapshot, { error: "登录状态已失效，请重新登录。" });
       epoch++;
       closeDialog();
       render();

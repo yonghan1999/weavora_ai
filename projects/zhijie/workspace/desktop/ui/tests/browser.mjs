@@ -122,7 +122,7 @@ if(command==='activity_join'){activity={activityId:'a1',leaseId:'lease-room',voi
 if(command==='activity_leave'){activity=null;return snapshot();}
 if(command==='voice_connect'){if(globalThis.holdVoice)await new Promise(done=>globalThis.resumeVoice=done);voice.state='FAILED';voice.failureCode='VOICE_CAPACITY_LIMITED';throw 'VOICE_CAPACITY_LIMITED';}
 if(command==='voice_snapshot'){if(globalThis.failVoiceRead)throw 'SERVICE_UNAVAILABLE';return structuredClone(voice);}
-if(command==='state_snapshot')return snapshot();
+if(command==='state_snapshot'){if(globalThis.failStateRead){globalThis.failedStateReads++;throw 'SERVICE_UNAVAILABLE';}return snapshot();}
 if(command==='network_connect'){if(globalThis.holdNetwork)await new Promise(done=>globalThis.resumeNetwork=done);throw 'HELPER_UNAVAILABLE';}
 if(command==='network_snapshot'){if(globalThis.failNetworkRead)throw 'SERVICE_UNAVAILABLE';return {status:{state:activity?(globalThis.networkState??'FAILED'):'DISCONNECTED',activityId:activity?.activityId},peers:[]};}
 if(command==='voice_set_mute'){voice.muted=p.muted;return voice;}
@@ -780,7 +780,7 @@ try {
     'document.querySelector("[data-form=dialog]").requestSubmit()',
   );
   await delay(250);
-  await check("确认后返回登录", '!!document.querySelector(".auth-card")');
+  await check("主动退出返回登录且不误报会话失效", '!!document.querySelector(".auth-card") && document.querySelector("#feedback").textContent===""');
   await check("本地退出后显示尚未确认的清理提示", 'document.getElementById("toast").textContent.includes("已退出本机账号") && document.getElementById("toast").textContent.includes("尚未确认")');
   await click('[data-action="auth-register"]');
   await fill('[name="email"]', "user@example.test");
@@ -795,9 +795,17 @@ try {
   await fill('[name="password"]', "test-password-123");
   await evaluate('document.querySelector("[data-form=auth]").requestSubmit()');
   await delay(300);
-  await evaluate('sessionExpired=true');
+  await evaluate('globalThis.failedStateReads=0;globalThis.failStateRead=true');
   await delay(1300);
-  await check("未入房时会话失效也返回登录", '!!document.querySelector(".auth-card") && !document.querySelector(".rail")');
+  await check("暂时无法读取会话不等于登录失效", 'failedStateReads>0 && !!document.querySelector(".rail") && !document.querySelector(".auth-card")');
+  await evaluate('globalThis.failStateRead=false;sessionExpired=true');
+  await delay(1300);
+  await check("会话失效时告知原因且不保留密码", 'document.querySelector("#feedback")?.textContent.includes("登录状态已失效，请重新登录") && !document.querySelector(".rail") && document.querySelector("[name=password]").value===""');
+  await evaluate('sessionExpired=false');
+  await fill('[name="password"]', "test-password-123");
+  await evaluate('document.querySelector("[data-form=auth]").requestSubmit()');
+  await delay(300);
+  await check("失效后重新登录恢复大厅并清除旧提示", '!!document.querySelector(".rail") && !document.body.innerText.includes("登录状态已失效")');
   assert.deepEqual(errors, []);
   console.log(
     JSON.stringify(
