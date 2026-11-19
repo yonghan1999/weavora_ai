@@ -18,12 +18,18 @@
             #{generation}, #{policyRevision}, #{occurredAt}, #{deliveredAt}, #{attempts})
     </insert>
     <select id="listAfter" resultMap="OutboxEvent">
-        SELECT * FROM outbox_events WHERE sequence &gt; #{cursor} ORDER BY sequence LIMIT #{limit}
+        SELECT assigned.sequence, event.event_id, event.group_id, event.activity_id, event.aggregate_id,
+            event.type, event.payload, event.generation, event.policy_revision, event.occurred_at, event.delivered_at, event.attempts
+        FROM sync_event_sequences assigned JOIN outbox_events event ON event.event_id=assigned.event_id
+        WHERE assigned.sequence &gt; #{cursor} ORDER BY assigned.sequence LIMIT #{limit}
     </select>
     <select id="listUndelivered" resultMap="OutboxEvent">
-        SELECT * FROM outbox_events WHERE delivered_at IS NULL ORDER BY sequence LIMIT #{limit}
+        SELECT assigned.sequence, event.event_id, event.group_id, event.activity_id, event.aggregate_id,
+            event.type, event.payload, event.generation, event.policy_revision, event.occurred_at, event.delivered_at, event.attempts
+        FROM sync_event_sequences assigned JOIN outbox_events event ON event.event_id=assigned.event_id
+        WHERE event.delivered_at IS NULL ORDER BY assigned.sequence LIMIT #{limit}
     </select>
-    <select id="latestSequence" resultType="long">SELECT COALESCE(MAX(sequence), 0) FROM outbox_events</select>
+    <select id="latestSequence" resultType="long">SELECT COALESCE(MAX(sequence), 0) FROM sync_event_sequences</select>
     <update id="markDelivered">UPDATE outbox_events SET delivered_at = NOW() WHERE event_id = #{eventId}</update>
     <update id="recordFailure">UPDATE outbox_events SET attempts = attempts + 1 WHERE event_id = #{eventId}</update>
 </mapper>
