@@ -1,4 +1,5 @@
 import { groupAvatarImage } from './group-avatar.js';
+import { networkErrorText } from './network-errors.js';
 export const escapeHtml = (value) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -154,12 +155,16 @@ function memberVoice(s, member) {
 function room(s) {
   const r = s.rooms.find((r) => r.id === s.roomId);
   if (!r || !s.activity) return lobby(s);
+  const status = s.network?.status;
+  const networkFault = status?.activityId === s.activity.activityId && status?.state === s.activity.network
+    && ["FAILED", "REVOKED"].includes(s.activity.network) && status.errorCode
+    ? networkErrorText(status.errorCode) || "联机失败，请重试；若仍失败，请查看辅助服务诊断。" : null;
   const side =
     s.roomTab === "chat"
       ? chat(s)
       : s.roomTab === "members"
         ? `<div class="network-panel">${s.members.map(member => activityMemberRow(s, r, member)).join("")}${button("刷新成员", "refresh-room-members", "ghost small")}</div>`
-        : `<div class="network-panel"><div class="network-hero">${chip("联机", s.activity.network)}<h3>${statusLabel(s.activity.network)}</h3><p>虚拟网络建立后，才能通过成员地址连接游戏。</p></div>${s.activity.network === "CONNECTED" ? `<div class="member-ip-heading"><strong>我的虚拟地址</strong></div><div class="member-ip-row"><span class="ip-address">${e(s.activity.virtualIpv4 || "暂不可用")}</span></div>${(s.network?.peers || []).map(peer => `<div class="member-ip-row"><span>${e(peer.userId)}</span><span class="ip-address">${e(peer.virtualIpv4)}</span></div>`).join("")}` : ""}<p class="runtime-note">${s.activity.network === "CONNECTED" ? "通过队友的虚拟地址连接游戏。" : "当前联机功能尚未就绪，暂时无法通过虚拟地址连接游戏。"}</p>${button("重试联机", "retry-network", "ghost small")}</div>`;
+        : `<div class="network-panel"><div class="network-hero">${chip("联机", s.activity.network)}<h3>${statusLabel(s.activity.network)}</h3><p>虚拟网络建立后，才能通过成员地址连接游戏。</p></div>${s.activity.network === "CONNECTED" ? `<div class="member-ip-heading"><strong>我的虚拟地址</strong></div><div class="member-ip-row"><span class="ip-address">${e(s.activity.virtualIpv4 || "暂不可用")}</span></div>${(s.network?.peers || []).map(peer => `<div class="member-ip-row"><span>${e(peer.userId)}</span><span class="ip-address">${e(peer.virtualIpv4)}</span></div>`).join("")}` : ""}<p class="runtime-note">${s.activity.network === "CONNECTED" ? "通过队友的虚拟地址连接游戏。" : "当前联机功能尚未就绪，暂时无法通过虚拟地址连接游戏。"}</p>${networkFault ? `<p class="runtime-note">${e(networkFault)}</p>` : ""}${button("重试联机", "retry-network", "ghost small")}</div>`;
   return `<div class="room-layout"><main class="room-stage"><div class="room-top"><div class="room-heading"><button class="back-button" data-view="lobby" aria-label="返回大厅">${icon("back", 17)}</button><div><h1>${e(r.name)}</h1><p>${e(r.gameName || "游戏房间")} · ${e(s.groups.find((g) => g.id === r.groupId)?.name)}</p></div></div><div class="room-flags">${chip("语音", s.voice?.state)}${chip("联机", s.activity.network)}${button("房间设置", "manage-room", "ghost small")}</div></div><div class="room-alert">${e(s.voice?.failureCode ? "语音服务暂不可用，可单独重试。" : "")}</div><div class="stage-heading"><div><span class="stage-label">语音房间</span><h2>队友已就位</h2></div><span>${s.members.length} / 12 人</span></div><div class="party-grid">${s.members.map((m) => `<article class="player-tile">${avatar(m.userId === s.userId ? "我" : m.userId)}<div class="player-name"><div><strong>${m.userId === s.userId ? "我" : e(m.userId)}</strong><small>${memberVoice(s, m)}</small></div>${icon("mic", 15)}</div></article>`).join("")}<article class="player-tile empty-player"><button data-action="invite-member">${icon("plus", 24)}<span>邀请队友</span></button></article></div></main><aside class="room-side"><div class="side-tabs">${[
     ["chat", "群聊"],
     ["network", "联机"],

@@ -282,6 +282,9 @@ async function roomChannels() {
     await client.wait('both real failures are visible', `document.querySelectorAll('.room-flags [data-connection=failed]').length===2`);
     assert.equal((await native(client, 'voice_snapshot')).failureCode, 'VOICE_CAPACITY_LIMITED');
     assert.equal((await native(client, 'network_snapshot')).status.errorCode, 'HELPER_UNAVAILABLE');
+    await client.click('[data-tab=network]');
+    await client.wait('helper failure remains explained beside retry', `document.querySelector('.network-panel')?.innerText.includes('联机辅助服务未启动') && !!document.querySelector('.network-panel [data-action=retry-network]') && !document.querySelector('.network-panel .ip-address')`);
+    await client.click('[data-tab=chat]');
   }
   await member.evaluate(`document.querySelector('#message-input').value='通道故障时仍可聊天';document.querySelector('[data-form=message]').requestSubmit()`);
   await owner.wait('chat delivered despite both channel failures', `Array.from(document.querySelectorAll('.message-text')).some(node=>node.textContent==='通道故障时仍可聊天')`);
