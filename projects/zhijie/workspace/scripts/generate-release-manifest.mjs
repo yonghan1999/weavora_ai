@@ -5,6 +5,13 @@ import { resolve } from "node:path";
 const root = process.cwd();
 const files = [
   "desktop/shell/tauri.conf.json",
+  "desktop/shell/tauri.windows.conf.json",
+  "packaging/windows/installer-hooks.nsh",
+  "packaging/windows/build-candidate.ps1",
+  "packaging/windows/verify-package.py",
+  "packaging/windows/prepare-wintun.py",
+  "scripts/local-preview/start-helper.ps1",
+  "scripts/local-preview/HelperInstallPolicy.psm1",
   "packaging/install-policy.json",
   "packaging/windows/helper-install.json",
   "packaging/macos/app.weavora.zhijie.helper.plist",

@@ -10,6 +10,23 @@ assert.ok(tauri.bundle.targets.includes("nsis"));
 assert.ok(tauri.bundle.targets.includes("dmg"));
 assert.ok(tauri.bundle.targets.includes("appimage"));
 
+const windows = JSON.parse(readFileSync("desktop/shell/tauri.windows.conf.json", "utf8"));
+assert.deepEqual(windows.bundle.targets, ["nsis"]);
+assert.equal(windows.bundle.windows.nsis.installMode, "perMachine");
+assert.equal(windows.bundle.windows.nsis.installerHooks, "../../packaging/windows/installer-hooks.nsh");
+assert.deepEqual(windows.bundle.resources, {
+  "../../target/windows-bundle/zhijie-helper.exe": "zhijie-helper.exe",
+  "../../scripts/local-preview/start-helper.ps1": "start-helper.ps1",
+  "../../scripts/local-preview/HelperInstallPolicy.psm1": "HelperInstallPolicy.psm1",
+  "../../target/windows-bundle/wintun.dll": "wintun.dll",
+  "../../target/windows-bundle/WINTUN-LICENSE.txt": "WINTUN-LICENSE.txt",
+  "../../target/windows-bundle/wintun.h": "wintun.h",
+  "../../target/windows-bundle/wintun-source.json": "wintun-source.json",
+});
+const preview = JSON.parse(readFileSync("packaging/windows/preview.conf.json", "utf8"));
+assert.equal(preview.bundle.resources, undefined, "Preview resources must derive from the Windows configuration");
+assert.equal(preview.bundle.windows.nsis.installMode, "currentUser");
+
 const policy = JSON.parse(readFileSync("packaging/install-policy.json", "utf8"));
 assert.equal(policy.upgradeRequiresCompatibleHelper, true);
 assert.equal(policy.uninstall.removeDefaultRoute, false);

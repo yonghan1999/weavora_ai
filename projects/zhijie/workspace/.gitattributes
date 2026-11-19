@@ -1,0 +1,15 @@
+# Preserve the exact checkout bytes hashed by the release contract.
+desktop/shell/tauri.conf.json text eol=lf
+desktop/shell/tauri.windows.conf.json text eol=lf
+packaging/windows/installer-hooks.nsh text eol=lf
+packaging/windows/build-candidate.ps1 text eol=lf
+packaging/windows/verify-package.py text eol=lf
+packaging/windows/prepare-wintun.py text eol=lf
+scripts/local-preview/start-helper.ps1 text eol=crlf
+scripts/local-preview/HelperInstallPolicy.psm1 text eol=crlf
+packaging/install-policy.json text eol=lf
+packaging/windows/helper-install.json text eol=lf
+packaging/macos/app.weavora.zhijie.helper.plist text eol=lf
+packaging/linux/zhijie-helper.service text eol=lf
+release/support-matrix.json text eol=lf
+release/manifest.json text eol=lf

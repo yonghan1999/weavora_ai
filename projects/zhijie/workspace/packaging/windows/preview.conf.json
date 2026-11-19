@@ -1,0 +1,14 @@
+{
+  "productName": "织界开发预览",
+  "identifier": "app.weavora.zhijie.preview",
+  "bundle": {
+    "targets": ["nsis"],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false,
+        "languages": ["SimpChinese"]
+      }
+    }
+  }
+}

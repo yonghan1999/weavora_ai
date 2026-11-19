@@ -7,8 +7,50 @@
     {
       "path": "desktop/shell/tauri.conf.json",
       "artifactClass": "configuration",
-      "bytes": 782,
-      "sha256": "53a0fef54c7035c447250112122811862949aec5d6adfe6f179012e3eb450f1f"
+      "bytes": 928,
+      "sha256": "de82f4c42e5c6ef12c36ea7c0f567fcc845ea113417544e05e69b685e2f45d33"
+    },
+    {
+      "path": "desktop/shell/tauri.windows.conf.json",
+      "artifactClass": "configuration",
+      "bytes": 824,
+      "sha256": "b44995def6efec25557cfd1e713760fcbb5b1f98c0e2b554214a67e3ad8de20e"
+    },
+    {
+      "path": "packaging/windows/installer-hooks.nsh",
+      "artifactClass": "configuration",
+      "bytes": 2092,
+      "sha256": "a6ceaf21f932d086785fbc0e0be066920ac74de578b4a6bd88d3f1eae373c224"
+    },
+    {
+      "path": "packaging/windows/build-candidate.ps1",
+      "artifactClass": "configuration",
+      "bytes": 1961,
+      "sha256": "2643fbd8e5eb49952ab56777773248a48c37ac3903cb0063699f8bc92c089701"
+    },
+    {
+      "path": "packaging/windows/verify-package.py",
+      "artifactClass": "configuration",
+      "bytes": 3301,
+      "sha256": "c3bcf25fb5b3c02d3fc67a825f1456e228c474d767f0f3f20b92fcb8ddffb6ac"
+    },
+    {
+      "path": "packaging/windows/prepare-wintun.py",
+      "artifactClass": "configuration",
+      "bytes": 6335,
+      "sha256": "72108a28e4b93eca27afb2e63688f4b52a766c009c1e1dfcf6c0edd7cdcd1c7b"
+    },
+    {
+      "path": "scripts/local-preview/start-helper.ps1",
+      "artifactClass": "configuration",
+      "bytes": 3597,
+      "sha256": "07c8123abadb1ac0afac3dbab709fbf0bcf75d78b79232156b32d50f5a11080d"
+    },
+    {
+      "path": "scripts/local-preview/HelperInstallPolicy.psm1",
+      "artifactClass": "configuration",
+      "bytes": 2697,
+      "sha256": "e7a9b17b060825704355dfc9a590f1a6df39539a835581b555d1a5ddcdbd5a40"
     },
     {
       "path": "packaging/install-policy.json",

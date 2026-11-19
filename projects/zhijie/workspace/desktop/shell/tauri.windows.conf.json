@@ -1,0 +1,22 @@
+{
+  "bundle": {
+    "targets": ["nsis"],
+    "resources": {
+      "../../target/windows-bundle/zhijie-helper.exe": "zhijie-helper.exe",
+      "../../scripts/local-preview/start-helper.ps1": "start-helper.ps1",
+      "../../scripts/local-preview/HelperInstallPolicy.psm1": "HelperInstallPolicy.psm1",
+      "../../target/windows-bundle/wintun.dll": "wintun.dll",
+      "../../target/windows-bundle/WINTUN-LICENSE.txt": "WINTUN-LICENSE.txt",
+      "../../target/windows-bundle/wintun.h": "wintun.h",
+      "../../target/windows-bundle/wintun-source.json": "wintun-source.json"
+    },
+    "windows": {
+      "nsis": {
+        "installerHooks": "../../packaging/windows/installer-hooks.nsh",
+        "installMode": "perMachine",
+        "displayLanguageSelector": false,
+        "languages": ["SimpChinese"]
+      }
+    }
+  }
+}
