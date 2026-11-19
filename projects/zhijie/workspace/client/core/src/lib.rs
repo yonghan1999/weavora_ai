@@ -3,6 +3,7 @@ pub mod model;
 pub mod policy;
 pub mod protocol;
 pub mod state;
+pub mod sync;
 
 pub use api::{AuthTokens, ClientError, ControlPlaneClient, NetworkGrant, VoiceGrant};
 pub use model::{ActivityContext, ActivityResult, ChannelStatus, ClientSnapshot};
