@@ -1,6 +1,8 @@
 package app.weavora.zhijie.controlplane.group;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
+import app.weavora.zhijie.controlplane.activity.ActivityRepository;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.identity.*;
 import app.weavora.zhijie.controlplane.message.MessageService;
@@ -70,12 +72,43 @@ class GroupBrowserIntegrationTest {
                 while (!Files.exists(ready) && browser.isAlive() && System.nanoTime() < deadline) Thread.sleep(100);
                 assertThat(ready).as("browser logged in: %s", profile).isRegularFile();
                 onReady.run();
+                Files.createFile(profile.resolve("checked"));
             }
             assertThat(browser.waitFor(250, TimeUnit.SECONDS)).as("browser deadline: %s", profile).isTrue();
             assertThat(browser.exitValue()).as("browser steps: %s", profile.resolve("scenario.log")).isZero();
         } finally {
             browser.descendants().forEach(ProcessHandle::destroyForcibly);
             browser.destroyForcibly();
+        }
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
+    void memberRetriesProtectedRoomWithoutLosingOriginalLease() throws Exception {
+        prepareClients();
+        try (var postgres = EmbeddedPostgres.start(); var context = start(postgres)) {
+            var identities = context.getBean(IdentityRepository.class);
+            String password = UUID.randomUUID().toString();
+            String hash = context.getBean(CredentialProtector.class).hashPassword(password);
+            String owner = UUID.randomUUID().toString(), member = UUID.randomUUID().toString();
+            identities.insertUser(new UserAccount(owner, "owner@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            identities.insertUser(new UserAccount(member, "member@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            var groups = context.getBean(GroupService.class);
+            var group = groups.createGroup(owner, "切房验证群", null, "");
+            groups.acceptInvitation(member, groups.invite(owner, group.id(), member).id());
+            var rooms = context.getBean(app.weavora.zhijie.controlplane.room.RoomService.class);
+            var original = rooms.startActivity(owner, rooms.createRoom(owner, group.id(), "原房间", "", "", null).id());
+            var target = rooms.startActivity(owner, rooms.createRoom(owner, group.id(), "密码房", "", "", "room-" + password).id());
+            var repository = context.getBean(ActivityRepository.class);
+            runBrowser(context, password, "protected-switch", () -> {
+                assertThat(repository.findAccountActivity(member).orElseThrow().activityId()).isEqualTo(original.id());
+                assertThat(repository.findLatestLease(target.id(), member)).isEmpty();
+                var lease = repository.findLatestLease(original.id(), member).orElseThrow();
+                context.getBean(ActivityCoordinator.class).heartbeat(member, original.id(), lease.deviceId(), lease.id(), lease.activityGeneration(), lease.memberGeneration());
+            });
+            assertThat(repository.findAccountActivity(member).orElseThrow().activityId()).isEqualTo(target.id());
+            assertThat(repository.findLatestLease(original.id(), member).orElseThrow().revokedAt()).isNotNull();
+            assertThat(repository.findLatestLease(target.id(), member).orElseThrow().revokedAt()).isNull();
         }
     }
 

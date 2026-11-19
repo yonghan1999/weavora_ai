@@ -229,6 +229,7 @@ try {
   else if (scenario === 'session-revoked') await sessionRevoked();
   else if (scenario === 'history-delete') await historyDelete();
   else if (scenario === 'room-channels') await roomChannels();
+  else if (scenario === 'protected-switch') await protectedRoomSwitch();
   else {
     assert.ok(['profile-write', 'profile-read'].includes(scenario));
     await groupProfile(await page('owner@example.test'), scenario);
@@ -244,6 +245,36 @@ try {
   if (browser.exitCode === null && browser.signalCode === null) browser.kill();
   await browserClosed;
   await rm(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 });
+}
+
+async function protectedRoomSwitch() {
+  const member = await page('member@example.test');
+  const activity = () => member.evaluate(`globalThis.__TAURI__.core.invoke('state_snapshot').then(snapshot=>snapshot.activity)`);
+  async function chooseRoom(name) {
+    await member.click('[data-view=groups]');
+    await member.action('open-group');
+    const entry = `Array.from(document.querySelectorAll('.group-room-item')).find(row=>row.querySelector('strong').textContent===${JSON.stringify(name)})?.querySelector('[data-action=join-room]')`;
+    await member.wait('room entry available', `(${entry})?.disabled===false`);
+    await member.evaluate(`(${entry}).click()`);
+  }
+  await chooseRoom('原房间'); await member.submit();
+  await member.wait('original room joined', `document.querySelector('.room-heading h1')?.textContent==='原房间'`);
+  const original = await activity();
+  await chooseRoom('密码房');
+  const input = `document.querySelector('[data-form=dialog] [name=password]')`;
+  await member.evaluate(`${input}.value='wrong'`); await member.submit();
+  await member.wait('wrong password explained in dialog', `document.querySelector('#dialog-error')?.textContent==='房间密码不正确。'`);
+  assert.equal(await member.evaluate(`document.querySelector('.voice-now strong')?.textContent`), '原房间');
+  const retained = await activity();
+  assert.equal(retained.activityId, original.activityId);
+  assert.equal(retained.leaseId, original.leaseId);
+  writeFileSync(join(process.argv[2], 'ready'), '', { flag: 'wx' });
+  await until('original heartbeat accepted before retry', () => existsSync(join(process.argv[2], 'checked')));
+  await member.evaluate(`${input}.value=${JSON.stringify('room-' + password)}`); await member.submit();
+  await member.wait('retry entered protected room', `!document.querySelector('[role=dialog]') && document.querySelector('.room-heading h1')?.textContent==='密码房'`);
+  const switched = await activity();
+  assert.notEqual(switched.activityId, original.activityId);
+  assert.notEqual(switched.leaseId, original.leaseId);
 }
 
 async function sessionRevoked() {
