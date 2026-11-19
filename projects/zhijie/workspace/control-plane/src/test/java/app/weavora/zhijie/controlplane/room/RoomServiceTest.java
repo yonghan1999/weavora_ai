@@ -47,11 +47,25 @@ class RoomServiceTest {
     @Test
     void onlyGroupManagersCreateRoomsAndResponsesNeverExposePasswordHash() {
         Room room = service.createRoom("admin", "group", "游戏房", "描述", "游戏", "secret");
-        assertThat(RoomView.from(room).passwordProtected()).isTrue();
-        assertThat(RoomView.from(room).toString()).doesNotContain("argon2id-hash");
+        assertThat(service.getRoomView("member", room.id()).passwordProtected()).isTrue();
+        assertThat(service.getRoomView("member", room.id()).toString()).doesNotContain("argon2id-hash");
         assertThat(service.passwordMatches(room, "secret")).isTrue();
         assertThatThrownBy(() -> service.createRoom("member", "group", "越权房", "", "", null))
                 .isInstanceOf(ApiException.class).extracting("code").isEqualTo("CURRENT_GRANT_REQUIRED");
+    }
+
+    @Test
+    void passwordPromptDependsOnTheMemberOfTheTargetGroup() {
+        Room room = service.createRoom("owner", "group", "密码房", "", "", "secret");
+        service.assignOwner("owner", room.id(), "designated");
+        for (String userId : List.of("owner", "admin", "designated", "member")) {
+            RoomView view = service.getRoomView(userId, room.id());
+            assertThat(view.passwordProtected()).isTrue();
+            assertThat(view.passwordRequired()).isEqualTo(userId.equals("member"));
+            assertThat(service.listRooms(userId, "group")).containsExactly(view);
+        }
+        service.updateRoom("admin", room.id(), "无密码房", "", "", null);
+        assertThat(service.getRoomView("member", room.id()).passwordRequired()).isFalse();
     }
 
     @Test

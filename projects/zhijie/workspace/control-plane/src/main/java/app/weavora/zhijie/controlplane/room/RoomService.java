@@ -54,9 +54,18 @@ public class RoomService {
         return room;
     }
 
-    public List<Room> listRooms(String actorId, String groupId) {
-        groups.requireMembership(groupId, actorId);
-        return repository.listGroupRooms(groupId).stream().filter(room -> room.lifecycle() == RoomLifecycle.AVAILABLE).toList();
+    public List<RoomView> listRooms(String actorId, String groupId) {
+        GroupMember member = groups.requireMembership(groupId, actorId);
+        return repository.listGroupRooms(groupId).stream().filter(room -> room.lifecycle() == RoomLifecycle.AVAILABLE)
+                .map(room -> RoomView.from(room, member)).toList();
+    }
+
+    public RoomView view(String actorId, Room room) {
+        return RoomView.from(room, groups.requireMembership(room.groupId(), actorId));
+    }
+
+    public RoomView getRoomView(String actorId, String roomId) {
+        return view(actorId, availableRoom(roomId));
     }
 
     public Room getRoom(String actorId, String roomId) {

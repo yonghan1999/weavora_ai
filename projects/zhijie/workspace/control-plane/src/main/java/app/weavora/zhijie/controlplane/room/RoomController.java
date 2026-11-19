@@ -29,39 +29,44 @@ public class RoomController {
     @PostMapping("/groups/{groupId}/rooms")
     public Map<String, RoomView> create(@RequestHeader("Authorization") String auth, @PathVariable String groupId,
                                         @Valid @RequestBody RoomBody body) {
-        return data(rooms.createRoom(actor(auth), groupId, body.name(), body.description(), body.gameName(), body.password()));
+        String userId = actor(auth);
+        return data(userId, rooms.createRoom(userId, groupId, body.name(), body.description(), body.gameName(), body.password()));
     }
 
     @GetMapping("/groups/{groupId}/rooms")
     public Map<String, List<RoomView>> list(@RequestHeader("Authorization") String auth, @PathVariable String groupId) {
-        return Map.of("data", rooms.listRooms(actor(auth), groupId).stream().map(RoomView::from).toList());
+        return Map.of("data", rooms.listRooms(actor(auth), groupId));
     }
 
     @GetMapping("/rooms/{roomId}")
     public Map<String, RoomView> get(@RequestHeader("Authorization") String auth, @PathVariable String roomId) {
-        return data(rooms.getRoom(actor(auth), roomId));
+        return Map.of("data", rooms.getRoomView(actor(auth), roomId));
     }
 
     @PatchMapping("/rooms/{roomId}")
     public Map<String, RoomView> update(@RequestHeader("Authorization") String auth, @PathVariable String roomId,
                                         @Valid @RequestBody RoomBody body) {
-        return data(rooms.updateRoom(actor(auth), roomId, body.name(), body.description(), body.gameName(), body.password()));
+        String userId = actor(auth);
+        return data(userId, rooms.updateRoom(userId, roomId, body.name(), body.description(), body.gameName(), body.password()));
     }
 
     @PostMapping("/rooms/{roomId}/open")
     public Map<String, RoomView> open(@RequestHeader("Authorization") String auth, @PathVariable String roomId) {
-        return data(rooms.setOpenState(actor(auth), roomId, RoomOpenState.OPEN));
+        String userId = actor(auth);
+        return data(userId, rooms.setOpenState(userId, roomId, RoomOpenState.OPEN));
     }
 
     @PostMapping("/rooms/{roomId}/pause")
     public Map<String, RoomView> pause(@RequestHeader("Authorization") String auth, @PathVariable String roomId) {
-        return data(rooms.setOpenState(actor(auth), roomId, RoomOpenState.PAUSED));
+        String userId = actor(auth);
+        return data(userId, rooms.setOpenState(userId, roomId, RoomOpenState.PAUSED));
     }
 
     @PostMapping("/rooms/{roomId}/owner")
     public Map<String, RoomView> assignOwner(@RequestHeader("Authorization") String auth, @PathVariable String roomId,
                                              @Valid @RequestBody OwnerBody body) {
-        return data(rooms.assignOwner(actor(auth), roomId, body.targetUserId()));
+        String userId = actor(auth);
+        return data(userId, rooms.assignOwner(userId, roomId, body.targetUserId()));
     }
 
     @DeleteMapping("/rooms/{roomId}")
@@ -81,7 +86,7 @@ public class RoomController {
         return Map.of("data", Map.of("ended", true));
     }
 
-    private Map<String, RoomView> data(Room room) { return Map.of("data", RoomView.from(room)); }
+    private Map<String, RoomView> data(String userId, Room room) { return Map.of("data", rooms.view(userId, room)); }
     private String actor(String authorization) { return identity.authenticate(authorization).id(); }
 
     public record RoomBody(@NotBlank String name, String description, String gameName, String password) {

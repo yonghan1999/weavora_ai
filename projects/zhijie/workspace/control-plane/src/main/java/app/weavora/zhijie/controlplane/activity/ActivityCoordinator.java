@@ -2,7 +2,6 @@ package app.weavora.zhijie.controlplane.activity;
 
 import app.weavora.zhijie.controlplane.common.ApiException;
 import app.weavora.zhijie.controlplane.group.GroupMember;
-import app.weavora.zhijie.controlplane.group.GroupRole;
 import app.weavora.zhijie.controlplane.group.GroupService;
 import app.weavora.zhijie.controlplane.identity.IdentityService;
 import app.weavora.zhijie.controlplane.room.Activity;
@@ -70,9 +69,7 @@ public class ActivityCoordinator {
             if (existing != null && existing.state() == MemberState.GRACE) return resumeInternal(existing);
         }
         if (room.openState() != RoomOpenState.OPEN) throw conflict("ROOM_PAUSED", "房间已暂停新加入");
-        boolean passwordExempt = groupMember.role() == GroupRole.OWNER || groupMember.role() == GroupRole.ADMIN
-                || room.ownerUserId().equals(userId);
-        if (!passwordExempt && !rooms.passwordMatches(room, password)) {
+        if (room.requiresPassword(groupMember) && !rooms.passwordMatches(room, password)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "ROOM_PASSWORD_INVALID", "房间密码错误", false);
         }
         boolean alreadyCounted = previous != null && previous.activityId().equals(activity.id());
