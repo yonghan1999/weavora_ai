@@ -14,6 +14,12 @@ python "scripts/sample-capacity-resources.py" --pid 1234 --pid 5678 --interface 
 
 每次采样立即写 `samples.jsonl`，含 UTC、单调时间及各 PID 累计值。`summary.json` 的 CPU 使用一个满核 = 100%；RSS 是所选进程 RSS 之和（不去重共享页）；速率为指定接口两次累计字节之差 × 8 / 1000 / 实际经过秒数。峰值是采样区间峰值，不是瞬时峰值。PID 退出/身份变更、计数倒退或读取异常时退出非零，保留已写记录，不生成成功峰值。计数器未变化时，不能用记录中的 0 证明业务没有网络流量。接口统计还包含无关流量，不是业务分项或物理链路总开销。
 
+## 本机 C0：零账号空闲与固定请求
+
+需要 Windows 或 Linux 本地测试机、可用的回环接口和已安装 psutil 的 Python。设置 `ZHIJIE_TEST_CONTROL_BASELINE=true` 和 `ZHIJIE_TEST_RESOURCE_INTERFACE`（本机为 `Loopback Pseudo-Interface 1`），可用 `ZHIJIE_TEST_PYTHON` 指定解释器。从 workspace 执行 `./mvnw.cmd -o -pl control-plane "-Dtest=ControlPlaneBaselineIntegrationTest" test`；不开启该测试时会跳过。场景使用临时 PostgreSQL、随机本地 HTTP 端口和零账号，不接触试用数据库。等首条资源样本落盘后，前 30 秒没有业务 HTTP；后 30 秒每秒一次 `GET /actuator/health`，要求 HTTP 200 且状态为 UP。两段均每秒查询当前数据库的连接数，该查询本身也占用连接，所以“空闲”并非完全没有数据库活动。
+
+本机记录：`target/control-baseline-12757177290913580339/control.jsonl`（60 条），同目录 `host-observation/samples.jsonl`（61 条、60.47 秒）；Maven 日志 `target/baseline-validation-20261120-031435/maven.log`（1 项通过、0 跳过）。30 次健康请求成功，按延迟升序取第 29 个样本的 p95 为 7.76 ms；60 次数据库连接观测均为 10。测试 JVM（含 Maven 和 Spring）的区间 CPU 峰值为单核的 58.96%，RSS 峰值 528.95 MiB，句柄峰值 718；这些值不包括 PostgreSQL 子进程。回环网卡双向计数均未变化，不能推导流量为零。本结果用于对比同机后续负载，不是目标服务器基线或任何容量验收结论。
+
 ## 与本机百账号用例协同
 
 设置 `ZHIJIE_TEST_CONTROL_LOAD=true` 及 `ZHIJIE_TEST_RESOURCE_INTERFACE`（非空接口名），从 workspace 运行 `./mvnw.cmd -o -pl control-plane "-Dtest=ControlPlaneLoadIntegrationTest#hundredVerifiedAccountsRunRealHttpAndSyncWithPresenceRecovery" test`。可选 `ZHIJIE_TEST_PYTHON` 指向已安装 psutil 的解释器。不设接口时保持原测试流程，无新增 Python 环境要求。台架先确认采样器已写首条样本，再启动业务流量；负载结束后写停止信号，检查子进程、截止原因及覆盖时长。`host-observation/` 与负载 `summary.json`、`operations.jsonl`、`resources.jsonl` 同属于一个新运行目录。
