@@ -1,8 +1,12 @@
 # Windows 本机试用后端（离线包）
 
-**首次试用**：与[当前桌面](candidate-build.md)配套的后端来自 `038145c`。本机已解压到全新目录 `target/trial-backend-038145c`，未初始化数据库。离线包 `target/backend-038145c/preview-backend.zip` 为 140,640,047 字节，SHA-256：`e79323869d70d8f3530bf664038ae83448be104b012cde3bae0532b10f870847`。与 `6a908d1` 的 330 项包内容逐项比对，仅 `RoomService.class` 不同。
+**首次试用**：与[当前桌面](candidate-build.md)配套的后端已准备在 `target/trial-backend-b44c82c5`。离线包 `target/log-boundary-f5bbaac/preview-backend.zip` 为 83,803,971 字节，SHA-256：`b44c82c537d6cd6c99316e4dff672087ea19dbc23e3c3a577c26009aab71725b`。与上一精简包逐项比较，327 个文件中仅控制台日志转换器发生变化。新包记录异常类型和请求关联编号，不再附加原始异常消息、原因链或堆栈。已有目录和历史日志不会自动改变。
 
-需另行复制或解压时，可改用 Windows 精简包 `target/backend-winonly-a5e476f/preview-backend.zip`（83,803,127 字节，SHA-256：`6da742951ba9a0b625bc4920e79ffa76858cb160e01ee5654dcd7738ef2a1453`）。与上述旧包逐文件比对，仅移除三个非 Windows PostgreSQL 二进制 JAR 并更新类路径；应用、迁移和 Windows PostgreSQL 文件字节不变。独立解压副本已通过登录、消息持久化、停库重启、房间重开和两种同步认证回归。已在试用的目录不需替换，切勿覆盖数据。此精简只影响 Windows 分发，不改变源码测试依赖。
+用 `test-backend-zip.ps1` 的 `-CheckLogPrivacy -CheckSyncAuth -CheckRoomReopen` 选项可在隔离试用库复测：两次登录、消息和重启、同步删除通知、房间重开与设置密码后，核查普通日志和房间管理记录未出现本次明文密码及登录令牌。该检查不证明生产 TLS、数据库存储或所有日志通道满足 AC-033。
+
+**历史候选**：旧后端 `038145c` 的离线包 `target/backend-038145c/preview-backend.zip` 为 140,640,047 字节，SHA-256：`e79323869d70d8f3530bf664038ae83448be104b012cde3bae0532b10f870847`。与 `6a908d1` 的 330 项包内容逐项比对，仅 `RoomService.class` 不同。
+
+上一 Windows 精简包 `target/backend-winonly-a5e476f/preview-backend.zip`（83,803,127 字节，SHA-256：`6da742951ba9a0b625bc4920e79ffa76858cb160e01ee5654dcd7738ef2a1453`）仅移除三个非 Windows PostgreSQL 二进制 JAR 并更新类路径，不含本次日志修复。
 
 在独立解压副本中，同版重启后验证了房内成员重新开放返回 `409 / ROOM_REOPEN_OUTSIDE_REQUIRED`；结束活动后仍暂停，房外开放后再次读取为 `OPEN` 且没有活动。另从上一版 `6a908d1` 的独立试用库停库冷备迁入，核对了 1,109 个文件和目录结构，恢复后可登录、读取原群/房间/消息并删除原消息。两种场景均验证了新旧同步认证客户端收到删除事件。记录在新 zip 旁的 `reopen-final.log` 和 `upgrade.log`。
 

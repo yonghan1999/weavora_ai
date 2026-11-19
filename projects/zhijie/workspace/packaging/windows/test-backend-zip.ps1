@@ -1,5 +1,6 @@
 param([Parameter(Mandatory)][string]$Package, [string]$JavaHome = $env:JAVA_HOME,
-      [int]$HttpPort = 18831, [int]$DatabasePort = 15441, [string]$PreviousPackage, [switch]$CheckSyncAuth, [switch]$CheckRoomReopen)
+      [int]$HttpPort = 18831, [int]$DatabasePort = 15441, [string]$PreviousPackage, [switch]$CheckSyncAuth, [switch]$CheckRoomReopen,
+      [switch]$CheckLogPrivacy)
 $ErrorActionPreference = 'Stop'
 $workspace = (Resolve-Path -LiteralPath "$PSScriptRoot/../..").Path
 $target = (Resolve-Path -LiteralPath "$workspace/target").Path
@@ -16,6 +17,12 @@ $savedPassword = $env:ZHIJIE_PREVIEW_PASSWORD
 $savedMail = $env:ZHIJIE_MAIL_ENABLED
 $savedVoice = $env:ZHIJIE_VOICE_ENABLED
 $url = "http://127.0.0.1:$HttpPort"
+function Assert-NoCredential($Text, $Values, $Source) {
+    foreach ($value in $Values) {
+        if ([string]::IsNullOrEmpty($value)) { throw 'Missing privacy test credential' }
+        if ($Text.Contains($value)) { throw "Credential found in $Source" }
+    }
+}
 function Assert-RoomReopen($Room, $Headers) {
     $endpoint = "$url/api/v1/rooms/$($Room.id)"
     $join = @{roomId=$Room.id;deviceId='relocation-test';operationId=[guid]::NewGuid().ToString('N')} | ConvertTo-Json
@@ -75,6 +82,7 @@ try {
     $env:ZHIJIE_VOICE_ENABLED = 'false'
     $env:ZHIJIE_PREVIEW_PASSWORD = $password
     $marker = [guid]::NewGuid().ToString('N')
+    $secrets = @($password)
     $caller = (Get-Location).Path
     $portRejected = $false
     try {
@@ -90,6 +98,7 @@ try {
         if ((Invoke-RestMethod "$url/actuator/health").status -ne 'UP') { throw '试用后端未就绪' }
         $login = Invoke-RestMethod "$url/api/v1/auth/login" -Method Post -ContentType 'application/json' -Body (@{email='trial@example.test';password=$password;deviceId='relocation-test'} | ConvertTo-Json)
         $headers = @{Authorization=('Bearer ' + $login.data.accessToken)}
+        if ($CheckLogPrivacy) { $secrets += @($login.data.accessToken, $login.data.refreshToken) }
         $groups = (Invoke-RestMethod "$url/api/v1/groups" -Headers $headers).data
         if ($groups.Count -ne 1) { throw '群数量不符' }
         $rooms = (Invoke-RestMethod "$url/api/v1/groups/$($groups[0].id)/rooms" -Headers $headers).data
@@ -126,7 +135,24 @@ try {
                 $deadline.Dispose()
             }
         }
+        if ($CheckLogPrivacy -and $attempt -eq 2) {
+            $room = $rooms[0]
+            $roomPassword = [guid]::NewGuid().ToString('N')
+            $secrets += $roomPassword
+            $update = @{name='Privacy test';description='';gameName='Fixture';password=$roomPassword} | ConvertTo-Json
+            $protected = (Invoke-RestMethod "$url/api/v1/rooms/$($room.id)" -Headers $headers -Method Patch -ContentType 'application/json' -Body $update).data
+            $records = (Invoke-RestMethod "$url/api/v1/groups/$($groups[0].id)/audit-logs" -Headers $headers).data
+            if (!$protected.passwordProtected -or !($records | Where-Object { $_.action -eq 'ROOM_UPDATE' -and $_.targetId -eq $room.id })) { throw 'Missing protected room or audit record' }
+            Assert-NoCredential (ConvertTo-Json -InputObject $records -Depth 10) $secrets 'group audit records'
+        }
         & "$trial/scripts/local-preview/stop.ps1" | Out-Host
+        if ($CheckLogPrivacy) {
+            foreach ($nameOfLog in 'server.log','server-error.log') {
+                $text = [IO.File]::ReadAllText("$trial/target/local-preview/$nameOfLog")
+                if ($nameOfLog -eq 'server.log' -and !$text.Contains('LOCAL_PREVIEW_READY')) { throw 'Missing startup log' }
+                Assert-NoCredential $text $secrets $nameOfLog
+            }
+        }
         if ($trial -eq $current -and (Get-Location).Path -ne $caller) { throw '停止后未保留调用者目录' }
         if ($previous -and $attempt -eq 1) {
             Set-Location -LiteralPath $caller
@@ -160,4 +186,5 @@ if ((Split-Path -Parent $resolved) -ne $target -or (Split-Path -Leaf $resolved) 
 }
 Remove-Item -LiteralPath $resolved -Recurse -Force
 Write-Output 'RELOCATED_PACKAGE_LOGIN_HISTORY_RESTART_OK'
+if ($CheckLogPrivacy) { Write-Output 'PACKAGED_LOGIN_ROOM_AUDIT_AND_SERVER_LOG_PRIVACY_OK' }
 if ($previous) { Write-Output 'BACKEND_PACKAGE_UPGRADE_USER_DATA_OK' }
