@@ -1,7 +1,6 @@
 param([string]$JavaHome = $env:JAVA_HOME, [ValidateRange(1,65535)][int]$HttpPort = 8080, [ValidateRange(1,65535)][int]$DatabasePort = 15432)
 $ErrorActionPreference = "Stop"
 $workspace = (Resolve-Path "$PSScriptRoot/../..").Path
-Set-Location -LiteralPath $workspace
 $runtime = "$workspace/target/local-preview"
 New-Item -ItemType Directory -Path $runtime -Force | Out-Null
 $classpathFile = "$workspace/control-plane/target/local-preview-classpath.txt"
@@ -27,7 +26,10 @@ function Request-SeedPassword {
 try {
     $env:TEMP = $tempDirectory
     $env:TMP = $tempDirectory
-    & "$JavaHome/bin/javac.exe" "-J-Djava.io.tmpdir=$tempDirectory" -J-XX:-UsePerfData -encoding UTF-8 -cp $classpath -d $runtime "$PSScriptRoot/LocalPreview.java"
+    Push-Location -LiteralPath $workspace
+    try {
+        & "$JavaHome/bin/javac.exe" "-J-Djava.io.tmpdir=$tempDirectory" -J-XX:-UsePerfData -encoding UTF-8 -cp $classpath -d $runtime "$PSScriptRoot/LocalPreview.java"
+    } finally { Pop-Location }
     if ($LASTEXITCODE -ne 0) { throw "本地启动入口编译失败" }
     $shimOutput = [System.IO.Path]::GetFullPath("$runtime/clean-cmd.exe")
     $shimSource = [System.IO.Path]::GetFullPath("$PSScriptRoot/CleanCmd.cs")

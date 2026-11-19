@@ -33,8 +33,18 @@ try {
     $env:ZHIJIE_VOICE_ENABLED = 'false'
     $env:ZHIJIE_PREVIEW_PASSWORD = $password
     $marker = [guid]::NewGuid().ToString('N')
+    $caller = (Get-Location).Path
+    $portRejected = $false
+    try {
+        & "$current/scripts/local-preview/start.ps1" -JavaHome $JavaHome -HttpPort $HttpPort -DatabasePort $HttpPort | Out-Host
+    } catch {
+        if ($_.Exception.Message -notlike '*试用端口重复或已占用*') { throw }
+        $portRejected = $true
+    }
+    if (!$portRejected -or (Get-Location).Path -ne $caller) { throw '拒绝重复端口后未保留调用者目录' }
     $snapshots = foreach ($attempt in 1,2) {
         & "$trial/scripts/local-preview/start.ps1" -JavaHome $JavaHome -HttpPort $HttpPort -DatabasePort $DatabasePort | Out-Host
+        if ($trial -eq $current -and (Get-Location).Path -ne $caller) { throw '启动后未保留调用者目录' }
         if ((Invoke-RestMethod "$url/actuator/health").status -ne 'UP') { throw '试用后端未就绪' }
         $login = Invoke-RestMethod "$url/api/v1/auth/login" -Method Post -ContentType 'application/json' -Body (@{email='trial@example.test';password=$password;deviceId='relocation-test'} | ConvertTo-Json)
         $headers = @{Authorization=('Bearer ' + $login.data.accessToken)}
@@ -53,13 +63,16 @@ try {
             if (!$removed.deleted -or $removed.deleteKind -ne 'AUTHOR' -or $removed.id -ne $sent.id) { throw '恢复后删除本人消息失败' }
         }
         & "$trial/scripts/local-preview/stop.ps1" | Out-Host
+        if ($trial -eq $current -and (Get-Location).Path -ne $caller) { throw '停止后未保留调用者目录' }
         if ($previous -and $attempt -eq 1) {
+            Set-Location -LiteralPath $caller
             $backup = Join-Path $fixture 'snapshot'
             & python -B "$workspace/ops/database/cold-backup.py" snapshot --source "$trial/target/local-preview/postgres" --destination $backup | Out-Host
             if ($LASTEXITCODE) { throw '旧包停库快照失败' }
             & python -B "$workspace/ops/database/cold-backup.py" verify --backup $backup --require-directories | Out-Host
             if ($LASTEXITCODE) { throw '快照核验失败' }
-            $runtime = New-Item -ItemType Directory -Path "$current/target/local-preview"
+            if (Test-Path -LiteralPath "$current/target/local-preview/postgres") { throw '新版测试目录已存在数据库，拒绝覆盖' }
+            $runtime = New-Item -ItemType Directory -Path "$current/target/local-preview" -Force
             Copy-Item -LiteralPath "$backup/data" -Destination "$($runtime.FullName)/postgres" -Recurse -ErrorAction Stop
             $trial = $current
         }

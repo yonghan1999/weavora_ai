@@ -1,6 +1,8 @@
 # Windows 本机试用后端（离线包）
 
-**更新候选**：`target/backend-f67715c/preview-backend.zip` 包含并发删除群消息修复，大小为 140,633,165 字节，SHA-256 为 `1b24c669645ed6101ec9b23f87068c9750ffdfc13406537a5a9c881ac27c50b1`。本机已准备配套的 [Windows 便携桌面与启动命令](candidate-build.md)。仅更新桌面时无需重新解压后端。下述 `649e830` 是留存的旧候选。
+**首次试用**：`target/backend-cwd-20261120-035936/preview-backend.zip` 为 140,633,215 字节，SHA-256 为 `00b82124463e303d5ea3b2e31f28eac096fa9d809fe358dcd876652573e84a5c`。对应的本机目录 `target/trial-backend-cwd` 已解压、未初始化。新版启动脚本保留 PowerShell 调用者目录；正常启动后可在同一窗口按[桌面试用说明](candidate-build.md)继续。包中 329 项与上一版逐项比对，只有 `scripts/local-preview/start.ps1` 内容变化。`restart.log` 和 `upgrade.log` 与 zip 同目录，记录了独立测试库的登录、消息重启保留及从上一版冷备份迁入后的验证。
+
+**已有试用数据**：`target/backend-f67715c/preview-backend.zip` 为 140,633,165 字节，SHA-256 为 `1b24c669645ed6101ec9b23f87068c9750ffdfc13406537a5a9c881ac27c50b1`。仅更新桌面无需迁移后端。继续使用旧库时，启动和停止都应使用旧解压目录里的脚本。下述 `649e830` 是更早的留存候选。
 
 在这台构建机的 `workspace` 下，`target/trial-649e830/preview-backend.zip` 是与桌面候选 `649e830` 同版的后端。它不是生产发布包。压缩包 SHA-256：`f8fd92f5be33f09e78082468cab5eb712254565c2ff688b91215cdb80fe98702`。只使用来源可信、摘要匹配的包；摘要本身不是签名。包内没有 JDK、账号、密码、试用数据库或桌面程序。
 
