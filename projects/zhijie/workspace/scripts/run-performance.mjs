@@ -26,20 +26,28 @@ const execution = spawnSync(adapter[0], adapter.slice(1), {
   timeout: scenario.durationSeconds * 1000 + 60000,
   maxBuffer: 16 * 1024 * 1024,
 });
-if (execution.error) throw execution.error;
 writeFileSync(`${output}.stdout.log`, execution.stdout ?? "");
 writeFileSync(`${output}.stderr.log`, execution.stderr ?? "");
-const metrics = metricsIndex > 0 ? JSON.parse(readFileSync(resolve(process.argv[metricsIndex + 1]), "utf8")) : null;
+let metrics = null;
+let metricsError = null;
+try {
+  if (metricsIndex > 0) metrics = JSON.parse(readFileSync(resolve(process.argv[metricsIndex + 1]), "utf8"));
+} catch {
+  metricsError = "METRICS_UNREADABLE";
+}
+const failed = execution.status !== 0 || !!execution.error || !!metricsError;
 const result = {
   schemaVersion: 1,
   scenarioId: scenario.id,
   plannedScenario: scenario,
   execution: {
-    status: execution.status === 0 ? "completed" : "failed",
+    status: execution.status === 0 && !execution.error ? "completed" : "failed",
     startedAt,
     durationSeconds: (performance.now() - started) / 1000,
     command: adapter,
     exitCode: execution.status,
+    signal: execution.signal,
+    errorCode: execution.error?.code ?? null,
   },
   hostInventory: {
     platform: process.platform,
@@ -48,12 +56,14 @@ const result = {
     totalMemoryMiB: Math.floor(totalmem() / 1024 / 1024),
   },
   metrics,
+  metricsError,
   evidence: [`${output}.stdout.log`, `${output}.stderr.log`],
   conclusion: {
-    status: execution.status === 0 ? "metrics_required" : "failed",
+    status: failed ? "failed" : "metrics_required",
     reason: "The runner records execution only; capacity or audio acceptance requires reviewed raw metrics and evidence",
   },
 };
 validateResult(result, scenario, configuration.resourceBudget);
 writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`);
 console.log(`Recorded ${scenario.id} adapter execution with conclusion ${result.conclusion.status}; no acceptance pass was inferred.`);
+process.exitCode = failed ? execution.status || 1 : 0;

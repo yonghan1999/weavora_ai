@@ -21,7 +21,6 @@ const result = spawnSync(adapter[0], adapter.slice(1), {
   shell: false,
   maxBuffer: 16 * 1024 * 1024,
 });
-if (result.error) throw result.error;
 writeFileSync(`${output}.stdout.log`, result.stdout ?? "");
 writeFileSync(`${output}.stderr.log`, result.stderr ?? "");
 writeFileSync(output, `${JSON.stringify({
@@ -30,8 +29,11 @@ writeFileSync(output, `${JSON.stringify({
   startedAt,
   command: adapter,
   exitCode: result.status,
+  signal: result.signal,
+  errorCode: result.error?.code ?? null,
   evidence: [`${output}.stdout.log`, `${output}.stderr.log`],
-  status: "adapter_recorded_not_acceptance_verified",
+  status: result.status === 0 && !result.error ? "adapter_recorded_not_acceptance_verified" : "failed",
   note: "Installation, signing, real audio/TUN, games, capacity and cross-platform acceptance require human-reviewed evidence",
 }, null, 2)}\n`);
 console.log(`Recorded ${platform} adapter output; support-matrix status was not changed.`);
+process.exitCode = result.status === 0 && !result.error ? 0 : result.status || 1;

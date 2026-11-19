@@ -1,0 +1,46 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, existsSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
+
+const directory = mkdtempSync(resolve("target/validation-runners-"));
+for (const [name, selector] of [["compatibility", ["--platform", "windows"]], ["performance", ["--scenario", "C0"]]]) {
+  for (const [condition, command, expected] of [
+    ["success", [process.execPath, "-e", "process.stdout.write('adapter-output');process.stderr.write('adapter-diagnostic')"], 0],
+    ["failure", [process.execPath, "-e", "process.stdout.write('before-failure');process.exit(7)"], 7],
+    ["missing", [resolve(directory, "missing-adapter.exe")], 1],
+  ]) {
+    const output = resolve(directory, `${name}-${condition}.json`);
+    const result = spawnSync(process.execPath, [`scripts/run-${name}.mjs`, ...selector, "--output", output, "--", ...command], {encoding: "utf8"});
+    assert.equal(result.status, expected, `${name}/${condition}: wrapper must preserve adapter failure`);
+    assert.ok(existsSync(output), `${name}/${condition}: failure must retain structured result`);
+    const recorded = JSON.parse(readFileSync(output, "utf8"));
+    assert.notEqual(recorded.conclusion?.status, "passed");
+    const exitCode = name === "performance" ? recorded.execution.exitCode : recorded.exitCode;
+    assert.equal(exitCode, condition === "missing" ? null : expected);
+    assert.ok(recorded.evidence.every(path => existsSync(path)));
+    if (condition === "success") {
+      assert.equal(readFileSync(`${output}.stdout.log`, "utf8"), "adapter-output");
+      assert.equal(readFileSync(`${output}.stderr.log`, "utf8"), "adapter-diagnostic");
+    } else {
+      assert.equal(name === "performance" ? recorded.conclusion.status : recorded.status, "failed");
+      if (condition === "missing") {
+        assert.equal(name === "performance" ? recorded.execution.errorCode : recorded.errorCode, "ENOENT");
+      } else {
+        assert.equal(readFileSync(`${output}.stdout.log`, "utf8"), "before-failure");
+      }
+    }
+  }
+}
+for (const code of [0, 7]) {
+  const output = resolve(directory, `metrics-missing-${code}.json`);
+  const result = spawnSync(process.execPath, ["scripts/run-performance.mjs", "--scenario", "C0", "--output", output,
+    "--metrics", resolve(directory, "missing-metrics.json"), "--", process.execPath, "-e", `process.exit(${code})`], {encoding: "utf8"});
+  assert.equal(result.status, code || 1, "Unreadable metrics must not lose adapter failure or report success");
+  const recorded = JSON.parse(readFileSync(output, "utf8"));
+  assert.equal(recorded.metricsError, "METRICS_UNREADABLE");
+  assert.equal(recorded.conclusion.status, "failed");
+  assert.equal(recorded.execution.exitCode, code);
+  assert.ok(recorded.evidence.every(path => existsSync(path)));
+}
+console.log("Validation runners preserve adapter exit codes and failure evidence; success does not imply acceptance.");
