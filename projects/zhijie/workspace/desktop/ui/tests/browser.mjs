@@ -121,10 +121,10 @@ if(command==='group_list')return [group];if(command==='room_list')return [room];
 if(command==='activity_join'){activity={activityId:'a1',leaseId:'lease-room',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
 if(command==='activity_leave'){activity=null;return snapshot();}
 if(command==='voice_connect'){if(globalThis.holdVoice)await new Promise(done=>globalThis.resumeVoice=done);voice.state='FAILED';voice.failureCode='VOICE_CAPACITY_LIMITED';throw 'VOICE_CAPACITY_LIMITED';}
-if(command==='voice_snapshot')return structuredClone(voice);
+if(command==='voice_snapshot'){if(globalThis.failVoiceRead)throw 'SERVICE_UNAVAILABLE';return structuredClone(voice);}
 if(command==='state_snapshot')return snapshot();
 if(command==='network_connect'){if(globalThis.holdNetwork)await new Promise(done=>globalThis.resumeNetwork=done);throw 'HELPER_UNAVAILABLE';}
-if(command==='network_snapshot')return {status:{state:activity?'FAILED':'DISCONNECTED',activityId:activity?.activityId},peers:[]};
+if(command==='network_snapshot'){if(globalThis.failNetworkRead)throw 'SERVICE_UNAVAILABLE';return {status:{state:activity?(globalThis.networkState??'FAILED'):'DISCONNECTED',activityId:activity?.activityId},peers:[]};}
 if(command==='voice_set_mute'){voice.muted=p.muted;return voice;}
 if(command==='voice_set_receive'){voice.receiveEnabled=p.enabled;return voice;}
 if(command==='voice_set_volume'){if(p.memberId){voice.memberVolumes??={};voice.memberVolumes[p.memberId]=p.volume;}else voice.masterVolume=p.volume;return structuredClone(voice);}
@@ -607,8 +607,15 @@ try {
   await click('[data-action="retry-network"]');
   await check("独立重试联机不重建语音", 'calls.filter(x=>x.command==="network_connect").length===2 && calls.filter(x=>x.command==="voice_connect").length===1');
   await shot("room-1440");
-  await evaluate('voice.state="CONNECTED";voice.failureCode=null');
+  await evaluate('globalThis.failVoiceRead=true;globalThis.networkState="CONNECTED"');
+  await delay(1300);
+  await check('语音状态不可读不阻挡联机恢复', `document.querySelector('.room-flags').innerText.includes('语音 · 状态未知') && document.querySelector('.network-panel .ip-address')?.textContent==='10.66.0.2'`);
+  await evaluate('failVoiceRead=false;globalThis.failNetworkRead=true;voice.state="CONNECTED";voice.failureCode=null');
+  await delay(1300);
+  await check('联机状态不可读不阻挡语音恢复且收起旧地址', `document.querySelector('.room-flags').innerText.includes('语音 · 已连接') && document.querySelector('.room-flags').innerText.includes('联机 · 状态未知') && !document.querySelector('.network-panel .ip-address')`);
+  await evaluate('failNetworkRead=false;networkState="FAILED"');
   await delay(1200);
+  await check('读取恢复后联机状态由未知变为真实失败', `document.querySelector('.room-flags').innerText.includes('联机 · 连接失败') && !!document.querySelector('[data-action=retry-network]')`);
   await check("媒体重连事件自动刷新房间状态", 'document.querySelector(".room-flags").innerText.includes("已连接")');
   await evaluate('voice.members=[{userId:"u2",memberGeneration:3,speaking:true,muted:false,subscribed:true}]');
   await delay(1200);

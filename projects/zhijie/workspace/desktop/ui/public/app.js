@@ -70,9 +70,12 @@ async function refreshRuntime() {
       return;
     }
     if (!activity || snapshot.activity?.leaseId !== activity.leaseId) return;
-    const [voice, network] = await Promise.all([bridge.voiceSnapshot(), bridge.networkSnapshot()]);
+    const [voiceRead, networkRead] = await Promise.allSettled([bridge.voiceSnapshot(), bridge.networkSnapshot()]);
     if (s.busy || epoch !== current || s.userId !== userId || s.activity !== activity) return;
-    if (network?.status?.activityId === snapshot.activity.activityId) snapshot.activity.network = network.status.state;
+    const voice = voiceRead.status === "fulfilled" ? voiceRead.value : { state: "UNKNOWN" };
+    const network = networkRead.status === "fulfilled" ? networkRead.value : null;
+    if (!network) snapshot.activity.network = "UNKNOWN";
+    else if (network.status?.activityId === snapshot.activity.activityId) snapshot.activity.network = network.status.state;
     const changed = JSON.stringify(s.voice) !== JSON.stringify(voice)
       || JSON.stringify(s.network) !== JSON.stringify(network)
       || JSON.stringify(s.activity) !== JSON.stringify(snapshot.activity);

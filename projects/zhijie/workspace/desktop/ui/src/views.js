@@ -59,6 +59,7 @@ export const statusLabel = (value) =>
     RETRYING: "重试中",
     FAILED: "连接失败",
     REVOKED: "已撤销",
+    UNKNOWN: "状态未知",
     DISCONNECTED: "未连接",
   })[value] || "未连接";
 const chip = (name, value) =>
