@@ -65,8 +65,14 @@ export const statusLabel = (value) =>
   })[value] || "未连接";
 const chip = (name, value) =>
   `<span class="status-chip" data-connection="${value === "CONNECTED" ? "connected" : value === "FAILED" ? "failed" : "pending"}">${icon(name === "语音" ? "headphones" : "network", 14)} ${name} · ${statusLabel(value)}</span>`;
+export function serviceIndicator(s) {
+  if (!s.userId) return "织界桌面端";
+  return s.service === "RETRYING"
+    ? `服务暂不可用 · 自动重连中 ${button("重试", "refresh", "ghost small", 'aria-label="重试服务连接"')}`
+    : `服务 · ${statusLabel(s.service)}`;
+}
 export function titlebar(s) {
-  return `<header class="titlebar desktop-titlebar"><div class="titlebar-drag" data-window-drag>${brand()}<span class="window-title">和喜欢的人，玩同一个世界</span></div><div class="top-actions"><span class="connection-pill">${s.userId ? "已登录" : "织界桌面端"}</span><div class="window-controls"><button data-window="minimize" aria-label="最小化" title="最小化"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 6h10" stroke="currentColor"/></svg></button><button data-window="maximize" aria-label="最大化" title="最大化"><svg width="12" height="12" viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" fill="none" stroke="currentColor"/></svg></button><button data-window="close" aria-label="关闭" title="关闭">${icon("close", 16)}</button></div></div></header>`;
+  return `<header class="titlebar desktop-titlebar"><div class="titlebar-drag" data-window-drag>${brand()}<span class="window-title">和喜欢的人，玩同一个世界</span></div><div class="top-actions"><span class="connection-pill" role="status" data-service="${e(s.service)}">${serviceIndicator(s)}</span><div class="window-controls"><button data-window="minimize" aria-label="最小化" title="最小化"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 6h10" stroke="currentColor"/></svg></button><button data-window="maximize" aria-label="最大化" title="最大化"><svg width="12" height="12" viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" fill="none" stroke="currentColor"/></svg></button><button data-window="close" aria-label="关闭" title="关闭">${icon("close", 16)}</button></div></div></header>`;
 }
 export function authView(s) {
   const mode = s.authMode;

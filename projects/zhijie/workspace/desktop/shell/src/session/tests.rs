@@ -302,10 +302,12 @@ fn temporary_refresh_failure_preserves_session_for_retry() {
         let mut renewal = None;
         let _operation = state.activity_operations.lock().await;
         tick(&state, &mut renewal).await;
+        assert_eq!(state.core.snapshot().service, ChannelStatus::Retrying);
         tick(&state, &mut renewal).await;
         worker.join().unwrap();
         assert!(state.access_token().unwrap() == "old-access");
         assert!(state.core.snapshot().user_id.is_some());
+        assert_eq!(state.core.snapshot().service, ChannelStatus::Connected);
     });
 }
 

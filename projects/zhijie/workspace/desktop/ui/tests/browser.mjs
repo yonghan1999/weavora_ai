@@ -112,7 +112,7 @@ globalThis.incoming=[{id:'fr1',requesterId:'u3',email:'new<friend>@example.test'
 const group={id:'g1',name:'周末远征队',description:'约好下一局，一起探索。',ownerUserId:'u1'};
 const room={id:'r1',groupId:'g1',name:'周末方块局',gameName:'MINECRAFT',description:'生存建造',openState:'OPEN',currentActivityId:'a1',ownerUserId:'u1'};
 let activity=null,voice={state:'DISCONNECTED',muted:false,receiveEnabled:true,masterVolume:1},messages=[];
-const snapshot=()=>({userId:sessionExpired?null:'u1',activity:sessionExpired?null:activity,service:'CONNECTED',lastErrorCode:null});
+const snapshot=()=>({userId:sessionExpired?null:'u1',activity:sessionExpired?null:activity,service:globalThis.serviceState??'CONNECTED',lastErrorCode:null});
 globalThis.__TAURI__={window:{getCurrentWindow:()=>({minimize:async()=>windowCalls.push('minimize'),toggleMaximize:async()=>windowCalls.push('maximize'),isMaximized:async()=>true,close:async()=>windowCalls.push('close'),startDragging:async()=>windowCalls.push('drag')})},core:{invoke:async(command,p={})=>{
 calls.push({command,p});
 if(command==='session_login'){await new Promise(r=>setTimeout(r,80));if(failLogin)throw 'SERVICE_UNAVAILABLE';return snapshot();}
@@ -258,6 +258,15 @@ try {
     "好友来自接口",
     'document.body.innerText.includes("friend@example.test")',
   );
+  await command("Emulation.setDeviceMetricsOverride", {width:600,height:900,deviceScaleFactor:1,mobile:false});
+  await evaluate(`globalThis.editing=document.querySelector('#friend-search');editing.focus();editing.value='保留输入';globalThis.serviceState='RETRYING'`);
+  await delay(1300);
+  await check("窄屏断线提示可见且保留输入焦点", `document.querySelector('[aria-label="重试服务连接"]').getBoundingClientRect().width>0 && document.documentElement.scrollWidth<=innerWidth && document.activeElement===editing && editing.value==='保留输入'`);
+  await evaluate(`globalThis.serviceState='CONNECTED'`);
+  await delay(1300);
+  await check("连接恢复不打断编辑", `document.querySelector('.connection-pill').dataset.service==='CONNECTED' && !document.querySelector('[aria-label="重试服务连接"]') && document.activeElement===editing && editing.value==='保留输入'`);
+  await evaluate(`editing.value='';editing.blur()`);
+  await command("Emulation.setDeviceMetricsOverride", {width:1440,height:900,deviceScaleFactor:1,mobile:false});
   await evaluate('friends[0].presence="OFFLINE";emitProduct({userId:"u1"})');
   await delay(900);
   await check("定向通知自动更新好友离线状态", 'document.querySelector(".friend-row small").textContent==="离线"');

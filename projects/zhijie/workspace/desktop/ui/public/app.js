@@ -3,6 +3,7 @@ import { CoreBridge } from "./src/index.js";
 import { avatarField, readGroupAvatar } from "./src/group-avatar.js";
 import {
   renderApp,
+  serviceIndicator,
   messageDeleteControl,
   escapeHtml as e,
   field,
@@ -69,6 +70,12 @@ async function refreshRuntime() {
       closeDialog();
       render();
       return;
+    }
+    if (s.service !== snapshot.service) {
+      s.service = snapshot.service;
+      const indicator = root.querySelector(".connection-pill");
+      indicator.dataset.service = s.service;
+      indicator.innerHTML = serviceIndicator(s);
     }
     if (!activity || snapshot.activity?.leaseId !== activity.leaseId) return;
     const [voiceRead, networkRead] = await Promise.allSettled([bridge.voiceSnapshot(), bridge.networkSnapshot()]);

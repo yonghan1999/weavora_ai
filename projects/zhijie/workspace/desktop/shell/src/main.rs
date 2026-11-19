@@ -68,11 +68,24 @@ async fn session_login(
 
 #[tauri::command]
 async fn group_list(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
-    state
-        .client
-        .groups(&state.access_token()?)
-        .await
-        .map_err(error_code)
+    let token = state.access_token()?;
+    let result = state.client.groups(&token).await;
+    let _operation = state.activity_operations.channel().await;
+    if state.access_token().as_ref() == Ok(&token) {
+        match &result {
+            Ok(_) => state.core.set_service_available(true),
+            Err(
+                ClientError::Transport(_)
+                | ClientError::Api {
+                    status: 500..=599, ..
+                },
+            ) => {
+                state.core.set_service_available(false);
+            }
+            Err(_) => {}
+        }
+    }
+    result.map_err(error_code)
 }
 
 #[tauri::command]

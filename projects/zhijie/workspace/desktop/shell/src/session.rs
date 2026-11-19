@@ -193,17 +193,21 @@ where
         let current = state.session.lock().expect("session lock").clone();
         if let Some(current) = current {
             match state.client.refresh(&current.refresh_token).await {
-                Ok(fresh) => *state.session.lock().expect("session lock") = Some(fresh),
+                Ok(fresh) => {
+                    *state.session.lock().expect("session lock") = Some(fresh);
+                    state.core.set_service_available(true);
+                }
                 Err(ClientError::Api {
                     status: 401 | 403, ..
                 }) => {
                     invalidate(state).await;
                     *renewed = None;
                 }
-                // 暂时不可达不清除仍可能有效的会话，下个周期继续重试。
-                Err(_) => {}
+                Err(_) => state.core.set_service_available(false),
             }
         }
+    } else {
+        state.core.set_service_available(presence.is_ok());
     }
 }
 

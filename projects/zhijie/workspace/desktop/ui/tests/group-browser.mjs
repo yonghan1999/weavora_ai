@@ -127,10 +127,14 @@ async function friendLifecycle(owner, member, link) {
   assert.deepEqual(await owner.evaluate(`Array.from(document.querySelectorAll('.friend-row button, .friend-row a')).map(node => node.dataset.action)`), ['delete-friend']);
   const disconnectedAt = performance.now();
   link.disconnect();
+  await until('affected desktop shows service retry without losing login', () => member.evaluate(`!!document.querySelector('[data-service=RETRYING] [aria-label="重试服务连接"]') && !!document.querySelector('.rail')`), 25000);
+  assert.equal(await owner.evaluate(`document.querySelector('.connection-pill').dataset.service`), 'CONNECTED');
   await until('friend appears offline without refresh or deletion', () => owner.evaluate(`document.querySelector('.friend-row strong')?.textContent==='member@example.test' && document.querySelector('.friend-row small')?.textContent==='离线'`), 75000);
   const offlineMs = Math.round(performance.now() - disconnectedAt);
   const restoredAt = performance.now();
   link.restore();
+  await member.click('[aria-label="重试服务连接"]');
+  await member.wait('service retry restores connected status', `document.querySelector('.connection-pill').dataset.service==='CONNECTED' && !!document.querySelector('.rail')`);
   await until('friend returns online without resending request', () => owner.evaluate(online('member@example.test')), 25000);
   console.log(`FRIEND_PRESENCE_OFFLINE_ONLINE offlineMs=${offlineMs} recoveredMs=${Math.round(performance.now() - restoredAt)}`);
   await member.click('[data-view=groups]');

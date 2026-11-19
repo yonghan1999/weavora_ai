@@ -268,8 +268,11 @@ body,
   .group-chat-layout {
     grid-template-columns: minmax(0, 1fr);
   }
-  .desktop-titlebar .connection-pill {
+  .desktop-titlebar .connection-pill:not([data-service="RETRYING"]) {
     display: none;
+  }
+  .desktop-titlebar .connection-pill[data-service="RETRYING"] {
+    display: inline-flex;
   }
   .settings-layout {
     grid-template-columns: minmax(0, 1fr);

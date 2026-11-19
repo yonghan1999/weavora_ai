@@ -38,6 +38,17 @@ impl ClientCore {
         snapshot.last_error_code = None;
     }
 
+    pub fn set_service_available(&self, available: bool) {
+        let mut state = self.state.lock().expect("client state lock");
+        if state.snapshot.user_id.is_some() {
+            state.snapshot.service = if available {
+                ChannelStatus::Connected
+            } else {
+                ChannelStatus::Retrying
+            };
+        }
+    }
+
     pub fn begin_activity(&self, request_id: String, activity_id: String, device_id: String) {
         let mut state = self.state.lock().expect("client state lock");
         state.pending_request = Some(request_id);
