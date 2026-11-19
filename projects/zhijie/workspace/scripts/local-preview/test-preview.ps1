@@ -27,12 +27,16 @@ function Read-Seed {
 $savedPassword = $env:ZHIJIE_PREVIEW_PASSWORD
 $savedMail = $env:ZHIJIE_MAIL_ENABLED
 $savedVoice = $env:ZHIJIE_VOICE_ENABLED
+$savedTemp = $env:TEMP
+$savedTmp = $env:TMP
 Push-Location -LiteralPath $fixture
 try {
     $env:ZHIJIE_MAIL_ENABLED = 'false'
     $env:ZHIJIE_VOICE_ENABLED = 'false'
     $env:ZHIJIE_PREVIEW_PASSWORD = $password
     & "$fixture/scripts/local-preview/start.ps1" -JavaHome $JavaHome -HttpPort $HttpPort -DatabasePort $DatabasePort
+    if ($env:TEMP -ne $savedTemp -or $env:TMP -ne $savedTmp) { throw "启动器改变了调用者的临时目录" }
+    if (!(Test-Path -LiteralPath "$fixture/target/local-preview/temp/embedded-pg" -PathType Container)) { throw "临时 PostgreSQL 未使用项目目录" }
     $before = Read-Seed
     & "$fixture/scripts/local-preview/stop.ps1"
     & "$fixture/scripts/local-preview/start.ps1" -JavaHome $JavaHome -HttpPort $HttpPort -DatabasePort $DatabasePort

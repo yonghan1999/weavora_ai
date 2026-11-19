@@ -15,15 +15,20 @@ if ($HttpPort -eq $DatabasePort -or (Get-NetTCPConnection -State Listen -LocalPo
 }
 if (!$JavaHome -or !(Test-Path -LiteralPath "$JavaHome/bin/javac.exe" -PathType Leaf)) { throw "请通过 JAVA_HOME 或 -JavaHome 指定 JDK 25。" }
 $classpath = "$workspace/control-plane/target/classes;" + (Get-Content -LiteralPath $classpathFile -Raw).Trim()
-& "$JavaHome/bin/javac.exe" -encoding UTF-8 -cp $classpath -d $runtime "$PSScriptRoot/LocalPreview.java"
-if ($LASTEXITCODE -ne 0) { throw "本地启动入口编译失败" }
-$shimOutput = [System.IO.Path]::GetFullPath("$runtime/clean-cmd.exe")
-$shimSource = [System.IO.Path]::GetFullPath("$PSScriptRoot/CleanCmd.cs")
-& "C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe" /nologo "/out:$shimOutput" $shimSource
-if ($LASTEXITCODE -ne 0) { throw "本机命令行兼容入口编译失败" }
+$tempDirectory = (New-Item -ItemType Directory -Path "$runtime/temp" -Force).FullName
+$originalTemp = $env:TEMP
+$originalTmp = $env:TMP
 $originalComSpec = $env:ComSpec
-$env:ComSpec = "$runtime/clean-cmd.exe"
 try {
+    $env:TEMP = $tempDirectory
+    $env:TMP = $tempDirectory
+    & "$JavaHome/bin/javac.exe" "-J-Djava.io.tmpdir=$tempDirectory" -J-XX:-UsePerfData -encoding UTF-8 -cp $classpath -d $runtime "$PSScriptRoot/LocalPreview.java"
+    if ($LASTEXITCODE -ne 0) { throw "本地启动入口编译失败" }
+    $shimOutput = [System.IO.Path]::GetFullPath("$runtime/clean-cmd.exe")
+    $shimSource = [System.IO.Path]::GetFullPath("$PSScriptRoot/CleanCmd.cs")
+    & "C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe" /nologo "/out:$shimOutput" $shimSource
+    if ($LASTEXITCODE -ne 0) { throw "本机命令行兼容入口编译失败" }
+    $env:ComSpec = $shimOutput
     if (!(Test-Path -LiteralPath "$runtime/postgres/PG_VERSION")) {
         if (!$env:ZHIJIE_PREVIEW_PASSWORD) {
             $secure = Read-Host "首次试用账号密码（至少 12 位）" -AsSecureString
@@ -32,8 +37,10 @@ try {
         if ($env:ZHIJIE_PREVIEW_PASSWORD.Length -lt 12) { throw "首次试用密码至少需要 12 位，未启动数据库。" }
     }
     if (Test-Path -LiteralPath "$runtime/stop") { Remove-Item -LiteralPath "$runtime/stop" }
-    $process = Start-Process -FilePath "$JavaHome/bin/java.exe" -ArgumentList @("-cp", "`"$runtime;$classpath`"", "LocalPreview", $HttpPort, $DatabasePort) -WorkingDirectory $workspace -WindowStyle Hidden -PassThru -RedirectStandardOutput "$runtime/server.log" -RedirectStandardError "$runtime/server-error.log"
+    $process = Start-Process -FilePath "$JavaHome/bin/java.exe" -ArgumentList @("`"-Djava.io.tmpdir=$tempDirectory`"", "-XX:-UsePerfData", "-cp", "`"$runtime;$classpath`"", "LocalPreview", $HttpPort, $DatabasePort) -WorkingDirectory $workspace -WindowStyle Hidden -PassThru -RedirectStandardOutput "$runtime/server.log" -RedirectStandardError "$runtime/server-error.log"
 } finally {
+    $env:TEMP = $originalTemp
+    $env:TMP = $originalTmp
     $env:ComSpec = $originalComSpec
     Remove-Item Env:ZHIJIE_PREVIEW_PASSWORD -ErrorAction SilentlyContinue
 }
