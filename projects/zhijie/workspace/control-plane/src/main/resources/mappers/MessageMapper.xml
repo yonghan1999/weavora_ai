@@ -22,6 +22,9 @@
     <select id="list" resultMap="GroupMessage">
         SELECT * FROM messages WHERE group_id = #{groupId}
         <if test="before != null">AND created_at &lt; #{before}</if>
+        <if test="beforeId != null">
+            AND (created_at, id) &lt; (SELECT created_at, id FROM messages WHERE group_id = #{groupId} AND id = #{beforeId})
+        </if>
         ORDER BY created_at DESC, id DESC LIMIT #{limit}
     </select>
 </mapper>

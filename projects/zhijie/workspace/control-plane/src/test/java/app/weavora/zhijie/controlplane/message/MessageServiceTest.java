@@ -72,6 +72,16 @@ class MessageServiceTest {
     }
 
     @Test
+    void rejectsAmbiguousOrMalformedMessageCursors() {
+        for (String cursor : List.of("", " ", "x".repeat(129))) {
+            assertThatThrownBy(() -> service.list("author", "group", null, cursor, 50))
+                    .isInstanceOf(ApiException.class).extracting("code").isEqualTo("INVALID_MESSAGE_CURSOR");
+        }
+        assertThatThrownBy(() -> service.list("author", "group", Instant.EPOCH, "message-id", 50))
+                .isInstanceOf(ApiException.class).extracting("code").isEqualTo("INVALID_MESSAGE_CURSOR");
+    }
+
+    @Test
     void paginationAndValidationUseStableLimits() {
         MessageView first = service.post("author", "group", "第一条");
         MessageView second = service.post("author", "group", "第二条");
@@ -87,10 +97,13 @@ class MessageServiceTest {
         public void insert(GroupMessage message) { messages.put(message.id(), message); }
         public Optional<GroupMessage> findById(String messageId) { return Optional.ofNullable(messages.get(messageId)); }
         public void update(GroupMessage message) { messages.put(message.id(), message); }
-        public List<GroupMessage> list(String groupId, Instant before, int limit) {
+        public List<GroupMessage> list(String groupId, Instant before, String beforeId, int limit) {
+            var order = java.util.Comparator.comparing(GroupMessage::createdAt).thenComparing(GroupMessage::id);
+            var cursor = messages.get(beforeId);
             return messages.values().stream().filter(m -> m.groupId().equals(groupId))
                     .filter(m -> before == null || m.createdAt().isBefore(before))
-                    .sorted((a, b) -> b.createdAt().compareTo(a.createdAt())).limit(limit).toList();
+                    .filter(m -> beforeId == null || cursor != null && cursor.groupId().equals(groupId) && order.compare(m, cursor) < 0)
+                    .sorted(order.reversed()).limit(limit).toList();
         }
     }
 }

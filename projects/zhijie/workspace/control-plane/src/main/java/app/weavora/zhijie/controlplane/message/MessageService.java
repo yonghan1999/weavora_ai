@@ -45,8 +45,15 @@ public class MessageService {
     }
 
     public List<MessageView> list(String actorId, String groupId, Instant before, int limit) {
+        return list(actorId, groupId, before, null, limit);
+    }
+
+    public List<MessageView> list(String actorId, String groupId, Instant before, String beforeId, int limit) {
         groups.requireMembership(groupId, actorId);
-        return repository.list(groupId, before, Math.min(Math.max(limit, 1), 100)).stream().map(MessageView::from).toList();
+        if (beforeId != null && (before != null || beforeId.isBlank() || beforeId.length() > 128)) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "INVALID_MESSAGE_CURSOR", "群消息游标无效", false);
+        }
+        return repository.list(groupId, before, beforeId, Math.min(Math.max(limit, 1), 100)).stream().map(MessageView::from).toList();
     }
 
     @Transactional

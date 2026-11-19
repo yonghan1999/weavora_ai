@@ -16,5 +16,7 @@ public class MyBatisMessageRepository implements MessageRepository {
     public void insert(GroupMessage message) { mapper.insert(message); }
     public Optional<GroupMessage> findById(String messageId) { return mapper.findById(messageId); }
     public void update(GroupMessage message) { mapper.update(message); }
-    public List<GroupMessage> list(String groupId, Instant before, int limit) { return mapper.list(groupId, before, limit); }
+    public List<GroupMessage> list(String groupId, Instant before, String beforeId, int limit) {
+        return mapper.list(groupId, before, beforeId, limit);
+    }
 }

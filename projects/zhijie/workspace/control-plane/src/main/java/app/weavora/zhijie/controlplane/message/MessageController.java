@@ -38,8 +38,9 @@ public class MessageController {
     @GetMapping("/groups/{groupId}/messages")
     public Map<String, List<MessageView>> list(@RequestHeader("Authorization") String auth, @PathVariable String groupId,
                                                @RequestParam(required = false) Instant before,
+                                               @RequestParam(required = false) String beforeId,
                                                @RequestParam(defaultValue = "50") int limit) {
-        return Map.of("data", messages.list(actor(auth), groupId, before, limit));
+        return Map.of("data", messages.list(actor(auth), groupId, before, beforeId, limit));
     }
 
     @DeleteMapping("/messages/{messageId}")
