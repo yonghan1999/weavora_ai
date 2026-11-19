@@ -67,6 +67,18 @@ python zhijie.py add-task my-app --task-id TASK-001 --title "实现核心功能"
 python zhijie.py submit my-app --actor tech-lead --role tech_lead
 ```
 
+如果 shell 管道不能可靠传递中文，先将五项说明保存为 UTF-8 JSON（可含 BOM），再从文件登记；不与 `--title` 等内联说明混用。命令、需求和依赖仍须显式指定，文件不能改写任务状态。
+
+```json
+{"title":"实现核心功能","input":"已批准需求和设计","output":"实现与测试","acceptance":"AC-001 通过","rollback":"回退本任务变更"}
+```
+
+```bash
+python zhijie.py add-task my-app --task-id TASK-001 --requirements REQ-001 --test "项目测试命令" --text-file "任务说明.json"
+```
+
+`status <项目标识>` 在发现任务说明为空、含替换字符或主要由连续问号组成时，返回 `task_text_warnings`，列出任务和字段，不会改写任务和审计。已有损坏记录须从可信原文核对，不能从问号反推验收条件。
+
 E 阶段真实执行命令并保存证据：
 
 ```bash

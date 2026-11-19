@@ -22,10 +22,21 @@ TASK_ID_RE = re.compile(r"^(?:TASK|FIX)-[A-Za-z0-9-]+$")
 CHECK_ID_RE = re.compile(r"^[a-z][a-z0-9-]{1,63}$")
 CASE_ID_RE = re.compile(r"^TC-[A-Za-z0-9-]+$")
 HUMAN_CONFIRMATION = "I_CONFIRM_HUMAN_DECISION"
+TASK_TEXT_FIELDS = ("title", "input", "output", "acceptance", "rollback")
 
 
 class WorkflowError(RuntimeError):
     """用户可修正的工作流错误。"""
+
+
+def unreadable_task_fields(task: dict[str, Any]) -> list[str]:
+    fields = []
+    for name in TASK_TEXT_FIELDS:
+        text = task.get(name)
+        if (not isinstance(text, str) or not text.strip() or "\ufffd" in text
+                or ("???" in text and text.count("?") * 2 >= len(text.strip()))):
+            fields.append(name)
+    return fields
 
 
 def utc_now() -> str:
@@ -397,7 +408,18 @@ class Engine:
         if project_id:
             state = self._load_consistent(project_id)
             current = self.current_approval_request(project_id, required=False)
-            return {"state": state, "current_approval_request": current}
+            result = {"state": state, "current_approval_request": current}
+            try:
+                tasks = read_json(self.project_dir(project_id) / "tasks/tasks.json")["tasks"]
+                if not isinstance(tasks, list) or not all(isinstance(task, dict) for task in tasks):
+                    raise ValueError
+                warnings = [{"task_id": task.get("id"), "fields": fields} for task in tasks
+                            if (fields := unreadable_task_fields(task))]
+            except (WorkflowError, OSError, ValueError, KeyError, TypeError):
+                warnings = [{"error": "无法读取任务列表", "path": "tasks/tasks.json"}]
+            if warnings:
+                result["task_text_warnings"] = warnings
+            return result
         if not self.projects.exists():
             return []
         result = []
@@ -829,6 +851,9 @@ class Engine:
                 raise WorkflowError("只有开发规划阶段可添加任务。")
             if not TASK_ID_RE.fullmatch(task["id"]):
                 raise WorkflowError("任务标识格式无效。")
+            unreadable = unreadable_task_fields(task)
+            if unreadable:
+                raise WorkflowError(f"任务说明为空或疑似编码丢失：{', '.join(unreadable)}。请核对原文或使用 UTF-8 --text-file。")
             path = self.project_dir(project_id) / "tasks/tasks.json"
             data = read_json(path)
             if any(item["id"] == task["id"] for item in data["tasks"]):

@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .engine import Engine, HUMAN_CONFIRMATION, WorkflowError
+from .engine import Engine, HUMAN_CONFIRMATION, TASK_TEXT_FIELDS, WorkflowError
 from .gates import check_installation, check_stage
 
 
@@ -63,11 +63,12 @@ def parser() -> argparse.ArgumentParser:
     command = sub.add_parser("add-task", help="添加可执行开发任务")
     command.add_argument("project_id")
     command.add_argument("--task-id", required=True)
-    command.add_argument("--title", required=True)
+    command.add_argument("--text-file", type=Path, help="从 UTF-8 JSON 读取五项任务说明，不与内联说明混用")
     command.add_argument("--requirements", required=True, help="逗号分隔 REQ 标识")
     command.add_argument("--depends-on", default="", help="逗号分隔任务标识")
-    for argument in ["input", "output", "acceptance", "test", "rollback"]:
-        command.add_argument(f"--{argument}", required=True)
+    command.add_argument("--test", required=True)
+    for argument in TASK_TEXT_FIELDS:
+        command.add_argument(f"--{argument}")
 
     command = sub.add_parser("task-run", help="真实执行开发/修复任务命令")
     command.add_argument("project_id")
@@ -150,16 +151,22 @@ def dispatch(args: argparse.Namespace) -> Any:
     if args.command == "cancel":
         return engine.cancel(args.project_id, args.actor, args.role, args.reason)
     if args.command == "add-task":
+        text = {field: getattr(args, field) for field in TASK_TEXT_FIELDS}
+        if args.text_file is not None:
+            if any(value is not None for value in text.values()):
+                raise WorkflowError("--text-file 不能与内联任务说明混用。")
+            try:
+                text = json.loads(args.text_file.read_text(encoding="utf-8-sig"))
+            except (OSError, UnicodeError, json.JSONDecodeError) as error:
+                raise WorkflowError("无法读取 UTF-8 任务说明 JSON 文件。") from error
+            if not isinstance(text, dict) or set(text) != set(TASK_TEXT_FIELDS):
+                raise WorkflowError(f"任务说明文件须且仅可包含：{', '.join(TASK_TEXT_FIELDS)}。")
         task = {
             "id": args.task_id,
-            "title": args.title,
+            **text,
             "requirement_ids": _csv(args.requirements),
             "depends_on": _csv(args.depends_on),
-            "input": args.input,
-            "output": args.output,
-            "acceptance": args.acceptance,
             "test": args.test,
-            "rollback": args.rollback,
         }
         return engine.add_task(args.project_id, task)
     if args.command == "task-run":

@@ -624,6 +624,50 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaisesRegex(WorkflowError, "依赖任务尚未完成"):
             self.engine.run_task(self.project_id, "TASK-002", "developer", "developer", "python --version")
 
+    def test_task_text_file_round_trip_and_rejection_before_writes(self):
+        from workflow.cli import dispatch, parser
+
+        state = self.engine.load(self.project_id)
+        state["stage"] = "D_PLANNING"
+        self.engine.save(self.project_id, state)
+        text = {"title": "注册与找回 🔑", "input": "已批准需求", "output": "实现与用例",
+                "acceptance": "找回后可登录吗？", "rollback": "撤回变更"}
+        source = self.root / "任务说明.json"
+        args = ["--root", str(self.root), "add-task", self.project_id, "--task-id", "TASK-001",
+                "--requirements", "REQ-001", "--test", "python --version"]
+        project = self.engine.project_dir(self.project_id)
+        paths = [project / "tasks/tasks.json", project / "audit.jsonl"]
+        before = [path.read_bytes() for path in paths]
+        for invalid, extra in [(b'\xff', []), (b'{}', []), (b'[]', []),
+                               (json.dumps(text | {"test": "other"}).encode(), []),
+                               (json.dumps(text | {"title": "??LiveKit????????"}).encode(), []),
+                               (json.dumps(text | {"output": "\ufffd"}).encode(), []),
+                               (json.dumps(text | {"acceptance": 42}).encode(), []),
+                               (json.dumps(text).encode(), ["--title", "重复"])]:
+            source.write_bytes(invalid)
+            with self.subTest(invalid=invalid, extra=extra), self.assertRaises(WorkflowError):
+                dispatch(parser().parse_args(args + ["--text-file", str(source)] + extra))
+            self.assertEqual([path.read_bytes() for path in paths], before)
+        with self.assertRaises(WorkflowError):
+            dispatch(parser().parse_args(args + ["--title", "缺少其他字段"]))
+        source.write_text(json.dumps(text, ensure_ascii=False), encoding="utf-8-sig")
+        result = dispatch(parser().parse_args(args + ["--text-file", str(source)]))
+        self.assertEqual({key: result[key] for key in text}, text)
+        for record in [json.loads(paths[0].read_bytes())["tasks"][0], json.loads(paths[1].read_bytes().splitlines()[-1])["task"]]:
+            self.assertEqual({key: record[key] for key in text}, text)
+        self.assertNotIn("task_text_warnings", self.engine.status(self.project_id))
+        stored = json.loads(paths[0].read_bytes())
+        stored["tasks"][0]["acceptance"] = "????????"
+        atomic_json(paths[0], stored)
+        before = [path.read_bytes() for path in paths]
+        self.assertEqual(self.engine.status(self.project_id)["task_text_warnings"],
+                         [{"task_id": "TASK-001", "fields": ["acceptance"]}])
+        self.assertEqual([path.read_bytes() for path in paths], before)
+        paths[0].write_text("null", encoding="utf-8")
+        status = self.engine.status(self.project_id)
+        self.assertEqual(status["state"]["stage"], "D_PLANNING")
+        self.assertEqual(status["task_text_warnings"][0]["path"], "tasks/tasks.json")
+
     def test_task_execution_requires_developer_and_registered_command(self):
         state = self.engine.load(self.project_id)
         state["stage"] = "D_PLANNING"
