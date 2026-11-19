@@ -1,0 +1,9 @@
+# 正式运行使用独立低权限账号；迁移由发布步骤单独完成。
+server:
+  address: 127.0.0.1
+spring:
+  datasource:
+    username: ${ZHIJIE_DATABASE_USERNAME}
+    password: ${ZHIJIE_DATABASE_PASSWORD}
+  flyway:
+    enabled: true
