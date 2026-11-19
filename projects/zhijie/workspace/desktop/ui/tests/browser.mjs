@@ -4,12 +4,9 @@ import { rm } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
 import { createServer } from "node:http";
 import assert from "node:assert/strict";
+import { browserExecutable } from "./browser-executable.mjs";
 
-const chrome = [
-  "C:/Program Files/Google/Chrome/Application/chrome.exe",
-  "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
-].find(existsSync);
-assert.ok(chrome, "需要 Chrome 或 Edge");
+const chrome = browserExecutable();
 const output = resolve(".test-artifacts");
 mkdirSync(output, { recursive: true });
 const dist = resolve("dist");

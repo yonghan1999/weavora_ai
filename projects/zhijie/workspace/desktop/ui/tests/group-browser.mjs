@@ -7,6 +7,7 @@ import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { memberTestLink } from './member-test-link.mjs';
+import { browserExecutable } from './browser-executable.mjs';
 
 const { port, password, scenario = 'social' } = JSON.parse(readFileSync(0, 'utf8'));
 assert.ok(Number.isInteger(port) && port > 0 && port <= 65535);
@@ -14,9 +15,7 @@ const origin = `http://127.0.0.1:${port}`;
 const executable = process.argv[3];
 assert.ok(executable && existsSync(executable), 'prepared Shell test binary required');
 const clients = new Map();
-const chrome = [process.env.ZHIJIE_TEST_CHROME, 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(path => path && existsSync(path));
-assert.ok(chrome, 'Chrome or Edge required');
+const chrome = browserExecutable();
 const profile = mkdtempSync(join(process.argv[2], 'profile-'));
 const browser = spawn(chrome, ['--headless=new', '--no-first-run', '--disable-background-networking',
   '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { windowsHide: true, stdio: 'ignore' });
