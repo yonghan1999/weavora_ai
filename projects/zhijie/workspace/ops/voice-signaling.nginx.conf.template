@@ -6,15 +6,12 @@ map $http_upgrade $zhijie_voice_connection {
 }
 
 server {
-    listen 443 ssl;
-    server_name ${ZHIJIE_VOICE_PUBLIC_HOST};
-    ssl_certificate ${ZHIJIE_VOICE_TLS_CERT};
-    ssl_certificate_key ${ZHIJIE_VOICE_TLS_KEY};
+    ${VOICE_LISTENER}
     access_log off;
 
     location = /_voice_authorize {
         internal;
-        proxy_pass http://127.0.0.1:8080/internal/voice/v1/authorize;
+        proxy_pass http://127.0.0.1:${CONTROL_PORT}/internal/voice/v1/authorize;
         proxy_pass_request_body off;
         proxy_set_header Content-Length "";
         proxy_set_header Authorization $http_authorization;

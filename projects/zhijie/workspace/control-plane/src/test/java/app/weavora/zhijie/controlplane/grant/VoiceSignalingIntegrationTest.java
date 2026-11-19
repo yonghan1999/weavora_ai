@@ -38,8 +38,6 @@ class VoiceSignalingIntegrationTest {
         String relayKey = UUID.randomUUID().toString();
         Process nginx = null;
         Path directory = Files.createTempDirectory(Path.of("target"), "voice-entry-").toAbsolutePath();
-        Files.createDirectories(directory.resolve("logs"));
-        Files.createDirectories(directory.resolve("temp"));
         if ("true".equals(System.getenv("ZHIJIE_TEST_VOICE_MEDIA"))) {
             if (combined()) {
                 var networkBuild = new ProcessBuilder("cargo", "test", "--offline", "-p", "zhijie-helper", "--lib", "--no-run")
@@ -76,17 +74,11 @@ class VoiceSignalingIntegrationTest {
                      "--zhijie.scheduling.enabled=false", "--zhijie.voice.enabled=true", "--zhijie.voice.url=" + signalingUrl,
                      "--zhijie.voice.api-key=" + apiKey, "--zhijie.voice.api-secret=" + apiSecret,
                      "--zhijie.voice.signaling-key=" + signalingKey, "--zhijie.relay.management-key=" + relayKey)) {
-            String template = Files.readString(Path.of("ops/voice-signaling.nginx.conf.template"));
-            String config = template.replace("listen 443 ssl;", "listen 127.0.0.1:" + port + ";")
-                    .replace("    ssl_certificate ${ZHIJIE_VOICE_TLS_CERT};", "")
-                    .replace("    ssl_certificate_key ${ZHIJIE_VOICE_TLS_KEY};", "")
-                    .replace("${ZHIJIE_VOICE_PUBLIC_HOST}", "localhost")
-                    .replace("${ZHIJIE_VOICE_SIGNALING_KEY}", signalingKey)
-                    .replace("127.0.0.1:8080", "127.0.0.1:" + context.getWebServer().getPort());
-            Files.writeString(directory.resolve("nginx.conf"), "daemon off;\nworker_processes 1;\nevents { worker_connections 64; }\nhttp {\n" + config + "\n}\n");
             String executable = Path.of(System.getenv("ZHIJIE_TEST_NGINX")).toAbsolutePath().toString();
-            nginx = new ProcessBuilder(executable, "-p", directory.toString().replace('\\', '/') + "/", "-c", "nginx.conf")
-                    .redirectOutput(directory.resolve("out.log").toFile()).redirectError(directory.resolve("err.log").toFile()).start();
+            var proxy = new ProcessBuilder("python", "-B", "scripts/local-preview/voice-proxy.py", "--nginx", executable,
+                    "--port", String.valueOf(port), "--control-port", String.valueOf(context.getWebServer().getPort()));
+            proxy.environment().put("ZHIJIE_VOICE_SIGNALING_KEY", signalingKey);
+            nginx = proxy.redirectOutput(directory.resolve("out.log").toFile()).redirectError(directory.resolve("err.log").toFile()).start();
             var http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
             String entry = "http://127.0.0.1:" + port;
             boolean ready = false;
@@ -171,14 +163,11 @@ class VoiceSignalingIntegrationTest {
                 assertThat(status(http, entry, disabledSecond, true)).isEqualTo(403);
             }
         } finally {
-            if (nginx != null) {
-                var descendants = nginx.descendants().toList();
-                nginx.destroy();
-                if (!nginx.waitFor(5, TimeUnit.SECONDS)) nginx.destroyForcibly();
-                descendants.forEach(ProcessHandle::destroy);
+            if (nginx != null && nginx.isAlive()) {
+                nginx.getOutputStream().close();
+                assertThat(nginx.waitFor(25, TimeUnit.SECONDS)).as("preview proxy stopped").isTrue();
+                assertThat(nginx.exitValue()).isZero();
             }
-            // nginx 配置含管理密钥，结束时立即删除；仅保留无凭据日志。
-            Files.deleteIfExists(directory.resolve("nginx.conf"));
         }
     }
 

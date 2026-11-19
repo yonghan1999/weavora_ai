@@ -48,6 +48,8 @@ Copy-Item -LiteralPath $candidate -Destination "control-plane/target/local-previ
 
 ## 受控语音联调
 
+桌面单机试用现在可以直接启动受鉴权的回环入口：[启动步骤与停止方式](voice-proxy.md)。不需要语音时保持默认配置即可。
+
 已补充可选本机 SFU，默认试用后端仍不启用。先从 LiveKit 官方 release 下载并校验服务端，将 `livekit-server.exe` 放在 `target/local-preview/livekit/bin/`。通过当前进程环境设置 `ZHIJIE_VOICE_API_KEY` 和至少 32 字符的 `ZHIJIE_VOICE_API_SECRET`，随后运行 `./scripts/local-preview/start-voice.ps1` 和 `python scripts/local-preview/test-voice.py`。HTTP 信令限定回环，媒体 UDP 绑定本机默认出口 IPv4 的 7882 端口，可通过 `-MediaAddress` 指定另一块本机网卡；不改防火墙。Rust WebRTC 默认忽略回环网卡，纯回环媒体在本机连接超时，不能据此宣称媒体可用。
 
 需要后端签发语音凭据时，先启动受鉴权代理，并把 `ZHIJIE_VOICE_URL` 设为客户端可访问的代理地址（正式环境使用 `wss://`，仅本机开发允许回环 `ws://`），然后设置 `ZHIJIE_VOICE_ENABLED=true` 再启动后端。`ZHIJIE_VOICE_ADMIN_URL` 仅供控制面访问 SFU；不要把 7880 直接发给客户端。SFU 启动脚本不会设置或覆盖客户端地址；缺少入口或与管理端点相同会阻止启用语音的后端启动。默认关闭语音不需要这些配置。结束后运行 `./scripts/local-preview/stop-voice.ps1`。

@@ -10,11 +10,27 @@ import re
 import subprocess
 
 
+def render_entry(template, listener, control_port, key):
+    values = {'VOICE_LISTENER': listener, 'CONTROL_PORT': str(control_port), 'ZHIJIE_VOICE_SIGNALING_KEY': key}
+    if set(re.findall(r"\$\{([^}]+)\}", template)) != set(values):
+        raise ValueError("VOICE_TEMPLATE_PLACEHOLDERS_INVALID")
+    if not re.fullmatch(r"[A-Za-z0-9_+=/.-]{32,256}", key):
+        raise ValueError("VOICE_SIGNALING_KEY_INVALID")
+    return re.sub(r"\$\{([^}]+)\}", lambda match: values[match[1]], template)
+
+
+def render_preview(template, environment, port, control_port):
+    if (not all(type(value) is int and 1 <= value <= 65535 for value in (port, control_port))
+            or len({port, control_port, 7880, 7882}) != 4):
+        raise ValueError("VOICE_PREVIEW_PORT_INVALID")
+    entry = render_entry(template, f'listen 127.0.0.1:{port};\n    server_name localhost;',
+                         control_port, environment.get('ZHIJIE_VOICE_SIGNALING_KEY', ''))
+    return 'daemon off;\nworker_processes 1;\nerror_log stderr crit;\nevents { worker_connections 128; }\nhttp {\n' + entry + '\n}\n'
+
+
 def render(template, environment):
     names = {"ZHIJIE_VOICE_PUBLIC_HOST", "ZHIJIE_VOICE_TLS_CERT",
              "ZHIJIE_VOICE_TLS_KEY", "ZHIJIE_VOICE_SIGNALING_KEY"}
-    if set(re.findall(r"\$\{([^}]+)\}", template)) != names:
-        raise ValueError("VOICE_TEMPLATE_PLACEHOLDERS_INVALID")
     values = {}
     for name in names:
         value = environment.get(name, "")
@@ -25,8 +41,6 @@ def render(template, environment):
     if len(host) > 253 or not all(re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", label)
                                   for label in host.split(".")):
         raise ValueError("VOICE_PUBLIC_HOST_INVALID")
-    if not re.fullmatch(r"[A-Za-z0-9_+=/.-]{32,256}", values["ZHIJIE_VOICE_SIGNALING_KEY"]):
-        raise ValueError("VOICE_SIGNALING_KEY_INVALID")
     for name in ["ZHIJIE_VOICE_TLS_CERT", "ZHIJIE_VOICE_TLS_KEY"]:
         path = values[name]
         if (not (PurePosixPath(path).is_absolute() or PureWindowsPath(path).is_absolute())
@@ -34,7 +48,10 @@ def render(template, environment):
             raise ValueError("VOICE_TLS_PATH_INVALID")
         # nginx 引号支持含空格路径；Windows 分隔符转为正斜杠，拒绝变量插值。
         values[name] = '"' + path.replace("\\", "/") + '"'
-    return re.sub(r"\$\{([^}]+)\}", lambda match: values[match[1]], template)
+    listener = (f'listen 443 ssl;\n    server_name {host};\n'
+                f'    ssl_certificate {values["ZHIJIE_VOICE_TLS_CERT"]};\n'
+                f'    ssl_certificate_key {values["ZHIJIE_VOICE_TLS_KEY"]};')
+    return render_entry(template, listener, 8080, values['ZHIJIE_VOICE_SIGNALING_KEY'])
 
 
 def write_private_directory(directory, content):

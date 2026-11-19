@@ -47,6 +47,18 @@ class VoiceConfigTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             renderer.render(self.template, {})
 
+    def test_preview_only_binds_loopback_and_rejects_conflicting_ports(self):
+        config = renderer.render_preview(self.template, self.environment, 7881, 18080)
+        self.assertIn('listen 127.0.0.1:7881;', config)
+        self.assertIn('127.0.0.1:18080/internal/voice/v1/authorize;', config)
+        self.assertIn('auth_request /_voice_authorize;', config)
+        self.assertNotIn('ssl_certificate', config)
+        for ports in [(7881, 7881), (7880, 8080), (7881, 7882), (0, 8080), (65536, 8080)]:
+            with self.subTest(ports=ports), self.assertRaises(ValueError):
+                renderer.render_preview(self.template, self.environment, *ports)
+        with self.assertRaises(ValueError):
+            renderer.render_preview(self.template, {}, 7881, 8080)
+
     def test_output_is_private_and_existing_directory_is_never_overwritten(self):
         root = Path(__file__).resolve().parents[1] / "target"
         root.mkdir(exist_ok=True)
