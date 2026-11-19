@@ -1,5 +1,21 @@
 use std::{ffi::OsString, path::PathBuf};
 
+fn default_socket_for(os: &str) -> &'static str {
+    match os {
+        "windows" => r"\\.\pipe\zhijie-helper-v1",
+        "macos" => "/var/run/zhijie-helper-v1.sock",
+        _ => "/run/zhijie/helper-v1.sock",
+    }
+}
+
+pub fn socket_path(configured: Option<OsString>) -> Result<PathBuf, String> {
+    let path = configured
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(default_socket_for(std::env::consts::OS)));
+    validate_socket(&path)?;
+    Ok(path)
+}
+
 pub struct StartupConfig {
     pub client_pid: u32,
     pub socket: PathBuf,
@@ -59,17 +75,7 @@ impl StartupConfig {
             .ok_or("ZHIJIE_HELPER_CLIENT_PID is invalid")?;
         let control_plane_url = control_plane_url.unwrap_or_else(|| "http://127.0.0.1:8080".into());
         crate::authority::validate_base_url(&control_plane_url)?;
-        let socket = socket.map(PathBuf::from).unwrap_or_else(|| {
-            #[cfg(windows)]
-            {
-                PathBuf::from(r"\\.\pipe\zhijie-helper-v1")
-            }
-            #[cfg(not(windows))]
-            {
-                PathBuf::from("/run/zhijie/helper-v1.sock")
-            }
-        });
-        validate_socket(&socket)?;
+        let socket = socket_path(socket)?;
         Ok(Self {
             client_pid,
             socket,
@@ -100,6 +106,30 @@ fn validate_socket(socket: &std::path::Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn defaults_match_packaged_service_endpoints() {
+        let plist = include_str!("../../../packaging/macos/app.weavora.zhijie.helper.plist");
+        let unit = include_str!("../../../packaging/linux/zhijie-helper.service");
+        assert!(plist.contains(&format!(
+            "<key>ZHIJIE_HELPER_SOCKET</key><string>{}</string>",
+            default_socket_for("macos")
+        )));
+        assert!(unit.lines().any(|line| line
+            == format!(
+                "Environment=ZHIJIE_HELPER_SOCKET={}",
+                default_socket_for("linux")
+            )));
+        assert_eq!(default_socket_for("windows"), r"\\.\pipe\zhijie-helper-v1");
+        assert_eq!(
+            parse(&[], Some("42")).unwrap().socket,
+            socket_path(None).unwrap()
+        );
+        assert_eq!(
+            socket_path(Some("relative".into())).unwrap_err(),
+            "IPC_PATH_INVALID"
+        );
+    }
 
     fn parse(args: &[&str], pid: Option<&str>) -> Result<StartupConfig, String> {
         StartupConfig::parse(

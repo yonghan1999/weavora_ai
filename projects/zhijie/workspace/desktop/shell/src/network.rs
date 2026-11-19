@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
@@ -399,18 +398,8 @@ async fn call(request: HelperRequest) -> Result<NetworkStatus, String> {
 }
 
 async fn call_with_delivery(request: HelperRequest) -> Result<NetworkStatus, CallFailure> {
-    let path = std::env::var_os("ZHIJIE_HELPER_SOCKET")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            #[cfg(windows)]
-            {
-                PathBuf::from(r"\\.\pipe\zhijie-helper-v1")
-            }
-            #[cfg(not(windows))]
-            {
-                PathBuf::from("/run/zhijie/helper-v1.sock")
-            }
-        });
+    let path = zhijie_helper::startup::socket_path(std::env::var_os("ZHIJIE_HELPER_SOCKET"))
+        .map_err(CallFailure::NotSent)?;
     let response = tauri::async_runtime::spawn_blocking(move || {
         zhijie_helper::ipc::call_with_delivery(&path, &request)
     })
