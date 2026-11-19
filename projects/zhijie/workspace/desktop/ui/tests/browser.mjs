@@ -117,7 +117,7 @@ globalThis.__TAURI__={window:{getCurrentWindow:()=>({minimize:async()=>windowCal
 calls.push({command,p});
 if(command==='session_login'){await new Promise(r=>setTimeout(r,80));if(failLogin)throw 'SERVICE_UNAVAILABLE';return snapshot();}
 if(command==='session_logout')return {userId:null,activity:null,service:'DISCONNECTED',lastErrorCode:'LOGOUT_CLEANUP_PENDING'};
-if(command==='group_list')return [group];if(command==='room_list')return [room];
+if(command==='group_list')return [group,...(globalThis.extraGroups??[])];if(command==='room_list')return p.groupId===group.id?[room]:[];
 if(command==='activity_join'){activity={activityId:'a1',leaseId:'lease-room',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
 if(command==='activity_leave'){activity=null;return snapshot();}
 if(command==='voice_connect'){if(globalThis.holdVoice)await new Promise(done=>globalThis.resumeVoice=done);voice.state='FAILED';voice.failureCode='VOICE_CAPACITY_LIMITED';throw 'VOICE_CAPACITY_LIMITED';}
@@ -594,7 +594,14 @@ try {
   await evaluate('globalThis.syncCalls=calls.length;emitProduct({userId:"other-account"})');
   await delay(700);
   await check("其他账号同步通知不触发资源读取", 'calls.slice(syncCalls).every(x=>x.command!=="group_list" && x.command!=="room_list" && x.p.resource!=="messages")');
+  await evaluate('room.openState="PAUSED"');
   await click('[data-view="lobby"]');
+  await click('[data-action="refresh"]');
+  await check("大厅禁止新加入暂停房间", 'document.querySelector(".room-card [data-action=join-room]")?.disabled');
+  await click('[data-view="groups"]'); await click('[data-action="open-group"]');
+  await check("群页禁止新加入暂停房间", 'document.querySelector(".group-room-item [data-action=join-room]")?.disabled');
+  await evaluate('room.openState="OPEN"');
+  await click('[data-view="lobby"]'); await click('[data-action="refresh"]');
   await evaluate('globalThis.holdVoice=true');
   await click('[data-action="join-room"]');
   await evaluate(
@@ -608,6 +615,24 @@ try {
     "入房后保留独立语音失败和网络未连接",
     '!!document.querySelector(".voice-dock") && document.querySelectorAll(".room-flags [data-connection=failed]").length===2',
   );
+  await evaluate('room.openState="PAUSED";globalThis.beforeRoomReturn=calls.length');
+  await click('[data-view="lobby"]'); await click('[data-action="refresh"]');
+  await click('.room-card [data-action="open-room"]');
+  await check("大厅房间卡允许已加入成员返回暂停房间", '!!document.querySelector(".room-stage") && !document.querySelector("[role=dialog]")');
+  await click('[data-view="groups"]'); await click('[data-action="open-group"]');
+  await click('.group-room-item [data-action="open-room"]');
+  await check("从群页直接回到暂停房间，不重复加入或重连通道", '!!document.querySelector(".room-stage") && !document.querySelector("[role=dialog]") && !calls.slice(beforeRoomReturn).some(x=>["activity_join","voice_connect","network_connect"].includes(x.command))');
+  await evaluate('globalThis.extraGroups=[{id:"g2",name:"另一群"}];room.openState="OPEN"');
+  await click('[data-view="lobby"]'); await click('[data-action="refresh"]');
+  await click('[data-view="groups"]'); await click('[data-action="open-group"][data-id="g2"]');
+  await fill('#message-input', '只属于另一群的草稿');
+  await evaluate('globalThis.beforeGroupReturn=calls.length');
+  await click('.voice-dock [data-action="open-room"]');
+  await check("从别的群返回房间时加载房间所属群，不混用草稿", '!!document.querySelector(".room-stage") && document.querySelector("#message-input").value!=="只属于另一群的草稿" && calls.slice(beforeGroupReturn).some(x=>x.p.resource==="messages" && x.p.id==="g1") && !calls.slice(beforeGroupReturn).some(x=>x.p.resource==="messages" && x.p.id==="g2")');
+  await click('[data-view="groups"]'); await click('[data-action="open-group"][data-id="g2"]');
+  await check("另一群的未发送草稿仍留在原群", 'document.querySelector("#message-input").value==="只属于另一群的草稿"');
+  await click('.voice-dock [data-action="open-room"]');
+  await evaluate('globalThis.extraGroups=[]');
   await click('[data-tab="network"]');
   await check(
     "未接入网络不伪造队友地址",

@@ -335,6 +335,22 @@ async function roomChannels() {
   await member.wait('voluntary leave released second membership', `!!document.querySelector('.room-card') && !document.querySelector('.voice-dock')`);
   assert.equal((await native(member, 'state_snapshot')).activity, null);
   assert.equal((await native(owner, 'state_snapshot')).activity.leaseId, ownerActivity.leaseId);
+  await owner.action('manage-room');
+  await owner.action('toggle-room');
+  await owner.wait('pause saved', `!document.querySelector('[role=dialog]')`);
+  await member.wait('paused room rejects a new entry in lobby', `document.querySelector('.room-card [data-action=join-room]')?.disabled && document.querySelector('.availability')?.textContent==='暂停加入'`);
+  await member.click('[data-view=groups]'); await member.action('open-group');
+  await member.wait('group page also blocks entry', `document.querySelector('.group-room-item [data-action=join-room]')?.disabled`);
+  await owner.click('[data-view=lobby]');
+  await owner.wait('pause visible for current member', `document.querySelector('.availability')?.textContent==='暂停加入'`);
+  await owner.click('.room-card [data-action=open-room]');
+  await owner.wait('current member returns via lobby card', `!!document.querySelector('.room-stage') && !document.querySelector('[role=dialog]')`);
+  await owner.click('[data-view=groups]'); await owner.action('open-group');
+  await owner.click('.group-room-item [data-action=open-room]');
+  await owner.wait('current member returns via group entry', `!!document.querySelector('.room-stage') && !document.querySelector('[role=dialog]')`);
+  assert.equal((await native(owner, 'state_snapshot')).activity.leaseId, ownerActivity.leaseId);
+  assert.equal((await native(member, 'state_snapshot')).activity, null);
+  console.log('PAUSED_ROOM_ENTRY_PRESERVED_CURRENT_LEASE');
   console.log(`ROOM_CHANNEL_FAILURE_CHAT_KICK_REJOIN_LEAVE_OK kick_ms=${elapsed}`);
 }
 

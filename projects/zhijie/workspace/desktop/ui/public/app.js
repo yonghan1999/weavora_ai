@@ -356,8 +356,9 @@ async function loadContext(current = epoch, applicable = () => true) {
     members,
   });
 }
-function navigate(view) {
+function navigate(view, groupId = s.groupId) {
   capture();
+  if (s.groupId !== groupId) Object.assign(s, { groupId, messages: [], groupMembers: [] });
   s.view = view;
   s.error = "";
   epoch++;
@@ -378,7 +379,7 @@ async function joinRoom(id, password = null) {
   if (!r) throw new Error("RESOURCE_NOT_ALLOWED");
   if (s.activity && s.roomId === id) {
     closeDialog();
-    navigate("room");
+    navigate("room", r.groupId);
     await loadContext();
     return;
   }
@@ -752,12 +753,13 @@ const actions = {
       await refresh();
     }),
   "open-group": (b) => {
-    navigate("group");
-    s.groupId = b.dataset.id;
+    navigate("group", b.dataset.id);
     return run((current) => loadContext(current));
   },
   "open-room": () => {
-    navigate("room");
+    const room = s.rooms.find(item => item.id === s.roomId);
+    if (!room || !s.activity) return;
+    navigate("room", room.groupId);
     return run((current) => loadContext(current));
   },
   "join-room": (b) =>

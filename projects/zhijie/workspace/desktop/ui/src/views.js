@@ -88,13 +88,19 @@ export function authView(s) {
 }
 function rail(s) {
   const nav = (view, name, label) =>
-    `<button class="nav-item ${s.view === view || (view === "groups" && s.view === "group") ? "active" : ""}" data-view="${view}" aria-label="${label}">${icon(name)}<span>${label}</span></button>`;
+    `<button class="nav-item ${s.view === view || (view === "groups" && s.view === "group") ? "active" : ""}" data-view="${view}" aria-label="${label}" ${s.busy ? "disabled" : ""}>${icon(name)}<span>${label}</span></button>`;
   return `<aside class="rail"><nav aria-label="主导航">${nav("lobby", "home", "大厅")}${nav("friends", "users", "好友")}${nav("groups", "messages", "群组")}<div class="rail-separator"></div><button class="nav-item" data-action="create-room" aria-label="创建房间">${icon("plus")}<span>创建</span></button></nav><div class="rail-bottom"><button class="nav-item" data-action="help" aria-label="联机帮助">${icon("help")}</button>${nav("settings", "settings", "设置")}<button class="mini-me" data-action="account" aria-label="我的账号">${e((s.email || "我")[0])}</button></div></aside>`;
+}
+function roomEntry(state, room, withArrow = false) {
+  const current = state.activity && state.roomId === room.id;
+  const paused = room.openState !== "OPEN";
+  const label = current ? "回到房间" : paused ? "暂停加入" : "加入房间";
+  return button(label + (withArrow ? ` ${icon("arrow", 14)}` : ""), current ? "open-room" : "join-room", "small",
+    `data-id="${e(room.id)}" ${state.busy || (!current && paused) ? "disabled" : ""}`);
 }
 function roomCard(s, r) {
   const g = s.groups.find((g) => g.id === r.groupId);
-  const current = s.roomId === r.id && s.activity;
-  return `<article class="room-card"><div class="room-cover cubes"><span class="game-chip">${e(r.gameName || "游戏房间")}</span><span class="room-capacity">最多 12 人</span></div><div class="room-body"><div class="room-provenance">${icon("messages", 13)} ${e(g?.name)}</div><div class="room-title-row"><h3>${e(r.name)}</h3></div><p class="room-description">${e(r.description || "约好下一局，随时来集合。")}</p><div class="room-presence"><span class="availability ${r.openState === "OPEN" ? "available" : "unavailable"}"><i></i>${r.openState === "OPEN" ? "开放加入" : "暂停加入"}</span></div><div class="room-footer"><span class="room-waiting">${r.currentActivityId ? "房间活动中" : "等待开启活动"}</span>${button(`${current ? "回到房间" : "加入房间"} ${icon("arrow", 14)}`, current ? "open-room" : "join-room", "small", `data-id="${e(r.id)}" ${r.openState !== "OPEN" || s.busy ? "disabled" : ""}`)}</div></div></article>`;
+  return `<article class="room-card"><div class="room-cover cubes"><span class="game-chip">${e(r.gameName || "游戏房间")}</span><span class="room-capacity">最多 12 人</span></div><div class="room-body"><div class="room-provenance">${icon("messages", 13)} ${e(g?.name)}</div><div class="room-title-row"><h3>${e(r.name)}</h3></div><p class="room-description">${e(r.description || "约好下一局，随时来集合。")}</p><div class="room-presence"><span class="availability ${r.openState === "OPEN" ? "available" : "unavailable"}"><i></i>${r.openState === "OPEN" ? "开放加入" : "暂停加入"}</span></div><div class="room-footer"><span class="room-waiting">${r.currentActivityId ? "房间活动中" : "等待开启活动"}</span>${roomEntry(s, r, true)}</div></div></article>`;
 }
 const friendRow = (f) =>
   `<div class="friend-row">${avatar(f.email)}<div class="friend-copy"><strong>${e(f.email)}</strong><small>${f.presence === "ONLINE" ? "在线" : "离线"}</small></div>${button("删除好友", "delete-friend", "ghost small", `data-id="${e(f.userId)}"`)}</div>`;
@@ -134,7 +140,7 @@ function groupView(s) {
       .filter((r) => r.groupId === g.id)
       .map(
         (r) =>
-          `<div class="group-room-item"><strong>${e(r.name)}</strong>${button("进入", "join-room", "small", `data-id="${e(r.id)}"`)}</div>`,
+          `<div class="group-room-item"><strong>${e(r.name)}</strong>${roomEntry(s, r)}</div>`,
       )
       .join("") || '<div class="empty-state">暂无房间</div>'
   }${button("创建房间", "create-room", "ghost")}<div class="aside-divider"></div><div class="panel-title"><h2>群组成员</h2></div>${s.groupMembers.map((m) => `<div class="friend-item">${avatar(m.userId)}<span class="friend-copy"><strong>${e(m.userId === s.userId ? "我" : m.userId)}</strong><small>${{ OWNER: "群主", ADMIN: "管理员", MEMBER: "成员" }[m.role] || e(m.role)}</small><span class="member-presence">${m.presence === "ONLINE" ? "在线" : m.presence === "OFFLINE" ? "离线" : "状态未知"}</span></span></div>`).join("")}</aside></div>`;
