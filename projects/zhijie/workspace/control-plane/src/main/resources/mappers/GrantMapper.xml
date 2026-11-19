@@ -30,6 +30,11 @@
     <update id="revokeLease">
         UPDATE activity_grants SET revoked_at = #{revokedAt} WHERE lease_id = #{leaseId} AND revoked_at IS NULL
     </update>
+    <update id="revokeOtherNetworkKeys">
+        UPDATE activity_grants SET revoked_at = #{revokedAt}
+        WHERE lease_id = #{leaseId} AND kind = 'NETWORK' AND revoked_at IS NULL AND expires_at &gt; #{revokedAt}
+          AND decode(rpad(public_key, 44, '='), 'base64') IS DISTINCT FROM #{publicKey}
+    </update>
     <select id="countActive" resultType="int">
         SELECT COUNT(*) FROM activity_grants WHERE kind = #{kind} AND revoked_at IS NULL AND expires_at &gt; NOW()
     </select>

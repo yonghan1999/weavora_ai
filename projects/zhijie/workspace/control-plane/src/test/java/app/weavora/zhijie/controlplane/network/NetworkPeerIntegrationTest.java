@@ -101,9 +101,25 @@ class NetworkPeerIntegrationTest {
         for (String endpoint : List.of("example.test:41001", "0.0.0.0:4", "224.0.0.1:4", "127.0.0.1:0", "127.0.0.1:65536", "255.255.255.255:4"))
             assertThatThrownBy(() -> peers.register(a, activity, ga.networkTicket(), endpoint)).isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> grants.network(a, activity, "invalid-key")).isInstanceOf(ApiException.class);
+        var renewed = grants.network(b, activity, key(2).replace("=", ""));
+        assertThat(access.validate(renewed.networkTicket()).grant().publicKey()).isEqualTo(key(2));
+        assertThat(peers.list(a, activity, ga.networkTicket())).singleElement().extracting(NetworkPeerService.Peer::publicKey).isEqualTo(key(2));
+        var rotated = grants.network(b, activity, key(5));
+        assertThat(rotated.leaseId()).isEqualTo(gb.leaseId());
+        var grantRecords = context.getBean(GrantRepository.class);
+        for (var previous : List.of(gb, renewed)) {
+            assertThat(grantRecords.findById(previous.grantId()).orElseThrow().revokedAt()).isNotNull();
+        }
+        assertThat(peers.list(a, activity, ga.networkTicket())).isEmpty();
+        peers.register(b, activity, rotated.networkTicket(), "127.0.0.1:41005");
+        assertThat(peers.list(a, activity, ga.networkTicket())).singleElement().satisfies(peer -> {
+            assertThat(peer.publicKey()).isEqualTo(key(5));
+            assertThat(peer.endpoint()).isEqualTo("127.0.0.1:41005");
+        });
+        assertThat(access.validate(gc.networkTicket()).grant().id()).isEqualTo(gc.grantId());
         coordinator.join(b, room.id(), "new-device", null, "transfer");
         assertThat(peers.list(a, activity, ga.networkTicket())).isEmpty();
-        assertThatThrownBy(() -> access.validate(gb.networkTicket())).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> access.validate(rotated.networkTicket())).isInstanceOf(ApiException.class);
         var replacement = grants.network(b, activity, key(4));
         peers.register(b, activity, replacement.networkTicket(), "127.0.0.1:41004");
         assertThat(peers.list(a, activity, ga.networkTicket())).singleElement().extracting(NetworkPeerService.Peer::publicKey).isEqualTo(key(4));

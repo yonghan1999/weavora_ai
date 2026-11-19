@@ -15,4 +15,7 @@ public class MyBatisGrantRepository implements GrantRepository {
     public void revokeMember(String activityId, String userId, Instant revokedAt) { mapper.revokeMember(activityId, userId, revokedAt); }
     public void revokeLease(String leaseId, Instant revokedAt) { mapper.revokeLease(leaseId, revokedAt); }
     public int countActive(String kind) { return mapper.countActive(kind); }
+    public void revokeOtherNetworkKeys(String leaseId, byte[] publicKey, Instant revokedAt) {
+        mapper.revokeOtherNetworkKeys(leaseId, publicKey, revokedAt);
+    }
 }

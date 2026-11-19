@@ -104,16 +104,18 @@ public class GrantService {
         activities.lockUser(userId);
         ActivityMember member = currentMember(userId, activityId);
         ConnectionLease lease = currentLease(member);
-        admission.admit("NETWORK");
         if (publicKey == null || publicKey.isBlank()) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_FAILED", "必须提供本机 WireGuard 公钥", false);
         }
+        byte[] key;
         try {
-            byte[] key = java.util.Base64.getDecoder().decode(publicKey);
+            key = java.util.Base64.getDecoder().decode(publicKey);
             if (key.length != 32 || java.util.Arrays.equals(key, new byte[32])) throw new IllegalArgumentException();
         } catch (IllegalArgumentException exception) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_FAILED", "WireGuard 公钥格式无效", false);
         }
+        repository.revokeOtherNetworkKeys(lease.id(), key, clock.instant());
+        admission.admit("NETWORK");
         var policy = policies.current();
         List<String> allowedPaths = policies.allowedPaths(policy.mode());
         lease = new ConnectionLease(lease.id(), lease.activityId(), lease.userId(), lease.deviceId(),
@@ -122,7 +124,8 @@ public class GrantService {
         activities.updateLease(lease);
         Instant expiresAt = grantExpiry(lease);
         String ticket = credentials.randomSecret();
-        ActivityGrant grant = saveGrant(member, lease, "NETWORK", ticket, publicKey, String.join(",", allowedPaths), expiresAt);
+        ActivityGrant grant = saveGrant(member, lease, "NETWORK", ticket, java.util.Base64.getEncoder().encodeToString(key),
+                String.join(",", allowedPaths), expiresAt);
         IpAllocation address = activities.findAddress(activityId, userId).orElseThrow();
         return new NetworkGrantResponse(grant.id(), activityId, member.memberGeneration(), lease.id(), ticket,
                 lease.policyRevision(), allowedPaths, address.ipv4(), ActivityCoordinator.ACTIVITY_CIDR, expiresAt);

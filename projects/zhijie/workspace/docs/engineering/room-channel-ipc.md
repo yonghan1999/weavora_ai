@@ -13,3 +13,8 @@ Helper 缺席时，原生 IPC 现在区分「未发送」与「可能已发送�
 本机 Windows 命名管道回归还发现，整段非阻塞写入较大的启动请求可导致对端只收到长度头。收发双方沿用原长度帧和五秒绝对截止时间，Windows 写端以最多 512 字节分段，遇到零字节写入时在同一截止时间内重试。实际管道测试验证大请求和大响应保持请求标识一致，以及对端完整读到请求但未回复时仍保留清理资格。使用记录调用的后端，不启动驱动；见 `target/room-channel-ipc/delivery-final.log`。
 
 开发验证：`target/room-channel-ipc/browser-regression.log` 的三项浏览器集成通过；首次用例因刷新期间点击而停在确认框之前，记录在 `integration.log`，修正为等待实际成员代次后再点击。增强后的 `target/room-channel-ipc/leave-final.log` 单项通过，从群主提交确认到成员退回大厅用时 1429 毫秒。这不是正在传输的媒体或 TUN 撤销时延，也不证明真实双机、设备听感、安装或满载通过。
+## 同一租约内的联机换钥
+
+桌面重试可在租约和虚拟地址不变时生成新 WireGuard 公钥。控制面签发时在同一事务内撤销该租约不同公钥的有效网络票据；如果签发失败，撤销随事务回滚。同钥续期仍允许新旧票据短时重叠。按公钥字节而非 Base64 文本判断是否换钥，新签发的数据统一使用带填充的 Base64。复用现有授权与 Peer 查询，不另建端点状态：提交换钥后，队友下一次读取时看不到旧端点；新端点注册后才返回新公钥。
+
+开发验证：`target/network-key-rotation/regression.log`。在 `control-plane` 目录设置 `ZHIJIE_TEST_RELAY_MEDIA=true`、`ZHIJIE_TEST_GROUP_BROWSER=true`，执行 `../mvnw.cmd -o -Dtest=NetworkPeerIntegrationTest,GroupBrowserIntegrationTest#roomMembershipSurvivesChannelFailuresAndKickInvalidatesOnlyTheOldLease,RelayGrantValidationServiceTest,AdmissionServiceTest package`，6 项通过，无跳过。真实 PostgreSQL 核对同租约续期、换钥、端点交接与其他成员不受影响。真实回环十二端分别在直连、强制中继和直连优先策略下完成五轮同钥续期，原票过期后仍能在 132 个方向传输。此处没有测量已建数据通路在换钥时的中断时延，也没有验证跨机 TUN 或同时满载。
