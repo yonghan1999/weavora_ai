@@ -1,0 +1,6 @@
+# 摘要命名的第三方原文必须逐字节保留，包括 CRLF 和原始空白。
+cargo-license-materials/texts/* binary
+cargo-license-header-materials/texts/* binary
+cargo-upstream-license-materials/texts/* binary
+maven-binary-license-originals/texts/* binary
+maven-source-license-materials/texts/* binary
