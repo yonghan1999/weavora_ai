@@ -395,13 +395,9 @@ async fn full_room_all_to_all_audio() {
                     }
                 }
             }
-            let mut count = 0;
-            while let Some(result) = tracks.join_next().await {
-                result.expect("per-direction PCM assertions");
-                count += 1;
-            }
-            assert_eq!(count, 11);
-            count
+            collect_observations(tracks, 11)
+                .await
+                .unwrap_or_else(|error| panic!("receiver {index}: {error}"));
         });
     }
     // 所有真实音轨接收流已创建后才统一计时，启动延迟仍受独立截止约束。
@@ -412,29 +408,72 @@ async fn full_room_all_to_all_audio() {
     if let Some(ready) = std::env::var_os("ZHIJIE_TEST_FULL_ROOM_READY") {
         std::fs::write(ready, b"ready").expect("publish full-room readiness");
     }
-    let total = tokio::time::timeout(Duration::from_secs(windows as u64 * 15 + 15), async {
-        let mut count = 0;
-        while let Some(result) = monitors.join_next().await {
-            count += result.expect("full-room receiver assertions");
-        }
-        count
-    })
-    .await
-    .expect("full-room observation deadline");
-    assert_eq!(
-        total, 132,
-        "every participant decodes all eleven other speakers"
-    );
+    let observation_result = tokio::time::timeout(
+        Duration::from_secs(windows as u64 * 15 + 15),
+        collect_observations(monitors, 12),
+    )
+    .await;
     for producer in producers {
         producer.abort();
     }
     for room in rooms {
         close_room(&room).await;
     }
+    observation_result
+        .expect("full-room observation deadline")
+        .expect("every participant decodes all eleven other speakers");
     println!(
-        "FULL_ROOM_OK participants=12 directions={total} observation_seconds={} windows={windows}",
+        "FULL_ROOM_OK participants=12 directions=132 observation_seconds={} windows={windows}",
         windows * 15
     );
+}
+
+async fn collect_observations(
+    mut tasks: tokio::task::JoinSet<()>,
+    expected: usize,
+) -> Result<(), String> {
+    let mut finished = 0;
+    let mut failures = Vec::new();
+    while let Some(result) = tasks.join_next().await {
+        finished += 1;
+        if let Err(error) = result {
+            failures.push(error.to_string());
+        }
+    }
+    if finished == expected && failures.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "finished {finished}/{expected}; failures: {}",
+            failures.join("; ")
+        ))
+    }
+}
+
+#[tokio::test]
+async fn observation_failure_preserves_other_receivers_and_directions() {
+    let completed = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let mut monitors = tokio::task::JoinSet::new();
+    for receiver in 0..12 {
+        let mut tracks = tokio::task::JoinSet::new();
+        for direction in 0..11 {
+            let completed = completed.clone();
+            tracks.spawn(async move {
+                if receiver == 0 && direction == 0 {
+                    panic!("injected PCM failure");
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+                completed.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            });
+        }
+        monitors.spawn(async move { collect_observations(tracks, 11).await.unwrap() });
+    }
+    let error = collect_observations(monitors, 12).await.unwrap_err();
+    assert!(error.contains("injected PCM failure"));
+    assert_eq!(completed.load(std::sync::atomic::Ordering::SeqCst), 131);
+    assert!(collect_observations(tokio::task::JoinSet::new(), 1)
+        .await
+        .is_err());
 }
 
 async fn measure_full_room_track(
