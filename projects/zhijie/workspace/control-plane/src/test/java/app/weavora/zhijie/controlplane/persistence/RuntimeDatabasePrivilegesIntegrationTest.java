@@ -18,7 +18,8 @@ import java.sql.DriverManager;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import org.flywaydb.core.Flyway;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.apache.coyote.AbstractProtocol;
 import org.springframework.boot.SpringApplication;
@@ -36,7 +37,17 @@ class RuntimeDatabasePrivilegesIntegrationTest {
                 admin.createStatement().execute("ALTER ROLE zhijie_migrator LOGIN; ALTER ROLE zhijie_app LOGIN");
             }
             String migratorUrl = postgres.getJdbcUrl("zhijie_migrator", "postgres");
-            Flyway.configure().dataSource(migratorUrl, "zhijie_migrator", "").load().migrate();
+            String password = UUID.randomUUID().toString();
+            assertThatThrownBy(() -> DatabaseMigration.run(Map.of()))
+                    .hasMessage("MIGRATION_DATABASE_CONFIGURATION_REQUIRED");
+            try (var admin = DriverManager.getConnection(adminUrl, "postgres", "")) {
+                admin.createStatement().execute("ALTER ROLE zhijie_migrator CREATEDB");
+                assertThatThrownBy(() -> migrate(migratorUrl, password, false))
+                        .hasMessageContaining("MIGRATION_DATABASE_ROLE_REQUIRED");
+                admin.createStatement().execute("ALTER ROLE zhijie_migrator NOCREATEDB");
+            }
+            migrate(migratorUrl, password, false);
+            migrate(migratorUrl, password, true);
             try (var migrator = DriverManager.getConnection(migratorUrl, "zhijie_migrator", "")) {
                 executeFile(migrator, "ops/database/grant-runtime.sql");
             }
@@ -113,6 +124,7 @@ class RuntimeDatabasePrivilegesIntegrationTest {
             try (var migrator = DriverManager.getConnection(migratorUrl, "zhijie_migrator", "")) {
                 migrator.createStatement().execute("UPDATE flyway_schema_history SET checksum=0 WHERE version='12'");
             }
+            assertThatThrownBy(() -> migrate(migratorUrl, password, false)).hasMessageContaining("checksum mismatch");
             assertThatThrownBy(() -> new SpringApplication(ControlPlaneApplication.class).run(
                     "--server.address=127.0.0.1", "--server.port=0", "--spring.profiles.active=runtime",
                     "--spring.datasource.url=" + appUrl, "--spring.datasource.username=zhijie_app",
@@ -123,7 +135,32 @@ class RuntimeDatabasePrivilegesIntegrationTest {
 
     private void executeFile(Connection connection, String file) throws Exception {
         try (var statement = connection.createStatement()) {
-            statement.execute(Files.readString(Path.of(file)));
+            Path path = Path.of(file);
+            statement.execute(Files.readString(Files.isRegularFile(path) ? path : Path.of("..").resolve(path)));
         }
+    }
+
+    private void migrate(String url, String password, boolean upToDate) throws Exception {
+        var settings = Map.of("ZHIJIE_MIGRATION_DATABASE_URL", url, "ZHIJIE_MIGRATION_DATABASE_PASSWORD", password);
+        String jar = System.getenv("ZHIJIE_TEST_MIGRATION_JAR");
+        if (jar == null) {
+            DatabaseMigration.run(settings);
+            return;
+        }
+        var command = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"), "-XX:-UsePerfData", "-jar", jar, "--migrate-database");
+        command.environment().putAll(settings);
+        Path log = Files.createTempFile("migration-cli-", ".log");
+        try {
+            var child = command.redirectErrorStream(true).redirectOutput(log.toFile()).start();
+            try {
+                assertThat(child.waitFor(40, TimeUnit.SECONDS)).isTrue();
+                String output = Files.readString(log);
+                assertThat(output.contains(password)).isFalse();
+                assertThat(output).doesNotContain("Tomcat started");
+                if (child.exitValue() != 0) throw new IllegalStateException(output);
+                assertThat(output).containsPattern(upToDate ? "DATABASE_MIGRATION_OK applied=0\\b" : "DATABASE_MIGRATION_OK applied=[1-9]\\d*");
+            } finally { if (child.isAlive()) child.destroyForcibly(); }
+        } finally { Files.deleteIfExists(log); }
     }
 }
