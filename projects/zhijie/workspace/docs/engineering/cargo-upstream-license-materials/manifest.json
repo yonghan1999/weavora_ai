@@ -1,0 +1,4144 @@
+{
+  "schemaVersion": 1,
+  "scope": "exact_commit_root_license_supplement",
+  "inputEvidenceSha256": "22781db03537f2ac0be13abb4d891ca1853f1b061d1285d0b16d96bf836744ca",
+  "releaseApproved": false,
+  "reviewStatus": "unreviewed",
+  "summary": {
+    "dependencies": 52,
+    "withUpstreamOriginals": 43,
+    "documentReferences": 58,
+    "uniqueOriginals": 13,
+    "reviewed": 0
+  },
+  "dependencies": [
+    {
+      "name": "alloc-stdlib",
+      "version": "0.3.0",
+      "archiveSha256": "0b5c1865780388bfa186411ab5f247819487fc4864c6e9c3106611fa347586e1",
+      "declaredLicense": "BSD-3-Clause",
+      "repositoryDeclaration": "https://github.com/dropbox/rust-alloc-no-stdlib",
+      "githubRepository": "dropbox/rust-alloc-no-stdlib",
+      "commit": "0a81fd6928ea3b33c8cd484aa4575d50ffb98012",
+      "pathInVcs": "alloc-stdlib",
+      "vcsEntrySha256": "2bfc044805e0e75273a7e4d06c9d72f4e029a6cb926e4645c382bde160ecfd95",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae.txt",
+          "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae",
+          "bytes": 1483
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/dropbox/rust-alloc-no-stdlib/git/trees/0a81fd6928ea3b33c8cd484aa4575d50ffb98012",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "asn1-rs-impl",
+      "version": "0.2.0",
+      "archiveSha256": "7b18050c2cd6fe86c3a76584ef5e0baf286d038cda203eb6223df2cc413565f7",
+      "declaredLicense": "MIT/Apache-2.0",
+      "repositoryDeclaration": "https://github.com/rusticata/asn1-rs.git",
+      "githubRepository": "rusticata/asn1-rs",
+      "commit": "a20e5f7319c896737ad0f2557037817b91ad854f",
+      "pathInVcs": "impl",
+      "vcsEntrySha256": "bfb8aecdc47faea066fd27b878d0640c2e7859033c513ed32f342f25faef0b87",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/rusticata/asn1-rs/a20e5f7319c896737ad0f2557037817b91ad854f/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/rusticata/asn1-rs/a20e5f7319c896737ad0f2557037817b91ad854f/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/a5c61b93b6ee1d104af9920cf020ff3c7efe818e31fe562c72261847a728f513.txt",
+          "sha256": "a5c61b93b6ee1d104af9920cf020ff3c7efe818e31fe562c72261847a728f513",
+          "bytes": 1060
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/rusticata/asn1-rs/a20e5f7319c896737ad0f2557037817b91ad854f/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2.txt",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+          "bytes": 10847
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/rusticata/asn1-rs/a20e5f7319c896737ad0f2557037817b91ad854f/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/rusticata/asn1-rs/a20e5f7319c896737ad0f2557037817b91ad854f/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/rusticata/asn1-rs/a20e5f7319c896737ad0f2557037817b91ad854f/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/rusticata/asn1-rs/a20e5f7319c896737ad0f2557037817b91ad854f/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/rusticata/asn1-rs/a20e5f7319c896737ad0f2557037817b91ad854f/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/rusticata/asn1-rs/git/trees/a20e5f7319c896737ad0f2557037817b91ad854f",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "block2",
+      "version": "0.6.2",
+      "archiveSha256": "cdeb9d870516001442e364c5220d3574d2da8dc765554b4a617230d33fa58ef5",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "b4167b582b2f75f9a1be75495c41b765344fd03c",
+      "pathInVcs": "crates/block2",
+      "vcsEntrySha256": "5b87885cad87999d141e83cc8af4b073192f584b2b92cea77e2d87636621a264",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/b4167b582b2f75f9a1be75495c41b765344fd03c",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "boringtun",
+      "version": "0.7.1",
+      "archiveSha256": "15dd6a8a89cbe8997f37ca0cf035e6ea4d64cd2ecea4aed83ffb9f99f7126939",
+      "declaredLicense": "BSD-3-Clause",
+      "repositoryDeclaration": "https://github.com/cloudflare/boringtun",
+      "githubRepository": "cloudflare/boringtun",
+      "commit": "051c9d47dc9c5cb36e461b7d36dcd673820dc98b",
+      "pathInVcs": "boringtun",
+      "vcsEntrySha256": "6d32d22396128a47209e46157bb80204b5886be2118f5c8d0865c4c0e5bb4178",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/cloudflare/boringtun/051c9d47dc9c5cb36e461b7d36dcd673820dc98b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/cloudflare/boringtun/051c9d47dc9c5cb36e461b7d36dcd673820dc98b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/cloudflare/boringtun/051c9d47dc9c5cb36e461b7d36dcd673820dc98b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/cloudflare/boringtun/051c9d47dc9c5cb36e461b7d36dcd673820dc98b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6dbef24708bad8c727bd80cca58ba8aa1637cdcb2cc6e9a31ea49235717e9391.txt",
+          "sha256": "6dbef24708bad8c727bd80cca58ba8aa1637cdcb2cc6e9a31ea49235717e9391",
+          "bytes": 1496
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/cloudflare/boringtun/051c9d47dc9c5cb36e461b7d36dcd673820dc98b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/cloudflare/boringtun/051c9d47dc9c5cb36e461b7d36dcd673820dc98b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/cloudflare/boringtun/051c9d47dc9c5cb36e461b7d36dcd673820dc98b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/cloudflare/boringtun/051c9d47dc9c5cb36e461b7d36dcd673820dc98b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/cloudflare/boringtun/git/trees/051c9d47dc9c5cb36e461b7d36dcd673820dc98b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "device-info",
+      "version": "0.1.1",
+      "archiveSha256": "a2ca8e71544c1b67dcdbc2699ab258828aff985e5bc8d5f6b486d90d7df2f848",
+      "declaredLicense": "Apache-2.0",
+      "repositoryDeclaration": "https://github.com/livekit/rust-sdks",
+      "githubRepository": "livekit/rust-sdks",
+      "commit": "db06213ede5227c406116a27b3c08f4f6089b2d9",
+      "pathInVcs": "device-info",
+      "vcsEntrySha256": "35956787b32649950e55007cbb3f979b2c021d1c4cb4fe472f09f022e66ce2aa",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/db06213ede5227c406116a27b3c08f4f6089b2d9/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/db06213ede5227c406116a27b3c08f4f6089b2d9/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/db06213ede5227c406116a27b3c08f4f6089b2d9/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/db06213ede5227c406116a27b3c08f4f6089b2d9/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/db06213ede5227c406116a27b3c08f4f6089b2d9/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/db06213ede5227c406116a27b3c08f4f6089b2d9/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/db06213ede5227c406116a27b3c08f4f6089b2d9/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/db06213ede5227c406116a27b3c08f4f6089b2d9/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac.txt",
+          "sha256": "6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac",
+          "bytes": 553
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/livekit/rust-sdks/git/trees/db06213ede5227c406116a27b3c08f4f6089b2d9",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "dispatch2",
+      "version": "0.3.1",
+      "archiveSha256": "1e0e367e4e7da84520dedcac1901e4da967309406d1e51017ae1abfb97adbd38",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "8852b424193ca41602281b3d7540d7c8ed51e49a",
+      "pathInVcs": "crates/dispatch2",
+      "vcsEntrySha256": "26f5e6d699ba3ce13b8eea253ad7a7f7feb9345e9da3c01bb9b9bd911a6a7dba",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/8852b424193ca41602281b3d7540d7c8ed51e49a",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "dlopen2",
+      "version": "0.8.2",
+      "archiveSha256": "5e2c5bd4158e66d1e215c49b837e11d62f3267b30c92f1d171c4d3105e3dc4d4",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/OpenByteDev/dlopen2",
+      "githubRepository": "OpenByteDev/dlopen2",
+      "commit": "cc80e4a0a90d499b677fdf7743699b4b3a43a989",
+      "pathInVcs": "dlopen2",
+      "vcsEntrySha256": "ed795da0aa7789a000ca4c8708d047c26148b3938d44897c45c9acce4d3ae015",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/39fa265207450e77c62e90c5594a06c085b655d8374c7ced4bf7894b6bd95dd2.txt",
+          "sha256": "39fa265207450e77c62e90c5594a06c085b655d8374c7ced4bf7894b6bd95dd2",
+          "bytes": 1184
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/OpenByteDev/dlopen2/git/trees/cc80e4a0a90d499b677fdf7743699b4b3a43a989",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "dlopen2_derive",
+      "version": "0.4.3",
+      "archiveSha256": "0fbbb781877580993a8707ec48672673ec7b81eeba04cfd2310bd28c08e47c8f",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/OpenByteDev/dlopen2",
+      "githubRepository": "OpenByteDev/dlopen2",
+      "commit": "cc80e4a0a90d499b677fdf7743699b4b3a43a989",
+      "pathInVcs": "dlopen2-derive",
+      "vcsEntrySha256": "90a5b706d2f492723b4c81afa07cea75eda9a4e4c7fc98c368931f539bf5b439",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/39fa265207450e77c62e90c5594a06c085b655d8374c7ced4bf7894b6bd95dd2.txt",
+          "sha256": "39fa265207450e77c62e90c5594a06c085b655d8374c7ced4bf7894b6bd95dd2",
+          "bytes": 1184
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/OpenByteDev/dlopen2/git/trees/cc80e4a0a90d499b677fdf7743699b4b3a43a989",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "from_variants",
+      "version": "1.0.2",
+      "archiveSha256": "4e859c8f2057687618905dbe99fc76e836e0a69738865ef90e46fc214a41bbf2",
+      "declaredLicense": "MIT/Apache-2.0",
+      "repositoryDeclaration": "https://github.com/TedDriggs/from_variants",
+      "githubRepository": "TedDriggs/from_variants",
+      "commit": "5ced1950ed3f5bc01b10cf8c036588ac4b02558a",
+      "pathInVcs": "",
+      "vcsEntrySha256": "46e8915e27e41e266374207efd057a9e3b29066e3016d5a861305527fd800be7",
+      "status": "root_materials_missing",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/TedDriggs/from_variants/git/trees/5ced1950ed3f5bc01b10cf8c036588ac4b02558a",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "from_variants_impl",
+      "version": "1.0.2",
+      "archiveSha256": "55a5e644a80e6d96b2b4910fa7993301d7b7926c045b475b62202b20a36ce69e",
+      "declaredLicense": "MIT/Apache-2.0",
+      "repositoryDeclaration": "https://github.com/TedDriggs/from_variants",
+      "githubRepository": "TedDriggs/from_variants",
+      "commit": "5ced1950ed3f5bc01b10cf8c036588ac4b02558a",
+      "pathInVcs": "from_variants_impl",
+      "vcsEntrySha256": "48a849eb64e18067b07b0852ba19846d2108f6d8d6b787a05ac7710007406d3d",
+      "status": "root_materials_missing",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/TedDriggs/from_variants/5ced1950ed3f5bc01b10cf8c036588ac4b02558a/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/TedDriggs/from_variants/git/trees/5ced1950ed3f5bc01b10cf8c036588ac4b02558a",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "jni-sys-macros",
+      "version": "0.4.1",
+      "archiveSha256": "38c0b942f458fe50cdac086d2f946512305e5631e720728f2a61aabcd47a6264",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "repositoryDeclaration": "https://github.com/jni-rs/jni-sys",
+      "githubRepository": "jni-rs/jni-sys",
+      "commit": "64d77b7a5f119d7b55b4e2c169a4668067ff59e6",
+      "pathInVcs": "jni-sys-macros",
+      "vcsEntrySha256": "1824b83bc25a1e245bcb97a6503105bfe07078a47cddc924c6b7db91e8852f45",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/1d85bd754b04ceec93e98e890edd1fa3c6a22e81bcb32135806beeccefa51cd1.txt",
+          "sha256": "1d85bd754b04ceec93e98e890edd1fa3c6a22e81bcb32135806beeccefa51cd1",
+          "bytes": 1071
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08.txt",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+          "bytes": 11358
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/jni-rs/jni-sys/git/trees/64d77b7a5f119d7b55b4e2c169a4668067ff59e6",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "libappindicator-sys",
+      "version": "0.9.0",
+      "archiveSha256": "6e9ec52138abedcc58dc17a7c6c0c00a2bdb4f3427c7f63fa97fd0d859155caf",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "repositoryDeclaration": null,
+      "githubRepository": null,
+      "commit": "eafd1e3682a1247f595410266091e9684021cb6f",
+      "pathInVcs": "sys",
+      "vcsEntrySha256": "2eb6d78db3efbbb1c498618238bad1377e08f43f12e9ba7e1fb128a8aedfe2c5",
+      "status": "exact_source_unresolved",
+      "reviewStatus": "unreviewed",
+      "documents": []
+    },
+    {
+      "name": "livekit",
+      "version": "0.10.0",
+      "archiveSha256": "51f6a9dd86d3255487f778582ec0d631092fd379d781ae11995479498f12daf4",
+      "declaredLicense": "Apache-2.0",
+      "repositoryDeclaration": "https://github.com/livekit/rust-sdks",
+      "githubRepository": "livekit/rust-sdks",
+      "commit": "ede8ac53843a8fb91d6f4fb5629f5245f1758e38",
+      "pathInVcs": "livekit",
+      "vcsEntrySha256": "27743ba790edc1332b64e4b9ec8d7f544103bc90cd84ef53f66fb82123b66d8a",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac.txt",
+          "sha256": "6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac",
+          "bytes": 553
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/livekit/rust-sdks/git/trees/ede8ac53843a8fb91d6f4fb5629f5245f1758e38",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "livekit-common",
+      "version": "0.1.6",
+      "archiveSha256": "728a0e2cc2991a3392e2a1c9321b92f3f49d35f02ffc3e071ec75ea66fa9a5bc",
+      "declaredLicense": "Apache-2.0",
+      "repositoryDeclaration": "https://github.com/livekit/rust-sdks",
+      "githubRepository": "livekit/rust-sdks",
+      "commit": "fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a",
+      "pathInVcs": "livekit-common",
+      "vcsEntrySha256": "def440bbd3a0f3ae5d6d291497b7e90e6fd87158710ce27cd078d9e0da2c9929",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac.txt",
+          "sha256": "6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac",
+          "bytes": 553
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/livekit/rust-sdks/git/trees/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "livekit-data-stream",
+      "version": "0.2.0",
+      "archiveSha256": "97cf9d2dc503dc26c365fb90f994e0a5fed0eaf8800cd32abfc53e4645f09c39",
+      "declaredLicense": "Apache-2.0",
+      "repositoryDeclaration": "https://github.com/livekit/rust-sdks",
+      "githubRepository": "livekit/rust-sdks",
+      "commit": "ede8ac53843a8fb91d6f4fb5629f5245f1758e38",
+      "pathInVcs": "livekit-data-stream",
+      "vcsEntrySha256": "8ff7ac6133b1259f41877f0f3efa5964660f0a6e2b2c93bc8f7a1eecb696b5e9",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac.txt",
+          "sha256": "6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac",
+          "bytes": 553
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/livekit/rust-sdks/git/trees/ede8ac53843a8fb91d6f4fb5629f5245f1758e38",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "livekit-datatrack",
+      "version": "0.2.4",
+      "archiveSha256": "a610cb4b2a6927fb21dee3d089bfb5d39da1b71de383201a89b7ac9bf80e1c74",
+      "declaredLicense": "Apache-2.0",
+      "repositoryDeclaration": "https://github.com/livekit/rust-sdks",
+      "githubRepository": "livekit/rust-sdks",
+      "commit": "fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a",
+      "pathInVcs": "livekit-datatrack",
+      "vcsEntrySha256": "8b29a7c4ead8f5dd777f14bbd92ac27b03fdcf0c43bb53708209e6ab62659e5b",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac.txt",
+          "sha256": "6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac",
+          "bytes": 553
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/livekit/rust-sdks/git/trees/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "livekit-net",
+      "version": "0.1.4",
+      "archiveSha256": "92ee1131d54701875cf3d0a1ef5ea09f8e328c93afc8845ac65b36cdadf80422",
+      "declaredLicense": "Apache-2.0",
+      "repositoryDeclaration": "https://github.com/livekit/rust-sdks",
+      "githubRepository": "livekit/rust-sdks",
+      "commit": "fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a",
+      "pathInVcs": "livekit-net",
+      "vcsEntrySha256": "c108aa29eff75fc415f8154fd12d2af73338d3c11951ed6d955c7e2df8638299",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac.txt",
+          "sha256": "6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac",
+          "bytes": 553
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/livekit/rust-sdks/git/trees/fa46e8427050b6ee0c6e40670ff161ee3a2bbf5a",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "livekit-region",
+      "version": "0.1.1",
+      "archiveSha256": "8e94621b7d7cbb4544cd568c8e632852cc174d383055b0e77f4638eb91e43d3b",
+      "declaredLicense": "Apache-2.0",
+      "repositoryDeclaration": "https://github.com/livekit/rust-sdks",
+      "githubRepository": "livekit/rust-sdks",
+      "commit": "8066415f8faa09a0ec0a6643e6cfdaa825167c65",
+      "pathInVcs": "livekit-region",
+      "vcsEntrySha256": "bb40ce6818d2254f819d1c699d0ee9c4107b09f24a3150d1c1c3be9d0ccb3124",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/8066415f8faa09a0ec0a6643e6cfdaa825167c65/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/8066415f8faa09a0ec0a6643e6cfdaa825167c65/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/8066415f8faa09a0ec0a6643e6cfdaa825167c65/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/8066415f8faa09a0ec0a6643e6cfdaa825167c65/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/8066415f8faa09a0ec0a6643e6cfdaa825167c65/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/8066415f8faa09a0ec0a6643e6cfdaa825167c65/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/8066415f8faa09a0ec0a6643e6cfdaa825167c65/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/8066415f8faa09a0ec0a6643e6cfdaa825167c65/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac.txt",
+          "sha256": "6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac",
+          "bytes": 553
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/livekit/rust-sdks/git/trees/8066415f8faa09a0ec0a6643e6cfdaa825167c65",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "livekit-rpc",
+      "version": "0.2.0",
+      "archiveSha256": "64484e0a669d6b6f1ec1572caef775fcab5a67325f3cc41ebc255a86d9e309db",
+      "declaredLicense": "Apache-2.0",
+      "repositoryDeclaration": "https://github.com/livekit/rust-sdks",
+      "githubRepository": "livekit/rust-sdks",
+      "commit": "ede8ac53843a8fb91d6f4fb5629f5245f1758e38",
+      "pathInVcs": "livekit-rpc",
+      "vcsEntrySha256": "57084e4a3dc6db68387320a95f1c2005878d46c9f0ad5034c51309c51b71a4a8",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac.txt",
+          "sha256": "6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac",
+          "bytes": 553
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/livekit/rust-sdks/git/trees/ede8ac53843a8fb91d6f4fb5629f5245f1758e38",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "livekit-signaling",
+      "version": "0.1.8",
+      "archiveSha256": "8e4c039320b98bc615890653143735c8f7f45789bca074dc97a6392ea04390a5",
+      "declaredLicense": "Apache-2.0",
+      "repositoryDeclaration": "https://github.com/livekit/rust-sdks",
+      "githubRepository": "livekit/rust-sdks",
+      "commit": "ede8ac53843a8fb91d6f4fb5629f5245f1758e38",
+      "pathInVcs": "livekit-signaling",
+      "vcsEntrySha256": "63491df76fbe84dc97a0cf387c9a42ce7bc7b21091c45a24aa6a21dfa39b7145",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ede8ac53843a8fb91d6f4fb5629f5245f1758e38/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac.txt",
+          "sha256": "6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac",
+          "bytes": 553
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/livekit/rust-sdks/git/trees/ede8ac53843a8fb91d6f4fb5629f5245f1758e38",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "ndk",
+      "version": "0.9.0",
+      "archiveSha256": "c3f42e7bbe13d351b6bead8286a43aac9534b82bd3cc43e47037f012ebfd62d4",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "repositoryDeclaration": "https://github.com/rust-mobile/ndk",
+      "githubRepository": "rust-mobile/ndk",
+      "commit": "49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25",
+      "pathInVcs": "ndk",
+      "vcsEntrySha256": "77723ef695dbacca767bc080c017fe1c4ee651bb0bbd94512e0de3597558a536",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1.txt",
+          "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1",
+          "bytes": 1036
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/rust-mobile/ndk/git/trees/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "ndk-context",
+      "version": "0.1.1",
+      "archiveSha256": "27b02d87554356db9e9a873add8782d4ea6e3e58ea071a9adb9a2e8ddb884a8b",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "repositoryDeclaration": "https://github.com/rust-windowing/android-ndk-rs",
+      "githubRepository": "rust-windowing/android-ndk-rs",
+      "commit": "10f2ba388fca20f7349996ebae26ccda7a6fda5c",
+      "pathInVcs": "ndk-context",
+      "vcsEntrySha256": "63e46f6a74bfd27b6634c1ebffab676492f589a2bc12010a2ef50a0f11660844",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1.txt",
+          "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1",
+          "bytes": 1036
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/rust-windowing/android-ndk-rs/git/trees/10f2ba388fca20f7349996ebae26ccda7a6fda5c",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "ndk-sys",
+      "version": "0.6.0+11769913",
+      "archiveSha256": "ee6cda3051665f1fb8d9e08fc35c96d5a244fb1be711a03b71118828afc9a873",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "repositoryDeclaration": "https://github.com/rust-mobile/ndk",
+      "githubRepository": "rust-mobile/ndk",
+      "commit": "49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25",
+      "pathInVcs": "ndk-sys",
+      "vcsEntrySha256": "04855a5c956a06190b9aae90fe172c8857d1afbf8fd676acc4c555161537b06e",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1.txt",
+          "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1",
+          "bytes": 1036
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/rust-mobile/ndk/git/trees/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2",
+      "version": "0.6.5",
+      "archiveSha256": "08849bbd4767dfae9457696856ae1c84fe4e0281bbe4a7abff2d0e06fb7981f8",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "d7d2fa23ceaa5e6096c923b081040e5d81b3b9df",
+      "pathInVcs": "crates/objc2",
+      "vcsEntrySha256": "5f7c8e095d3933c477ff1f71021b551cbfe497a62346a1dc8615debd9846e257",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/d7d2fa23ceaa5e6096c923b081040e5d81b3b9df/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/d7d2fa23ceaa5e6096c923b081040e5d81b3b9df/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/d7d2fa23ceaa5e6096c923b081040e5d81b3b9df/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/d7d2fa23ceaa5e6096c923b081040e5d81b3b9df/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/d7d2fa23ceaa5e6096c923b081040e5d81b3b9df/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/d7d2fa23ceaa5e6096c923b081040e5d81b3b9df/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/d7d2fa23ceaa5e6096c923b081040e5d81b3b9df/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/d7d2fa23ceaa5e6096c923b081040e5d81b3b9df/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/d7d2fa23ceaa5e6096c923b081040e5d81b3b9df",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-app-kit",
+      "version": "0.3.2",
+      "archiveSha256": "d49e936b501e5c5bf01fda3a9452ff86dc3ea98ad5f283e1455153142d97518c",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-app-kit",
+      "vcsEntrySha256": "07762c2a438c287ac124300928c9da0f96cefc1932ff8cadac13716fd1e195eb",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-cloud-kit",
+      "version": "0.3.2",
+      "archiveSha256": "73ad74d880bb43877038da939b7427bba67e9dd42004a18b809ba7d87cee241c",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-cloud-kit",
+      "vcsEntrySha256": "62f199c0f8876bdc6d78976603201d3684c925632b1fe158f2d6816b28baf121",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-core-data",
+      "version": "0.3.2",
+      "archiveSha256": "0b402a653efbb5e82ce4df10683b6b28027616a2715e90009947d50b8dd298fa",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-core-data",
+      "vcsEntrySha256": "7f8e9d957f5352b458a53d6e594c3f0f9033433224c6fb77823a6f0f421ef9e8",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-core-foundation",
+      "version": "0.3.2",
+      "archiveSha256": "2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-core-foundation",
+      "vcsEntrySha256": "1c1a87985a2bd25015f5e2413f4041379bea0172b2fce88dae3e6482b50aab26",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-core-graphics",
+      "version": "0.3.2",
+      "archiveSha256": "e022c9d066895efa1345f8e33e584b9f958da2fd4cd116792e15e07e4720a807",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-core-graphics",
+      "vcsEntrySha256": "264ea4e6453d508410c33c7e5c05ef71f067cac56efc06603862b36d1fe5dfc3",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-core-image",
+      "version": "0.3.2",
+      "archiveSha256": "e5d563b38d2b97209f8e861173de434bd0214cf020e3423a52624cd1d989f006",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-core-image",
+      "vcsEntrySha256": "c894249d194f6678eab85405db96965489b93eba3863198439f1014a21421c31",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-core-location",
+      "version": "0.3.2",
+      "archiveSha256": "ca347214e24bc973fc025fd0d36ebb179ff30536ed1f80252706db19ee452009",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-core-location",
+      "vcsEntrySha256": "e5c887d503b15fdeedff465f5b2a20548c108c03a09e68cc6fa000083fcede82",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-core-text",
+      "version": "0.3.2",
+      "archiveSha256": "0cde0dfb48d25d2b4862161a4d5fcc0e3c24367869ad306b0c9ec0073bfed92d",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-core-text",
+      "vcsEntrySha256": "505aa6c21bf36109e6e050055d239bcaf791b18e63cdefb7d601922b9f864545",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-encode",
+      "version": "4.1.0",
+      "archiveSha256": "ef25abbcd74fb2609453eb695bd2f860d389e457f67dc17cafc8b8cbc89d0c33",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "8d214f5477365ffcbcbb7de058c86ed9a518efb7",
+      "pathInVcs": "crates/objc2-encode",
+      "vcsEntrySha256": "b23c761215887d90ac44e18b18c8b386f93139c65a4a14f110e22405830cb3f1",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/8d214f5477365ffcbcbb7de058c86ed9a518efb7",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-exception-helper",
+      "version": "0.1.1",
+      "archiveSha256": "c7a1c5fbb72d7735b076bb47b578523aedc40f3c439bea6dfd595c089d79d98a",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "8d214f5477365ffcbcbb7de058c86ed9a518efb7",
+      "pathInVcs": "crates/objc2-exception-helper",
+      "vcsEntrySha256": "c7e239421c2f7dc6ec239f8d464ca656be3d325c801c780a341dfa99c79a0949",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/8d214f5477365ffcbcbb7de058c86ed9a518efb7",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-io-surface",
+      "version": "0.3.2",
+      "archiveSha256": "180788110936d59bab6bd83b6060ffdfffb3b922ba1396b312ae795e1de9d81d",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-io-surface",
+      "vcsEntrySha256": "a68dbb39ef7cfef6062e3d2e49c59539c7a34d70d13c5bdf4a443d2475280011",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-quartz-core",
+      "version": "0.3.2",
+      "archiveSha256": "96c1358452b371bf9f104e21ec536d37a650eb10f7ee379fff67d2e08d537f1f",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-quartz-core",
+      "vcsEntrySha256": "d18b21bb115491577880f7f8c491ac10dd8d9947bd27fdc3f6dafcf4cf92b2e9",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-ui-kit",
+      "version": "0.3.2",
+      "archiveSha256": "d87d638e33c06f577498cbcc50491496a3ed4246998a7fbba7ccb98b1e7eab22",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-ui-kit",
+      "vcsEntrySha256": "4c63b7685ce9aa0273820c80801fbd582bb3431815a318d0180f2ee7de85ba00",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-user-notifications",
+      "version": "0.3.2",
+      "archiveSha256": "9df9128cbbfef73cda168416ccf7f837b62737d748333bfe9ab71c245d76613e",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-user-notifications",
+      "vcsEntrySha256": "f9f9fc21b411afa8a20002f259187760b838f8fb6db54814db214c1682a14344",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "objc2-web-kit",
+      "version": "0.3.2",
+      "archiveSha256": "b2e5aaab980c433cf470df9d7af96a7b46a9d892d521a2cbbb2f8a4c16751e7f",
+      "declaredLicense": "Zlib OR Apache-2.0 OR MIT",
+      "repositoryDeclaration": "https://github.com/madsmtm/objc2",
+      "githubRepository": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "pathInVcs": "framework-crates/objc2-web-kit",
+      "vcsEntrySha256": "af77e35da92d2c30dde7cd40ff3723ce9f312cddb639a388ae447979af630a30",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54.txt",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54",
+          "bytes": 1339
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/madsmtm/objc2/git/trees/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "pbjson",
+      "version": "0.9.0",
+      "archiveSha256": "e8edd1efdd8ab23ba9cb9ace3d9987a72663d5d7c9f74fa00b51d6213645cf6c",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/influxdata/pbjson",
+      "githubRepository": "influxdata/pbjson",
+      "commit": "48ee5989564e0ace82ad71b87736d3d1b2e0e1cd",
+      "pathInVcs": "pbjson",
+      "vcsEntrySha256": "85a11bd2d2a09d9c968e32016d3a426435d4ef97fcc55640fc4f88acc9776458",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/791a00933f2ea7e512856361e026998362241c3918d7be948c24d29441033b55.txt",
+          "sha256": "791a00933f2ea7e512856361e026998362241c3918d7be948c24d29441033b55",
+          "bytes": 1054
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/influxdata/pbjson/git/trees/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "pbjson-build",
+      "version": "0.9.0",
+      "archiveSha256": "2ed4d5c6ae95e08ac768883c8401cf0e8deb4e6e1d6a4e1fd3d2ec4f0ec63200",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/influxdata/pbjson",
+      "githubRepository": "influxdata/pbjson",
+      "commit": "48ee5989564e0ace82ad71b87736d3d1b2e0e1cd",
+      "pathInVcs": "pbjson-build",
+      "vcsEntrySha256": "2902bd5a9d8f24cb8cfaaf223a86328ffa60fe48c69c4081d91347b1b89aa863",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/791a00933f2ea7e512856361e026998362241c3918d7be948c24d29441033b55.txt",
+          "sha256": "791a00933f2ea7e512856361e026998362241c3918d7be948c24d29441033b55",
+          "bytes": 1054
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/influxdata/pbjson/git/trees/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "pbjson-types",
+      "version": "0.9.0",
+      "archiveSha256": "a14e2757d877c0f607a82ce1b8560e224370f159d66c5d52eb55ea187ef0350e",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/influxdata/pbjson",
+      "githubRepository": "influxdata/pbjson",
+      "commit": "48ee5989564e0ace82ad71b87736d3d1b2e0e1cd",
+      "pathInVcs": "pbjson-types",
+      "vcsEntrySha256": "62a42f3e231a932f4263c9ca6b944486ff57eaf25731d9c6637fefdf7bcb9528",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/791a00933f2ea7e512856361e026998362241c3918d7be948c24d29441033b55.txt",
+          "sha256": "791a00933f2ea7e512856361e026998362241c3918d7be948c24d29441033b55",
+          "bytes": 1054
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/influxdata/pbjson/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/influxdata/pbjson/git/trees/48ee5989564e0ace82ad71b87736d3d1b2e0e1cd",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "r-efi",
+      "version": "5.3.0",
+      "archiveSha256": "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f",
+      "declaredLicense": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+      "repositoryDeclaration": "https://github.com/r-efi/r-efi",
+      "githubRepository": "r-efi/r-efi",
+      "commit": "97b55bed1c2c91dcbf787674849f05337ff80b33",
+      "pathInVcs": "",
+      "vcsEntrySha256": "50e0c72ee0164f182d7b5db0213cdb1626bad950f2443b05d006c28c7f0641b5",
+      "status": "root_materials_missing",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/r-efi/r-efi/git/trees/97b55bed1c2c91dcbf787674849f05337ff80b33",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "r-efi",
+      "version": "6.0.0",
+      "archiveSha256": "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf",
+      "declaredLicense": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+      "repositoryDeclaration": "https://github.com/r-efi/r-efi",
+      "githubRepository": "r-efi/r-efi",
+      "commit": "7e1b0322d31d625f81a5656096330934f9cd835d",
+      "pathInVcs": "",
+      "vcsEntrySha256": "d8d0d853429b028d5e3c7b969f7c6b77b04e17486c57fac0759eb8083a359f3f",
+      "status": "root_materials_missing",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/r-efi/r-efi/git/trees/7e1b0322d31d625f81a5656096330934f9cd835d",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "selectors",
+      "version": "0.38.0",
+      "archiveSha256": "8adfa1c298912827b8a28b223b3b874357397ae706e6190acd9bf28cee99114d",
+      "declaredLicense": "MPL-2.0",
+      "repositoryDeclaration": "https://github.com/servo/stylo",
+      "githubRepository": "servo/stylo",
+      "commit": "572ecba2d1600e7c3d490586692a209faf703baa",
+      "pathInVcs": "selectors",
+      "vcsEntrySha256": "1ddc4845786a1b1ebc7fb2f940878d9b923c4385d7d66841f25c765d1312fe74",
+      "status": "root_materials_missing",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/servo/stylo/572ecba2d1600e7c3d490586692a209faf703baa/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/servo/stylo/572ecba2d1600e7c3d490586692a209faf703baa/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/servo/stylo/572ecba2d1600e7c3d490586692a209faf703baa/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/servo/stylo/572ecba2d1600e7c3d490586692a209faf703baa/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/servo/stylo/572ecba2d1600e7c3d490586692a209faf703baa/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/servo/stylo/572ecba2d1600e7c3d490586692a209faf703baa/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/servo/stylo/572ecba2d1600e7c3d490586692a209faf703baa/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/servo/stylo/572ecba2d1600e7c3d490586692a209faf703baa/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/servo/stylo/git/trees/572ecba2d1600e7c3d490586692a209faf703baa",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "tun",
+      "version": "0.8.14",
+      "archiveSha256": "8bb55e468c585e02ef89ba7a1a9848871ac942dfc64547ad4d1166b0f61a98be",
+      "declaredLicense": "WTFPL",
+      "repositoryDeclaration": "https://github.com/meh/rust-tun",
+      "githubRepository": "meh/rust-tun",
+      "commit": "d77c12a7f5536e3f72e668c5b00a4164d5acced2",
+      "pathInVcs": "",
+      "vcsEntrySha256": "50f7afbee7e65c3e78553d0cc09ff6486c4fe17a6eb17d13f124ff188c6e12d9",
+      "status": "root_materials_missing",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/meh/rust-tun/d77c12a7f5536e3f72e668c5b00a4164d5acced2/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/meh/rust-tun/d77c12a7f5536e3f72e668c5b00a4164d5acced2/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/meh/rust-tun/d77c12a7f5536e3f72e668c5b00a4164d5acced2/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/meh/rust-tun/d77c12a7f5536e3f72e668c5b00a4164d5acced2/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/meh/rust-tun/d77c12a7f5536e3f72e668c5b00a4164d5acced2/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/meh/rust-tun/d77c12a7f5536e3f72e668c5b00a4164d5acced2/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/meh/rust-tun/d77c12a7f5536e3f72e668c5b00a4164d5acced2/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/meh/rust-tun/d77c12a7f5536e3f72e668c5b00a4164d5acced2/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/meh/rust-tun/git/trees/d77c12a7f5536e3f72e668c5b00a4164d5acced2",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "webrtc-sys-build",
+      "version": "0.3.21",
+      "archiveSha256": "8d67326bcdd69af2a902c37d2f19101eaf4298fc81b699b89a2017a9a0c46267",
+      "declaredLicense": "Apache-2.0",
+      "repositoryDeclaration": "https://github.com/livekit/rust-sdks",
+      "githubRepository": "livekit/rust-sdks",
+      "commit": "ead3a6936e7e526c6853255e2a731ba7648dd63d",
+      "pathInVcs": "webrtc-sys/build",
+      "vcsEntrySha256": "8edd1d6cf6f4145553012a98175353a5115ffb353e874696ae5f7d7a532f397c",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ead3a6936e7e526c6853255e2a731ba7648dd63d/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ead3a6936e7e526c6853255e2a731ba7648dd63d/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ead3a6936e7e526c6853255e2a731ba7648dd63d/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ead3a6936e7e526c6853255e2a731ba7648dd63d/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ead3a6936e7e526c6853255e2a731ba7648dd63d/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ead3a6936e7e526c6853255e2a731ba7648dd63d/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ead3a6936e7e526c6853255e2a731ba7648dd63d/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/livekit/rust-sdks/ead3a6936e7e526c6853255e2a731ba7648dd63d/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac.txt",
+          "sha256": "6d0f7c5e0deb284362296c5da110dd353831da2e67ca77cb5abc051b951b0fac",
+          "bytes": 553
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/livekit/rust-sdks/git/trees/ead3a6936e7e526c6853255e2a731ba7648dd63d",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "webview2-com",
+      "version": "0.39.1",
+      "archiveSha256": "3f89fca7a704cee10dcb3654c1dbb8941d1783132f1917358af75bec37a7d7e6",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/wravery/webview2-rs",
+      "githubRepository": "wravery/webview2-rs",
+      "commit": "edc2caf886175ccaebe86078c9cfe1ae2a187328",
+      "pathInVcs": "crates/webview2-com",
+      "vcsEntrySha256": "88413f4e9de3a9360fafb0d8c9a0fdf5a01a45d73f9ded314fa7b9ffa2108ace",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73.txt",
+          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
+          "bytes": 1067
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/wravery/webview2-rs/git/trees/edc2caf886175ccaebe86078c9cfe1ae2a187328",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "webview2-com-macros",
+      "version": "0.8.1",
+      "archiveSha256": "67a921c1b6914c367b2b823cd4cde6f96beec77d30a939c8199bb377cf9b9b54",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/wravery/webview2-rs",
+      "githubRepository": "wravery/webview2-rs",
+      "commit": "dffa41a8a46d3f5565eefbff2de57d38d399f158",
+      "pathInVcs": "crates/callback-macros",
+      "vcsEntrySha256": "c24c2646f52e6cb4c1f382afc69fa99c0dc78d6d8e4316ade7e51707b4f9af8e",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73.txt",
+          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
+          "bytes": 1067
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/wravery/webview2-rs/git/trees/dffa41a8a46d3f5565eefbff2de57d38d399f158",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "webview2-com-sys",
+      "version": "0.39.1",
+      "archiveSha256": "b3a07132775117d6065853d9d1178157b8c90e228de47129d6bce2c7edebedfb",
+      "declaredLicense": "MIT",
+      "repositoryDeclaration": "https://github.com/wravery/webview2-rs",
+      "githubRepository": "wravery/webview2-rs",
+      "commit": "edc2caf886175ccaebe86078c9cfe1ae2a187328",
+      "pathInVcs": "crates/bindings",
+      "vcsEntrySha256": "d4137410068017c3f66fe98578f2fd40f0e76d3fd628fa361c758f3b262351c7",
+      "status": "root_materials_collected",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "path": "LICENSE",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "collected_not_reviewed",
+          "file": "texts/0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73.txt",
+          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
+          "bytes": 1067
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE-MIT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE-APACHE",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE-APACHE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.md",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE.md",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "LICENSE.txt",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/LICENSE.txt",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYING",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/COPYING",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "COPYRIGHT",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/COPYRIGHT",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        },
+        {
+          "path": "NOTICE",
+          "sourceUrl": "https://raw.githubusercontent.com/wravery/webview2-rs/edc2caf886175ccaebe86078c9cfe1ae2a187328/NOTICE",
+          "gitBlobSha1": null,
+          "reviewStatus": "unreviewed",
+          "status": "retrieval_failed",
+          "errorCategory": "http_404"
+        }
+      ],
+      "treeUrl": "https://api.github.com/repos/wravery/webview2-rs/git/trees/edc2caf886175ccaebe86078c9cfe1ae2a187328",
+      "errorCategory": "http_403"
+    },
+    {
+      "name": "winapi-i686-pc-windows-gnu",
+      "version": "0.4.0",
+      "archiveSha256": "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6",
+      "declaredLicense": "MIT/Apache-2.0",
+      "repositoryDeclaration": "https://github.com/retep998/winapi-rs",
+      "githubRepository": "retep998/winapi-rs",
+      "commit": null,
+      "pathInVcs": null,
+      "vcsEntrySha256": null,
+      "status": "exact_source_unresolved",
+      "reviewStatus": "unreviewed",
+      "documents": []
+    },
+    {
+      "name": "winapi-x86_64-pc-windows-gnu",
+      "version": "0.4.0",
+      "archiveSha256": "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f",
+      "declaredLicense": "MIT/Apache-2.0",
+      "repositoryDeclaration": "https://github.com/retep998/winapi-rs",
+      "githubRepository": "retep998/winapi-rs",
+      "commit": null,
+      "pathInVcs": null,
+      "vcsEntrySha256": null,
+      "status": "exact_source_unresolved",
+      "reviewStatus": "unreviewed",
+      "documents": []
+    }
+  ],
+  "indexSha256": "65370fa79fff7a3b956474dc7bb87a4a933d11224e23116f11c3d5cd76442757"
+}

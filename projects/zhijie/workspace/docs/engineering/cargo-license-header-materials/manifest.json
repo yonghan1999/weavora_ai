@@ -1,0 +1,842 @@
+{
+  "schemaVersion": 1,
+  "scope": "remaining_cargo_archive_declaration_supplement",
+  "inputEvidenceSha256": "ce7bec36d733563cd8745a44dd6a41dcea0ee430744e62f3ca03dc000e1bbdd2",
+  "releaseApproved": false,
+  "reviewStatus": "unreviewed",
+  "summary": {
+    "dependencies": 9,
+    "withDeclarations": 7,
+    "documentReferences": 67,
+    "uniqueOriginals": 10,
+    "reviewed": 0
+  },
+  "dependencies": [
+    {
+      "name": "from_variants",
+      "version": "1.0.2",
+      "archiveSha256": "4e859c8f2057687618905dbe99fc76e836e0a69738865ef90e46fc214a41bbf2",
+      "declaredLicense": "MIT/Apache-2.0",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "status": "no_matching_declarations"
+    },
+    {
+      "name": "from_variants_impl",
+      "version": "1.0.2",
+      "archiveSha256": "55a5e644a80e6d96b2b4910fa7993301d7b7926c045b475b62202b20a36ce69e",
+      "declaredLicense": "MIT/Apache-2.0",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "status": "no_matching_declarations"
+    },
+    {
+      "name": "libappindicator-sys",
+      "version": "0.9.0",
+      "archiveSha256": "6e9ec52138abedcc58dc17a7c6c0c00a2bdb4f3427c7f63fa97fd0d859155caf",
+      "declaredLicense": "Apache-2.0 OR MIT",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "entry": "libappindicator-sys-0.9.0/CHANGELOG.md",
+          "entrySha256": "bdcb483931833f9e6a9ec584655212aa4e502b11541f330a186a284aae80647d",
+          "entryBytes": 2502,
+          "kind": "full_context_document",
+          "offset": 0,
+          "bytes": 2502,
+          "sha256": "bdcb483931833f9e6a9ec584655212aa4e502b11541f330a186a284aae80647d",
+          "file": "texts/bdcb483931833f9e6a9ec584655212aa4e502b11541f330a186a284aae80647d.txt",
+          "status": "declaration_collected_not_reviewed"
+        }
+      ],
+      "status": "declarations_collected"
+    },
+    {
+      "name": "r-efi",
+      "version": "5.3.0",
+      "archiveSha256": "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f",
+      "declaredLicense": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "entry": "r-efi-5.3.0/AUTHORS",
+          "entrySha256": "ff92bed461f50338dd703a9ba9aee496a425957873df1d91192776e4bdf5dda7",
+          "entryBytes": 3693,
+          "kind": "full_context_document",
+          "offset": 0,
+          "bytes": 3693,
+          "sha256": "ff92bed461f50338dd703a9ba9aee496a425957873df1d91192776e4bdf5dda7",
+          "file": "texts/ff92bed461f50338dd703a9ba9aee496a425957873df1d91192776e4bdf5dda7.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "r-efi-5.3.0/README.md",
+          "entrySha256": "420f65fec3ba2e89d49da51b222d2881d26959037a7b7d3794143db4bd4627b1",
+          "entryBytes": 2919,
+          "kind": "full_context_document",
+          "offset": 0,
+          "bytes": 2919,
+          "sha256": "420f65fec3ba2e89d49da51b222d2881d26959037a7b7d3794143db4bd4627b1",
+          "file": "texts/420f65fec3ba2e89d49da51b222d2881d26959037a7b7d3794143db4bd4627b1.txt",
+          "status": "declaration_collected_not_reviewed"
+        }
+      ],
+      "status": "declarations_collected"
+    },
+    {
+      "name": "r-efi",
+      "version": "6.0.0",
+      "archiveSha256": "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf",
+      "declaredLicense": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "entry": "r-efi-6.0.0/AUTHORS",
+          "entrySha256": "d027e91dbc9cdbb2f1190068e498bd6b61cff022b6a032b191021ba658d96111",
+          "entryBytes": 3733,
+          "kind": "full_context_document",
+          "offset": 0,
+          "bytes": 3733,
+          "sha256": "d027e91dbc9cdbb2f1190068e498bd6b61cff022b6a032b191021ba658d96111",
+          "file": "texts/d027e91dbc9cdbb2f1190068e498bd6b61cff022b6a032b191021ba658d96111.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "r-efi-6.0.0/README.md",
+          "entrySha256": "420f65fec3ba2e89d49da51b222d2881d26959037a7b7d3794143db4bd4627b1",
+          "entryBytes": 2919,
+          "kind": "full_context_document",
+          "offset": 0,
+          "bytes": 2919,
+          "sha256": "420f65fec3ba2e89d49da51b222d2881d26959037a7b7d3794143db4bd4627b1",
+          "file": "texts/420f65fec3ba2e89d49da51b222d2881d26959037a7b7d3794143db4bd4627b1.txt",
+          "status": "declaration_collected_not_reviewed"
+        }
+      ],
+      "status": "declarations_collected"
+    },
+    {
+      "name": "selectors",
+      "version": "0.38.0",
+      "archiveSha256": "8adfa1c298912827b8a28b223b3b874357397ae706e6190acd9bf28cee99114d",
+      "declaredLicense": "MPL-2.0",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "entry": "selectors-0.38.0/attr.rs",
+          "entrySha256": "cfb9ba3ae47538a05b218ed63cc1360ebcf7ba448cb910f2af638f66244c1ae6",
+          "entryBytes": 6686,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/bloom.rs",
+          "entrySha256": "3ce89fe5366a0f3e493ad00cdca426be1d4cdd8fa9d3e995759cb794eb794f33",
+          "entryBytes": 11810,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/build.rs",
+          "entrySha256": "36ba09a8d2089d0cae8e310829ecf0e94bcbaa87e775a6578c7d2f0459a5b6ca",
+          "entryBytes": 1446,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/builder.rs",
+          "entrySha256": "be4ce2818710343d2f6841a78013a26c86ca72d8ca62e68f8b580435a92bfc19",
+          "entryBytes": 16711,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/context.rs",
+          "entrySha256": "ae29c12c063fcfd4f1b121d84688a2c4d16291d6247a0e03f104e57a6361d575",
+          "entryBytes": 17280,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/kleene_value.rs",
+          "entrySha256": "1932450194f7114d89151a09efa79130f34961e2556fb79b92d4c5e174adb823",
+          "entryBytes": 3577,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/lib.rs",
+          "entrySha256": "d54c6e13e9e952dac17d209171df8657e3cae93beaddace4906150cdec8d02e9",
+          "entryBytes": 643,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/matching.rs",
+          "entrySha256": "90fb23dfb0dc9b9fa51e711ec4feb2b5a61d8f6bb8b284069d69f80ba82500fa",
+          "entryBytes": 56962,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/nth_index_cache.rs",
+          "entrySha256": "2f4e94a1010c867ce4b96619e90f1574449769fc5f3f419a2b84e4613d4ab39c",
+          "entryBytes": 3176,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/parser.rs",
+          "entrySha256": "9164d43a4411cf1690a2e04c728e11ae8eddff91e696abda1049ef78b746f919",
+          "entryBytes": 176505,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/relative_selector/cache.rs",
+          "entrySha256": "c6460f5db8c74421af0890c4c69119450397258f64be169c91d0320e2d8626f4",
+          "entryBytes": 2743,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/relative_selector/filter.rs",
+          "entrySha256": "7ea15f5d310fca2254ac36989bfeee06dd0e9897ccec0b886b75b550e0225177",
+          "entryBytes": 6078,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/relative_selector/mod.rs",
+          "entrySha256": "29e305635f471d8467a6eca83ef83dcbda769ecc62976a708c98afa418ab76a6",
+          "entryBytes": 238,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/sink.rs",
+          "entrySha256": "34d4cd4127a6e4979eba11f8e6c41dbc527c0a996be78bd2e3167916c025a04b",
+          "entryBytes": 950,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/tree.rs",
+          "entrySha256": "257a2b30dcdd07bcf0d2519301c4e0678b8ae1a0ba22ad122a7a9132027b62ee",
+          "entryBytes": 6347,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "selectors-0.38.0/visitor.rs",
+          "entrySha256": "3b39f678c2f89c720d2d4fe9bb9064e283609ed49c190cc5a657705522f91dfd",
+          "entryBytes": 4884,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 205,
+          "sha256": "7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840",
+          "file": "texts/7523df2468fda84e4df377ee0cfd844a83742f39e0425e7c7819a82e3e25f840.txt",
+          "status": "declaration_collected_not_reviewed"
+        }
+      ],
+      "status": "declarations_collected"
+    },
+    {
+      "name": "tun",
+      "version": "0.8.14",
+      "archiveSha256": "8bb55e468c585e02ef89ba7a1a9848871ac942dfc64547ad4d1166b0f61a98be",
+      "declaredLicense": "WTFPL",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "entry": "tun-0.8.14/README.md",
+          "entrySha256": "db8799380fc7b7bf0e23509fae77183659a929aa6274d7f03ef5486bee7fbc80",
+          "entryBytes": 5154,
+          "kind": "full_context_document",
+          "offset": 0,
+          "bytes": 5154,
+          "sha256": "db8799380fc7b7bf0e23509fae77183659a929aa6274d7f03ef5486bee7fbc80",
+          "file": "texts/db8799380fc7b7bf0e23509fae77183659a929aa6274d7f03ef5486bee7fbc80.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/examples/dev-config.rs",
+          "entrySha256": "a83d926a4eb533989d0d5e5ada149a4f99563198b8a308683ebe7ee8f98c02ee",
+          "entryBytes": 3769,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/examples/ping-tun.rs",
+          "entrySha256": "a2acf015192550a238de17747291e0197442a35b1cfcdbac9c23f363b6d46eb1",
+          "entryBytes": 3342,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/examples/read-async-codec.rs",
+          "entrySha256": "6c70a7c6d94c8586e6290a93d18855000a2a1713cdbcdfaf57577a603b93c5e5",
+          "entryBytes": 2833,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/examples/read-async.rs",
+          "entrySha256": "22abc1176fb60b10cfa3232acf45c6aa5ce3b79a92e9583a86cff6f904907e0c",
+          "entryBytes": 1954,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/examples/read.rs",
+          "entrySha256": "ecc69a105d95e139e07b07844baba4a2a53aa4cc60376b099b2a3b1d9d833f1b",
+          "entryBytes": 1921,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/examples/recv-timeout.rs",
+          "entrySha256": "9dbb07ba904bc5d7782d6d58067b907a3a7589b73294db773bd6515a0d9c3507",
+          "entryBytes": 2385,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/examples/split-async.rs",
+          "entrySha256": "1b187373ad398e623595e0bb231145fa832813ca42f8c9420e4ad4a19c3520de",
+          "entryBytes": 3866,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/examples/split.rs",
+          "entrySha256": "d7600233790368ab84971f51f78bbff0ba430b57e272edeef651b3663d94b772",
+          "entryBytes": 3599,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/examples/write.rs",
+          "entrySha256": "e09e3693f04adc021892113ba213d41ce350d310882645c5ef88c9d39580dece",
+          "entryBytes": 3032,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/address.rs",
+          "entrySha256": "35ecc573712f543a89359dd8886cebcad7fd3175f45cbbc13f003453d4520502",
+          "entryBytes": 3390,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/async/codec.rs",
+          "entrySha256": "fb8ef05d25cb5c7c5456f6042792cc85ae8c42673b5bc17253d4f51355fc7eb4",
+          "entryBytes": 1702,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/async/mod.rs",
+          "entrySha256": "86f3bb15984960c3936bb35df187a0928a22e28c67cb14da88dbeece9c67c4b7",
+          "entryBytes": 1215,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/async/unix_device.rs",
+          "entrySha256": "e51878ee391ad2bed760ef24129837bf4025bff5f0f6b07461d8c48c332f0693",
+          "entryBytes": 6865,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/async/win_device.rs",
+          "entrySha256": "ad0e96aaa90278bae3b3aa8a8e4c52c8b616fcdeb959392674050fca74dcbaf0",
+          "entryBytes": 5316,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/configuration.rs",
+          "entrySha256": "b7e878e23e8f55edb335f3fb40f211609ca1589562ae40a0a32372c3b94b8a31",
+          "entryBytes": 5873,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/device.rs",
+          "entrySha256": "2cdf0510e447f62844a5911b257650c9f54293a921b1e5c15235ec7d7f3b624a",
+          "entryBytes": 3025,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/error.rs",
+          "entrySha256": "034f73fb66f030fc038539b8e467b2e578ad9858e214cb693d2da530b9ea2096",
+          "entryBytes": 2349,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/lib.rs",
+          "entrySha256": "147d28b3424c8134e2657f54f8e206071f3904fc1adf418a7dd4cd7b79dbb950",
+          "entryBytes": 1236,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/android/device.rs",
+          "entrySha256": "75f75ef44677057ed7e4fdcf3b77f17dc100288ae9dc4ff91ea7ea3770217735",
+          "entryBytes": 5524,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/android/mod.rs",
+          "entrySha256": "023a85126a5b7db80b6c950e2a0379044f7f7f3b25ed22670444571edb455772",
+          "entryBytes": 960,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/freebsd/device.rs",
+          "entrySha256": "94987f552148ec4dab1fb0479f25df190f95cc67a24612e6fc0321da9cbeb1e8",
+          "entryBytes": 16088,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 509,
+          "sha256": "994c78d81a1b849ca22f1288a69ed80675c01b2feb7aef82e79c6fc3abd55ee0",
+          "file": "texts/994c78d81a1b849ca22f1288a69ed80675c01b2feb7aef82e79c6fc3abd55ee0.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/freebsd/mod.rs",
+          "entrySha256": "529837ae974c6938b93b18d5d3c35c28a1e1084b7b4c41b36d7e5bd16306cc37",
+          "entryBytes": 974,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/freebsd/sys.rs",
+          "entrySha256": "78c034c731399d5597858a2e6e71eec05c6667083a292de1c8b5069700cba1d9",
+          "entryBytes": 2247,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 509,
+          "sha256": "994c78d81a1b849ca22f1288a69ed80675c01b2feb7aef82e79c6fc3abd55ee0",
+          "file": "texts/994c78d81a1b849ca22f1288a69ed80675c01b2feb7aef82e79c6fc3abd55ee0.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/ios/device.rs",
+          "entrySha256": "025fdbcd36e8c07ad9b94fc0659078b94b7cebf59fef80c0f3d1222ec5fe676f",
+          "entryBytes": 5955,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/ios/mod.rs",
+          "entrySha256": "7f580730b7e0ec4d8fc95987dd10a73361c5161231035270c78af90bb300c726",
+          "entryBytes": 2030,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/linux/device.rs",
+          "entrySha256": "7c44b1196329aebb0b10cdde923bd140d054f128541666fa87d58692d35175bc",
+          "entryBytes": 15146,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/linux/mod.rs",
+          "entrySha256": "f87daad90aebf957ab0c1676543628839ed7a6120da848ba54770a8329a289d9",
+          "entryBytes": 2993,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/linux/sys.rs",
+          "entrySha256": "e2ddf7a65ebdc256f926d755a0438df6a3474a7a1b91f5c5bf25f51181b9b65d",
+          "entryBytes": 1529,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/macos/device.rs",
+          "entrySha256": "f073e4258dc7ff821d890f9ec8d1ad478938dc59e3f1f9b80207a668848b6352",
+          "entryBytes": 18739,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/macos/mod.rs",
+          "entrySha256": "c3493e1060e6883e1a3bfa4356668c33b99de9495728866a6fc2ad72bc304d8c",
+          "entryBytes": 2410,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/macos/sys.rs",
+          "entrySha256": "bd9d5c7888518002f8e2242d10f4e1793250f6d89d39b02c2e50941d7b476a6a",
+          "entryBytes": 1919,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/mod.rs",
+          "entrySha256": "06bf29c91ef6fff7439d3ec42d194c360657027da673c4e931c7b476234b92b6",
+          "entryBytes": 4236,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/ohos/device.rs",
+          "entrySha256": "bfc954b58284028d293410feb06dee47912d9257e7747833d3553979a7c710b8",
+          "entryBytes": 5334,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/ohos/mod.rs",
+          "entrySha256": "b03b4a18e8f4c9af2e419220663601aa66dfa886ad9500e04f13b13310eac18d",
+          "entryBytes": 1619,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/posix/fd.rs",
+          "entrySha256": "152b905ea5da447a613061569ee19eb5d2aac2b2933b5658759fe37f5978bd4e",
+          "entryBytes": 8349,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/posix/mod.rs",
+          "entrySha256": "6370de687d6e3a5374de4ba729706249c01a1c71f95615af2f64ff2d4ecb7093",
+          "entryBytes": 1293,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/posix/sockaddr.rs",
+          "entrySha256": "9318a963e0e7e6e32ee8fa80624f7864a0de862e8a61e8ae557e83ce33b85e4c",
+          "entryBytes": 6359,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/posix/split.rs",
+          "entrySha256": "cca6d099b80bd6a4bf75bd9ed6bd96e86862929b0ab0bfe2cc4571348bfe8c6e",
+          "entryBytes": 12613,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/windows/device.rs",
+          "entrySha256": "eded58dd87d48bf6ab1942d35900de6053e771bb34d0899a29f2365eadafc69c",
+          "entryBytes": 10812,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/windows/mod.rs",
+          "entrySha256": "784999f2e83c46a96c5e296f02b45c782c30cd5888c6595cbd4ff38cf428edf4",
+          "entryBytes": 3072,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "tun-0.8.14/src/platform/windows/sys.rs",
+          "entrySha256": "9ff22d51cb3c4d8448fe5a3ba473d61ac182e86d61ec4ce51503ff7ee38a3d95",
+          "entryBytes": 14258,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 542,
+          "sha256": "b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141",
+          "file": "texts/b0426ee1173e1ba0acf54332c7407b5f79c9c11e1ca31fa9fcdde1449db95141.txt",
+          "status": "declaration_collected_not_reviewed"
+        }
+      ],
+      "status": "declarations_collected"
+    },
+    {
+      "name": "winapi-i686-pc-windows-gnu",
+      "version": "0.4.0",
+      "archiveSha256": "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6",
+      "declaredLicense": "MIT/Apache-2.0",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "entry": "winapi-i686-pc-windows-gnu-0.4.0/build.rs",
+          "entrySha256": "4344ce95f51197e1377429cd9ef7a8e3f97d39546776705857991f2f9416f545",
+          "entryBytes": 831,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 383,
+          "sha256": "72f9dd4f441e55dbd746f776e04290d076584f469e9d0c964b152bf909029ad3",
+          "file": "texts/72f9dd4f441e55dbd746f776e04290d076584f469e9d0c964b152bf909029ad3.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "winapi-i686-pc-windows-gnu-0.4.0/src/lib.rs",
+          "entrySha256": "79212a91f610f8a77aa6ed4cc77212c2531eeb35630388bf07323cc328fcca42",
+          "entryBytes": 389,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 378,
+          "sha256": "9b0a59b4c5af60f46f79d2adbe433e07189d076972b8d33e9abca077dc10ccf7",
+          "file": "texts/9b0a59b4c5af60f46f79d2adbe433e07189d076972b8d33e9abca077dc10ccf7.txt",
+          "status": "declaration_collected_not_reviewed"
+        }
+      ],
+      "status": "declarations_collected"
+    },
+    {
+      "name": "winapi-x86_64-pc-windows-gnu",
+      "version": "0.4.0",
+      "archiveSha256": "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f",
+      "declaredLicense": "MIT/Apache-2.0",
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "entry": "winapi-x86_64-pc-windows-gnu-0.4.0/build.rs",
+          "entrySha256": "b4ab421e1dc98159dd4440813cdaf7d9ea98278324bc6118d0f7cf378933f371",
+          "entryBytes": 833,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 383,
+          "sha256": "72f9dd4f441e55dbd746f776e04290d076584f469e9d0c964b152bf909029ad3",
+          "file": "texts/72f9dd4f441e55dbd746f776e04290d076584f469e9d0c964b152bf909029ad3.txt",
+          "status": "declaration_collected_not_reviewed"
+        },
+        {
+          "entry": "winapi-x86_64-pc-windows-gnu-0.4.0/src/lib.rs",
+          "entrySha256": "79212a91f610f8a77aa6ed4cc77212c2531eeb35630388bf07323cc328fcca42",
+          "entryBytes": 389,
+          "kind": "leading_source_comment",
+          "offset": 0,
+          "bytes": 378,
+          "sha256": "9b0a59b4c5af60f46f79d2adbe433e07189d076972b8d33e9abca077dc10ccf7",
+          "file": "texts/9b0a59b4c5af60f46f79d2adbe433e07189d076972b8d33e9abca077dc10ccf7.txt",
+          "status": "declaration_collected_not_reviewed"
+        }
+      ],
+      "status": "declarations_collected"
+    }
+  ],
+  "indexSha256": "89b06f33f5b48094c2772ccc5a2ee7168dfb11d7b3ef36910dc8cdc3e3808f37"
+}
