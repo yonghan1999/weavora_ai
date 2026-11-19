@@ -1,6 +1,8 @@
 # Windows 本机试用后端（离线包）
 
-**首次试用**：`target/backend-cwd-20261120-035936/preview-backend.zip` 为 140,633,215 字节，SHA-256 为 `00b82124463e303d5ea3b2e31f28eac096fa9d809fe358dcd876652573e84a5c`。对应的本机目录 `target/trial-backend-cwd` 已解压、未初始化。新版启动脚本保留 PowerShell 调用者目录；正常启动后可在同一窗口按[桌面试用说明](candidate-build.md)继续。包中 329 项与上一版逐项比对，只有 `scripts/local-preview/start.ps1` 内容变化。`restart.log` 和 `upgrade.log` 与 zip 同目录，记录了独立测试库的登录、消息重启保留及从上一版冷备份迁入后的验证。
+**首次试用**：当前后端来自提交 `6a908d1`，已在本机解压到全新目录 `target/trial-backend-6a908d1`，未创建账号或数据库。离线包 `target/backend-6a908d1/preview-backend.zip` 为 140,638,964 字节，SHA-256：`0ce0c21e2d7af97539374fa3496acf197a2f6738bb418ecb88cc0ff3316fb4f4`。330 项包内容与上一版对比仅三个应用类新增或变化，依赖未变。启动后可在同一窗口按[桌面试用说明](candidate-build.md)继续。
+
+已分别验证同版重启，以及从上一版 `target/backend-cwd-20261120-035936/preview-backend.zip` 停库冷备迁入。两种情况下，恢复后均能登录、读取原有群/房间/消息，且使用认证头和旧查询参数的两个 WebSocket 客户端均收到同一条消息删除事件。记录见新 zip 旁的 `restart.log` 和 `upgrade.log`。已使用上一版的用户不必更换正在使用的目录；新版桌面使用认证头时，须先更新后端。
 
 **已有试用数据**：`target/backend-f67715c/preview-backend.zip` 为 140,633,165 字节，SHA-256 为 `1b24c669645ed6101ec9b23f87068c9750ffdfc13406537a5a9c881ac27c50b1`。仅更新桌面无需迁移后端。继续使用旧库时，启动和停止都应使用旧解压目录里的脚本。下述 `649e830` 是更早的留存候选。
 
@@ -23,6 +25,6 @@ python -B "packaging/windows/pack-preview-backend.py" --workspace "<已构建的
 & "./packaging/windows/test-backend-zip.ps1" -Package "<D 盘已有目录>/preview-backend.zip" -JavaHome "D:/Program Files/jdk-25"
 ```
 
-给回归命令添加 `-PreviousPackage "<旧试用包.zip>"` 即可验证升级：用独立旧包写消息并停库，核对冷备份，在新包恢复并校验账号、群、房间和消息，再实际删除测试消息。不加此参数则验证同版重启，两种模式都不接触现有试用库。
+给回归命令添加 `-PreviousPackage "<旧试用包.zip>"` 即可验证升级：用独立旧包写消息并停库，核对冷备份，在新包恢复并校验账号、群、房间和消息，再实际删除测试消息。不加此参数则验证同版重启，两种模式都不接触现有试用库。验证支持两种同步认证的候选包时再添加 `-CheckSyncAuth`，要求两个订阅者都收到实际删除事件；旧版候选不启用此选项。
 
 生成器不覆盖同名文件。它只复制试用启动脚本、控制面类、与源码一致的应用配置/映射/迁移和类路径所列 JAR，保留依赖顺序，清单中仅有包内相对路径。回归只针对自行生成的可信包，使用独立目录和回环端口；用例验证本机移位解压后的登录与重启，不代表第二台机器或其他平台已验收。

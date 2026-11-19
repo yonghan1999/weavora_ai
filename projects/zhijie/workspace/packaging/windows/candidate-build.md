@@ -6,11 +6,11 @@
 
 从该提交导出的源码通过 11 项界面单测和 156 项无头浏览器检查，包括窄屏断连提示和恢复时保留输入焦点。安装包内八个产品文件与构建输入逐个匹配，便携目录通过只读自检；六份界面脚本和 `desktop.css` 的压缩字节均在便携桌面程序内找到，解压后与 Git 内容逐字节一致。记录位于 `target/win-ab8d325/` 的 `browser.json`、`payload.json`、`portable.log` 和 `embedded.log`。这些不是实际安装或通话验收。旧便携目录 `target/trial-fb56078` 保留；两个版本不共享 WebView 试用目录，新版本可能需要重新登录。
 
-以下路径是本构建机 D 盘上的本地文件，不随 Git 下发。从 `projects/zhijie/workspace` 的一个普通 PowerShell 窗口依次执行即可。新版[离线后端](preview-backend.md)已解压到 `target/trial-backend-cwd`，供首次试用；它不会读取旧目录的数据库。若已在 `target/trial-backend-f67715c` 创建账号，可继续使用原后端，只运行下方桌面命令（旧启动脚本会切换目录，桌面命令需从 workspace 执行）。若要将旧数据带入新目录，先按离线后端说明停库、备份并验证。已有后端占用端口时不要重复启动。
+以下命令从本机 `projects/zhijie/workspace` 的普通 PowerShell 窗口执行。首次试用使用新版[离线后端](preview-backend.md) `target/trial-backend-6a908d1`。它兼容当前桌面包的旧同步协议，也支持新版客户端的认证请求头。已有试用数据时请继续使用原后端目录，或停库、备份并核验后迁入新目录；不要覆盖、混用数据库或重复启动同一端口。
 
 ```powershell
 # 首次试用：在本机提示中设置密码，等待“试用环境已就绪”
-& "./target/trial-backend-cwd/scripts/local-preview/start.ps1" -JavaHome "D:/Program Files/jdk-25" -HttpPort 18829 -DatabasePort 15439
+& "./target/trial-backend-6a908d1/scripts/local-preview/start.ps1" -JavaHome "D:/Program Files/jdk-25" -HttpPort 18829 -DatabasePort 15439
 ```
 
 ```powershell
@@ -18,7 +18,7 @@
 python -B "scripts/local-preview/trial-desktop.py" "target/trial-ab8d325" --http-port 18829 --check-only
 python -B "scripts/local-preview/trial-desktop.py" "target/trial-ab8d325" --http-port 18829
 # 退出桌面后，仍从 workspace 停止本试用后端；数据库保留
-& "./target/trial-backend-cwd/scripts/local-preview/stop.ps1"
+& "./target/trial-backend-6a908d1/scripts/local-preview/stop.ps1"
 ```
 
 ## 从源码重新构建
