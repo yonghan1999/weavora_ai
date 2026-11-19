@@ -1,0 +1,14 @@
+{
+  "productName": "zhijie",
+  "bundle": {
+    "targets": ["deb", "appimage"],
+    "category": "SocialNetworking",
+    "shortDescription": "Group chat, voice and game networking desktop client",
+    "linux": {
+      "deb": {
+        "section": "net",
+        "desktopTemplate": "../../packaging/linux/zhijie.desktop.hbs"
+      }
+    }
+  }
+}

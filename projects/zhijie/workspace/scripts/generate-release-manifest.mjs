@@ -7,6 +7,8 @@ const files = [
   "desktop/shell/tauri.conf.json",
   "desktop/shell/tauri.windows.conf.json",
   "desktop/shell/tauri.macos.conf.json",
+  "desktop/shell/tauri.linux.conf.json",
+  "packaging/linux/zhijie.desktop.hbs",
   "desktop/shell/Info.plist",
   "desktop/shell/Entitlements.plist",
   "packaging/windows/installer-hooks.nsh",

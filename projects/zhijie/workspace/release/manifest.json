@@ -23,6 +23,18 @@
       "sha256": "49a9b0c6495d5aa7199e2e6097ac6322ec026ffa89e8eee04225037bc39d31e8"
     },
     {
+      "path": "desktop/shell/tauri.linux.conf.json",
+      "artifactClass": "configuration",
+      "bytes": 341,
+      "sha256": "e0ec69cd2d31511fa12ffcd9fda6d8ddc978427b935fc45b6e2e9f19ff5a9a5d"
+    },
+    {
+      "path": "packaging/linux/zhijie.desktop.hbs",
+      "artifactClass": "configuration",
+      "bytes": 238,
+      "sha256": "313f6470b2df25c315a581f79c1cf4abfed549b2f92cc976a58f489fcaec4f66"
+    },
+    {
       "path": "desktop/shell/Info.plist",
       "artifactClass": "configuration",
       "bytes": 316,

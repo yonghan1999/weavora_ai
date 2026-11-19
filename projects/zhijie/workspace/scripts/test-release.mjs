@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 assert.ok(process.argv.includes("--contract"), "Use --contract to validate release configuration");
@@ -9,6 +10,14 @@ assert.equal(tauri.bundle.createUpdaterArtifacts, false);
 assert.ok(tauri.bundle.targets.includes("nsis"));
 assert.ok(tauri.bundle.targets.includes("dmg"));
 assert.ok(tauri.bundle.targets.includes("appimage"));
+
+const linux = JSON.parse(readFileSync("desktop/shell/tauri.linux.conf.json", "utf8"));
+assert.equal(linux.productName, "zhijie", "Keep the Debian package identity stable across upgrades");
+assert.deepEqual(linux.bundle.targets, ["deb", "appimage"]);
+const desktopEntry = readFileSync(resolve("desktop/shell", linux.bundle.linux.deb.desktopTemplate), "utf8");
+for (const line of ["[Desktop Entry]", "Type=Application", `Name[zh_CN]=${tauri.productName}`, "Exec={{exec}}", "Icon={{icon}}", "Terminal=false"]) {
+  assert.ok(desktopEntry.split(/\r?\n/).includes(line), `Missing Linux desktop entry: ${line}`);
+}
 
 const windows = JSON.parse(readFileSync("desktop/shell/tauri.windows.conf.json", "utf8"));
 assert.deepEqual(windows.bundle.targets, ["nsis"]);
