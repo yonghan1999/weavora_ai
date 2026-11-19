@@ -22,10 +22,16 @@ def inspect_candidate(target, candidate):
     for directory in (profile, root / 'temp'):
         if directory.exists() and not directory.is_dir():
             raise ValueError('试用缓存路径已被同名文件占用。')
-    expected = json.loads(manifest.read_text(encoding='utf-8-sig'))['productFiles'][executable.name]
-    with executable.open('rb') as stream:
-        if hashlib.file_digest(stream, 'sha256').hexdigest() != expected:
-            raise ValueError('桌面与候选清单摘要不符。')
+    expected = json.loads(manifest.read_text(encoding='utf-8-sig'))['productFiles']
+    files = list(executable.parent.iterdir())
+    if not isinstance(expected, dict) or executable.name not in expected or set(expected) != {path.name for path in files}:
+        raise ValueError('app 目录与候选清单的文件名不符。')
+    for path in files:
+        if path.resolve(strict=True) != path or not path.is_file():
+            raise ValueError(f'试用文件不是普通本地文件：{path.name}')
+        with path.open('rb') as stream:
+            if hashlib.file_digest(stream, 'sha256').hexdigest() != expected[path.name]:
+                raise ValueError(f'试用文件与候选清单摘要不符：{path.name}')
     return executable, profile
 
 
@@ -43,14 +49,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('candidate', type=Path, help='含 manifest.json 和 app 子目录的本机候选目录')
     parser.add_argument('--http-port', type=int, default=8080)
-    parser.add_argument('--check-only', action='store_true', help='只读核对桌面 SHA-256 和目录，不启动程序')
+    parser.add_argument('--check-only', action='store_true', help='只读核对 app 文件清单、SHA-256 和目录，不启动程序')
     args = parser.parse_args()
     if os.name != 'nt' or not 1 <= args.http_port <= 65535:
         parser.error('仅支持 Windows 本机，HTTP 端口须在 1 至 65535。')
     try:
         executable, profile = inspect_candidate(Path(__file__).resolve().parents[2] / 'target', args.candidate)
         if args.check_only:
-            print(f'桌面摘要匹配；WebView2 试用目录：{profile}；未启动。')
+            print(f'app 文件清单及全部摘要匹配；WebView2 试用目录：{profile}；未启动。')
             return 0
         profile.mkdir(exist_ok=True)
         temp_root = profile.parent / 'temp'

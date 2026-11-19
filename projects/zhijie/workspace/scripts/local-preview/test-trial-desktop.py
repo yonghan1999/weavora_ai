@@ -27,12 +27,14 @@ class DesktopTrialTest(unittest.TestCase):
         app.mkdir()
         self.executable = app / 'zhijie-shell.exe'
         self.executable.write_bytes(b'not a runnable desktop')
+        self.helper = app / 'zhijie-helper.exe'
+        self.helper.write_bytes(b'fixture helper')
         self.manifest = self.root / 'manifest.json'
         self.record_digest()
 
     def record_digest(self):
-        self.manifest.write_text(json.dumps({'productFiles': {self.executable.name:
-            hashlib.sha256(self.executable.read_bytes()).hexdigest()}}), encoding='utf-8')
+        self.manifest.write_text(json.dumps({'productFiles': {path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                                                             for path in (self.executable, self.helper)}}), encoding='utf-8')
 
     def run_trial(self, *arguments, **variables):
         return subprocess.run([sys.executable, '-B', launcher, self.root, *arguments], capture_output=True,
@@ -49,6 +51,17 @@ class DesktopTrialTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             trial.inspect_candidate(self.root / 'app', self.root)
         self.assertNotEqual(self.run_trial('--check-only', '--http-port', '0').returncode, 0)
+
+    def test_check_covers_companions_and_exact_app_contents(self):
+        self.helper.write_bytes(b'changed')
+        self.assertNotEqual(self.run_trial('--check-only').returncode, 0)
+        self.helper.unlink()
+        self.assertNotEqual(self.run_trial('--check-only').returncode, 0)
+        self.helper.write_bytes(b'fixture helper')
+        (self.helper.parent / 'extra.dll').write_bytes(b'extra')
+        self.assertNotEqual(self.run_trial('--check-only').returncode, 0)
+        self.assertFalse((self.root / 'webview').exists())
+        self.assertFalse((self.root / 'temp').exists())
 
     def test_check_rejects_unusable_profile_and_does_not_replace_it(self):
         profile = self.root / 'webview'
