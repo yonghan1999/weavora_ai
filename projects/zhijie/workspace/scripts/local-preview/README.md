@@ -46,7 +46,7 @@ Copy-Item -LiteralPath $candidate -Destination "control-plane/target/local-previ
 
 本机 `Command Processor/AutoRun` 存在异常值，`CleanCmd.cs` 仅为 PostgreSQL 子进程传入 `cmd /d`，不修改注册表或全局环境。启动入口使用测试作用域的嵌入式数据库依赖，与正式服务构建隔离（单一职责）；数据目录、停止信号及日志统一放在忽略目录，不写入工作流审批和历史证据。
 
-准备好类路径后，可运行 `./scripts/local-preview/test-preview.ps1`。它在 `target/preview-test-*` 创建独立试用库，通过 HTTP 验证登录、欢迎消息、历史游标和重启后的群/消息标识；默认使用 18828/15438，不读取原试用库或使用原账号密码。
+准备好类路径后，可运行 `./scripts/local-preview/test-preview.ps1`。它在 `target/preview-test-*` 创建独立试用库，重启前后都通过 HTTP 登录、读取欢迎消息和历史游标、加入房间、发送心跳并离房。群、消息、房间和活动标识须保持不变，再次入房须获得新租约及更高代次。默认使用 18828/15438，不读取原试用库或使用原账号密码；不启动桌面，也不验证语音或实际联机传输。
 
 ## 受控语音联调
 

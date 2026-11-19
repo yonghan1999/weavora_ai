@@ -22,7 +22,16 @@ function Read-Seed {
     if ($rows.Count -ne 1) { throw "欢迎消息数量不符" }
     $earlier = (Invoke-RestMethod "${history}?beforeId=$($rows[0].id)" -Headers $headers).data
     if ($null -eq $earlier -or $earlier.Count -ne 0) { throw "游标未排除已读取消息" }
-    return "$($groups[0].id):$($rows[0].id)"
+    $rooms = (Invoke-RestMethod "$url/api/v1/groups/$($groups[0].id)/rooms" -Headers $headers).data
+    if ($rooms.Count -ne 1 -or !$rooms[0].currentActivityId) { throw "试用房间或活动缺失" }
+    $body = @{roomId=$rooms[0].id;deviceId='preview-test';operationId=[guid]::NewGuid().ToString('N')} | ConvertTo-Json
+    $joined = (Invoke-RestMethod "$url/api/v1/room-joins" -Headers $headers -Method Post -ContentType 'application/json' -Body $body).data
+    if ($joined.activityId -ne $rooms[0].currentActivityId -or !$joined.leaseId -or !$joined.virtualIpv4) { throw "试用活动加入结果不符" }
+    $activity = "$url/api/v1/activities/$($joined.activityId)"
+    $heartbeat = @{deviceId=$joined.deviceId;leaseId=$joined.leaseId;activityGeneration=$joined.activityGeneration;memberGeneration=$joined.memberGeneration} | ConvertTo-Json
+    if (!(Invoke-RestMethod "$activity/heartbeat" -Headers $headers -Method Post -ContentType 'application/json' -Body $heartbeat).data.renewed) { throw "试用活动心跳失败" }
+    if (!(Invoke-RestMethod "$activity/leave" -Headers $headers -Method Post).data.left) { throw "试用活动退出失败" }
+    return [pscustomobject]@{seed="$($groups[0].id):$($rows[0].id):$($rooms[0].id):$($joined.activityId)";lease=$joined.leaseId;generation=$joined.memberGeneration}
 }
 $savedPassword = $env:ZHIJIE_PREVIEW_PASSWORD
 $savedMail = $env:ZHIJIE_MAIL_ENABLED
@@ -40,8 +49,11 @@ try {
     $before = Read-Seed
     & "$fixture/scripts/local-preview/stop.ps1"
     & "$fixture/scripts/local-preview/start.ps1" -JavaHome $JavaHome -HttpPort $HttpPort -DatabasePort $DatabasePort
-    if ((Read-Seed) -ne $before) { throw "重启后的群或消息标识改变" }
+    $after = Read-Seed
+    if ($after.seed -ne $before.seed) { throw "重启后的群、消息、房间或活动标识改变" }
+    if ($after.lease -eq $before.lease -or $after.generation -le $before.generation) { throw "重启后重新入房没有得到新租约和代次" }
     Write-Output 'PREVIEW_SEED_CURSOR_RESTART_OK'
+    Write-Output 'PREVIEW_ROOM_HEARTBEAT_LEAVE_REJOIN_OK'
 } finally {
     try { & "$fixture/scripts/local-preview/stop.ps1" } finally {
         $env:ZHIJIE_PREVIEW_PASSWORD = $savedPassword
