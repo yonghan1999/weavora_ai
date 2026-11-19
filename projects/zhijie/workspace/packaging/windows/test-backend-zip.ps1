@@ -1,7 +1,8 @@
 param([Parameter(Mandatory)][string]$Package, [string]$JavaHome = $env:JAVA_HOME,
       [int]$HttpPort = 18831, [int]$DatabasePort = 15441, [string]$PreviousPackage, [switch]$CheckSyncAuth, [switch]$CheckRoomReopen,
-      [switch]$CheckLogPrivacy, [string]$ControlTlsNginx)
+      [switch]$CheckLogPrivacy, [string]$ControlTlsNginx, [string]$ControlTlsRustProbe)
 $ErrorActionPreference = 'Stop'
+if ($ControlTlsRustProbe -and !$ControlTlsNginx) { throw 'Rust TLS 检查需要指定 nginx' }
 $workspace = (Resolve-Path -LiteralPath "$PSScriptRoot/../..").Path
 $target = (Resolve-Path -LiteralPath "$workspace/target").Path
 if ([IO.Path]::GetPathRoot($target).TrimEnd('\') -eq $env:SystemDrive) { throw '测试目录不得位于系统盘' }
@@ -158,7 +159,8 @@ try {
             Assert-NoCredential (ConvertTo-Json -InputObject $records -Depth 10) $secrets 'group audit records'
         }
         if ($ControlTlsNginx -and $attempt -eq 2) {
-            $password | python -B "$workspace/ops/test-control-plane-tls.py" --nginx $ControlTlsNginx --upstream-port $HttpPort | Out-Host
+            $probeArgs = if ($ControlTlsRustProbe) { '--rust-probe'; (Resolve-Path -LiteralPath $ControlTlsRustProbe).Path }
+            $password | python -B "$workspace/ops/test-control-plane-tls.py" --nginx $ControlTlsNginx --upstream-port $HttpPort @probeArgs | ForEach-Object { Write-Host $_ }
             if ($LASTEXITCODE) { throw '隔离试用包 HTTPS/WSS 验证失败' }
         }
         & "$trial/scripts/local-preview/stop.ps1" | Out-Host

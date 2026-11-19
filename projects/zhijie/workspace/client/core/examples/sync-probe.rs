@@ -33,6 +33,18 @@ async fn main() {
     let config = read();
     let client = ControlPlaneClient::new(config["base"].as_str().unwrap()).unwrap();
     let token = config["token"].as_str().unwrap();
+    if config["expectUntrusted"] == true {
+        assert!(matches!(
+            client.sync_cursor(token).await,
+            Err(zhijie_core::ClientError::Transport(_))
+        ));
+        assert!(matches!(
+            client.connect_sync(token, 0).await,
+            Err("SYNC_CONNECT_FAILED")
+        ));
+        signal("SYNC_UNTRUSTED_REJECTED");
+        return;
+    }
     let mut cursor = client.sync_cursor(token).await.expect("cursor request");
     let mut socket = client.connect_sync(token, cursor).await.expect("connect");
     signal("SYNC_READY");

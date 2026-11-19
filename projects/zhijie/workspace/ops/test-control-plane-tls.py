@@ -51,7 +51,52 @@ def prepare(directory, port, upstream):
     (directory / 'nginx.conf').write_text('daemon off;\nevents { worker_connections 64; }\nhttp {\n' + fragment + '\n}', encoding='utf-8')
 
 
-async def exercise(directory, port, password):
+async def rust_sync(probe, directory, address, login, api, group, headers):
+    async def send(child, value):
+        child.stdin.write(json.dumps(value).encode() + b'\n')
+        await child.stdin.drain()
+
+    async def expect(child, signal):
+        if (await child.stdout.readline()).strip() != signal.encode():
+            raise AssertionError(f'Rust sync probe did not reach {signal}')
+
+    for trusted in (False, True):
+        environment = os.environ.copy()
+        environment.pop('SSL_CERT_DIR', None)
+        environment['SSL_CERT_FILE'] = str(directory / ('cert.pem' if trusted else 'no-test-root.pem'))
+        child = await asyncio.create_subprocess_exec(str(probe), stdin=asyncio.subprocess.PIPE,
+                                                     stdout=asyncio.subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                                     env=environment, creationflags=subprocess.CREATE_NO_WINDOW)
+        try:
+            async with asyncio.timeout(30):
+                await send(child, {'base': address, 'token': login['accessToken'], 'expectUntrusted': not trusted})
+                if not trusted:
+                    child.stdin.close()
+                    await expect(child, 'SYNC_UNTRUSTED_REJECTED')
+                    if await child.wait() != 0:
+                        raise AssertionError('Rust certificate rejection check failed')
+                    continue
+                await expect(child, 'SYNC_READY')
+                async def post(auth):
+                    return (await api('POST', f'groups/{group}/messages', auth, {'body': uuid.uuid4().hex}))['id']
+                await send(child, {'message': await post(headers)})
+                await expect(child, 'SYNC_OFFLINE')
+                await send(child, {'message': await post(headers)})
+                await expect(child, 'SYNC_CATCHUP_OK')
+                fresh = await api('POST', 'auth/refresh', body={'refreshToken': login['refreshToken']})
+                fresh_token = fresh['accessToken']
+                await send(child, {'token': fresh_token, 'message': await post({'Authorization': 'Bearer ' + fresh_token})})
+                await expect(child, 'SYNC_ROTATED_OK')
+                if await child.wait() != 0:
+                    raise AssertionError('Rust sync probe failed at exit')
+        finally:
+            if child.returncode is None:
+                child.kill()
+                await child.wait()
+    print('PACKAGED_RUST_TLS_SYNC_LIVE_CATCHUP_ROTATION_OK', flush=True)
+
+
+async def exercise(directory, port, password, probe):
     address = f'https://127.0.0.1:{port}'
     trust = ssl.create_default_context(cafile=str(directory / 'cert.pem'))
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as client:
@@ -84,9 +129,11 @@ async def exercise(directory, port, password):
                     if (event['type'] == 'message.created' and event['groupId'] == group and event['sequence'] > cursor
                             and json.loads(event['payload'])['message_id'] == sent['id']):
                         break
+        if probe:
+            await rust_sync(probe, directory, address, login, api, group, headers)
 
 
-def run(nginx, upstream, password):
+def run(nginx, upstream, password, probe):
     if not password or os.name != 'nt' or not 1 <= upstream <= 65535:
         raise ValueError('Requires a Windows preview test instance')
     with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1] / 'target', prefix='control-tls-') as scratch:
@@ -110,7 +157,7 @@ def run(nginx, upstream, password):
                 time.sleep(.1)
             else:
                 raise TimeoutError('Proxy not ready')
-            asyncio.run(exercise(directory, port, password))
+            asyncio.run(exercise(directory, port, password, probe))
         finally:
             if process.poll() is None:
                 subprocess.run([*command, '-s', 'stop'], **options, check=True, timeout=10)
@@ -121,10 +168,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--nginx', required=True, type=Path)
     parser.add_argument('--upstream-port', required=True, type=int)
+    parser.add_argument('--rust-probe', type=Path)
     args = parser.parse_args()
     try:
         password = sys.stdin.buffer.readline().decode('utf-8-sig').rstrip('\r\n')
-        run(args.nginx, args.upstream_port, password)
+        run(args.nginx, args.upstream_port, password, args.rust_probe.resolve(strict=True) if args.rust_probe else None)
     except Exception as error:
         detail = str(error) if isinstance(error, AssertionError) else type(error).__name__
         print(f'Control TLS check failed: {detail}', flush=True)

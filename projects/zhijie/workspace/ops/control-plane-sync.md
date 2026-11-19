@@ -21,3 +21,7 @@
 ```
 
 测试仅在隔离试用库中写一条消息。临时代理绑定回环高端口，使用短时证书，不修改系统信任库。`PACKAGED_CONTROL_HTTPS_WSS_AND_PRIVATE_ROUTES_OK` 表示默认信任拒绝证书、仅此测试客户端信任该证书后通过 HTTPS 登录和发消息、WSS 收到对应消息 ID 的同步事件，且健康、内部观测和运维路径返回 404。这不是生产域名、外网或真实桌面客户端验收。
+
+要验证桌面复用的 Rust 客户端核心，在 `workspace` 运行 `cargo build --locked -p zhijie-core --example sync-probe --features sync-probe-test-roots`，再给上述命令加上 `-ControlTlsRustProbe "<实际 Cargo 输出目录>/debug/examples/sync-probe.exe"`。该非默认 feature 仅用于测试构建，勿用于分发。测试先确认 Rust 的 HTTPS 与 WSS 均拒绝未信任的回环证书，再仅向另一个探针进程提供临时根，不更改机器或已打包桌面的证书信任。
+
+此模式额外写三条消息。`PACKAGED_RUST_TLS_SYNC_LIVE_CATCHUP_ROTATION_OK` 要求 Rust 使用 HTTPS 读取游标，并在三次 WSS 连接中分别收到实时消息、离线消息和刷新令牌后的消息，逐条核对 ID 和递增游标。登录、发消息及刷新令牌由测试驱动通过 HTTPS 执行；没有打开图形窗口或验证生产证书链。
