@@ -2,11 +2,11 @@
 
 ## 本机试用（不安装）
 
-桌面候选 `ab8d325` 区分服务断连和登录失效。已登录时，服务暂不可达会显示自动重连提示，并允许手动重试；只有确认会话失效才要求重新登录。安装包 `target/trial-ab8d325/织界_0.1.0_x64-setup.exe` 为 12,079,507 字节，SHA-256：`0a555225b666834c8fdac867d48a9591eb44b2f3e0e92efc38d723dbd9f5ba29`。这是未签名候选包；普通用户试用无需运行安装器。
+本机首次试用请搭配**桌面 `3bbc939` 和[离线后端](preview-backend.md) `6a908d1`**。新版桌面通过认证请求头同步消息，不再把访问令牌放入 WebSocket URL。旧后端不支持这种握手方式：已有试用数据时，先保留原桌面和后端组合，或按后端说明停库、备份并核验迁移后再换桌面。不要覆盖数据库，或在同一端口启动两套后端。旧桌面 `target/trial-ab8d325` 保留；新便携目录不共享旧版 WebView 数据，可能需要重新登录。
 
-从该提交导出的源码通过 11 项界面单测和 156 项无头浏览器检查，包括窄屏断连提示和恢复时保留输入焦点。安装包内八个产品文件与构建输入逐个匹配，便携目录通过只读自检；六份界面脚本和 `desktop.css` 的压缩字节均在便携桌面程序内找到，解压后与 Git 内容逐字节一致。记录位于 `target/win-ab8d325/` 的 `browser.json`、`payload.json`、`portable.log` 和 `embedded.log`。这些不是实际安装或通话验收。旧便携目录 `target/trial-fb56078` 保留；两个版本不共享 WebView 试用目录，新版本可能需要重新登录。
+桌面安装包 `target/trial-3bbc939/织界_0.1.0_x64-setup.exe` 为 12,080,333 字节，SHA-256：`f84e6d376d23d745632103b92e5cceeee307dbecdcd0e68d5460dfeaa62b7546`。普通用户无需运行这个未签名安装器。包内八个产品文件与构建输入、便携副本逐一匹配。从该提交导出的源码通过 11 项界面单测和 156 项无头浏览器检查；15 项 Rust 核心测试包含对握手 URL 和认证头的断言。使用同版 Rust 同步探针连接独立解压的后端包，验证了实时接收、断线补收和令牌轮换后重连。记录在 `target/win-3bbc939/`：`unit.log`、`browser.json`、`core.log`、`package-sync.log`、`payload.json` 和 `portable.log`。这些检查没有启动图形桌面、运行安装器或验证实际通话。
 
-以下命令从本机 `projects/zhijie/workspace` 的普通 PowerShell 窗口执行。首次试用使用新版[离线后端](preview-backend.md) `target/trial-backend-6a908d1`。它兼容当前桌面包的旧同步协议，也支持新版客户端的认证请求头。已有试用数据时请继续使用原后端目录，或停库、备份并核验后迁入新目录；不要覆盖、混用数据库或重复启动同一端口。
+以下命令从本机 `projects/zhijie/workspace` 的普通 PowerShell 窗口执行。
 
 ```powershell
 # 首次试用：在本机提示中设置密码，等待“试用环境已就绪”
@@ -15,8 +15,8 @@
 
 ```powershell
 # 先核对便携目录，再启动桌面，使用 trial@example.test 登录
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-ab8d325" --http-port 18829 --check-only
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-ab8d325" --http-port 18829
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-3bbc939" --http-port 18829 --check-only
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-3bbc939" --http-port 18829
 # 退出桌面后，仍从 workspace 停止本试用后端；数据库保留
 & "./target/trial-backend-6a908d1/scripts/local-preview/stop.ps1"
 ```
