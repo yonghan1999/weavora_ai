@@ -5,53 +5,71 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.common.ApiException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import java.io.*;
 import java.net.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.WebApplicationType;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 class SmtpEmailDispatchAdapterTest {
     @Test
     void registrationVerificationAndPasswordResetDeliverThroughRealSmtp() throws Exception {
         try (SmtpInbox inbox = new SmtpInbox(); EmbeddedPostgres postgres = EmbeddedPostgres.start();
-             ConfigurableApplicationContext context = start(postgres, inbox.port())) {
+             var context = start(postgres, inbox.port(), true); var client = HttpClient.newHttpClient()) {
             assertThat(context.getBeansOfType(org.springframework.boot.actuate.mail.MailHealthIndicator.class)).hasSize(1);
-            IdentityService identity = context.getBean(IdentityService.class);
+            var api = new LocalApi(context, client);
+            assertThat(api.get("/actuator/health", null, 200).path("status").asText()).isEqualTo("UP");
             String email = "smtp-recipient@example.test";
             String original = "original-password-2026";
             String replacement = "replacement-password-2026";
-            try {
-                identity.register(email, original);
-            } catch (ApiException error) {
-                throw new AssertionError("受控 SMTP 收件失败：" + inbox.diagnostics(), error);
-            }
+            var login = Map.of("email", email, "password", original, "deviceId", "smtp-test");
+            var registration = api.post("register", Map.of("email", email, "password", original), 202);
+            assertThat(registration.required("data").size()).isEqualTo(1);
+            assertThat(registration.at("/data/verificationRequired").asBoolean()).isTrue();
             MimeMessage verification = inbox.receive();
             assertThat(inbox.phases).contains("EHLO", "DATA");
             assertThat(verification.getSubject()).isEqualTo("织界：验证邮箱");
             assertThat(verification.getAllRecipients()[0].toString()).isEqualTo(email);
-            assertThatThrownBy(() -> identity.login(email, original, "smtp-test")).isInstanceOf(ApiException.class);
+            assertThat(api.post("login", login, 401).at("/error/code").asText()).isEqualTo("AUTH_REQUIRED");
             String verificationCode = code(verification);
-            identity.verifyEmail(email, verificationCode);
-            assertThatThrownBy(() -> identity.verifyEmail(email, verificationCode)).isInstanceOf(ApiException.class);
-            AuthTokens oldTokens = identity.login(email, original, "smtp-test");
-            identity.forgotPassword(email);
+            var verify = Map.of("email", email, "code", verificationCode);
+            assertThat(api.post("verify-email", verify, 200).at("/data/verified").asBoolean()).isTrue();
+            assertThat(api.post("verify-email", verify, 422).at("/error/code").asText()).isEqualTo("CHALLENGE_INVALID");
+            var oldTokens = api.post("login", login, 200).required("data");
+            api.get("/api/v1/groups", oldTokens.required("accessToken").asText(), 200);
+            var accepted = api.post("password/forgot", Map.of("email", email), 202);
+            assertThat(accepted.at("/data/accepted").asBoolean()).isTrue();
             MimeMessage reset = inbox.receive();
             assertThat(reset.getSubject()).isEqualTo("织界：重置密码");
-            identity.resetPassword(email, code(reset), replacement);
-            assertThatThrownBy(() -> identity.login(email, original, "smtp-test")).isInstanceOf(ApiException.class);
-            assertThatThrownBy(() -> identity.authenticate("Bearer " + oldTokens.accessToken())).isInstanceOf(ApiException.class);
-            assertThat(identity.login(email, replacement, "smtp-test").userId()).isEqualTo(oldTokens.userId());
-            identity.forgotPassword("unknown@example.test");
+            assertThat(reset.getAllRecipients()[0].toString()).isEqualTo(email);
+            var resetBody = Map.of("email", email, "code", code(reset), "newPassword", replacement);
+            assertThat(api.post("password/reset", resetBody, 200).at("/data/reset").asBoolean()).isTrue();
+            assertThat(api.post("password/reset", resetBody, 422).at("/error/code").asText()).isEqualTo("CHALLENGE_INVALID");
+            api.post("login", login, 401);
+            api.get("/api/v1/groups", oldTokens.required("accessToken").asText(), 401);
+            api.post("refresh", Map.of("refreshToken", oldTokens.required("refreshToken").asText()), 401);
+            var renewed = api.post("login", Map.of("email", email, "password", replacement, "deviceId", "smtp-test"), 200).required("data");
+            assertThat(renewed.required("userId")).isEqualTo(oldTokens.required("userId"));
+            String access = renewed.required("accessToken").asText();
+            api.get("/api/v1/groups", access, 200);
+            assertThat(api.post("logout", Map.of("accessToken", access), 200).at("/data/loggedOut").asBoolean()).isTrue();
+            api.get("/api/v1/groups", access, 401);
+            assertThat(api.post("password/forgot", Map.of("email", "unknown@example.test"), 202)).isEqualTo(accepted);
             assertThat(inbox.messages.poll(300, TimeUnit.MILLISECONDS)).isNull();
         }
     }
@@ -59,7 +77,7 @@ class SmtpEmailDispatchAdapterTest {
     @Test
     void smtpFailureRollsBackRegistrationAndDoesNotExposeTransportDetails() throws Exception {
         try (SmtpInbox inbox = new SmtpInbox(); EmbeddedPostgres postgres = EmbeddedPostgres.start();
-             ConfigurableApplicationContext context = start(postgres, inbox.port())) {
+             var context = start(postgres, inbox.port(), true)) {
             inbox.rejectDelivery = true;
             assertThatThrownBy(() -> context.getBean(IdentityService.class).register(
                     "rejected@example.test", "rejected-password-2026"))
@@ -81,12 +99,50 @@ class SmtpEmailDispatchAdapterTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    private ConfigurableApplicationContext start(EmbeddedPostgres postgres, int smtpPort) {
+    @Test
+    void disabledMailKeepsHealthUpAndCannotRegisterAnAccount() throws Exception {
+        try (var inbox = new SmtpInbox(); var postgres = EmbeddedPostgres.start();
+             var context = start(postgres, inbox.port(), false); var client = HttpClient.newHttpClient()) {
+            var api = new LocalApi(context, client);
+            assertThat(api.get("/actuator/health", null, 200).path("status").asText()).isEqualTo("UP");
+            String email = "disabled@example.test";
+            assertThat(api.post("register", Map.of("email", email, "password", "disabled-password-test"), 503).at("/error/code").asText()).isEqualTo("EMAIL_DELIVERY_UNAVAILABLE");
+            assertThat(api.post("password/forgot", Map.of("email", email), 503).at("/error/code").asText()).isEqualTo("EMAIL_DELIVERY_UNAVAILABLE");
+            assertThat(context.getBean(IdentityRepository.class).findUserByEmail(email)).isEmpty();
+            assertThat(inbox.phases).isEmpty();
+        }
+    }
+
+    private record LocalApi(ServletWebServerApplicationContext context, HttpClient client) {
+        private HttpRequest.Builder request(String path) {
+            return HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + context.getWebServer().getPort() + path)).timeout(Duration.ofSeconds(10));
+        }
+
+        JsonNode post(String action, Map<String, String> body, int status) throws Exception {
+            String payload = context.getBean(ObjectMapper.class).writeValueAsString(body);
+            return send(request("/api/v1/auth/" + action).header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(payload)).build(), status);
+        }
+
+        JsonNode get(String path, String access, int status) throws Exception {
+            var builder = request(path);
+            if (access != null) builder.header("Authorization", "Bearer " + access);
+            return send(builder.GET().build(), status);
+        }
+
+        private JsonNode send(HttpRequest request, int status) throws Exception {
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).as("%s %s", request.method(), request.uri().getPath()).isEqualTo(status);
+            return context.getBean(ObjectMapper.class).readTree(response.body());
+        }
+    }
+
+    private ServletWebServerApplicationContext start(EmbeddedPostgres postgres, int smtpPort, boolean enabled) {
         SpringApplication application = new SpringApplication(ControlPlaneApplication.class);
-        application.setWebApplicationType(WebApplicationType.NONE);
-        return application.run("--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
+        return (ServletWebServerApplicationContext) application.run("--server.address=127.0.0.1", "--server.port=0",
+                "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
                 "--spring.datasource.username=postgres", "--spring.datasource.password=",
-                "--zhijie.scheduling.enabled=false", "--zhijie.mail.enabled=true",
+                "--zhijie.scheduling.enabled=false", "--zhijie.mail.enabled=" + enabled,
                 "--zhijie.mail.from=zhijie@example.test", "--spring.mail.host=127.0.0.1",
                 "--spring.mail.port=" + smtpPort, "--spring.mail.properties.mail.smtp.auth=false",
                 // 回环测试固定 EHLO 身份，避免宿主机反向 DNS 超过受控接收端的命令期限。
