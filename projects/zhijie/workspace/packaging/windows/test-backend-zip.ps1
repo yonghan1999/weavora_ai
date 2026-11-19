@@ -1,5 +1,5 @@
 param([Parameter(Mandatory)][string]$Package, [string]$JavaHome = $env:JAVA_HOME,
-      [int]$HttpPort = 18831, [int]$DatabasePort = 15441, [string]$PreviousPackage, [switch]$CheckSyncAuth)
+      [int]$HttpPort = 18831, [int]$DatabasePort = 15441, [string]$PreviousPackage, [switch]$CheckSyncAuth, [switch]$CheckRoomReopen)
 $ErrorActionPreference = 'Stop'
 $workspace = (Resolve-Path -LiteralPath "$PSScriptRoot/../..").Path
 $target = (Resolve-Path -LiteralPath "$workspace/target").Path
@@ -16,6 +16,31 @@ $savedPassword = $env:ZHIJIE_PREVIEW_PASSWORD
 $savedMail = $env:ZHIJIE_MAIL_ENABLED
 $savedVoice = $env:ZHIJIE_VOICE_ENABLED
 $url = "http://127.0.0.1:$HttpPort"
+function Assert-RoomReopen($Room, $Headers) {
+    $endpoint = "$url/api/v1/rooms/$($Room.id)"
+    $join = @{roomId=$Room.id;deviceId='relocation-test';operationId=[guid]::NewGuid().ToString('N')} | ConvertTo-Json
+    $lease = (Invoke-RestMethod "$url/api/v1/room-joins" -Method Post -Headers $Headers -ContentType 'application/json' -Body $join).data
+    if (!$lease.leaseId -or $lease.activityId -ne $Room.currentActivityId) { throw '试用账号未加入原活动' }
+    $paused = (Invoke-RestMethod "$endpoint/pause" -Method Post -Headers $Headers).data
+    if ($paused.openState -ne 'PAUSED') { throw '暂停房间失败' }
+    Add-Type -AssemblyName System.Net.Http
+    $client = [Net.Http.HttpClient]::new()
+    try {
+        $client.DefaultRequestHeaders.Add('Authorization', $Headers.Authorization)
+        $response = $client.PostAsync("$endpoint/open", $null).GetAwaiter().GetResult()
+        try {
+            $body = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult() | ConvertFrom-Json
+            if ([int]$response.StatusCode -ne 409 -or $body.error.code -ne 'ROOM_REOPEN_OUTSIDE_REQUIRED') { throw '未明确拒绝房内重新开放' }
+        } finally { $response.Dispose() }
+    } finally { $client.Dispose() }
+    $ended = (Invoke-RestMethod "$url/api/v1/activities/$($lease.activityId)/end" -Method Post -Headers $Headers).data
+    $outside = (Invoke-RestMethod $endpoint -Headers $Headers).data
+    if (!$ended.ended -or $outside.openState -ne 'PAUSED' -or $outside.currentActivityId) { throw '结束活动未保留暂停状态' }
+    $null = Invoke-RestMethod "$endpoint/open" -Method Post -Headers $Headers
+    $reopened = (Invoke-RestMethod $endpoint -Headers $Headers).data
+    if ($reopened.id -ne $Room.id -or $reopened.openState -ne 'OPEN' -or $reopened.currentActivityId) { throw '重新开放未持久化或意外创建活动' }
+    Write-Host 'PACKAGED_ROOM_REOPEN_OUTSIDE_WITHOUT_START_OK'
+}
 function Assert-DeleteEvent($Socket, $MessageId, $GroupId, $Cursor, $Cancellation) {
     $buffer = New-Object byte[] 4096
     while (!$Cancellation.IsCancellationRequested) {
@@ -76,6 +101,7 @@ try {
         if ($rooms.Count -ne 1 -or $messages.Count -ne 2 -or !($messages | Where-Object { $_.id -eq $sent.id -and $_.body -eq $marker })) { throw '用户消息、欢迎消息或房间缺失' }
         "$($groups[0].id):$($rooms[0].id):$($messages.id -join ':')"
         if ($attempt -eq 2) {
+            if ($CheckRoomReopen) { Assert-RoomReopen $rooms[0] $headers }
             $sockets = @()
             $deadline = [Threading.CancellationTokenSource]::new(15000)
             try {
