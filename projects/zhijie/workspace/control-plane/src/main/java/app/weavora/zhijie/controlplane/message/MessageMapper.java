@@ -10,7 +10,7 @@ import org.apache.ibatis.annotations.Param;
 public interface MessageMapper {
     void insert(GroupMessage message);
     Optional<GroupMessage> findById(String messageId);
-    void update(GroupMessage message);
+    boolean markDeleted(GroupMessage message);
     List<GroupMessage> list(@Param("groupId") String groupId, @Param("before") Instant before,
                             @Param("beforeId") String beforeId, @Param("limit") int limit);
 }

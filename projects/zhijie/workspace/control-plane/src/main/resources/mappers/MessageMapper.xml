@@ -15,7 +15,7 @@
         VALUES (#{id}, #{groupId}, #{authorId}, #{body}, #{createdAt}, #{deletedAt}, #{deletedBy}, #{deleteKind})
     </insert>
     <select id="findById" resultMap="GroupMessage">SELECT * FROM messages WHERE id = #{messageId}</select>
-    <update id="update" parameterType="app.weavora.zhijie.controlplane.message.GroupMessage">
+    <update id="markDeleted" parameterType="app.weavora.zhijie.controlplane.message.GroupMessage">
         UPDATE messages SET deleted_at = #{deletedAt}, deleted_by = #{deletedBy}, delete_kind = #{deleteKind}
         WHERE id = #{id} AND deleted_at IS NULL
     </update>

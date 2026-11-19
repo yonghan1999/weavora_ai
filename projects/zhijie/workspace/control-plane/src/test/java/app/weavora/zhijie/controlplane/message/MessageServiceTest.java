@@ -96,7 +96,10 @@ class MessageServiceTest {
         private final Map<String, GroupMessage> messages = new HashMap<>();
         public void insert(GroupMessage message) { messages.put(message.id(), message); }
         public Optional<GroupMessage> findById(String messageId) { return Optional.ofNullable(messages.get(messageId)); }
-        public void update(GroupMessage message) { messages.put(message.id(), message); }
+        public boolean markDeleted(GroupMessage message) {
+            var current = messages.get(message.id());
+            return current != null && current.deletedAt() == null && messages.replace(message.id(), current, message);
+        }
         public List<GroupMessage> list(String groupId, Instant before, String beforeId, int limit) {
             var order = java.util.Comparator.comparing(GroupMessage::createdAt).thenComparing(GroupMessage::id);
             var cursor = messages.get(beforeId);

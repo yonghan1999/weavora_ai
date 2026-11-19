@@ -7,6 +7,6 @@ import java.util.Optional;
 public interface MessageRepository {
     void insert(GroupMessage message);
     Optional<GroupMessage> findById(String messageId);
-    void update(GroupMessage message);
+    boolean markDeleted(GroupMessage message);
     List<GroupMessage> list(String groupId, Instant before, String beforeId, int limit);
 }

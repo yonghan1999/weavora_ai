@@ -68,7 +68,9 @@ public class MessageService {
         if (message.deletedAt() != null) return MessageView.from(message);
         GroupMessage deleted = new GroupMessage(message.id(), message.groupId(), message.authorId(), message.body(),
                 message.createdAt(), clock.instant(), actorId, author ? DeleteKind.AUTHOR : DeleteKind.MODERATOR);
-        repository.update(deleted);
+        if (!repository.markDeleted(deleted)) {
+            return MessageView.from(repository.findById(messageId).orElseThrow(this::messageUnavailable));
+        }
         outbox.record(message.groupId(), null, message.id(), "message.deleted",
                 "{\"message_id\":\"" + message.id() + "\"}", null, null);
         if (!author) {
