@@ -23,6 +23,6 @@ try {
 }
 ```
 
-看到 `VOICE_PROXY_READY` 后，从资源管理器打开试用桌面程序（不要从含密钥的终端启动）。客户端登录后加入房间并获取凭据；签发地址应为 7881，7880 仅供本机后端管理。代理仅接受 `/rtc` 系列信令，通过控制面鉴权，不转发管理 API。本机明文回环不替代正式 TLS 入口；同机不可信用户和进程不在单机试用的信任边界内。
+看到 `VOICE_PROXY_READY` 后，在另一个普通 PowerShell 从 `workspace` 执行 `python -B "scripts/local-preview/trial-desktop.py" "target/trial-40bc36b"` 手动打开候选桌面；若更改后端端口，传入相同的 `--http-port`。客户端登录后加入房间并获取凭据；签发地址应为 7881，7880 仅供本机后端管理。代理仅接受 `/rtc` 系列信令，通过控制面鉴权，不转发管理 API。本机明文回环不替代正式 TLS 入口；同机不可信用户和进程不在单机试用的信任边界内。
 
 结束时先关闭客户端，回到代理窗口按回车，等待后端和 SFU 退出，再关闭专用 PowerShell。若启动中断，也只停止本次实际启动的服务。正常退出删除代理私密配置，试用账号与数据库保留。自定义后端端口时，`start.ps1 -HttpPort` 与 `voice-proxy.py --control-port` 须一致；自定义代理 `--port` 时同步修改 `ZHIJIE_VOICE_URL`。
