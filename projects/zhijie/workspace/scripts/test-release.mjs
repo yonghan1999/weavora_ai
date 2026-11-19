@@ -23,6 +23,8 @@ assert.deepEqual(windows.bundle.resources, {
   "../../target/windows-bundle/wintun.h": "wintun.h",
   "../../target/windows-bundle/wintun-source.json": "wintun-source.json",
 });
+const macAudio = spawnSync(process.platform === "win32" ? "python" : "python3", ["-B", "packaging/macos/check-audio-bundle.py"], {encoding: "utf8"});
+assert.equal(macAudio.status, 0, macAudio.error?.message ?? macAudio.stderr);
 const preview = JSON.parse(readFileSync("packaging/windows/preview.conf.json", "utf8"));
 assert.equal(preview.bundle.resources, undefined, "Preview resources must derive from the Windows configuration");
 assert.equal(preview.bundle.windows.nsis.installMode, "currentUser");

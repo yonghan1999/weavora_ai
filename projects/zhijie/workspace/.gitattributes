@@ -1,6 +1,9 @@
 # Preserve the exact checkout bytes hashed by the release contract.
 desktop/shell/tauri.conf.json text eol=lf
 desktop/shell/tauri.windows.conf.json text eol=lf
+desktop/shell/tauri.macos.conf.json text eol=lf
+desktop/shell/Info.plist text eol=lf
+desktop/shell/Entitlements.plist text eol=lf
 packaging/windows/installer-hooks.nsh text eol=lf
 packaging/windows/build-candidate.ps1 text eol=lf
 packaging/windows/verify-package.py text eol=lf

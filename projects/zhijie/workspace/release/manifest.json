@@ -17,6 +17,24 @@
       "sha256": "b44995def6efec25557cfd1e713760fcbb5b1f98c0e2b554214a67e3ad8de20e"
     },
     {
+      "path": "desktop/shell/tauri.macos.conf.json",
+      "artifactClass": "configuration",
+      "bytes": 148,
+      "sha256": "49a9b0c6495d5aa7199e2e6097ac6322ec026ffa89e8eee04225037bc39d31e8"
+    },
+    {
+      "path": "desktop/shell/Info.plist",
+      "artifactClass": "configuration",
+      "bytes": 316,
+      "sha256": "c59e0a5a130c725d8374ee09b8ef05250088a829e57becee413d4d0312f7063f"
+    },
+    {
+      "path": "desktop/shell/Entitlements.plist",
+      "artifactClass": "configuration",
+      "bytes": 249,
+      "sha256": "48164d04a22347aeba9188068a12b8e8ee5d396e36d00aa36bc762fe224c0630"
+    },
+    {
       "path": "packaging/windows/installer-hooks.nsh",
       "artifactClass": "configuration",
       "bytes": 2092,

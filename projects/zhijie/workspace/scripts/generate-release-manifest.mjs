@@ -6,6 +6,9 @@ const root = process.cwd();
 const files = [
   "desktop/shell/tauri.conf.json",
   "desktop/shell/tauri.windows.conf.json",
+  "desktop/shell/tauri.macos.conf.json",
+  "desktop/shell/Info.plist",
+  "desktop/shell/Entitlements.plist",
   "packaging/windows/installer-hooks.nsh",
   "packaging/windows/build-candidate.ps1",
   "packaging/windows/verify-package.py",
