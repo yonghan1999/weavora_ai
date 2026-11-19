@@ -31,6 +31,17 @@ management:
     mail:
       enabled: ${zhijie.mail.enabled}
 zhijie:
+  relay:
+    management-key: ${ZHIJIE_RELAY_MANAGEMENT_KEY:}
+    validation-burst: ${ZHIJIE_RELAY_VALIDATION_BURST:2048}
+    validation-per-second: ${ZHIJIE_RELAY_VALIDATION_PER_SECOND:1024}
+  voice:
+    enabled: ${ZHIJIE_VOICE_ENABLED:false}
+    url: ${ZHIJIE_VOICE_URL:ws://127.0.0.1:7880}
+    admin-url: ${ZHIJIE_VOICE_ADMIN_URL:http://127.0.0.1:7880}
+    api-key: ${ZHIJIE_VOICE_API_KEY:}
+    api-secret: ${ZHIJIE_VOICE_API_SECRET:}
+    signaling-key: ${ZHIJIE_VOICE_SIGNALING_KEY:}
   mail:
     enabled: ${ZHIJIE_MAIL_ENABLED:false}
     from: ${ZHIJIE_MAIL_FROM:}

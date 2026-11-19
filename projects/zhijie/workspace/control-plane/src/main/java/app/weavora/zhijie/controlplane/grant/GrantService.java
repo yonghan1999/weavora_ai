@@ -25,6 +25,7 @@ public class GrantService {
     private final GrantRepository repository;
     private final ActivityRepository activities;
     private final IdentityService identity;
+    private final app.weavora.zhijie.controlplane.group.GroupService groups;
     private final CredentialProtector credentials;
     private final VoiceGateway voiceGateway;
     private final Clock clock;
@@ -36,7 +37,8 @@ public class GrantService {
                         CredentialProtector credentials, VoiceGateway voiceGateway, Clock clock,
                         @org.springframework.beans.factory.annotation.Value("${zhijie.voice.url:ws://127.0.0.1:7880}") String voiceUrl,
                         app.weavora.zhijie.controlplane.network.NetworkPolicyService policies,
-                        app.weavora.zhijie.controlplane.observability.AdmissionService admission) {
+                        app.weavora.zhijie.controlplane.observability.AdmissionService admission,
+                        app.weavora.zhijie.controlplane.group.GroupService groups) {
         this.repository = repository;
         this.activities = activities;
         this.identity = identity;
@@ -46,17 +48,20 @@ public class GrantService {
         this.voiceUrl = voiceUrl;
         this.policies = policies;
         this.admission = admission;
+        this.groups = groups;
     }
 
     @Transactional
     public VoiceGrantResponse voice(String userId, String activityId) {
+        lockMembership(userId, activityId);
+        activities.lockUser(userId);
         ActivityMember member = currentMember(userId, activityId);
         ConnectionLease lease = currentLease(member);
         admission.admit("VOICE");
         if (!voiceGateway.isAvailable()) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "VOICE_CAPACITY_LIMITED", "语音服务尚未接入或不可用", true);
         }
-        Instant expiresAt = clock.instant().plus(GRANT_TTL);
+        Instant expiresAt = grantExpiry(lease);
         String token = voiceGateway.issueToken(activityId, userId, member.memberGeneration(), expiresAt);
         ActivityGrant grant = saveGrant(member, lease, "VOICE", token, null, null, expiresAt);
         return new VoiceGrantResponse(grant.id(), activityId, member.memberGeneration(), lease.id(), voiceUrl, token, expiresAt);
@@ -64,11 +69,19 @@ public class GrantService {
 
     @Transactional
     public NetworkGrantResponse network(String userId, String activityId, String publicKey) {
+        lockMembership(userId, activityId);
+        activities.lockUser(userId);
         ActivityMember member = currentMember(userId, activityId);
         ConnectionLease lease = currentLease(member);
         admission.admit("NETWORK");
         if (publicKey == null || publicKey.isBlank()) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_FAILED", "必须提供本机 WireGuard 公钥", false);
+        }
+        try {
+            byte[] key = java.util.Base64.getDecoder().decode(publicKey);
+            if (key.length != 32 || java.util.Arrays.equals(key, new byte[32])) throw new IllegalArgumentException();
+        } catch (IllegalArgumentException exception) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_FAILED", "WireGuard 公钥格式无效", false);
         }
         var policy = policies.current();
         List<String> allowedPaths = policies.allowedPaths(policy.mode());
@@ -76,7 +89,7 @@ public class GrantService {
                 lease.activityGeneration(), lease.memberGeneration(), policy.revision(), lease.voiceState(),
                 lease.networkState(), lease.expiresAt(), lease.revokedAt());
         activities.updateLease(lease);
-        Instant expiresAt = clock.instant().plus(GRANT_TTL);
+        Instant expiresAt = grantExpiry(lease);
         String ticket = credentials.randomSecret();
         ActivityGrant grant = saveGrant(member, lease, "NETWORK", ticket, publicKey, String.join(",", allowedPaths), expiresAt);
         IpAllocation address = activities.findAddress(activityId, userId).orElseThrow();
@@ -93,11 +106,23 @@ public class GrantService {
         return grant;
     }
 
+    private void lockMembership(String userId, String activityId) {
+        String groupId = activities.findGroupId(activityId);
+        if (groupId == null) throw grantUnavailable();
+        groups.lockGroup(groupId);
+        groups.requireMembership(groupId, userId);
+    }
+
     private ActivityMember currentMember(String userId, String activityId) {
         identity.requireActive(userId);
         ActivityMember member = activities.findMember(activityId, userId).orElseThrow(this::grantUnavailable);
         if (member.state() != MemberState.ACTIVE && member.state() != MemberState.GRACE) throw grantUnavailable();
         return member;
+    }
+
+    private Instant grantExpiry(ConnectionLease lease) {
+        Instant limit = clock.instant().plus(GRANT_TTL);
+        return lease.expiresAt().isBefore(limit) ? lease.expiresAt() : limit;
     }
 
     private ConnectionLease currentLease(ActivityMember member) {

@@ -7,12 +7,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Clock;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
@@ -21,10 +24,21 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final String relayKey;
+    private final int relayCapacity;
+    private final double relayPerSecond;
 
-    public RateLimitFilter(ObjectMapper objectMapper, Clock clock) {
+    public RateLimitFilter(ObjectMapper objectMapper, Clock clock,
+                           @Value("${zhijie.relay.management-key:}") String relayKey,
+                           @Value("${zhijie.relay.validation-burst:2048}") int relayCapacity,
+                           @Value("${zhijie.relay.validation-per-second:1024}") double relayPerSecond) {
+        if (relayCapacity < 1 || relayCapacity > 65536 || !Double.isFinite(relayPerSecond)
+                || relayPerSecond <= 0 || relayPerSecond > 65536) throw new IllegalArgumentException("Invalid relay validation rate budget");
         this.objectMapper = objectMapper;
         this.clock = clock;
+        this.relayKey = relayKey;
+        this.relayCapacity = relayCapacity;
+        this.relayPerSecond = relayPerSecond;
     }
 
     @Override
@@ -32,9 +46,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
             throws IOException, ServletException {
         String path = request.getRequestURI();
         boolean sensitive = path.startsWith("/api/v1/auth/") || path.contains("grants") || path.startsWith("/ops/");
-        int capacity = sensitive ? 10 : 60;
-        double perSecond = sensitive ? 5.0 : 30.0;
-        String key = request.getRemoteAddr() + ":" + request.getMethod() + ":" + path;
+        String supplied = request.getHeader("X-Relay-Key");
+        boolean internalRelay = path.equals("/internal/relay/v1/validate") && request.getMethod().equals("POST")
+                && !relayKey.isEmpty() && supplied != null
+                && MessageDigest.isEqual(relayKey.getBytes(StandardCharsets.UTF_8), supplied.getBytes(StandardCharsets.UTF_8));
+        int capacity = internalRelay ? relayCapacity : sensitive ? 10 : 60;
+        double perSecond = internalRelay ? relayPerSecond : sensitive ? 5.0 : 30.0;
+        String key = request.getRemoteAddr() + ":" + request.getMethod() + ":" + path + (internalRelay ? ":authenticated-relay" : "");
         Bucket bucket = buckets.computeIfAbsent(key, ignored -> new Bucket(capacity, clock.millis()));
         if (!bucket.allow(capacity, perSecond, clock.millis())) {
             response.setStatus(429);
