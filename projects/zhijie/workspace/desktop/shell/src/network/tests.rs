@@ -392,6 +392,36 @@ fn connected() -> NetworkStatus {
 }
 
 #[test]
+fn failed_start_requires_stop_only_if_delivery_was_possible() {
+    for uncertain in [false, true] {
+        tauri::async_runtime::block_on(async {
+            let manager = NetworkManager::default();
+            let original = current();
+            *manager.current.lock().unwrap() = Some(original.clone());
+            let code = "HELPER_UNAVAILABLE".to_string();
+            let failure = if uncertain {
+                CallFailure::PossiblySent(code.clone())
+            } else {
+                CallFailure::NotSent(code.clone())
+            };
+            assert_eq!(manager.start_result(Err(failure)).err(), Some(code));
+            let mut stops = 0;
+            manager
+                .stop_with(|request| {
+                    stops += 1;
+                    assert_eq!(request.method, "network.stop");
+                    assert_eq!(request.ticket.as_deref(), Some(original.ticket.as_str()));
+                    std::future::ready(Ok(NetworkStatus::default()))
+                })
+                .await
+                .unwrap();
+            assert_eq!(stops, usize::from(uncertain));
+            assert!(manager.current.lock().unwrap().is_none());
+        });
+    }
+}
+
+#[test]
 fn registration_failure_survives_helper_poll_until_real_http_recovery() {
     tauri::async_runtime::block_on(async {
         let peers = serde_json::json!([{"userId":"peer", "virtualIpv4":"10.231.0.2"}]);

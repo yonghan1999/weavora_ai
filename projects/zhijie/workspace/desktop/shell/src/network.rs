@@ -6,6 +6,7 @@ use base64::Engine;
 use boringtun::x25519::{PublicKey, StaticSecret};
 use rand::RngCore;
 use zhijie_core::{ActivityContext, ControlPlaneClient, NetworkGrant};
+use zhijie_helper::ipc::CallFailure;
 use zhijie_helper::model::{HelperRequest, NetworkPath, NetworkStart, NetworkState, NetworkStatus};
 
 #[derive(Default)]
@@ -53,9 +54,22 @@ impl NetworkManager {
         )?;
         // IPC 可能在网卡创建完成前超时，先保留票据，后续仍可显式清理该请求。
         *self.current.lock().expect("network request lock") = Some(start.clone());
-        let response = call(request("network.start", Some(&start))).await?;
+        let response =
+            self.start_result(call_with_delivery(request("network.start", Some(&start))).await)?;
         self.apply_helper_status(response);
         self.register(client, token, &start).await
+    }
+
+    fn start_result(
+        &self,
+        result: Result<NetworkStatus, CallFailure>,
+    ) -> Result<NetworkStatus, String> {
+        result.map_err(|failure| {
+            if matches!(failure, CallFailure::NotSent(_)) {
+                self.current.lock().expect("network request lock").take();
+            }
+            failure.into_code()
+        })
     }
 
     pub async fn maintain(
@@ -379,6 +393,12 @@ fn request(method: &str, start: Option<&NetworkStart>) -> HelperRequest {
 }
 
 async fn call(request: HelperRequest) -> Result<NetworkStatus, String> {
+    call_with_delivery(request)
+        .await
+        .map_err(CallFailure::into_code)
+}
+
+async fn call_with_delivery(request: HelperRequest) -> Result<NetworkStatus, CallFailure> {
     let path = std::env::var_os("ZHIJIE_HELPER_SOCKET")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
@@ -391,16 +411,21 @@ async fn call(request: HelperRequest) -> Result<NetworkStatus, String> {
                 PathBuf::from("/run/zhijie/helper-v1.sock")
             }
         });
-    let response =
-        tauri::async_runtime::spawn_blocking(move || zhijie_helper::ipc::call(&path, &request))
-            .await
-            .map_err(|_| "HELPER_UNAVAILABLE")??;
+    let response = tauri::async_runtime::spawn_blocking(move || {
+        zhijie_helper::ipc::call_with_delivery(&path, &request)
+    })
+    .await
+    .map_err(|_| CallFailure::PossiblySent("HELPER_UNAVAILABLE".into()))??;
     if !response.accepted {
-        return Err(response
-            .error_code
-            .unwrap_or("NETWORK_REQUEST_FAILED".into()));
+        return Err(CallFailure::PossiblySent(
+            response
+                .error_code
+                .unwrap_or("NETWORK_REQUEST_FAILED".into()),
+        ));
     }
-    response.data.ok_or("IPC_RESPONSE_INVALID".into())
+    response
+        .data
+        .ok_or_else(|| CallFailure::PossiblySent("IPC_RESPONSE_INVALID".into()))
 }
 
 fn advertise_address() -> Result<std::net::Ipv4Addr, String> {

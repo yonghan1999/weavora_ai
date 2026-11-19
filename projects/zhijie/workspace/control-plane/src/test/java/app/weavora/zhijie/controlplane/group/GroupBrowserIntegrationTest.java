@@ -91,6 +91,7 @@ class GroupBrowserIntegrationTest {
             assertThat(sql.queryForObject("SELECT count(*) FROM activity_grants WHERE activity_id=? AND user_id=? AND kind='NETWORK' AND member_generation=1 AND revoked_at IS NOT NULL", Integer.class, activity.id(), member)).isGreaterThan(0);
             assertThat(sql.queryForObject("SELECT count(*) FROM connection_leases WHERE activity_id=? AND user_id=? AND revoked_at IS NULL", Integer.class, activity.id(), member)).isZero();
             assertThat(sql.queryForObject("SELECT state FROM activity_members WHERE activity_id=? AND user_id=? AND member_generation=2", String.class, activity.id(), member)).isEqualTo("LEFT");
+            assertThat(sql.queryForObject("SELECT count(DISTINCT public_key) FROM activity_grants WHERE activity_id=? AND user_id=? AND member_generation=2 AND kind='NETWORK' AND revoked_at IS NOT NULL", Integer.class, activity.id(), member)).isGreaterThanOrEqualTo(2);
             assertThat(sql.queryForObject("SELECT count(*) FROM ip_allocations WHERE activity_id=? AND user_id=? AND released_at IS NULL", Integer.class, activity.id(), member)).isZero();
         }
     }

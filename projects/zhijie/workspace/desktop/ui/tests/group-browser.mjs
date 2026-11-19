@@ -273,6 +273,12 @@ async function roomChannels() {
   const current = await join(member);
   assert.equal(current.activityId, previous.activityId);
   assert.ok(current.memberGeneration > previous.memberGeneration && current.leaseId !== previous.leaseId);
+  await member.wait('voice denial on new lease', `document.querySelector('.room-flags [data-connection=failed]')`);
+  const retry = await member.evaluate(`globalThis.__TAURI__.core.invoke('network_connect',${JSON.stringify({activityId:current.activityId,leaseId:current.leaseId})}).then(()=>null,error=>error)`);
+  assert.equal(retry, 'HELPER_UNAVAILABLE');
+  const failedNetwork = (await native(member, 'network_snapshot')).status;
+  assert.equal(failedNetwork.memberGeneration, current.memberGeneration);
+  assert.equal((await native(member, 'voice_snapshot')).failureCode, 'VOICE_CAPACITY_LIMITED');
   const stale = { activityId: previous.activityId, leaseId: previous.leaseId };
   for (const command of ['voice_connect', 'network_connect']) {
     const error = await member.evaluate(`globalThis.__TAURI__.core.invoke(${JSON.stringify(command)},${JSON.stringify(stale)}).then(()=>null,error=>error)`);
