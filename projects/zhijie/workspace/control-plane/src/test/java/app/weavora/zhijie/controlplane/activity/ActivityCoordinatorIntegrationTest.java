@@ -112,6 +112,10 @@ class ActivityCoordinatorIntegrationTest {
         Activity secondActivity = rooms.startActivity(userId, secondRoom.id());
         ActivityCoordinator coordinator = context.getBean(ActivityCoordinator.class);
         JoinResult original = coordinator.join(userId, fixture.roomId(), "device-a", null, "original");
+        rooms.setOpenState(userId, fixture.roomId(), RoomOpenState.PAUSED);
+        assertThatThrownBy(() -> rooms.setOpenState(userId, fixture.roomId(), RoomOpenState.OPEN))
+                .isInstanceOf(ApiException.class).extracting("code").isEqualTo("ROOM_REOPEN_OUTSIDE_REQUIRED");
+        assertThat(rooms.getRoom(userId, fixture.roomId()).openState()).isEqualTo(RoomOpenState.PAUSED);
         rooms.setOpenState(userId, secondRoom.id(), RoomOpenState.PAUSED);
 
         assertThatThrownBy(() -> coordinator.join(userId, secondRoom.id(), "device-a", null, "paused-target"))
@@ -122,6 +126,7 @@ class ActivityCoordinatorIntegrationTest {
         rooms.setOpenState(userId, secondRoom.id(), RoomOpenState.OPEN);
         JoinResult switched = coordinator.join(userId, secondRoom.id(), "device-a", null, "switch-target");
         assertThat(switched.activityId()).isEqualTo(secondActivity.id());
+        assertThat(rooms.setOpenState(userId, fixture.roomId(), RoomOpenState.OPEN).openState()).isEqualTo(RoomOpenState.OPEN);
         assertThat(repository.findLease(original.leaseId()).orElseThrow().revokedAt()).isNotNull();
         assertThat(repository.findMember(original.activityId(), userId).orElseThrow().state()).isEqualTo(MemberState.REVOKED);
         assertThat(repository.findAddress(original.activityId(), userId).orElseThrow().releasedAt()).isNotNull();

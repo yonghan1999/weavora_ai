@@ -1,6 +1,7 @@
 package app.weavora.zhijie.controlplane.room;
 
 import app.weavora.zhijie.controlplane.common.ApiException;
+import app.weavora.zhijie.controlplane.activity.ActivityRepository;
 import app.weavora.zhijie.controlplane.audit.AuditService;
 import app.weavora.zhijie.controlplane.group.GroupMember;
 import app.weavora.zhijie.controlplane.group.GroupRole;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RoomService {
     private final RoomRepository repository;
+    private final ActivityRepository activities;
     private final GroupService groups;
     private final CredentialProtector credentials;
     private final Clock clock;
@@ -25,10 +27,11 @@ public class RoomService {
     private final AuditService audit;
     private final app.weavora.zhijie.controlplane.sync.ProductSync sync;
 
-    public RoomService(RoomRepository repository, GroupService groups, CredentialProtector credentials, Clock clock,
+    public RoomService(RoomRepository repository, ActivityRepository activities, GroupService groups, CredentialProtector credentials, Clock clock,
                        app.weavora.zhijie.controlplane.revocation.RevocationService revocation, AuditService audit,
                        app.weavora.zhijie.controlplane.sync.ProductSync sync) {
         this.repository = repository;
+        this.activities = activities;
         this.groups = groups;
         this.credentials = credentials;
         this.clock = clock;
@@ -92,6 +95,10 @@ public class RoomService {
     public Room setOpenState(String actorId, String roomId, RoomOpenState state) {
         Room room = governanceRoom(roomId);
         requireManager(actorId, room);
+        if (state == RoomOpenState.OPEN && room.openState() == RoomOpenState.PAUSED && room.currentActivityId() != null
+                && activities.findAccountActivity(actorId).filter(pointer -> room.currentActivityId().equals(pointer.activityId())).isPresent()) {
+            throw new ApiException(HttpStatus.CONFLICT, "ROOM_REOPEN_OUTSIDE_REQUIRED", "请先离开该房间，再重新开放", false);
+        }
         Room updated = copy(room, room.ownerUserId(), state, room.lifecycle(), room.currentActivityId());
         repository.updateRoom(updated);
         record(actorId, room, state == RoomOpenState.OPEN ? "ROOM_OPEN" : "ROOM_PAUSE");
