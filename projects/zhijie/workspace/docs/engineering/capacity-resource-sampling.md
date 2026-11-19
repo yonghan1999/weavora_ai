@@ -4,6 +4,8 @@
 
 ## 独立采样
 
+通过 `scripts/run-performance.mjs` 或 `scripts/run-compatibility.mjs` 记录一次运行时，每次请传入新的 `--output` 文件名。报告、同名 `.stdout.log` 或 `.stderr.log` 中只要有一个已存在，运行器就拒绝启动适配器，保留原始记录。遇到中断留下的空文件也应换名重跑，而不是覆盖前一次结果。
+
 先在对应非生产测试机核实需要监测的实际 PID 和承载负载的接口名，可用 `python -c "import psutil; print(list(psutil.net_io_counters(pernic=True)))"` 枚举接口。下例 PID 和接口仅为占位；`--pid` 可重复，不能重复计入同一 PID。使用已存在的父目录和新的输出目录，避免覆盖历史结果：
 
 ```sh

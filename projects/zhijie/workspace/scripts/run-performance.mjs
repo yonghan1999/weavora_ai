@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
+import { reserveValidationOutput } from "./validation-output.mjs";
 import { scenarioById, validateResult } from "./performance-tool.mjs";
 
 const separator = process.argv.indexOf("--");
@@ -15,7 +16,7 @@ const scenario = scenarioById(configuration, process.argv[scenarioIndex + 1]);
 const adapter = process.argv.slice(separator + 1);
 assert.ok(adapter.length > 0, "A real load adapter command is required");
 const output = resolve(process.argv[outputIndex + 1]);
-mkdirSync(dirname(output), { recursive: true });
+const record = reserveValidationOutput(output);
 const startedAt = new Date().toISOString();
 const started = performance.now();
 const execution = spawnSync(adapter[0], adapter.slice(1), {
@@ -26,8 +27,7 @@ const execution = spawnSync(adapter[0], adapter.slice(1), {
   timeout: scenario.durationSeconds * 1000 + 60000,
   maxBuffer: 16 * 1024 * 1024,
 });
-writeFileSync(`${output}.stdout.log`, execution.stdout ?? "");
-writeFileSync(`${output}.stderr.log`, execution.stderr ?? "");
+record.writeLogs(execution.stdout, execution.stderr);
 let metrics = null;
 let metricsError = null;
 try {
@@ -57,13 +57,14 @@ const result = {
   },
   metrics,
   metricsError,
-  evidence: [`${output}.stdout.log`, `${output}.stderr.log`],
+  evidence: record.evidence,
   conclusion: {
     status: failed ? "failed" : "metrics_required",
     reason: "The runner records execution only; capacity or audio acceptance requires reviewed raw metrics and evidence",
   },
 };
 validateResult(result, scenario, configuration.resourceBudget);
-writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`);
+record.writeReport(result);
+record.close();
 console.log(`Recorded ${scenario.id} adapter execution with conclusion ${result.conclusion.status}; no acceptance pass was inferred.`);
 process.exitCode = failed ? execution.status || 1 : 0;

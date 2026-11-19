@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, readFileSync, existsSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 
@@ -31,6 +31,23 @@ for (const [name, selector] of [["compatibility", ["--platform", "windows"]], ["
       }
     }
   }
+  const marker = resolve(directory, `${name}-unexpected-adapter-start`);
+  const rerun = output => spawnSync(process.execPath, [`scripts/run-${name}.mjs`, ...selector, "--output", output,
+    "--", process.execPath, "-e", "require('node:fs').writeFileSync(process.argv[1], 'ran')", marker], {encoding: "utf8"});
+  const failedOutput = resolve(directory, `${name}-failure.json`);
+  const artifacts = [failedOutput, `${failedOutput}.stdout.log`, `${failedOutput}.stderr.log`];
+  const previous = artifacts.map(path => readFileSync(path));
+  assert.notEqual(rerun(failedOutput).status, 0);
+  assert.deepEqual(artifacts.map(path => readFileSync(path)), previous);
+  for (const suffix of [".stdout.log", ".stderr.log"]) {
+    const output = resolve(directory, `${name}-partial${suffix}.json`);
+    writeFileSync(output + suffix, "previous run", {flag: "wx"});
+    assert.notEqual(rerun(output).status, 0);
+    assert.equal(readFileSync(output + suffix, "utf8"), "previous run");
+    assert.equal(existsSync(output), false);
+    assert.equal(existsSync(output + (suffix === ".stdout.log" ? ".stderr.log" : ".stdout.log")), false);
+  }
+  assert.equal(existsSync(marker), false, "An output conflict must stop the adapter before it starts");
 }
 for (const code of [0, 7]) {
   const output = resolve(directory, `metrics-missing-${code}.json`);

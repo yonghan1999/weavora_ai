@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
+import { reserveValidationOutput } from "./validation-output.mjs";
 
 const separator = process.argv.indexOf("--");
 const platformIndex = process.argv.indexOf("--platform");
@@ -12,7 +12,7 @@ assert.ok(["windows", "macos", "linux"].includes(platform));
 const adapter = process.argv.slice(separator + 1);
 assert.ok(adapter.length > 0, "A real platform adapter command is required");
 const output = resolve(process.argv[outputIndex + 1]);
-mkdirSync(dirname(output), { recursive: true });
+const record = reserveValidationOutput(output);
 const startedAt = new Date().toISOString();
 const result = spawnSync(adapter[0], adapter.slice(1), {
   cwd: process.cwd(),
@@ -21,9 +21,8 @@ const result = spawnSync(adapter[0], adapter.slice(1), {
   shell: false,
   maxBuffer: 16 * 1024 * 1024,
 });
-writeFileSync(`${output}.stdout.log`, result.stdout ?? "");
-writeFileSync(`${output}.stderr.log`, result.stderr ?? "");
-writeFileSync(output, `${JSON.stringify({
+record.writeLogs(result.stdout, result.stderr);
+record.writeReport({
   schemaVersion: 1,
   platform,
   startedAt,
@@ -31,9 +30,10 @@ writeFileSync(output, `${JSON.stringify({
   exitCode: result.status,
   signal: result.signal,
   errorCode: result.error?.code ?? null,
-  evidence: [`${output}.stdout.log`, `${output}.stderr.log`],
+  evidence: record.evidence,
   status: result.status === 0 && !result.error ? "adapter_recorded_not_acceptance_verified" : "failed",
   note: "Installation, signing, real audio/TUN, games, capacity and cross-platform acceptance require human-reviewed evidence",
-}, null, 2)}\n`);
+});
+record.close();
 console.log(`Recorded ${platform} adapter output; support-matrix status was not changed.`);
 process.exitCode = result.status === 0 && !result.error ? 0 : result.status || 1;
