@@ -3,6 +3,7 @@ package app.weavora.zhijie.controlplane.group;
 import static org.assertj.core.api.Assertions.assertThat;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.identity.*;
+import app.weavora.zhijie.controlplane.message.MessageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import java.nio.file.Files;
@@ -119,6 +120,35 @@ class GroupBrowserIntegrationTest {
                 assertThat(group.description()).isEqualTo("修改后的群简介");
                 runBrowser(restarted, password, "profile-read");
             }
+        }
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
+    void twoPagesDeleteHistoricalMessagesAsAuthorAndModerator() throws Exception {
+        prepareClients();
+        try (var postgres = EmbeddedPostgres.start(); var context = start(postgres)) {
+            var identities = context.getBean(IdentityRepository.class);
+            String password = UUID.randomUUID().toString();
+            String hash = context.getBean(CredentialProtector.class).hashPassword(password);
+            String owner = UUID.randomUUID().toString(), member = UUID.randomUUID().toString();
+            identities.insertUser(new UserAccount(owner, "owner@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            identities.insertUser(new UserAccount(member, "member@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            var groups = context.getBean(GroupService.class);
+            String groupId = groups.createGroup(owner, "历史消息试用群", null, "").id();
+            groups.acceptInvitation(member, groups.invite(owner, groupId, member).id());
+            var messages = context.getBean(MessageService.class);
+            var untouched = messages.post(owner, groupId, "群主保留");
+            var own = messages.post(member, groupId, "成员自删");
+            var moderated = messages.post(member, groupId, "群主代删");
+            for (int index = 0; index < 50; index++) messages.post(owner, groupId, "近期消息 " + index);
+            runBrowser(context, password, "history-delete");
+            var sql = context.getBean(JdbcTemplate.class);
+            assertThat(sql.queryForObject("SELECT deleted_by FROM messages WHERE id=? AND delete_kind='AUTHOR'", String.class, own.id())).isEqualTo(member);
+            assertThat(sql.queryForObject("SELECT deleted_by FROM messages WHERE id=? AND delete_kind='MODERATOR'", String.class, moderated.id())).isEqualTo(owner);
+            assertThat(sql.queryForObject("SELECT count(*) FROM messages WHERE id=? AND deleted_at IS NULL", Integer.class, untouched.id())).isOne();
+            assertThat(sql.queryForList("SELECT target_id FROM audit_logs WHERE group_id=? AND actor_id=? AND action='MESSAGE_DELETE'", String.class, groupId, owner)).containsExactly(moderated.id());
+            assertThat(sql.queryForList("SELECT aggregate_id FROM outbox_events WHERE type='message.deleted'", String.class)).containsExactlyInAnyOrder(own.id(), moderated.id());
         }
     }
 

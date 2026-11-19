@@ -222,6 +222,7 @@ try {
     } else { pending.get(message.id)?.(message); pending.delete(message.id); }
   };
   if (scenario === 'social') await socialScenario();
+  else if (scenario === 'history-delete') await historyDelete();
   else if (scenario === 'room-channels') await roomChannels();
   else {
     assert.ok(['profile-write', 'profile-read'].includes(scenario));
@@ -238,6 +239,30 @@ try {
   if (browser.exitCode === null && browser.signalCode === null) browser.kill();
   await browserClosed;
   await rm(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 });
+}
+
+async function historyDelete() {
+  const owner = await page('owner@example.test'), member = await page('member@example.test');
+  const entries = `Array.from(document.querySelectorAll('[data-message-history] article'))`;
+  const entry = text => `${entries}.find(row=>row.querySelector('.message-text').textContent===${JSON.stringify(text)})`;
+  const control = text => `${entry(text)}?.querySelector('[data-action=delete-message]')`;
+  for (const client of [owner, member]) {
+    await client.action('open-group');
+    await client.action('message-history');
+    await client.wait('exactly three older messages loaded', `${entries}.length===3 && ${entry('群主保留')}`);
+  }
+  assert.equal(await member.evaluate(`${control('群主保留')}===null`), true);
+  async function remove(client, peer, body, count) {
+    await client.wait('permitted historical delete available', control(body));
+    await client.evaluate(`${control(body)}.click()`);
+    await client.wait('delete confirmation shown', `document.querySelector('#dialog-title')?.textContent==='删除消息'`);
+    await client.submit();
+    const reconciled = `${entries}.length===3 && !!${entry('群主保留')} && !${entry(body)} && ${entries}.filter(row=>row.querySelector('.message-text').textContent==='此消息已被删除' && !row.querySelector('[data-action=delete-message]')).length===${count}`;
+    await Promise.all([client.wait('deleter remains on reconciled page', reconciled), peer.wait('open peer history reflects deletion', reconciled)]);
+  }
+  await remove(member, owner, '成员自删', 1);
+  await remove(owner, member, '群主代删', 2);
+  console.log('HISTORY_AUTHOR_AND_MODERATOR_DELETIONS_SYNCED');
 }
 
 async function roomChannels() {
