@@ -1,10 +1,14 @@
 pub mod livekit_adapter;
 pub mod manager;
+mod microphone_test;
 pub mod model;
 
 pub use livekit_adapter::LiveKitVoiceSession;
 pub use manager::VoiceManager;
-pub use model::{AudioDeviceView, AudioProcessingSnapshot, VoiceConnectionState, VoiceSnapshot};
+pub use model::{
+    AudioDeviceView, AudioProcessingSnapshot, MicrophoneTestResult, VoiceConnectionState,
+    VoiceSnapshot,
+};
 
 pub const VOICE_ADAPTER_PROTOCOL_VERSION: u16 = 1;
 

@@ -22,8 +22,11 @@ pub struct VoiceSnapshot {
     pub member_volumes: HashMap<String, f32>,
     pub input_device: Option<String>,
     pub output_device: Option<String>,
+    pub input_failure_code: Option<String>,
+    pub output_failure_code: Option<String>,
     pub processing: AudioProcessingSnapshot,
     pub failure_code: Option<String>,
+    pub members: Vec<VoiceMemberSnapshot>,
 }
 
 impl Default for VoiceSnapshot {
@@ -36,10 +39,23 @@ impl Default for VoiceSnapshot {
             member_volumes: HashMap::new(),
             input_device: None,
             output_device: None,
+            input_failure_code: None,
+            output_failure_code: None,
             processing: AudioProcessingSnapshot::default(),
             failure_code: None,
+            members: Vec::new(),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceMemberSnapshot {
+    pub user_id: String,
+    pub member_generation: u64,
+    pub speaking: bool,
+    pub muted: bool,
+    pub subscribed: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -66,4 +82,13 @@ pub struct AudioDeviceView {
     pub id: String,
     pub name: String,
     pub index: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MicrophoneTestResult {
+    pub frames: usize,
+    pub samples: usize,
+    pub peak: f64,
+    pub rms: f64,
 }
