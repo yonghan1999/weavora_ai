@@ -11,8 +11,19 @@ interprocess = "2.4.7"
 ipnet = "2.12.2"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
+reqwest = { version = "0.12.24", default-features = false, features = ["json", "rustls-tls"] }
 time = { version = "0.3.44", features = ["parsing", "formatting"] }
-tun = "0.8.14"
+tun = { version = "0.8.14", features = ["async"] }
+tokio = { version = "1.48.0", features = ["rt", "net", "sync", "time", "macros"] }
+zhijie-relay = { path = "../relay" }
+
+[target.'cfg(windows)'.dependencies]
+sha2 = "0.10.9"
+widestring = "1.2.1"
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_System_Threading", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock"] }
+
+[dev-dependencies]
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring"] }
 
 [lib]
 path = "src/lib.rs"

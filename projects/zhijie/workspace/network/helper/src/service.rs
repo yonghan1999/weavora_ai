@@ -5,7 +5,8 @@ use ipnet::Ipv4Net;
 use time::OffsetDateTime;
 
 use crate::model::{
-    HelperRequest, HelperResponse, NetworkPath, NetworkStart, NetworkState, NetworkStatus,
+    HelperRequest, HelperResponse, NetworkPath, NetworkRoute, NetworkStart, NetworkState,
+    NetworkStatus,
 };
 
 pub trait NetworkBackend: Send + Sync {
@@ -17,17 +18,45 @@ pub trait NetworkBackend: Send + Sync {
     ) -> Result<(), String>;
     fn migrate_path(&self, activity_id: &str, path: NetworkPath) -> Result<(), String>;
     fn stop(&self, activity_id: &str) -> Result<(), String>;
+    fn health(&self) -> Result<(), String> {
+        Ok(())
+    }
+    fn connected(&self) -> bool {
+        false
+    }
+    fn udp_port(&self) -> Option<u16> {
+        None
+    }
+    fn active_path(&self) -> Option<NetworkRoute> {
+        None
+    }
+    fn renew(&self, _request: &NetworkStart) -> Result<(), String> {
+        Err("NETWORK_RENEW_UNAVAILABLE".into())
+    }
 }
 
 pub struct HelperService {
+    operations: Mutex<()>,
     backend: Arc<dyn NetworkBackend>,
     status: Mutex<NetworkStatus>,
     current_request: Mutex<Option<NetworkStart>>,
 }
 
 impl HelperService {
+    pub(crate) fn shutdown(&self) -> Result<(), String> {
+        let _operation = self.operations.lock().expect("helper operation lock");
+        let mut current = self.current_request.lock().expect("helper request lock");
+        if let Some(request) = current.as_ref() {
+            self.backend.stop(&request.activity_id)?;
+        }
+        *current = None;
+        *self.status.lock().expect("helper status lock") = NetworkStatus::default();
+        Ok(())
+    }
+
     pub fn new(backend: Arc<dyn NetworkBackend>) -> Self {
         Self {
+            operations: Mutex::new(()),
             backend,
             status: Mutex::new(NetworkStatus::default()),
             current_request: Mutex::new(None),
@@ -35,6 +64,7 @@ impl HelperService {
     }
 
     pub fn handle(&self, request: HelperRequest) -> HelperResponse<NetworkStatus> {
+        let _operation = self.operations.lock().expect("helper operation lock");
         let result = self.dispatch(&request);
         match result {
             Ok(status) => HelperResponse {
@@ -55,7 +85,27 @@ impl HelperService {
     }
 
     pub fn status(&self) -> NetworkStatus {
-        self.status.lock().expect("helper status lock").clone()
+        let mut status = self.status.lock().expect("helper status lock").clone();
+        if matches!(
+            status.state,
+            NetworkState::Connected | NetworkState::Connecting
+        ) {
+            if let Err(code) = self.backend.health() {
+                status.state = NetworkState::Failed;
+                status.error_code = Some(code);
+            } else {
+                status.state = if self.backend.connected() {
+                    NetworkState::Connected
+                } else {
+                    NetworkState::Connecting
+                };
+                status.udp_port = self.backend.udp_port();
+                if let Some(path) = self.backend.active_path() {
+                    status.active_path = Some(path);
+                }
+            }
+        }
+        status
     }
 
     fn dispatch(&self, request: &HelperRequest) -> Result<NetworkStatus, String> {
@@ -86,10 +136,18 @@ impl HelperService {
                 self.backend
                     .migrate_path(request.activity_id.as_ref().unwrap(), path)?;
                 let mut status = self.status.lock().expect("helper status lock");
-                status.active_path = Some(path);
+                status.active_path = Some(path.into());
                 Ok(status.clone())
             }
             "network.stop" => {
+                if self
+                    .current_request
+                    .lock()
+                    .expect("helper request lock")
+                    .is_some()
+                {
+                    self.authorize(request)?;
+                }
                 let activity_id = request.activity_id.as_deref().ok_or("ACTIVITY_REQUIRED")?;
                 self.backend.stop(activity_id)?;
                 self.current_request
@@ -100,13 +158,47 @@ impl HelperService {
                 Ok(self.status())
             }
             "network.status" => Ok(self.status()),
-            "network.retry" => {
+            "network.renew" => {
+                self.authorize(request)?;
+                let updated = request.start.as_ref().ok_or("START_REQUEST_REQUIRED")?;
+                validate_start(updated)?;
                 let current = self
                     .current_request
                     .lock()
                     .expect("helper request lock")
                     .clone()
                     .ok_or("NETWORK_NOT_STARTED")?;
+                if updated.activity_id != current.activity_id
+                    || updated.activity_generation != current.activity_generation
+                    || updated.member_generation != current.member_generation
+                    || updated.device_id != current.device_id
+                    || updated.lease_id != current.lease_id
+                    || updated.policy_revision != current.policy_revision
+                    || updated.private_key != current.private_key
+                    || updated.virtual_ipv4 != current.virtual_ipv4
+                    || updated.activity_cidr != current.activity_cidr
+                    || updated.allowed_paths != current.allowed_paths
+                {
+                    return Err("GENERATION_STALE".into());
+                }
+                self.backend.renew(updated)?;
+                *self.current_request.lock().expect("helper request lock") = Some(updated.clone());
+                Ok(self.status())
+            }
+            "network.retry" => {
+                self.authorize(request)?;
+                let current = self
+                    .current_request
+                    .lock()
+                    .expect("helper request lock")
+                    .clone()
+                    .ok_or("NETWORK_NOT_STARTED")?;
+                validate_start(&current)?;
+                self.backend.stop(&current.activity_id)?;
+                self.current_request
+                    .lock()
+                    .expect("helper request lock")
+                    .take();
                 self.start(&current)
             }
             _ => Err("METHOD_NOT_ALLOWED".into()),
@@ -115,6 +207,14 @@ impl HelperService {
 
     fn start(&self, start: &NetworkStart) -> Result<NetworkStatus, String> {
         validate_start(start)?;
+        if self
+            .current_request
+            .lock()
+            .expect("helper request lock")
+            .is_some()
+        {
+            return Err("NETWORK_ALREADY_STARTED".into());
+        }
         {
             let mut status = self.status.lock().expect("helper status lock");
             *status = NetworkStatus {
@@ -122,17 +222,20 @@ impl HelperService {
                 member_generation: Some(start.member_generation),
                 policy_revision: Some(start.policy_revision),
                 state: NetworkState::Connecting,
-                active_path: start.allowed_paths.first().copied(),
+                active_path: start.allowed_paths.first().copied().map(Into::into),
                 virtual_ipv4: Some(start.virtual_ipv4.clone()),
                 error_code: None,
+                udp_port: None,
             };
         }
+        // 启动失败也保留已校验请求，重试和清理仍必须核对原票据与代次。
+        *self.current_request.lock().expect("helper request lock") = Some(start.clone());
         if let Err(code) = self.backend.start(start) {
-            self.status.lock().expect("helper status lock").state = NetworkState::Failed;
+            let mut status = self.status.lock().expect("helper status lock");
+            status.state = NetworkState::Failed;
+            status.error_code = Some(code.clone());
             return Err(code);
         }
-        *self.current_request.lock().expect("helper request lock") = Some(start.clone());
-        self.status.lock().expect("helper status lock").state = NetworkState::Connected;
         Ok(self.status())
     }
 
@@ -144,6 +247,16 @@ impl HelperService {
             || request.policy_revision != Some(current.policy_revision)
         {
             return Err("GENERATION_STALE".into());
+        }
+        let supplied = request.ticket.as_deref().unwrap_or("");
+        if supplied.len() != current.ticket.len()
+            || supplied
+                .bytes()
+                .zip(current.ticket.bytes())
+                .fold(0u8, |difference, (a, b)| difference | (a ^ b))
+                != 0
+        {
+            return Err("NETWORK_TICKET_REQUIRED".into());
         }
         Ok(())
     }

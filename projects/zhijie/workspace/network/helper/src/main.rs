@@ -1,26 +1,19 @@
 use std::sync::Arc;
 
-use zhijie_helper::ipc::{bind, HelperIpcServer};
+use zhijie_helper::ipc::HelperIpcServer;
 use zhijie_helper::service::HelperService;
 use zhijie_helper::system::SystemNetworkBackend;
 
 fn main() -> Result<(), String> {
-    let path = std::env::var_os("ZHIJIE_HELPER_SOCKET")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| {
-            #[cfg(windows)]
-            {
-                std::path::PathBuf::from(r"\\.\pipe\zhijie-helper-v1")
-            }
-            #[cfg(not(windows))]
-            {
-                std::path::PathBuf::from("/run/zhijie/helper-v1.sock")
-            }
-        });
-    let listener = bind(&path)?;
-    let service = Arc::new(HelperService::new(Arc::new(SystemNetworkBackend::new())));
-    let server = HelperIpcServer::new(service);
-    loop {
-        server.serve_once(&listener)?;
+    let config = zhijie_helper::startup::StartupConfig::load()?;
+    let backend = SystemNetworkBackend::with_control_plane_url(config.control_plane_url)?;
+    let service = Arc::new(HelperService::new(Arc::new(backend)));
+    let server = HelperIpcServer::for_client(service, config.client_pid)?;
+    server.check_client()?;
+    if config.check_only {
+        println!("HELPER_STARTUP_OK protocol=1 client_bound=true tun_created=false");
+        return Ok(());
     }
+    let listener = server.bind(&config.socket)?;
+    server.serve(&listener)
 }

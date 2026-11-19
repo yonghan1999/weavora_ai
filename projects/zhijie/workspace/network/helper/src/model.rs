@@ -9,6 +9,23 @@ pub enum NetworkPath {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
+pub enum NetworkRoute {
+    Direct,
+    Relay,
+    Mixed,
+}
+
+impl From<NetworkPath> for NetworkRoute {
+    fn from(path: NetworkPath) -> Self {
+        match path {
+            NetworkPath::Direct => Self::Direct,
+            NetworkPath::Relay => Self::Relay,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum NetworkState {
     Disconnected,
     Connecting,
@@ -58,6 +75,7 @@ pub struct HelperRequest {
     pub start: Option<NetworkStart>,
     pub peers: Option<Vec<NetworkPeer>>,
     pub target_path: Option<NetworkPath>,
+    pub ticket: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -77,9 +95,10 @@ pub struct NetworkStatus {
     pub member_generation: Option<u64>,
     pub policy_revision: Option<u64>,
     pub state: NetworkState,
-    pub active_path: Option<NetworkPath>,
+    pub active_path: Option<NetworkRoute>,
     pub virtual_ipv4: Option<String>,
     pub error_code: Option<String>,
+    pub udp_port: Option<u16>,
 }
 
 impl Default for NetworkStatus {
@@ -92,6 +111,7 @@ impl Default for NetworkStatus {
             active_path: None,
             virtual_ipv4: None,
             error_code: None,
+            udp_port: None,
         }
     }
 }
