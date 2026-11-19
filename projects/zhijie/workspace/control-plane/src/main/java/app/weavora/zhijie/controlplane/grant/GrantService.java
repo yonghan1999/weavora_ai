@@ -88,7 +88,7 @@ public class GrantService {
         activities.lockUser(userId);
         ActivityMember member = currentMember(userId, activityId);
         ConnectionLease lease = currentLease(member);
-        admission.admit("VOICE");
+        admission.admitVoice();
         if (!voiceGateway.isAvailable()) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "VOICE_CAPACITY_LIMITED", "语音服务尚未接入或不可用", true);
         }
@@ -115,7 +115,7 @@ public class GrantService {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_FAILED", "WireGuard 公钥格式无效", false);
         }
         repository.revokeOtherNetworkKeys(lease.id(), key, clock.instant());
-        admission.admit("NETWORK");
+        admission.admitNetwork(lease.id());
         var policy = policies.current();
         List<String> allowedPaths = policies.allowedPaths(policy.mode());
         lease = new ConnectionLease(lease.id(), lease.activityId(), lease.userId(), lease.deviceId(),

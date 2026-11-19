@@ -14,12 +14,12 @@ class AdmissionServiceTest {
     void capacityRejectionIsSpecificToTheAffectedChannel() {
         GrantRepository grants = mock(GrantRepository.class);
         when(grants.countActive("VOICE")).thenReturn(2);
-        when(grants.countActive("NETWORK")).thenReturn(0);
+        when(grants.countOtherNetworkLeases("lease")).thenReturn(0);
         AdmissionService service = new AdmissionService(grants, 2, 10,
                 new ObservationService(new SimpleMeterRegistry()));
 
-        service.admit("NETWORK");
-        assertThatThrownBy(() -> service.admit("VOICE"))
+        service.admitNetwork("lease");
+        assertThatThrownBy(service::admitVoice)
                 .isInstanceOf(ApiException.class).extracting("code").isEqualTo("VOICE_CAPACITY_LIMITED");
     }
 }

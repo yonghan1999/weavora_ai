@@ -12,4 +12,6 @@ public interface GrantRepository {
     void revokeLease(String leaseId, Instant revokedAt);
     void revokeOtherNetworkKeys(String leaseId, byte[] publicKey, Instant revokedAt);
     int countActive(String kind);
+    void lockNetworkAdmission();
+    int countOtherNetworkLeases(String leaseId);
 }

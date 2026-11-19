@@ -38,4 +38,11 @@
     <select id="countActive" resultType="int">
         SELECT COUNT(*) FROM activity_grants WHERE kind = #{kind} AND revoked_at IS NULL AND expires_at &gt; NOW()
     </select>
+    <select id="lockNetworkAdmission" resultType="int" flushCache="true" useCache="false">
+        SELECT 1 FROM pg_advisory_xact_lock(2053654885, 2)
+    </select>
+    <select id="countOtherNetworkLeases" resultType="int">
+        SELECT COUNT(DISTINCT lease_id) FROM activity_grants
+        WHERE kind = 'NETWORK' AND lease_id != #{leaseId} AND revoked_at IS NULL AND expires_at &gt; statement_timestamp()
+    </select>
 </mapper>

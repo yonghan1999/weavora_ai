@@ -16,4 +16,6 @@ public interface GrantMapper {
     void revokeOtherNetworkKeys(@Param("leaseId") String leaseId, @Param("publicKey") byte[] publicKey,
                                 @Param("revokedAt") Instant revokedAt);
     int countActive(String kind);
+    void lockNetworkAdmission();
+    int countOtherNetworkLeases(String leaseId);
 }

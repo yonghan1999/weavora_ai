@@ -18,3 +18,10 @@ Helper 缺席时，原生 IPC 现在区分「未发送」与「可能已发送�
 桌面重试可在租约和虚拟地址不变时生成新 WireGuard 公钥。控制面签发时在同一事务内撤销该租约不同公钥的有效网络票据；如果签发失败，撤销随事务回滚。同钥续期仍允许新旧票据短时重叠。按公钥字节而非 Base64 文本判断是否换钥，新签发的数据统一使用带填充的 Base64。复用现有授权与 Peer 查询，不另建端点状态：提交换钥后，队友下一次读取时看不到旧端点；新端点注册后才返回新公钥。
 
 开发验证：`target/network-key-rotation/regression.log`。在 `control-plane` 目录设置 `ZHIJIE_TEST_RELAY_MEDIA=true`、`ZHIJIE_TEST_GROUP_BROWSER=true`，执行 `../mvnw.cmd -o -Dtest=NetworkPeerIntegrationTest,GroupBrowserIntegrationTest#roomMembershipSurvivesChannelFailuresAndKickInvalidatesOnlyTheOldLease,RelayGrantValidationServiceTest,AdmissionServiceTest package`，6 项通过，无跳过。真实 PostgreSQL 核对同租约续期、换钥、端点交接与其他成员不受影响。真实回环十二端分别在直连、强制中继和直连优先策略下完成五轮同钥续期，原票过期后仍能在 132 个方向传输。此处没有测量已建数据通路在换钥时的中断时延，也没有验证跨机 TUN 或同时满载。
+## 联机满额时的续期
+
+`zhijie.capacity.network` 约束的是持有有效联机授权的不同租约数，不是短时重叠的票据张数。修复前，上限为 2 时，一个成员拿原票再续期一次就能让其他房间的两个申请同时被拒绝。`ChannelCapacityIntegrationTest` 用三个独立群组、房间和账号复现，记录在 `target/channel-capacity-before.log`。
+
+联机签发事务先取得 PostgreSQL 事务级联机准入锁，再统计其他仍持有效票据的租约，锁持续到该事务提交或回滚。这样，同一租约的同钥续期或换钥无需第二个名额；不同房间并发申请最后一个名额只会放行一个。达到上限后拒绝者可以在名额释放后再次申请。未更改语音准入规则或引入额外名额表。
+
+开发回归：在工作区根目录运行 `mvnw.cmd -o -pl control-plane -Dtest=ChannelCapacityIntegrationTest,AdmissionServiceTest,RuntimeDatabasePrivilegesIntegrationTest,RelayGrantValidationServiceTest,NetworkPeerIntegrationTest package`，6 项通过、1 项真实数据泵测试默认跳过（`target/channel-capacity-regression.log`）。另在 `control-plane` 目录设置 `ZHIJIE_TEST_RELAY_MEDIA=true`、`ZHIJIE_CAPACITY_NETWORK=12`，运行 `../mvnw.cmd -o -Dtest=NetworkPeerIntegrationTest#realFullRoomDataPumpsUseIssuedTicketsAndStopOnlyTheDepartingMember test`。这项测试独立通过：直连、强制中继、直连优先分别在满额时五轮续期，首批票据到期后 132 个方向均有传输（`target/channel-capacity-12.log`）。这些结果只验证控制面授权与本机回环数据泵，不证明目标服务器的实际带宽、语音和联机同时满载，或跨机 TUN 验收。

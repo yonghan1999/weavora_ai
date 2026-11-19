@@ -5,6 +5,8 @@ import app.weavora.zhijie.controlplane.grant.GrantRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AdmissionService {
@@ -23,11 +25,18 @@ public class AdmissionService {
         this.observations = observations;
     }
 
-    public void admit(String channel) {
-        String kind = channel.equals("VOICE") ? "VOICE" : "NETWORK";
-        int limit = kind.equals("VOICE") ? voiceLimit : networkLimit;
-        if (grants.countActive(kind) >= limit) {
-            String code = kind.equals("VOICE") ? "VOICE_CAPACITY_LIMITED" : "NETWORK_CAPACITY_LIMITED";
+    public void admitVoice() {
+        check(grants.countActive("VOICE"), voiceLimit, "VOICE_CAPACITY_LIMITED");
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void admitNetwork(String leaseId) {
+        grants.lockNetworkAdmission();
+        check(grants.countOtherNetworkLeases(leaseId), networkLimit, "NETWORK_CAPACITY_LIMITED");
+    }
+
+    private void check(int occupied, int limit, String code) {
+        if (occupied >= limit) {
             observations.recordApiResult("capacity_rejected");
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, code, "当前通道容量已满，请稍后重试", true);
         }
