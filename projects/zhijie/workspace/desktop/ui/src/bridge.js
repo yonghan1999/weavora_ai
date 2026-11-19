@@ -57,8 +57,8 @@ export class CoreBridge {
     return this.invoke("state_snapshot");
   }
 
-  request(resource, id = null, body = null) {
-    return this.invoke("product_request", { resource, id, body });
+  request(resource, id = null, body = null, targetId = null) {
+    return this.invoke("product_request", { resource, id, body, ...(targetId === null ? {} : { targetId }) });
   }
 
   leave() {

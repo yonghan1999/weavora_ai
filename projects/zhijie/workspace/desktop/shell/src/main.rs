@@ -130,10 +130,11 @@ async fn session_logout(state: State<'_, AppState>) -> Result<ClientSnapshot, St
 async fn product_request(
     resource: String,
     id: Option<String>,
+    target_id: Option<String>,
     body: Option<serde_json::Value>,
     state: State<'_, AppState>,
 ) -> Result<serde_json::Value, String> {
-    let (method, path, public) = product_route(&resource, id.as_deref())?;
+    let (method, path, public) = product_route(&resource, id.as_deref(), target_id.as_deref())?;
     let token = if public {
         None
     } else {
@@ -151,9 +152,13 @@ async fn product_request(
         .map_err(error_code)
 }
 
-fn product_route(resource: &str, id: Option<&str>) -> Result<(&'static str, String, bool), String> {
-    let keyed = |prefix: &str, suffix: &str| -> Result<String, String> {
-        let value = id.ok_or("INVALID_RESOURCE_ID")?;
+fn product_route(
+    resource: &str,
+    id: Option<&str>,
+    target_id: Option<&str>,
+) -> Result<(&'static str, String, bool), String> {
+    let validate_id = |value: Option<&str>| -> Result<String, String> {
+        let value = value.ok_or("INVALID_RESOURCE_ID")?;
         if value.is_empty()
             || value.len() > 128
             || !value
@@ -162,7 +167,11 @@ fn product_route(resource: &str, id: Option<&str>) -> Result<(&'static str, Stri
         {
             return Err("INVALID_RESOURCE_ID".into());
         }
-        Ok(format!("/api/v1/{prefix}/{value}{suffix}"))
+        Ok(value.to_owned())
+    };
+    let valid_id = || validate_id(id);
+    let keyed = |prefix: &str, suffix: &str| -> Result<String, String> {
+        Ok(format!("/api/v1/{prefix}/{}{suffix}", valid_id()?))
     };
     let (method, path, public) = match resource {
         "register" => ("POST", "/api/v1/auth/register".into(), true),
@@ -202,7 +211,13 @@ fn product_route(resource: &str, id: Option<&str>) -> Result<(&'static str, Stri
         "activity-start" => ("POST", keyed("rooms", "/activities")?, false),
         "activity-end" => ("POST", keyed("activities", "/end")?, false),
         "activity-members" => ("GET", keyed("activities", "/members")?, false),
-        "messages" => ("GET", keyed("groups", "/messages")?, false),
+        "messages" => {
+            let mut path = keyed("groups", "/messages")?;
+            if target_id.is_some() {
+                path.push_str(&format!("?beforeId={}", validate_id(target_id)?));
+            }
+            ("GET", path, false)
+        }
         "message-send" => ("POST", keyed("groups", "/messages")?, false),
         "message-delete" => ("DELETE", keyed("messages", "")?, false),
         _ => return Err("RESOURCE_NOT_ALLOWED".into()),
@@ -336,23 +351,36 @@ mod tests {
     use super::product_route;
 
     #[test]
+    fn group_message_history_uses_only_valid_group_and_cursor_ids() {
+        assert_eq!(
+            product_route("messages", Some("group-1"), Some("message-9")).unwrap(),
+            ("GET", "/api/v1/groups/group-1/messages?beforeId=message-9".into(), false)
+        );
+        assert_eq!(product_route("messages", Some("group-1"), None).unwrap().1, "/api/v1/groups/group-1/messages");
+        for invalid in ["", "a/b", "a&limit=100", "a%2fb"] {
+            assert!(product_route("messages", Some("group-1"), Some(invalid)).is_err());
+            assert!(product_route("messages", Some(invalid), Some("message-9")).is_err());
+        }
+    }
+
+    #[test]
     fn product_routes_reject_arbitrary_paths_and_path_injection() {
-        assert!(product_route("https://example.com", None).is_err());
+        assert!(product_route("https://example.com", None, None).is_err());
         for id in ["../ops", "a/b", "a?admin=true", "", "a%2fb"] {
-            assert!(product_route("group-members", Some(id)).is_err());
+            assert!(product_route("group-members", Some(id), None).is_err());
         }
         assert_eq!(
-            product_route("group-members", Some("group-123")).unwrap(),
+            product_route("group-members", Some("group-123"), None).unwrap(),
             ("GET", "/api/v1/groups/group-123/members".into(), false)
         );
     }
 
     #[test]
     fn only_authentication_resources_allow_anonymous_access() {
-        assert!(product_route("register", None).unwrap().2);
-        assert!(!product_route("friends", None).unwrap().2);
+        assert!(product_route("register", None, None).unwrap().2);
+        assert!(!product_route("friends", None, None).unwrap().2);
         let (_, path, _) =
-            product_route("friend-search", Some("a+b@example.test&admin=true")).unwrap();
+            product_route("friend-search", Some("a+b@example.test&admin=true"), None).unwrap();
         assert!(!path.contains('&'));
         assert!(!path.contains('@'));
     }

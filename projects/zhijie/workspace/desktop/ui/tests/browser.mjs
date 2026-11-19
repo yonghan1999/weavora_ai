@@ -117,7 +117,7 @@ if(command==='product_request'){
 if(p.resource==='friends')return [{userId:'u2',email:'friend@example.test',presence:'ONLINE'}];
 if(p.resource==='group-members')return [{userId:'u1',role:'OWNER'},{userId:'u2',role:'MEMBER'}];
 if(p.resource==='activity-members')return [{userId:'u1',state:'ACTIVE'}];
-if(p.resource==='messages')return [...messages].reverse();
+if(p.resource==='messages'){const rows=[...messages].reverse();if(!p.targetId)return rows.slice(0,50);if(globalThis.failHistory)throw 'SERVICE_UNAVAILABLE';const index=rows.findIndex(row=>row.id===p.targetId);return index<0?[]:rows.slice(index+1,index+51);}
 if(p.resource==='message-send'){messages.push({id:'m1',authorId:'u1',body:p.body.body,createdAt:new Date().toISOString()});return messages.at(-1);}
 if(p.resource==='message-delete'){messages[0].deleted=true;return messages[0];}
 if(p.resource==='friend-search')return [{userId:'u2',email:p.id}];
@@ -256,6 +256,18 @@ try {
     "消息经接口发送且转义",
     'document.querySelector(".message-text").textContent==="草稿<&>" && !document.querySelector(".message-text > *")',
   );
+  await evaluate(`globalThis.originalMessages=messages.slice();messages=Array.from({length:103},(_,index)=>({id:'page-'+index,authorId:'u2',createdAt:'2026-11-01T12:00:00Z',body:'历史 <'+index+'>',deleted:index===2}));`);
+  await click('[data-view="groups"]'); await click('[data-action="open-group"]');
+  await fill('#message-input','翻页草稿');
+  await click('[data-action="message-history"]');
+  await check('历史第一页无跳条且不改写实时消息', `JSON.stringify(Array.from(document.querySelectorAll('[data-message-history] .message-text'),node=>node.textContent))===JSON.stringify(Array.from({length:50},(_,i)=>'历史 <'+(i+3)+'>')) && document.querySelectorAll('.group-chat-body .message').length===50`);
+  await evaluate('globalThis.failHistory=true'); await click('[role=dialog] [data-action="message-history"]');
+  await check('翻页失败保留页和重试按钮', `document.querySelector('#dialog-error').textContent.length>0 && document.querySelectorAll('[data-message-history] .message-text').length===50`);
+  await evaluate('failHistory=false'); await click('[role=dialog] [data-action="message-history"]');
+  await check('末页按时间顺序显示删除占位并停止翻页', `JSON.stringify(Array.from(document.querySelectorAll('[data-message-history] .message-text'),node=>node.textContent))===JSON.stringify(['历史 <0>','历史 <1>','此消息已被删除']) && !document.querySelector('[role=dialog] [data-action=message-history]')`);
+  await click('[role=dialog] [data-action="dialog-close"].ghost');
+  await check('返回最新后草稿与最新消息保持', `document.querySelector('#message-input').value==='翻页草稿' && Array.from(document.querySelectorAll('.group-chat-body .message-text')).at(-1).textContent==='历史 <102>'`);
+  await evaluate('messages=originalMessages'); await click('[data-view="groups"]'); await click('[data-action="open-group"]');
   await click('[data-view="lobby"]');
   await click('[data-action="join-room"]');
   await evaluate(
