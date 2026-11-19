@@ -16,22 +16,33 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SocialService {
-    static final Duration ONLINE_WINDOW = Duration.ofSeconds(60);
+    public static final Duration ONLINE_WINDOW = Duration.ofSeconds(60);
 
     private final SocialRepository repository;
     private final IdentityService identityService;
     private final Clock clock;
+    private final app.weavora.zhijie.controlplane.sync.ProductSync sync;
 
-    public SocialService(SocialRepository repository, IdentityService identityService, Clock clock) {
+    public SocialService(SocialRepository repository, IdentityService identityService, Clock clock,
+                         app.weavora.zhijie.controlplane.sync.ProductSync sync) {
         this.repository = repository;
         this.identityService = identityService;
         this.clock = clock;
+        this.sync = sync;
     }
 
     public List<UserSearchView> search(String actorId, String query) {
         identityService.requireActive(actorId);
         if (query == null || query.isBlank()) return List.of();
         return repository.searchActiveUsers(query.trim(), actorId, 20);
+    }
+
+    public List<IncomingFriendRequest> listIncomingRequests(String actorId, String beforeId) {
+        identityService.requireActive(actorId);
+        if (beforeId != null && (beforeId.isBlank() || beforeId.length() > 128)) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "INVALID_REQUEST_CURSOR", "申请分页位置无效", false);
+        }
+        return repository.listIncomingRequests(actorId, beforeId);
     }
 
     @Transactional
@@ -51,6 +62,7 @@ public class SocialService {
                 UUID.randomUUID().toString(), actorId, addresseeId, FriendRequestStatus.PENDING, clock.instant(), null
         );
         repository.insertRequest(request);
+        notifyPair(actorId, addresseeId);
         return request;
     }
 
@@ -66,6 +78,7 @@ public class SocialService {
         repository.insertFriendship(friendship);
         FriendRequest accepted = respond(request, FriendRequestStatus.ACCEPTED, now);
         repository.updateRequest(accepted);
+        notifyPair(request.requesterId(), request.addresseeId());
         return accepted;
     }
 
@@ -74,6 +87,7 @@ public class SocialService {
         FriendRequest request = pendingRequestForAddressee(actorId, requestId);
         FriendRequest rejected = respond(request, FriendRequestStatus.REJECTED, clock.instant());
         repository.updateRequest(rejected);
+        notifyPair(request.requesterId(), request.addresseeId());
         return rejected;
     }
 
@@ -83,6 +97,7 @@ public class SocialService {
         Friendship friendship = repository.findFriendship(actorId, friendId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "FRIENDSHIP_NOT_FOUND", "好友关系不存在", false));
         repository.deleteFriendship(friendship.userLowId(), friendship.userHighId());
+        notifyPair(actorId, friendId);
     }
 
     public List<FriendView> listFriends(String actorId) {
@@ -94,14 +109,39 @@ public class SocialService {
         Instant onlineSince = clock.instant().minus(ONLINE_WINDOW);
         return friendIds.stream().map(friendId -> {
             UserSearchView user = users.get(friendId);
-            boolean online = repository.findLastSeen(friendId).filter(lastSeen -> !lastSeen.isBefore(onlineSince)).isPresent();
+            boolean online = user.accountStatus() == app.weavora.zhijie.controlplane.identity.AccountStatus.ACTIVE
+                    && repository.findLastSeen(friendId).filter(lastSeen -> !lastSeen.isBefore(onlineSince)).isPresent();
             return new FriendView(user.userId(), user.email(), user.accountStatus(), online ? "ONLINE" : "OFFLINE");
         }).toList();
     }
 
+    @Transactional
     public void heartbeat(String actorId) {
+        repository.lockPresenceUser(actorId);
         identityService.requireActive(actorId);
-        repository.recordHeartbeat(actorId, clock.instant());
+        Instant now = clock.instant();
+        boolean wasOnline = repository.findLastSeen(actorId).filter(last -> !last.isBefore(now.minus(ONLINE_WINDOW))).isPresent();
+        repository.recordHeartbeat(actorId, now);
+        if (!wasOnline) notifyPresenceChanged(actorId);
+    }
+
+    @Transactional
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 1000)
+    public void expirePresence() {
+        // DELETE 与心跳 UPSERT 由 PostgreSQL 行锁串行；删除后只产生一次离线通知。
+        for (String userId : repository.expirePresence(clock.instant().minus(ONLINE_WINDOW))) notifyPresenceChanged(userId);
+    }
+
+    private void notifyPair(String first, String second) {
+        sync.userChanged(first);
+        sync.userChanged(second);
+    }
+
+    private void notifyPresenceChanged(String userId) {
+        for (String groupId : repository.activeGroupIds(userId)) sync.groupChanged(groupId, "member.changed");
+        for (Friendship friendship : repository.listFriendships(userId)) {
+            sync.userChanged(friendship.userLowId().equals(userId) ? friendship.userHighId() : friendship.userLowId());
+        }
     }
 
     private FriendRequest pendingRequestForAddressee(String actorId, String requestId) {

@@ -37,7 +37,8 @@ class SocialServiceTest {
             }
             return new UserAccount(userId, user.email(), user.accountStatus(), "hidden", Instant.now());
         });
-        service = new SocialService(repository, identityService, Clock.systemUTC());
+        service = new SocialService(repository, identityService, Clock.systemUTC(),
+                mock(app.weavora.zhijie.controlplane.sync.ProductSync.class));
         repository.addUser("user-a", "a@example.com", AccountStatus.ACTIVE);
         repository.addUser("user-b", "b@example.com", AccountStatus.ACTIVE);
         repository.addUser("user-c", "c@example.com", AccountStatus.ACTIVE);
@@ -98,6 +99,12 @@ class SocialServiceTest {
     }
 
     private static class InMemorySocialRepository implements SocialRepository {
+        public List<IncomingFriendRequest> listIncomingRequests(String userId, String beforeId) {
+            return requests.values().stream().filter(item -> item.addresseeId().equals(userId)
+                    && item.status() == FriendRequestStatus.PENDING)
+                    .map(item -> new IncomingFriendRequest(item.id(), item.requesterId(), users.get(item.requesterId()).email(),
+                            users.get(item.requesterId()).accountStatus(), item.createdAt())).toList();
+        }
         private final Map<String, UserSearchView> users = new HashMap<>();
         private final Map<String, FriendRequest> requests = new HashMap<>();
         private final Map<String, Friendship> friendships = new HashMap<>();
@@ -137,6 +144,7 @@ class SocialServiceTest {
                     && item.userHighId().equals(Friendship.high(firstUserId, secondUserId))).findFirst();
         }
 
+        public List<String> activeGroupIds(String userId) { return List.of(); }
         public List<Friendship> listFriendships(String userId) {
             return friendships.values().stream()
                     .filter(item -> item.userLowId().equals(userId) || item.userHighId().equals(userId)).toList();
@@ -160,6 +168,15 @@ class SocialServiceTest {
 
         public Optional<Instant> findLastSeen(String userId) {
             return Optional.ofNullable(presence.get(userId));
+        }
+
+        public void lockPresenceUser(String userId) { }
+
+        public List<String> expirePresence(Instant onlineSince) {
+            var expired = presence.entrySet().stream().filter(item -> item.getValue().isBefore(onlineSince)
+                    || users.get(item.getKey()).accountStatus() != AccountStatus.ACTIVE).map(Map.Entry::getKey).toList();
+            expired.forEach(presence::remove);
+            return expired;
         }
     }
 

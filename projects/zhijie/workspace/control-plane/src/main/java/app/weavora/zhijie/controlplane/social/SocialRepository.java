@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SocialRepository {
+    List<IncomingFriendRequest> listIncomingRequests(String userId, String beforeId);
+
     List<UserSearchView> searchActiveUsers(String query, String excludedUserId, int limit);
 
     Optional<FriendRequest> findRequestById(String requestId);
@@ -26,6 +28,11 @@ public interface SocialRepository {
     List<UserSearchView> findUsersByIds(List<String> userIds);
 
     void recordHeartbeat(String userId, Instant seenAt);
+
+    void lockPresenceUser(String userId);
+
+    List<String> expirePresence(Instant onlineSince);
+    List<String> activeGroupIds(String userId);
 
     Optional<Instant> findLastSeen(String userId);
 }

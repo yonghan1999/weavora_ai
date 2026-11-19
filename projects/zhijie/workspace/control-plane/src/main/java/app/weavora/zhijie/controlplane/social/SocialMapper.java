@@ -8,6 +8,8 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface SocialMapper {
+    List<IncomingFriendRequest> listIncomingRequests(@Param("userId") String userId, @Param("beforeId") String beforeId);
+
     List<UserSearchView> searchActiveUsers(@Param("query") String query, @Param("excludedUserId") String excludedUserId, @Param("limit") int limit);
 
     Optional<FriendRequest> findRequestById(String requestId);
@@ -29,6 +31,11 @@ public interface SocialMapper {
     List<UserSearchView> findUsersByIds(@Param("userIds") List<String> userIds);
 
     void recordHeartbeat(@Param("userId") String userId, @Param("seenAt") Instant seenAt);
+
+    void lockPresenceUser(String userId);
+
+    List<String> expirePresence(Instant onlineSince);
+    List<String> activeGroupIds(String userId);
 
     Optional<Instant> findLastSeen(String userId);
 }

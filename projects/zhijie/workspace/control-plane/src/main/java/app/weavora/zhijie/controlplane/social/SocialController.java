@@ -48,6 +48,14 @@ public class SocialController {
         return Map.of("data", socialService.sendRequest(actorId, request.addresseeId()));
     }
 
+    @GetMapping("/friend-requests")
+    public Map<String, List<IncomingFriendRequest>> incoming(
+            @RequestHeader("Authorization") String authorization,
+            @RequestParam(required = false) String beforeId
+    ) {
+        return Map.of("data", socialService.listIncomingRequests(identityService.authenticate(authorization).id(), beforeId));
+    }
+
     @PostMapping("/friend-requests/{requestId}/accept")
     public Map<String, FriendRequest> accept(
             @RequestHeader("Authorization") String authorization, @PathVariable String requestId

@@ -7,6 +7,10 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class MyBatisSocialRepository implements SocialRepository {
+    public List<IncomingFriendRequest> listIncomingRequests(String userId, String beforeId) {
+        return mapper.listIncomingRequests(userId, beforeId);
+    }
+
     private final SocialMapper mapper;
 
     public MyBatisSocialRepository(SocialMapper mapper) {
@@ -60,4 +64,9 @@ public class MyBatisSocialRepository implements SocialRepository {
     public Optional<Instant> findLastSeen(String userId) {
         return mapper.findLastSeen(userId);
     }
+
+    public void lockPresenceUser(String userId) { mapper.lockPresenceUser(userId); }
+
+    public List<String> expirePresence(Instant onlineSince) { return mapper.expirePresence(onlineSince); }
+    public List<String> activeGroupIds(String userId) { return mapper.activeGroupIds(userId); }
 }

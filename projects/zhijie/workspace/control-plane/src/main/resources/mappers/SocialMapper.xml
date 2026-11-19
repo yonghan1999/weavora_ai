@@ -1,6 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="app.weavora.zhijie.controlplane.social.SocialMapper">
+    <resultMap id="IncomingFriendRequest" type="app.weavora.zhijie.controlplane.social.IncomingFriendRequest">
+        <constructor>
+            <idArg column="id" javaType="String"/>
+            <arg column="requester_id" javaType="String"/>
+            <arg column="email_normalized" javaType="String"/>
+            <arg column="account_status" javaType="app.weavora.zhijie.controlplane.identity.AccountStatus"/>
+            <arg column="created_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+    <select id="listIncomingRequests" resultMap="IncomingFriendRequest">
+        SELECT r.id, r.requester_id, u.email_normalized, u.status AS account_status, r.created_at
+        FROM friend_requests r JOIN users u ON u.id = r.requester_id
+        WHERE r.addressee_id = #{userId} AND r.status = 'PENDING'
+        <if test="beforeId != null">
+            AND (r.created_at, r.id) &lt; (SELECT created_at, id FROM friend_requests
+                WHERE id = #{beforeId} AND addressee_id = #{userId})
+        </if>
+        ORDER BY r.created_at DESC, r.id DESC LIMIT 50
+    </select>
     <resultMap id="UserSearchView" type="app.weavora.zhijie.controlplane.social.UserSearchView">
         <constructor>
             <idArg column="id" javaType="String"/>
@@ -34,7 +53,7 @@
         ORDER BY email_normalized LIMIT #{limit}
     </select>
     <select id="findRequestById" resultMap="FriendRequest">
-        SELECT * FROM friend_requests WHERE id = #{requestId}
+        SELECT * FROM friend_requests WHERE id = #{requestId} FOR UPDATE
     </select>
     <select id="findPendingRequestBetween" resultMap="FriendRequest">
         SELECT * FROM friend_requests WHERE status = 'PENDING'
@@ -51,6 +70,10 @@
 
     <select id="findFriendship" resultMap="Friendship">
         SELECT * FROM friendships WHERE user_low_id = #{userLowId} AND user_high_id = #{userHighId}
+    </select>
+    <select id="activeGroupIds" resultType="String">
+        SELECT m.group_id FROM group_members m JOIN groups g ON g.id = m.group_id
+        WHERE m.user_id = #{userId} AND m.status = 'ACTIVE' AND g.status = 'ACTIVE' ORDER BY m.group_id
     </select>
     <select id="listFriendships" resultMap="Friendship">
         SELECT * FROM friendships WHERE user_low_id = #{userId} OR user_high_id = #{userId}
@@ -72,5 +95,13 @@
     </insert>
     <select id="findLastSeen" resultType="java.time.Instant">
         SELECT last_seen_at FROM presence WHERE user_id = #{userId}
+    </select>
+    <select id="lockPresenceUser" resultType="String" flushCache="true">
+        SELECT id FROM users WHERE id = #{userId} FOR UPDATE
+    </select>
+    <select id="expirePresence" resultType="String" affectData="true" flushCache="true">
+        DELETE FROM presence p WHERE p.last_seen_at &lt; #{onlineSince}
+            OR EXISTS (SELECT 1 FROM users u WHERE u.id = p.user_id AND u.status &lt;&gt; 'ACTIVE')
+        RETURNING p.user_id
     </select>
 </mapper>
