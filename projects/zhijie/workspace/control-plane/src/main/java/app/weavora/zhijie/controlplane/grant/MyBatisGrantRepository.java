@@ -14,8 +14,8 @@ public class MyBatisGrantRepository implements GrantRepository {
     public void revoke(String grantId, Instant revokedAt) { mapper.revoke(grantId, revokedAt); }
     public void revokeMember(String activityId, String userId, Instant revokedAt) { mapper.revokeMember(activityId, userId, revokedAt); }
     public void revokeLease(String leaseId, Instant revokedAt) { mapper.revokeLease(leaseId, revokedAt); }
-    public int countActive(String kind) { return mapper.countActive(kind); }
-    public void lockNetworkAdmission() { mapper.lockNetworkAdmission(); }
+    public int countOtherVoiceLeases(String leaseId) { return mapper.countOtherVoiceLeases(leaseId); }
+    public void lockChannelAdmission(int lockId) { mapper.lockChannelAdmission(lockId); }
     public int countOtherNetworkLeases(String leaseId) { return mapper.countOtherNetworkLeases(leaseId); }
     public void revokeOtherNetworkKeys(String leaseId, byte[] publicKey, Instant revokedAt) {
         mapper.revokeOtherNetworkKeys(leaseId, publicKey, revokedAt);

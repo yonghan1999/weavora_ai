@@ -25,13 +25,15 @@ public class AdmissionService {
         this.observations = observations;
     }
 
-    public void admitVoice() {
-        check(grants.countActive("VOICE"), voiceLimit, "VOICE_CAPACITY_LIMITED");
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void admitVoice(String leaseId) {
+        grants.lockChannelAdmission(3);
+        check(grants.countOtherVoiceLeases(leaseId), voiceLimit, "VOICE_CAPACITY_LIMITED");
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void admitNetwork(String leaseId) {
-        grants.lockNetworkAdmission();
+        grants.lockChannelAdmission(2);
         check(grants.countOtherNetworkLeases(leaseId), networkLimit, "NETWORK_CAPACITY_LIMITED");
     }
 

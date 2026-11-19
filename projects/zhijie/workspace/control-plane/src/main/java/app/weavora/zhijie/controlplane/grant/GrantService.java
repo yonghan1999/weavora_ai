@@ -88,10 +88,10 @@ public class GrantService {
         activities.lockUser(userId);
         ActivityMember member = currentMember(userId, activityId);
         ConnectionLease lease = currentLease(member);
-        admission.admitVoice();
         if (!voiceGateway.isAvailable()) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "VOICE_CAPACITY_LIMITED", "语音服务尚未接入或不可用", true);
         }
+        admission.admitVoice(lease.id());
         Instant expiresAt = grantExpiry(lease);
         String token = voiceGateway.issueToken(activityId, userId, member.memberGeneration(), expiresAt);
         ActivityGrant grant = saveGrant(member, lease, "VOICE", token, null, null, expiresAt);

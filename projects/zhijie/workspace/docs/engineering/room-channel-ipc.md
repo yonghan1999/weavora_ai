@@ -25,3 +25,10 @@ Helper 缺席时，原生 IPC 现在区分「未发送」与「可能已发送�
 联机签发事务先取得 PostgreSQL 事务级联机准入锁，再统计其他仍持有效票据的租约，锁持续到该事务提交或回滚。这样，同一租约的同钥续期或换钥无需第二个名额；不同房间并发申请最后一个名额只会放行一个。达到上限后拒绝者可以在名额释放后再次申请。未更改语音准入规则或引入额外名额表。
 
 开发回归：在工作区根目录运行 `mvnw.cmd -o -pl control-plane -Dtest=ChannelCapacityIntegrationTest,AdmissionServiceTest,RuntimeDatabasePrivilegesIntegrationTest,RelayGrantValidationServiceTest,NetworkPeerIntegrationTest package`，6 项通过、1 项真实数据泵测试默认跳过（`target/channel-capacity-regression.log`）。另在 `control-plane` 目录设置 `ZHIJIE_TEST_RELAY_MEDIA=true`、`ZHIJIE_CAPACITY_NETWORK=12`，运行 `../mvnw.cmd -o -Dtest=NetworkPeerIntegrationTest#realFullRoomDataPumpsUseIssuedTicketsAndStopOnlyTheDepartingMember test`。这项测试独立通过：直连、强制中继、直连优先分别在满额时五轮续期，首批票据到期后 132 个方向均有传输（`target/channel-capacity-12.log`）。这些结果只验证控制面授权与本机回环数据泵，不证明目标服务器的实际带宽、语音和联机同时满载，或跨机 TUN 验收。
+## 语音满额时的重连
+
+语音接入票的有效期不是通话时长。`zhijie.capacity.voice` 按已签发过未撤销语音票据、仍有效的不同房间租约计数。同一成员的心跳续租、重试或重新签票不额外占位；原票过期不释放仍有效的租约。离房、撤销或租约过期后释放。该计数是控制面的保守预留，不是实际正在发言或在线的 SFU 人数：只离开语音但仍续租房间，也会保留该名额。语音与联机使用独立的事务锁和限额。
+
+`ChannelCapacityIntegrationTest` 在真实 PostgreSQL 中对两个通道各设两个名额。修复前，同一成员重复签票后，其他两个房间争抢最后一个语音名额均被拒（`target/voice-capacity-before.log`）。修复后，并发申请恰有一个成功；所有原入房票过期后，其他房间仍不能抢占该成员的有效语音租约；该成员离房后等待者可获得资格。控制面回归 10 项通过，日志 `target/voice-capacity-regression.log`。
+
+另设 `ZHIJIE_CAPACITY_VOICE=12`、`ZHIJIE_TEST_VOICE_MEDIA=true`、`ZHIJIE_TEST_COMBINED_CHANNELS=false` 运行 `VoiceSignalingIntegrationTest`。同机真实 LiveKit、nginx、PostgreSQL 和十二个 SDK 端完成五轮心跳与重新签票；初始票过期后信令验证返回 403。75 秒、五个观察窗口共核实 132 个音频方向（`target/voice-capacity-12.log`、`target/voice-entry-3133454918333054278/rust-full-room-media.log`）。不替代真实设备听感、跨机或目标服务器上的双通道满载验收。

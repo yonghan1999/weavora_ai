@@ -35,11 +35,15 @@
         WHERE lease_id = #{leaseId} AND kind = 'NETWORK' AND revoked_at IS NULL AND expires_at &gt; #{revokedAt}
           AND decode(rpad(public_key, 44, '='), 'base64') IS DISTINCT FROM #{publicKey}
     </update>
-    <select id="countActive" resultType="int">
-        SELECT COUNT(*) FROM activity_grants WHERE kind = #{kind} AND revoked_at IS NULL AND expires_at &gt; NOW()
+    <select id="countOtherVoiceLeases" resultType="int">
+        SELECT COUNT(*) FROM connection_leases lease
+        WHERE lease.id != #{leaseId} AND lease.revoked_at IS NULL AND lease.expires_at &gt; statement_timestamp()
+          AND EXISTS (SELECT 1 FROM activity_grants ticket WHERE ticket.lease_id = lease.id
+                      AND ticket.activity_id = lease.activity_id AND ticket.user_id = lease.user_id
+                      AND ticket.kind = 'VOICE' AND ticket.revoked_at IS NULL)
     </select>
-    <select id="lockNetworkAdmission" resultType="int" flushCache="true" useCache="false">
-        SELECT 1 FROM pg_advisory_xact_lock(2053654885, 2)
+    <select id="lockChannelAdmission" resultType="int" flushCache="true" useCache="false">
+        SELECT 1 FROM pg_advisory_xact_lock(2053654885, #{lockId})
     </select>
     <select id="countOtherNetworkLeases" resultType="int">
         SELECT COUNT(DISTINCT lease_id) FROM activity_grants
