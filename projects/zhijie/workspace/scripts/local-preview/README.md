@@ -4,6 +4,14 @@
 
 ## 使用已有环境
 
+本机另已从提交 `649e830` 独立构建 release 候选：`target/trial-649e830`。这是未签名的 Windows x64 试用包，不是正式发布。安装包共 12,079,035 字节，SHA-256 为 `4627b40bbc4a2e7f1679483d4c97af96be47744fa1c296e81b559938303880e7`。安装包内的八个文件已经与同次构建输入和便携副本核对。本人试用无需运行安装器。在本机的 `workspace` 开一个普通 PowerShell，执行：
+
+```powershell
+& "./target/win-649e830/source/scripts/local-preview/start.ps1" -JavaHome "D:/Program Files/jdk-25" -HttpPort 18829 -DatabasePort 15439
+```
+
+此脚本使用候选源码目录下的独立数据库，并会切换当前目录。首次运行时在本机输入自己的试用密码。另开一个位于 `workspace` 的普通 PowerShell，执行 `python -B "scripts/local-preview/trial-desktop.py" "target/trial-649e830" --http-port 18829 --check-only`；确认后去掉 `--check-only` 手动启动桌面。用后从 `workspace` 执行 `& "./target/win-649e830/source/scripts/local-preview/stop.ps1"` 停止本候选的后端，保留数据。独立测试库已验证登录、入房、心跳、退出和重启；不代表已人工试音或已验证安装升级。上述 `target` 路径仅存在于这台构建机，其他机器需自行准备候选。
+
 对于已准备的 Windows 便携试用目录，先在 `workspace` 执行 `python -B "scripts/local-preview/trial-desktop.py" "target/trial-36a2e08-local" --check-only`；也可替换为其他候选目录。检查会逐个核对 `app/` 中的文件名和 SHA-256；缺失、多余或与清单不符均不会启动。确认后去掉 `--check-only` **手动**启动桌面。这是普通用户试用入口，不运行安装器、Helper 或后端。后端使用非默认端口时传 `--http-port`。入口向桌面子进程传入回环地址、候选目录中的 WebView2 用户数据目录和每次独立的临时目录，不传登录密码、SFU/代理密钥，也不修改系统环境变量。程序退出后清理本次临时目录，保留 `webview/`；不保证 Windows 自身的系统记录零写入。清单比对不是签名或来源认证。
 
 在 `projects/zhijie/workspace` 打开普通 PowerShell，检查后端：
