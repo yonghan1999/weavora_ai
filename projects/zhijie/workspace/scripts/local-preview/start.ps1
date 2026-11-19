@@ -19,6 +19,11 @@ $tempDirectory = (New-Item -ItemType Directory -Path "$runtime/temp" -Force).Ful
 $originalTemp = $env:TEMP
 $originalTmp = $env:TMP
 $originalComSpec = $env:ComSpec
+function Request-SeedPassword {
+    $secure = Read-Host "初始化试用账号密码（至少 12 位）" -AsSecureString
+    $env:ZHIJIE_PREVIEW_PASSWORD = [System.Net.NetworkCredential]::new("", $secure).Password
+    if ($env:ZHIJIE_PREVIEW_PASSWORD.Length -lt 12) { throw "试用密码至少需要 12 位。" }
+}
 try {
     $env:TEMP = $tempDirectory
     $env:TMP = $tempDirectory
@@ -31,27 +36,36 @@ try {
     $env:ComSpec = $shimOutput
     if (!(Test-Path -LiteralPath "$runtime/postgres/PG_VERSION")) {
         if (!$env:ZHIJIE_PREVIEW_PASSWORD) {
-            $secure = Read-Host "首次试用账号密码（至少 12 位）" -AsSecureString
-            $env:ZHIJIE_PREVIEW_PASSWORD = [System.Net.NetworkCredential]::new("", $secure).Password
+            Request-SeedPassword
         }
         if ($env:ZHIJIE_PREVIEW_PASSWORD.Length -lt 12) { throw "首次试用密码至少需要 12 位，未启动数据库。" }
     }
     if (Test-Path -LiteralPath "$runtime/stop") { Remove-Item -LiteralPath "$runtime/stop" }
-    $process = Start-Process -FilePath "$JavaHome/bin/java.exe" -ArgumentList @("`"-Djava.io.tmpdir=$tempDirectory`"", "-XX:-UsePerfData", "-cp", "`"$runtime;$classpath`"", "LocalPreview", $HttpPort, $DatabasePort) -WorkingDirectory $workspace -WindowStyle Hidden -PassThru -RedirectStandardOutput "$runtime/server.log" -RedirectStandardError "$runtime/server-error.log"
+    do {
+        $retry = $false
+        $process = Start-Process -FilePath "$JavaHome/bin/java.exe" -ArgumentList @("`"-Djava.io.tmpdir=$tempDirectory`"", "-XX:-UsePerfData", "-cp", "`"$runtime;$classpath`"", "LocalPreview", $HttpPort, $DatabasePort) -WorkingDirectory $workspace -WindowStyle Hidden -PassThru -RedirectStandardOutput "$runtime/server.log" -RedirectStandardError "$runtime/server-error.log"
+        $process.Id | Set-Content -LiteralPath "$runtime/server.pid"
+        Write-Output "后端进程：$($process.Id)；日志：$runtime/server.log"
+        for ($attempt = 0; $attempt -lt 45; $attempt++) {
+            if ($process.HasExited) {
+                if (!$env:ZHIJIE_PREVIEW_PASSWORD -and (Select-String -LiteralPath "$runtime/server.log" -Pattern '^LOCAL_PREVIEW_SEED_PASSWORD_REQUIRED$' -Quiet)) {
+                    Request-SeedPassword
+                    $retry = $true
+                    break
+                }
+                throw "后端启动失败，请检查 server.log 和 server-error.log"
+            }
+            if (Select-String -LiteralPath "$runtime/server.log" -Pattern "LOCAL_PREVIEW_READY" -Quiet) {
+                Write-Output "试用环境已就绪：http://127.0.0.1:$HttpPort；账号：trial@example.test"
+                return
+            }
+            Start-Sleep -Seconds 1
+        }
+    } while ($retry)
+    throw "等待后端就绪超时，请检查日志；进程可能仍在启动。"
 } finally {
     $env:TEMP = $originalTemp
     $env:TMP = $originalTmp
     $env:ComSpec = $originalComSpec
     Remove-Item Env:ZHIJIE_PREVIEW_PASSWORD -ErrorAction SilentlyContinue
 }
-$process.Id | Set-Content -LiteralPath "$runtime/server.pid"
-Write-Output "后端进程：$($process.Id)；日志：$runtime/server.log"
-for ($attempt = 0; $attempt -lt 45; $attempt++) {
-    if ($process.HasExited) { throw "后端启动失败，请检查 server.log 和 server-error.log" }
-    if (Select-String -LiteralPath "$runtime/server.log" -Pattern "LOCAL_PREVIEW_READY" -Quiet) {
-        Write-Output "试用环境已就绪：http://127.0.0.1:$HttpPort；账号：trial@example.test"
-        return
-    }
-    Start-Sleep -Seconds 1
-}
-throw "等待后端就绪超时，请检查日志；进程可能仍在启动。"

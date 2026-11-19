@@ -34,6 +34,8 @@ Copy-Item -LiteralPath $candidate -Destination "control-plane/target/local-previ
 
 每次生成独立文件名，避免 Maven 沿用已存在的旧清单。如果后端正在使用，先正常停止并确认两个监听端口已释放，再用 `ops/database/cold-backup.py snapshot` 将 `target/local-preview/postgres` 备份到限本人访问的新目录，以 `verify --require-directories` 核对后再更新；不要删除数据目录。首次启动交互输入至少 12 位的试用密码；账号为 `trial@example.test`。入口只在独立试用数据库中初始化已激活账号、群组、房间和欢迎消息，不改正式认证流程，不包含邮件模拟成功。嵌入式数据库仅用于可信的单用户开发机，不是多人共享服务器的隔离方案。
 
+试用账号、群、房间、活动和欢迎消息在同一个事务中创建。若初始化中途失败，排除日志所示原因后重新运行启动脚本即可；即使数据库目录已经存在，只要试用账号还没创建，启动器仍会安全询问密码（已配置密码则不询问）。已有试用账号及其数据不会被覆盖；旧版本留下的残缺数据不会自动修复，不要为此删库。
+
 后端就绪后启动 `target/debug/zhijie-shell.exe`。未构建时先在 `desktop/ui` 运行 `node scripts/build.mjs`，再从 `workspace` 运行 `cargo build --offline -p zhijie-shell --features tauri/custom-protocol`。
 
 停止：先关闭桌面程序，再在 PowerShell 执行下列命令，正常关闭后端及其嵌入式数据库：
