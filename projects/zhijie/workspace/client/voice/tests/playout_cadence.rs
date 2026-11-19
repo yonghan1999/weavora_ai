@@ -35,6 +35,7 @@ async fn silent_full_room_playout_cadence() {
     let url = std::env::var("ZHIJIE_TEST_VOICE_URL").expect("local SFU URL");
     let mut rooms = Vec::new();
     let mut events = Vec::new();
+    let mut local_tracks = Vec::new();
     let mut producers = tokio::task::JoinSet::new();
     for index in 0..12 {
         let token = std::env::var(format!("ZHIJIE_TEST_VOICE_TOKEN_{index}"))
@@ -48,6 +49,7 @@ async fn silent_full_room_playout_cadence() {
             "silent-cadence",
             RtcAudioSource::Native(source.clone()),
         );
+        local_tracks.push(track.rtc_track());
         room.local_participant()
             .publish_track(
                 LocalTrack::Audio(track),
@@ -97,34 +99,56 @@ async fn silent_full_room_playout_cadence() {
     })
     .await
     .expect("132 streams ready");
-    let start = tokio::time::Instant::now();
-    let deadline = start + Duration::from_secs(15);
     let mut consumers = tokio::task::JoinSet::new();
     let mut retained_events = Vec::new();
+    let mut all_streams = Vec::new();
     for (receiver, streams, events) in ready {
         retained_events.push(events);
-        for (speaker, mut stream) in streams {
-            consumers.spawn(async move {
-                let mut frames = 0;
-                let mut samples = 0;
-                let mut nonzero = 0;
-                let mut max_gap_us = 0;
-                let mut previous = start;
-                while let Ok(frame) = tokio::time::timeout_at(deadline, stream.next()).await {
-                    let frame = frame.expect("remote stream remains open");
-                    let now = tokio::time::Instant::now();
-                    if now >= deadline {
-                        break;
-                    }
-                    max_gap_us = max_gap_us.max(now.duration_since(previous).as_micros());
-                    previous = now;
-                    frames += 1;
-                    samples += frame.samples_per_channel as usize;
-                    nonzero += usize::from(frame.data.iter().any(|sample| *sample != 0));
-                }
-                (receiver, speaker, frames, samples, nonzero, max_gap_us)
-            });
+        for (speaker, stream) in streams {
+            all_streams.push(("PLAYOUT_CADENCE", receiver, speaker, stream));
         }
+    }
+    for (index, track) in local_tracks.into_iter().enumerate() {
+        all_streams.push((
+            "SOURCE_CADENCE",
+            index,
+            format!("cadence-{index}:1"),
+            NativeAudioStream::new(track, 48000, 1),
+        ));
+    }
+    let start = tokio::time::Instant::now();
+    let deadline = start + Duration::from_secs(15);
+    for (kind, receiver, speaker, mut stream) in all_streams {
+        consumers.spawn(async move {
+            let mut frames = 0;
+            let mut samples = 0;
+            let mut nonzero = 0;
+            let mut peak_abs = 0;
+            let mut max_gap_us = 0;
+            let mut previous = start;
+            while let Ok(frame) = tokio::time::timeout_at(deadline, stream.next()).await {
+                let frame = frame.expect("observed stream remains open");
+                let now = tokio::time::Instant::now();
+                if now >= deadline {
+                    break;
+                }
+                max_gap_us = max_gap_us.max(now.duration_since(previous).as_micros());
+                previous = now;
+                frames += 1;
+                samples += frame.samples_per_channel as usize;
+                let peak = frame
+                    .data
+                    .iter()
+                    .map(|sample| sample.unsigned_abs())
+                    .max()
+                    .unwrap_or(0);
+                peak_abs = peak_abs.max(peak);
+                nonzero += usize::from(peak != 0);
+            }
+            (
+                kind, receiver, speaker, frames, samples, nonzero, peak_abs, max_gap_us,
+            )
+        });
     }
     let mut observations = Vec::new();
     while let Some(result) = consumers.join_next().await {
@@ -137,9 +161,9 @@ async fn silent_full_room_playout_cadence() {
     }
     drop(retained_events);
     drop(audio);
-    assert_eq!(observations.len(), 132);
-    for (receiver, speaker, frames, samples, nonzero, max_gap_us) in observations {
-        println!("PLAYOUT_CADENCE mode={mode} receiver={receiver} speaker={speaker} observation_ms=15000 frames={frames} samples={samples} nonzero={nonzero} max_gap_us={max_gap_us}");
-        assert!(frames > 0, "diagnostic must observe actual remote PCM");
+    assert_eq!(observations.len(), 144);
+    for (kind, receiver, speaker, frames, samples, nonzero, peak_abs, max_gap_us) in observations {
+        println!("{kind} mode={mode} receiver={receiver} speaker={speaker} observation_ms=15000 frames={frames} samples={samples} nonzero={nonzero} peak_abs={peak_abs} max_gap_us={max_gap_us}");
+        assert!(frames > 0, "diagnostic must observe actual PCM");
     }
 }
