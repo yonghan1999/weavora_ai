@@ -2,25 +2,25 @@
 
 ## 本机试用（不安装）
 
-本机首次试用请搭配**桌面 `36e5d7a` 和[离线后端](preview-backend.md) `6a908d1`**。房间暂停时，大厅和群页都会阻止新加入，但已在房内的成员可以直接返回；从另一个群返回时，聊天和草稿按群区分。可用一个房主账号暂停房间，返回大厅后从房卡回去，再从群页返回，均不应要求再次加入。
+本机首次试用请搭配**同版桌面和[离线后端](preview-backend.md) `038145c`**。验证「房外重新开放」：用试用账号进入种子房间，在「房间设置」暂停加入，再结束活动。进入该群的群页，在「群内房间」点击「重新开放」并确认。房间应恢复可加入，但仍等待开启活动，不会替操作人重新入房。普通成员没有重新开放入口。
 
-已经使用 `6a908d1` 后端的用户不用迁移数据库或重设密码。旧桌面 `target/trial-3bbc939` 保留；新便携目录不共享旧版 WebView 数据，可能需要重新登录。更早的后端不支持新版桌面的同步认证头，已有数据请按后端说明停库、备份并核验恢复副本，再换桌面。不要覆盖数据库或同时占用同一端口。
+此前的桌面 `target/trial-36e5d7a` 与后端 `target/trial-backend-6a908d1` 保留。已有试用数据时，请先在旧目录正常停库，按后端说明冷备并核验恢复副本，再启动新后端；暂不迁移可继续用旧组合。不要覆盖旧数据库或同时占用同一端口。新版便携桌面使用独立 WebView 数据目录，首次需要重新登录。
 
-未签名安装包 `target/trial-36e5d7a/织界_0.1.0_x64-setup.exe` 为 12,078,797 字节，SHA-256：`ebc9cae4e34e40b62c28b716c50e795d5056adfdff4983c36e49f2190cefd410`。便携试用不需要运行安装器。八个产品文件与构建输入及便携副本逐一匹配；从桌面程序内取出的六个脚本、三份样式与该提交逐字节一致。界面单测 11 项通过，用这九份打包资源运行无头浏览器检查 162 项通过。记录见 `target/win-36e5d7a/` 的 `unit.log`、`embedded.log`、`embedded-browser.json`、`payload.json` 和 `portable.log`。同版源码另用两个原生测试客户端连独立后端验证了暂停后保留当前租约，见 `target/group-browser-room-channels-1330634412420445968/scenario.log`。以上不代表已运行图形桌面或已验收安装、真实语音和虚拟网卡。
+未签名安装包 `target/trial-038145c/织界_0.1.0_x64-setup.exe` 为 12,081,539 字节，SHA-256：`dff808155d44399913351f8b69b17ac1f222314dc76950d20d6c9074952458d4`。便携试用不需要运行安装器。八个产品文件与构建输入及便携副本逐一匹配；使用从桌面程序中提取的一份 HTML、六个脚本和三份样式运行无头浏览器检查，165 项通过，另有 12 项界面单测通过。证据见 `target/win-038145c/` 的 `unit.log`、`embedded.log`、`embedded-browser.json`、`payload.json` 和 `portable.log`。同版源码另用两个原生测试客户端验证了房间状态同步，见 `target/group-browser-room-channels-17502457677188402546/scenario.log`。以上不是原生图形窗口、安装器、实际通话或虚拟网卡验收。
 
 以下命令从本机 `projects/zhijie/workspace` 的普通 PowerShell 窗口执行。
 
 ```powershell
 # 首次试用：在本机提示中设置密码，等待“试用环境已就绪”
-& "./target/trial-backend-6a908d1/scripts/local-preview/start.ps1" -JavaHome "D:/Program Files/jdk-25" -HttpPort 18829 -DatabasePort 15439
+& "./target/trial-backend-038145c/scripts/local-preview/start.ps1" -JavaHome "D:/Program Files/jdk-25" -HttpPort 18829 -DatabasePort 15439
 ```
 
 ```powershell
 # 先核对便携目录，再启动桌面，使用 trial@example.test 登录
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-36e5d7a" --http-port 18829 --check-only
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-36e5d7a" --http-port 18829
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-038145c" --http-port 18829 --check-only
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-038145c" --http-port 18829
 # 退出桌面后，仍从 workspace 停止本试用后端；数据库保留
-& "./target/trial-backend-6a908d1/scripts/local-preview/stop.ps1"
+& "./target/trial-backend-038145c/scripts/local-preview/stop.ps1"
 ```
 
 ## 从源码重新构建
