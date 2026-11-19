@@ -2,9 +2,9 @@
 
 ## 本机试用（不安装）
 
-桌面候选 `3f55ac4` 包含历史消息删除、语音和联机状态独立更新、联机页持续显示故障原因三项修复。安装包 `target/trial-3f55ac4/织界_0.1.0_x64-setup.exe` 为 12,076,935 字节，SHA-256：`f19f30a66d8e3b8fc53bb237e75de17bf272e7e58f220847a5632810dd40604b`。这是未签名候选包；普通用户试用无需运行安装器。
+桌面候选 `fb56078` 新增登录失效原因提示：确认失效才要求重新登录，主动退出或暂时读不到状态不会误报。安装包 `target/trial-fb56078/织界_0.1.0_x64-setup.exe` 为 12,075,171 字节，SHA-256：`fceaea0116a7f3c1df620000a8dbb9149d7cf7c8d8450ac94eaf21ffb6b2ce96`。这是未签名候选包；普通用户试用无需运行安装器。
 
-从该提交导出的源码通过 11 项单测和 152 项无头浏览器检查。包内八个产品文件与构建输入逐个匹配，便携目录通过只读自检；三份修改过的界面脚本与 Git 内容一致，其编码后的字节也已在便携桌面程序内核对。记录位于 `target/win-3f55ac4/` 的 `browser.json`、`payload.log` 和 `exe-assets.log`。这些不是实际安装或通话验收。旧便携目录 `target/trial-5d5d283` 保留，可单独启动；两个版本不共享 WebView 试用目录，新版本可能需要重新登录。
+从该提交导出的源码通过 11 项界面单测和 154 项无头浏览器检查。安装包内八个产品文件与构建输入逐个匹配，便携目录通过只读自检；六份界面脚本的压缩字节均在便携桌面程序内找到，解压后与 Git 内容逐字节一致。记录位于 `target/win-fb56078/` 的 `browser.json`、`payload.log` 和 `exe-assets.log`。这些不是实际安装或通话验收。旧便携目录 `target/trial-3f55ac4` 保留；两个版本不共享 WebView 试用目录，新版本可能需要重新登录。
 
 以下路径是本构建机 D 盘上的本地文件，不随 Git 下发。从 `projects/zhijie/workspace` 的一个普通 PowerShell 窗口依次执行即可。新版[离线后端](preview-backend.md)已解压到 `target/trial-backend-cwd`，供首次试用；它不会读取旧目录的数据库。若已在 `target/trial-backend-f67715c` 创建账号，可继续使用原后端，只运行下方桌面命令（旧启动脚本会切换目录，桌面命令需从 workspace 执行）。若要将旧数据带入新目录，先按离线后端说明停库、备份并验证。已有后端占用端口时不要重复启动。
 
@@ -15,8 +15,8 @@
 
 ```powershell
 # 先核对便携目录，再启动桌面，使用 trial@example.test 登录
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-3f55ac4" --http-port 18829 --check-only
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-3f55ac4" --http-port 18829
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-fb56078" --http-port 18829 --check-only
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-fb56078" --http-port 18829
 # 退出桌面后，仍从 workspace 停止本试用后端；数据库保留
 & "./target/trial-backend-cwd/scripts/local-preview/stop.ps1"
 ```
