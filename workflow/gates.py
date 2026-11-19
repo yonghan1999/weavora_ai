@@ -469,7 +469,7 @@ def check_stage(engine, project_id: str, stage_id: str, for_archive: bool = Fals
         acceptance = documents.get("docs/09-acceptance.md", "")
         index = documents.get("docs/10-delivery-index.md", "")
         for label, text in [("验收报告", acceptance), ("交付索引", index)]:
-            if version not in text or code_version not in text:
+            if not version or not code_version or version not in text or code_version not in text:
                 result.errors.append(f"{label}与发布清单版本不一致")
         _load_tasks(engine, project_id, result)
         _check_cases(engine, project_id, requirements, result, "H_RELEASE")
