@@ -68,6 +68,25 @@ class BackendPackageTest(unittest.TestCase):
             self.pack()
         self.assertFalse(self.output.exists())
 
+    def test_windows_bundle_filters_only_other_platform_postgres_binaries(self):
+        offline = self.repository / 'io/zonky/test/postgres'
+        def binary(parent, platform):
+            artifact = f'embedded-postgres-binaries-{platform}'
+            path = parent / artifact / '17.5.0' / f'{artifact}-17.5.0.jar'
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b'fixture')
+            return path
+
+        windows = binary(offline, 'windows-amd64')
+        other_group = binary(self.repository / 'other', 'linux-arm64')
+        foreign = [binary(offline, platform) for platform in ('darwin-amd64', 'linux-amd64', 'linux-amd64-alpine')]
+        self.classpath.write_text(';'.join(map(str, [self.jar, *foreign, windows, other_group])), encoding='utf-8')
+        self.pack()
+        with ZipFile(self.output) as archive:
+            expected = [f'lib/{jar.name}' for jar in (self.jar, windows, other_group)]
+            self.assertEqual([name for name in archive.namelist() if name.startswith('lib/')], expected)
+            self.assertEqual(archive.read('control-plane/target/local-preview-classpath.txt').decode(), ';'.join(expected))
+
 
 if __name__ == '__main__':
     unittest.main()

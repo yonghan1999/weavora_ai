@@ -49,6 +49,11 @@ def pack(workspace, repository, output):
         jar = Path(entry)
         if jar.suffix.lower() != '.jar' or not jar.is_absolute():
             raise ValueError('依赖清单必须由 Maven 仓库内的绝对 JAR 路径组成')
+        artifact = jar.parent.parent
+        if (artifact.parent == repository / 'io/zonky/test/postgres'
+                and artifact.name.startswith(('embedded-postgres-binaries-darwin-', 'embedded-postgres-binaries-linux-'))
+                and jar.name == f'{artifact.name}-{jar.parent.name}.jar'):
+            continue
         name = f'lib/{jar.name}'
         add(jar, name, repository)
         dependencies.append(name)
