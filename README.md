@@ -160,7 +160,7 @@ python zhijie.py unblock my-app --actor "你的姓名" --human-confirm I_CONFIRM
 
 ## Git 提交与推送
 
-本地提交默认放在需求/设计批准、开发规划通过、单个任务验证通过、缺陷回归通过、自测/独立测试通过、发布批准和最终验收之后。待审批、测试失败、未验证或混入无关变更时不提交。本地 commit 与远程 push 分开授权，详细节点、提交前检查和提交说明格式见 `workflow/spec/GIT.md`。
+阶段性任务达到已验证节点并取得所需人工批准后，自动按逻辑拆分提交；已验证提交进入 `develop` 后自动推送至 `origin/develop`，无需逐次确认。待审批、验证失败或未验证的工作不自动提交或推送。节点、检查清单及授权范围见 `workflow/spec/GIT.md`。
 
 ## 质量检查与测试
 
