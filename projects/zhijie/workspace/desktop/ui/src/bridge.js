@@ -45,16 +45,36 @@ export class CoreBridge {
     return this.invoke("voice_set_volume", { volume, memberId });
   }
 
-  selectAudioDevice(index, output = false) {
-    return this.invoke("audio_select", { index, output });
+  selectAudioDevice(deviceId, output = false) {
+    return this.invoke("audio_select", { deviceId, output });
+  }
+
+  audioDevices() {
+    return this.invoke("audio_devices");
+  }
+
+  testMicrophone() {
+    return this.invoke("audio_test_microphone");
+  }
+
+  testOutput() {
+    return this.invoke("audio_test_output");
   }
 
   voiceSnapshot() {
     return this.invoke("voice_snapshot");
   }
 
+  connectNetwork() { return this.invoke("network_connect"); }
+
+  networkSnapshot() { return this.invoke("network_snapshot"); }
+
   snapshot() {
     return this.invoke("state_snapshot");
+  }
+
+  onProductChanged(listener) {
+    return globalThis.__TAURI__?.event?.listen("product-changed", event => listener(event.payload));
   }
 
   request(resource, id = null, body = null, targetId = null) {

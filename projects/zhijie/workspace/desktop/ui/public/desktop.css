@@ -1,5 +1,6 @@
 /* 桌面适配仅补充容器行为；产品令牌与组件样式由已批准设计源文件提供。 */
 .group-avatar-image { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.member-presence { color: var(--muted); font-size: 12px; }
 html,
 body,
 #app {
@@ -194,6 +195,38 @@ body,
   overflow-wrap: anywhere;
   color: var(--accent);
 }
+.friend-request-row,
+.group-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.friend-request-row > div:first-child,
+.group-member-row > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.friend-request-row p,
+.group-member-row p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.friend-request-actions,
+.group-member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.group-member-actions {
+  flex-shrink: 1;
+  max-width: 65%;
+}
 #toast:not(:empty) {
   position: fixed;
   z-index: 40;
@@ -208,6 +241,26 @@ body,
   box-shadow: var(--shadow);
   font-size: 13px;
 }
+.audit-entry {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.audit-entry time {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.audit-entry dl {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+.audit-entry dt { color: var(--muted); }
+.audit-entry dd { margin: 0; }
 @media (max-width: 900px) {
   .desktop-titlebar .window-title {
     display: none;

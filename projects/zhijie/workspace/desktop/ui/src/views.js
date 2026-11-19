@@ -35,6 +35,8 @@ export const icon = (name, size = 20) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.game}</svg>`;
 export const button = (label, action, cls = "", extra = "") =>
   `<button type="button" class="button ${cls}" data-action="${action}" ${extra}>${label}</button>`;
+const microphoneTest = (s) => `${button(s.busy ? "检测中…" : "检测麦克风（3 秒）", "test-microphone", "", s.busy || s.voice?.state !== "CONNECTED" ? "disabled" : "")}<p class="runtime-note">点击后请说话，检测仅在本机读取当前输入电平，不保存录音；通话中的静音设置保持不变。</p>`;
+const outputTest = (s) => `${button("试听输出（1.5 秒）", "test-output", "", s.busy || s.voice?.state !== "CONNECTED" || !s.voice?.outputDevice ? "disabled" : "")}<p class="runtime-note">先选择输出设备，再点击播放轻柔测试音；音量跟随总音量，仅在本机播放。请自行确认是否听到声音。</p>`;
 const brand = () =>
   '<div class="brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">织界<small>WEAVORA</small></span></div>';
 const heading = (
@@ -108,7 +110,9 @@ function groups(s) {
   return `<main class="main-scroll"><div class="center-panel">${heading("群组", "熟悉的朋友，固定的集合地。", button(`${icon("plus", 16)} 创建群组`, "create-group", "primary"), "私密小队 / YOUR CREWS")}<div class="group-list-toolbar"><h2>我的群组</h2>${button("群邀请", "invitation", "ghost small group-invites")}</div><div class="group-grid">${s.groups.map((g) => `<button class="group-card" data-action="open-group" data-id="${e(g.id)}"><div class="group-card-top"><span class="group-icon">${groupAvatarImage(g.avatar) || e(g.name[0])}</span><span class="group-members-label">${s.rooms.filter((r) => r.groupId === g.id).length} 个游戏房间</span></div><h3>${e(g.name)}</h3><p>${e(g.description || "约好下一局，随时来集合。")}</p><div class="group-card-foot"><span>进入群组</span>${icon("arrow", 14)}</div></button>`).join("") || empty("暂无群组", "创建自己的小队，或接受朋友发来的邀请。", button("创建群组", "create-group"), "messages")}</div></div></main>`;
 }
 function chat(s) {
-  return `<div class="chat-scroll group-chat-body">${s.messages.length === 50 ? button("更早的消息", "message-history", "ghost small", `data-id="${e(s.messages[0].id)}"`) : ""}${s.messages.map((m) => `<div class="message ${m.authorId === s.userId ? "own" : ""}">${avatar(m.authorId === s.userId ? "我" : m.authorId)}<div class="message-content"><div class="message-meta"><strong>${m.authorId === s.userId ? "我" : e(m.authorId)}</strong><time>${e(new Date(m.createdAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }))}</time>${!m.deleted && m.authorId === s.userId ? `<button class="icon-button" data-action="delete-message" data-id="${e(m.id)}" aria-label="删除消息">${icon("close", 14)}</button>` : ""}</div><div class="message-text">${e(m.deleted ? "此消息已被删除" : m.body)}</div></div></div>`).join("") || '<div class="empty-state">还没有消息，和队友打个招呼吧。</div>'}</div><form class="chat-compose" data-form="message"><input name="body" id="message-input" value="${e(s.drafts[s.groupId] || "")}" required maxlength="4000" autocomplete="off" aria-label="群文字消息" placeholder="发消息到群组"><button class="button primary" ${s.busy ? "disabled" : ""}>发送</button></form>`;
+  const role = s.groupMembers.find(member => member.userId === s.userId)?.role;
+  const canModerate = role === "OWNER" || role === "ADMIN";
+  return `<div class="chat-scroll group-chat-body">${s.messages.length === 50 ? button("更早的消息", "message-history", "ghost small", `data-id="${e(s.messages[0].id)}"`) : ""}${s.messages.map((m) => `<div class="message ${m.authorId === s.userId ? "own" : ""}">${avatar(m.authorId === s.userId ? "我" : m.authorId)}<div class="message-content"><div class="message-meta"><strong>${m.authorId === s.userId ? "我" : e(m.authorId)}</strong><time>${e(new Date(m.createdAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }))}</time>${!m.deleted && (m.authorId === s.userId || canModerate) ? `<button class="icon-button" data-action="delete-message" data-id="${e(m.id)}" aria-label="删除消息">${icon("close", 14)}</button>` : ""}</div><div class="message-text">${e(m.deleted ? "此消息已被删除" : m.body)}</div></div></div>`).join("") || '<div class="empty-state">还没有消息，和队友打个招呼吧。</div>'}</div><form class="chat-compose" data-form="message"><input name="body" id="message-input" value="${e(s.drafts[s.groupId] || "")}" required maxlength="4000" autocomplete="off" aria-label="群文字消息" placeholder="发消息到群组"><button class="button primary" ${s.busy ? "disabled" : ""}>发送</button></form>`;
 }
 function groupView(s) {
   const g = s.groups.find((g) => g.id === s.groupId);
@@ -121,7 +125,26 @@ function groupView(s) {
           `<div class="group-room-item"><strong>${e(r.name)}</strong>${button("进入", "join-room", "small", `data-id="${e(r.id)}"`)}</div>`,
       )
       .join("") || '<div class="empty-state">暂无房间</div>'
-  }${button("创建房间", "create-room", "ghost")}<div class="aside-divider"></div><div class="panel-title"><h2>群组成员</h2></div>${s.groupMembers.map((m) => `<div class="friend-item">${avatar(m.userId)}<span class="friend-copy"><strong>${e(m.userId === s.userId ? "我" : m.userId)}</strong><small>${{ OWNER: "群主", ADMIN: "管理员", MEMBER: "成员" }[m.role] || e(m.role)}</small></span></div>`).join("")}</aside></div>`;
+  }${button("创建房间", "create-room", "ghost")}<div class="aside-divider"></div><div class="panel-title"><h2>群组成员</h2></div>${s.groupMembers.map((m) => `<div class="friend-item">${avatar(m.userId)}<span class="friend-copy"><strong>${e(m.userId === s.userId ? "我" : m.userId)}</strong><small>${{ OWNER: "群主", ADMIN: "管理员", MEMBER: "成员" }[m.role] || e(m.role)}</small><span class="member-presence">${m.presence === "ONLINE" ? "在线" : m.presence === "OFFLINE" ? "离线" : "状态未知"}</span></span></div>`).join("")}</aside></div>`;
+}
+export function roomPermissions(s, room) {
+  const role = s.groupMembers.find(member => member.userId === s.userId)?.role;
+  return { role, assign: role === "OWNER", manage: !!role && (role === "OWNER" || role === "ADMIN" || room.ownerUserId === s.userId) };
+}
+function activityMemberRow(s, room, member) {
+  const permissions = roomPermissions(s, room);
+  const targetRole = s.groupMembers.find(item => item.userId === member.userId)?.role;
+  const canKick = member.userId !== s.userId && targetRole && targetRole !== "OWNER"
+    && (permissions.role === "OWNER" || (targetRole === "MEMBER" && permissions.manage));
+  return `<div class="friend-item">${avatar(member.userId)}<div class="friend-copy"><strong>${member.userId === s.userId ? "我" : e(member.userId)}</strong><small>${e(member.state)}${room.ownerUserId === member.userId ? " · 房主" : ""} · ${memberVoice(s, member)}</small>${member.userId !== s.userId ? `<label>音量 <input type="range" min="0" max="2" step="0.05" value="${s.voice?.memberVolumes?.[member.userId] ?? 1}" data-member-volume="${e(member.userId)}" aria-label="${e(member.userId)} 的音量"></label>` : ""}${canKick ? button("踢出活动", "kick-activity-member", "danger small", `data-id="${e(member.userId)}" data-generation="${e(member.memberGeneration)}" data-activity="${e(s.activity.activityId)}"`) : ""}</div></div>`;
+}
+function memberVoice(s, member) {
+  if (s.voice?.state !== "CONNECTED") return "语音状态暂不可用";
+  const media = s.voice.members?.find(item => item.userId === member.userId && item.memberGeneration === member.memberGeneration);
+  if (!media) return "语音状态暂不可用";
+  if (media.muted) return "已静音";
+  if (media.speaking) return "正在说话";
+  return media.subscribed ? "语音已连接" : "语音连接中";
 }
 function room(s) {
   const r = s.rooms.find((r) => r.id === s.roomId);
@@ -130,9 +153,9 @@ function room(s) {
     s.roomTab === "chat"
       ? chat(s)
       : s.roomTab === "members"
-        ? `<div class="network-panel">${s.members.map((m) => `<div class="friend-item">${avatar(m.userId)}<div class="friend-copy"><strong>${m.userId === s.userId ? "我" : e(m.userId)}</strong><small>${e(m.state)}</small></div></div>`).join("")}</div>`
-        : `<div class="network-panel"><div class="network-hero">${chip("联机", s.activity.network)}<h3>${statusLabel(s.activity.network)}</h3><p>虚拟网络建立后，才能通过成员地址连接游戏。</p></div>${s.activity.network === "CONNECTED" ? `<div class="member-ip-heading"><strong>我的虚拟地址</strong></div><div class="member-ip-row"><span class="ip-address">${e(s.activity.virtualIpv4 || "暂不可用")}</span></div>` : ""}<p class="runtime-note">${s.activity.network === "CONNECTED" ? "队友地址暂不可用。" : "当前联机功能尚未就绪，暂时无法通过虚拟地址连接游戏。"}</p></div>`;
-  return `<div class="room-layout"><main class="room-stage"><div class="room-top"><div class="room-heading"><button class="back-button" data-view="lobby" aria-label="返回大厅">${icon("back", 17)}</button><div><h1>${e(r.name)}</h1><p>${e(r.gameName || "游戏房间")} · ${e(s.groups.find((g) => g.id === r.groupId)?.name)}</p></div></div><div class="room-flags">${chip("语音", s.voice?.state)}${chip("联机", s.activity.network)}${button("房间设置", "manage-room", "ghost small")}</div></div><div class="room-alert">${e(s.voice?.failureCode ? "语音服务暂不可用，可单独重试。" : "")}</div><div class="stage-heading"><div><span class="stage-label">语音房间</span><h2>队友已就位</h2></div><span>${s.members.length} / 12 人</span></div><div class="party-grid">${s.members.map((m) => `<article class="player-tile">${avatar(m.userId === s.userId ? "我" : m.userId)}<div class="player-name"><div><strong>${m.userId === s.userId ? "我" : e(m.userId)}</strong><small>${m.userId === s.userId ? statusLabel(s.voice?.state) : "语音状态暂不可用"}</small></div>${icon("mic", 15)}</div></article>`).join("")}<article class="player-tile empty-player"><button data-action="invite-member">${icon("plus", 24)}<span>邀请队友</span></button></article></div></main><aside class="room-side"><div class="side-tabs">${[
+        ? `<div class="network-panel">${s.members.map(member => activityMemberRow(s, r, member)).join("")}${button("刷新成员", "refresh-room-members", "ghost small")}</div>`
+        : `<div class="network-panel"><div class="network-hero">${chip("联机", s.activity.network)}<h3>${statusLabel(s.activity.network)}</h3><p>虚拟网络建立后，才能通过成员地址连接游戏。</p></div>${s.activity.network === "CONNECTED" ? `<div class="member-ip-heading"><strong>我的虚拟地址</strong></div><div class="member-ip-row"><span class="ip-address">${e(s.activity.virtualIpv4 || "暂不可用")}</span></div>${(s.network?.peers || []).map(peer => `<div class="member-ip-row"><span>${e(peer.userId)}</span><span class="ip-address">${e(peer.virtualIpv4)}</span></div>`).join("")}` : ""}<p class="runtime-note">${s.activity.network === "CONNECTED" ? "通过队友的虚拟地址连接游戏。" : "当前联机功能尚未就绪，暂时无法通过虚拟地址连接游戏。"}</p>${button("重试联机", "retry-network", "ghost small")}</div>`;
+  return `<div class="room-layout"><main class="room-stage"><div class="room-top"><div class="room-heading"><button class="back-button" data-view="lobby" aria-label="返回大厅">${icon("back", 17)}</button><div><h1>${e(r.name)}</h1><p>${e(r.gameName || "游戏房间")} · ${e(s.groups.find((g) => g.id === r.groupId)?.name)}</p></div></div><div class="room-flags">${chip("语音", s.voice?.state)}${chip("联机", s.activity.network)}${button("房间设置", "manage-room", "ghost small")}</div></div><div class="room-alert">${e(s.voice?.failureCode ? "语音服务暂不可用，可单独重试。" : "")}</div><div class="stage-heading"><div><span class="stage-label">语音房间</span><h2>队友已就位</h2></div><span>${s.members.length} / 12 人</span></div><div class="party-grid">${s.members.map((m) => `<article class="player-tile">${avatar(m.userId === s.userId ? "我" : m.userId)}<div class="player-name"><div><strong>${m.userId === s.userId ? "我" : e(m.userId)}</strong><small>${memberVoice(s, m)}</small></div>${icon("mic", 15)}</div></article>`).join("")}<article class="player-tile empty-player"><button data-action="invite-member">${icon("plus", 24)}<span>邀请队友</span></button></article></div></main><aside class="room-side"><div class="side-tabs">${[
     ["chat", "群聊"],
     ["network", "联机"],
     ["members", `成员 ${s.members.length}`],
@@ -143,11 +166,19 @@ function room(s) {
     )
     .join("")}</div>${side}</aside></div>`;
 }
+function audioDeviceSelect(s, output = false) {
+  const kind = output ? "output" : "input", label = output ? "输出设备" : "输入设备";
+  const devices = s.voice?.state === "CONNECTED" ? s.audioDevices?.[output ? "outputs" : "inputs"] || [] : [];
+  const selected = s.voice?.[output ? "outputDevice" : "inputDevice"];
+  const missing = selected != null && !devices.some(device => device.id === selected);
+  const failure = s.voice?.state === "CONNECTED" && s.voice?.[output ? "outputFailureCode" : "inputFailureCode"];
+  return `<label for="audio-${kind}">${label}</label><select id="audio-${kind}" data-audio-device="${kind}" ${!devices.length || s.busy ? "disabled" : ""}><option value="" disabled ${selected == null || missing ? "selected" : ""}>${missing ? "所选设备已不可用，请重新选择" : devices.length ? "当前使用系统默认设备" : "暂无可用设备，请连接语音后刷新"}</option>${devices.map(device => `<option value="${e(device.id)}" ${device.id === selected ? "selected" : ""}>${e(device.name || "未命名设备")}</option>`).join("")}</select>${failure ? `<p role="status">${label}${failure.endsWith("DEVICE_REMOVED") ? "已不可用" : "切换失败"}，请刷新并重新选择；设备恢复后可重试。</p>` : ""}`;
+}
 function settings(s) {
   const tab = s.settingsTab;
   const body =
     tab === "voice"
-      ? `<h2>语音设置</h2><div class="settings-card"><div class="setting-row"><div><strong>麦克风</strong><p>${e(s.voice?.inputDevice || "尚未连接音频设备")}</p></div>${button(s.voice?.muted ? "取消静音" : "静音", "mute")}</div><div class="setting-row"><div><strong>声音输出</strong><p>${e(s.voice?.outputDevice || "尚未连接音频设备")}</p></div>${button(s.voice?.receiveEnabled === false ? "恢复接收" : "关闭接收", "receive")}</div><div class="setting-row"><label for="voice-volume">总音量</label><input id="voice-volume" type="range" min="0" max="2" step="0.05" value="${s.voice?.masterVolume ?? 1}" aria-label="总音量"></div><p class="runtime-note">${s.voice?.state === "CONNECTED" ? "音频设置来自当前语音连接。" : "入房连接语音后，设备状态会在这里更新。"}</p></div>`
+      ? `<h2>语音设置</h2><div class="settings-card"><div class="setting-row"><div>${audioDeviceSelect(s)}</div>${button(s.voice?.muted ? "取消静音" : "静音", "mute")}</div><div class="setting-row"><div>${audioDeviceSelect(s, true)}</div>${button(s.voice?.receiveEnabled === false ? "恢复接收" : "关闭接收", "receive")}</div>${button("刷新设备", "refresh-audio")}${microphoneTest(s)}${outputTest(s)}<div class="setting-row"><label for="voice-volume">总音量</label><input id="voice-volume" type="range" min="0" max="2" step="0.05" value="${s.voice?.masterVolume ?? 1}" aria-label="总音量"></div><p class="runtime-note">${s.voice?.state === "CONNECTED" ? "音频设置来自当前语音连接。" : "入房连接语音后，设备状态会在这里更新。"}</p></div>`
       : tab === "account"
         ? `<h2>账号</h2><div class="settings-card"><div class="setting-row"><div><strong>${e(s.email)}</strong><p>账号 ID：${e(s.userId)}</p></div></div>${button(`${icon("logout", 16)} 退出登录`, "logout", "danger")}</div>`
         : `<h2>帮助与支持</h2><div class="settings-card"><h3>织界 0.1.0</h3><p>语音与虚拟网络独立连接，一项异常时可单独重试。</p><p>Windows、macOS、Linux 的安装更新、真实语音和虚拟网络能力仍需实机验证。</p>${button("联机帮助", "help")}</div>`;

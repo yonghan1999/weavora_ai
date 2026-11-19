@@ -6,6 +6,7 @@ import {
   field,
   button,
   empty,
+  roomPermissions,
 } from "./src/views.js";
 
 const root = document.getElementById("app"),
@@ -19,6 +20,8 @@ const s = {
   email: "",
   activity: null,
   voice: null,
+  audioDevices: null,
+  network: null,
   view: "lobby",
   roomId: null,
   groupId: null,
@@ -39,10 +42,145 @@ const s = {
 };
 let epoch = 0,
   returnFocus,
-  dialogSubmit;
+  dialogSubmit,
+  modalRefresh = null;
+// 串行读取媒体状态；快照只应用于发起读取时的账号和租约。
+let runtimePolling = false, runtimeDirty = false;
+async function refreshRuntime() {
+  if (!bridge || !s.userId || runtimePolling || s.busy) return;
+  runtimePolling = true;
+  const userId = s.userId, activity = s.activity, current = epoch;
+  try {
+    const snapshot = await bridge.snapshot();
+    if (s.busy || epoch !== current || s.userId !== userId || s.activity !== activity) return;
+    if (!snapshot.userId) {
+      clearSession();
+      Object.assign(s, snapshot);
+      epoch++;
+      closeDialog();
+      render();
+      return;
+    }
+    if (!snapshot.activity && activity) {
+      Object.assign(s, snapshot, {voice: null, network: null, roomId: null, members: [], view: "lobby"});
+      epoch++;
+      closeDialog();
+      render();
+      return;
+    }
+    if (!activity || snapshot.activity?.leaseId !== activity.leaseId) return;
+    const [voice, network] = await Promise.all([bridge.voiceSnapshot(), bridge.networkSnapshot()]);
+    if (s.busy || epoch !== current || s.userId !== userId || s.activity !== activity) return;
+    if (network?.status?.activityId === snapshot.activity.activityId) snapshot.activity.network = network.status.state;
+    const changed = JSON.stringify(s.voice) !== JSON.stringify(voice)
+      || JSON.stringify(s.network) !== JSON.stringify(network)
+      || JSON.stringify(s.activity) !== JSON.stringify(snapshot.activity);
+    Object.assign(s, snapshot, {voice, network});
+    runtimeDirty ||= changed;
+    // 不在编辑输入框或模态框时重建页面，避免丢失用户输入。
+    if (runtimeDirty && !modalRoot.firstChild && !document.activeElement?.matches("input,textarea,select")) render();
+  } catch {
+    // 控制面续期与失权由桌面后台处理；轮询失败保留上次已知状态。
+  } finally {
+    runtimePolling = false;
+  }
+}
+if (bridge) setInterval(refreshRuntime, 1000);
+let productDirty = false, modalDirty = false, productRefreshing = false, productVersion = 0;
+let dirtyMessageGroup = null;
+let syncRetryAt = 0, syncRetryDelay = 0;
+function resetSyncRetry() {
+  syncRetryAt = syncRetryDelay = 0;
+}
+function deferLimitedSync(error) {
+  if ((error?.message || error) !== "RATE_LIMITED") return;
+  syncRetryDelay = Math.min(8000, syncRetryDelay ? syncRetryDelay * 2 : 2000);
+  syncRetryAt = performance.now() + syncRetryDelay + Math.random() * 1000;
+}
+bridge?.onProductChanged(payload => {
+  if (payload?.userId === s.userId) {
+    if (payload.messageGroupId) {
+      if (payload.messageGroupId === s.groupId && (s.view === "group" || s.view === "room")) {
+        dirtyMessageGroup = s.groupId;
+        if (modalRoot.querySelector("[data-message-history]")) modalDirty = true;
+      }
+      return;
+    }
+    productDirty = modalDirty = true;
+    productVersion++;
+  }
+});
+async function refreshProduct() {
+  if (dirtyMessageGroup !== s.groupId || (s.view !== "group" && s.view !== "room")) dirtyMessageGroup = null;
+  if ((!productDirty && !dirtyMessageGroup) || productRefreshing || s.busy || !s.userId || performance.now() < syncRetryAt) return;
+  if (modalRoot.firstChild) {
+    if (modalDirty && modalRefresh) await refreshListDialog();
+    return;
+  }
+  // 仅聊天输入支持恢复光标；其他编辑结束后再刷新。
+  if (document.activeElement?.matches("input:not(#message-input),textarea:not(#message-input),select")) return;
+  const fullRefresh = productDirty, messageGroup = dirtyMessageGroup;
+  productDirty = modalDirty = false; dirtyMessageGroup = null; productRefreshing = true;
+  const current = epoch, userId = s.userId;
+  try {
+    capture();
+    const applicable = () => current === epoch && userId === s.userId && !s.busy && !modalRoot.firstChild;
+    if (fullRefresh) await refresh(current, applicable);
+    else {
+      const messages = await request("messages", messageGroup);
+      if (applicable() && s.groupId === messageGroup) s.messages = [...messages].reverse();
+    }
+    if (applicable()) resetSyncRetry();
+    if (current === epoch && userId === s.userId && !s.busy && !modalRoot.firstChild
+        && !document.activeElement?.matches("input:not(#message-input),textarea:not(#message-input),select")) {
+      capture();
+      render(true);
+    }
+    else if (fullRefresh) productDirty = true;
+    else if (s.groupId === messageGroup && s.userId === userId) dirtyMessageGroup = messageGroup;
+  } catch (error) {
+    if (current === epoch && userId === s.userId) {
+      deferLimitedSync(error);
+      if (fullRefresh) productDirty = true;
+      else if (s.groupId === messageGroup) dirtyMessageGroup = messageGroup;
+    }
+  } finally { productRefreshing = false; }
+}
+if (bridge) setInterval(refreshProduct, 500);
+async function refreshListDialog() {
+  const list = modalRefresh, current = epoch, userId = s.userId;
+  const applicable = () => list === modalRefresh && current === epoch && userId === s.userId && !s.busy;
+  const panel = modalRoot.querySelector(".modal"), scroll = panel?.scrollTop;
+  const focused = modalRoot.contains(document.activeElement) ? document.activeElement : null;
+  const action = focused?.dataset.action, id = focused?.dataset.id;
+  modalDirty = false; productRefreshing = true;
+  try {
+    if (!await list.reload(applicable)) { modalDirty = true; return; }
+    if (current === epoch && userId === s.userId) resetSyncRetry();
+    if (action) {
+      const selector = `[data-action="${CSS.escape(action)}"]${id ? `[data-id="${CSS.escape(id)}"]` : ""}`;
+      modalRoot.querySelector(selector)?.focus({preventScroll: true});
+    }
+    if (scroll !== undefined && modalRoot.querySelector(".modal")) modalRoot.querySelector(".modal").scrollTop = scroll;
+  } catch (error) {
+    modalDirty = true;
+    if (applicable()) {
+      deferLimitedSync(error);
+      // 失权时移除已不可读取的列表；暂时失败保留列表供手动重试。
+      const code = typeof error === "string" ? error : error?.message;
+      if (["CURRENT_GRANT_REQUIRED", "RESOURCE_NOT_AVAILABLE", "GROUP_NOT_AVAILABLE"].includes(code)) closeDialog();
+      else document.getElementById("dialog-error").textContent = errorText(error);
+    }
+  } finally { productRefreshing = false; }
+}
 const errors = {
-  GROUP_AVATAR_INVALID: "头像未保存，请选择 2 MiB 以内的有效 PNG 或 JPEG 图片。",
+  RATE_LIMITED: "请求过于频繁，请稍后重试。",
+  FRIEND_REQUEST_CLOSED: "此申请已处理，请刷新申请列表。",
+  FRIEND_REQUEST_NOT_FOUND: "此申请已不存在，请刷新申请列表。",
+  FRIEND_REQUEST_PENDING: "你们之间已有待处理的好友申请。",
+  FRIENDSHIP_EXISTS: "你们已经是好友。",
   SERVICE_UNAVAILABLE: "无法连接服务，请稍后重试。",
+  LOGOUT_CLEANUP_PENDING: "已退出本机账号；远端退出或联机清理尚未确认，请检查连接状态。",
   TAURI_UNAVAILABLE: "请在织界桌面程序中使用账号服务。",
   INVALID_CREDENTIALS: "邮箱或密码不正确。",
   EMAIL_VERIFICATION_REQUIRED: "请先验证邮箱。",
@@ -51,21 +189,70 @@ const errors = {
   ACCOUNT_ALREADY_EXISTS: "此邮箱已注册，请登录或找回密码。",
   WEAK_PASSWORD: "密码至少需要 12 个字符。",
   CURRENT_GRANT_REQUIRED: "当前没有执行此操作的权限。",
+  RESOURCE_NOT_AVAILABLE: "此资源已不可用或你已失去访问权限，请返回列表刷新。",
+  ROLE_CHANGE_NOT_ALLOWED: "不能直接修改群主角色，请使用群主转让流程。",
+  OWNER_MUST_TRANSFER_OR_DISSOLVE: "群主退出前需要先完成转让或解散群组。",
+  OWNER_TRANSFER_PENDING: "已有待接受的转让，请先查看或撤销。",
+  OWNER_TRANSFER_INVALID: "转让条件已变化，请刷新群组与转让记录。",
+  OWNER_TRANSFER_NOT_AVAILABLE: "此转让已结束或不可用，请刷新转让记录。",
+  INVITATION_NOT_AVAILABLE: "此邀请已撤销或失效，请刷新邀请列表。",
+  GROUP_INVITATION_PENDING: "已有发给该账号的待接受邀请，请在邀请管理中查看。",
+  GROUP_MEMBER_EXISTS: "该账号已是群成员。",
+  GROUP_AVATAR_INVALID: "头像未保存，请选择 2 MiB 以内的有效 PNG 或 JPEG 图片。",
+  ACTIVITY_MEMBER_CHANGED: "成员已离开或重新加入，请刷新成员列表后重试。",
   VOICE_CAPACITY_LIMITED: "语音服务尚未接入或暂不可用。",
   ROOM_PASSWORD_REQUIRED: "请输入房间密码。",
   ROOM_PASSWORD_INVALID: "房间密码不正确。",
   ROOM_CAPACITY_LIMITED: "房间已满，请稍后再试。",
   RESOURCE_NOT_ALLOWED: "此操作尚未接入。",
+  HELPER_UNAVAILABLE: "联机辅助服务未启动，请启动后单独重试联机。",
+  AUDIO_TEST_NO_FRAMES: "未收到麦克风采样，请检查录音权限和输入设备后重试。",
+  AUDIO_TEST_CAPTURE_INTERRUPTED: "麦克风采集中断，请检查输入设备后重试。",
+  AUDIO_TEST_SUPERSEDED: "语音连接已变化，请在当前连接重新检测。",
+  IPC_SERVER_NOT_ALLOWED: "联机辅助服务身份不匹配，请使用与桌面配套的辅助服务后重试。",
+  IPC_SERVER_IDENTITY_UNAVAILABLE: "无法验证联机辅助服务身份，请检查配套服务安装后重试。",
+  IPC_SERVER_EXITED: "联机辅助服务已退出，请重新启动后重试。",
+  TUN_PERMISSION_OR_CREATE_FAILED: "无法创建虚拟网卡，请检查辅助服务权限和驱动。",
+  TUN_DRIVER_UNAVAILABLE: "缺少配套虚拟网卡驱动，请检查辅助服务目录中的 wintun.dll。",
+  HELPER_INSTALLATION_UNPROTECTED: "联机辅助服务安装目录权限不安全，请使用机器级安装包并检查安装权限。",
+  NETWORK_SUBNET_CONFLICT: "活动网段与本机已有网络或路由重叠，请检查其他虚拟网络或联系管理员。",
+  NETWORK_CONFIGURATION_UNAVAILABLE: "无法读取本机网络配置，请检查辅助服务权限后重试。",
+  NETWORK_POLICY_CHANGED: "网络策略已更新，请重新连接联机。",
+  RELAY_PATH_UNAVAILABLE: "当前需要中继，尚未配置可用的中继链路。",
+  DIRECT_UNAVAILABLE: "直连未成功，当前运营策略不允许中继，请检查网络后重试。",
+  RELAY_CONNECTION_FAILED: "无法建立安全中继连接，请检查网络和中继证书。",
+  RELAY_CONNECTION_TIMEOUT: "中继连接超时，请稍后单独重试联机。",
+  RELAY_CONNECTION_LOST: "中继连接已断开，请单独重试联机。",
+  RELAY_AUTH_FAILED: "中继授权失败，请重新连接联机。",
+  NETWORK_WRITE_TIMEOUT: "虚拟网络写入超时，请单独重试联机。",
+  VOICE_NOT_CONNECTED: "请先连接房间语音。",
+  AUDIO_INPUT_SWITCH_FAILED: "麦克风切换失败，请刷新设备后重试。",
+  AUDIO_OUTPUT_SWITCH_FAILED: "输出设备切换失败，请刷新设备后重试。",
+  AUDIO_INPUT_DEVICE_REMOVED: "所选麦克风已不可用，请刷新并重新选择设备。",
+  AUDIO_OUTPUT_DEVICE_REMOVED: "所选输出设备已不可用，请刷新并重新选择设备。",
+  AUDIO_OUTPUT_SELECTION_REQUIRED: "请先选择输出设备，再试听。",
+  AUDIO_OUTPUT_TEST_FAILED: "输出测试未完成，请检查设备和系统声音设置后重试。",
+  AUDIO_TEST_BUSY: "另一个音频测试正在进行，请稍后重试。",
 };
 const errorText = (error) =>
   errors[String(error?.message || error)] ||
   "操作未完成，请检查输入或稍后重试。";
-function render() {
+function render(preserveComposer = false) {
+  runtimeDirty = false;
   const active=document.activeElement;
+  const composer = preserveComposer && active?.id === "message-input" ? {
+    value: active.value, start: active.selectionStart, end: active.selectionEnd,
+  } : null;
   const focusKey=root.contains(active) ? ["data-action","data-view","data-settings"].find(key=>active.hasAttribute(key)) : null;
   const focusValue=focusKey ? active.getAttribute(focusKey) : null;
   const scroll=root.querySelector(".chat-scroll")?.scrollTop;
   root.innerHTML = renderApp(s);
+  if (composer && document.getElementById("message-input")) {
+    const input = document.getElementById("message-input");
+    input.value = composer.value;
+    input.focus({preventScroll: true});
+    input.setSelectionRange(composer.start, composer.end);
+  }
   if(focusKey)root.querySelector(`[${focusKey}="${CSS.escape(focusValue)}"]`)?.focus();
   if(scroll !== undefined && root.querySelector(".chat-scroll"))root.querySelector(".chat-scroll").scrollTop=scroll;
 }
@@ -78,6 +265,7 @@ function notify(message) {
   }, 4000);
 }
 function closeDialog() {
+  modalRefresh = null;
   modalRoot.replaceChildren();
   root.inert = false;
   dialogSubmit = null;
@@ -85,6 +273,7 @@ function closeDialog() {
   else root.querySelector(`[data-view="${s.view}"]`)?.focus();
 }
 function dialog(title, description, body, submit, label = "确认") {
+  modalRefresh = null;
   if (!modalRoot.firstChild) returnFocus = document.activeElement;
   dialogSubmit = submit;
   root.inert = true;
@@ -129,17 +318,32 @@ const request = (resource, id = null, body = null, targetId = null) =>
   bridge
     ? bridge.request(resource, id, body, targetId)
     : Promise.reject(new Error("TAURI_UNAVAILABLE"));
-async function refresh(current = epoch) {
+function clearSession() {
+  resetSyncRetry();
+  dirtyMessageGroup = null;
+  productDirty = modalDirty = false;
+  Object.assign(s, {
+    userId: null, activity: null, voice: null, network: null,
+    groups: [], rooms: [], friends: [], messages: [], members: [],
+    groupMembers: [], drafts: {}, roomId: null, groupId: null,
+    view: "lobby", authMode: "login",
+  });
+}
+async function refresh(current = epoch, applicable = () => true) {
   const groups = await bridge.groups();
   const rooms = (
     await Promise.all(groups.map((g) => bridge.rooms(g.id)))
   ).flat();
   const friends = await request("friends");
-  if (current !== epoch) return;
+  if (current !== epoch || !applicable()) return;
   Object.assign(s, { groups, rooms, friends });
-  if (s.view === "group" || s.view === "room") await loadContext(current);
+  if (s.groupId && !groups.some(group => group.id === s.groupId)) {
+    Object.assign(s, { groupId: null, roomId: null, messages: [], groupMembers: [], members: [], view: "lobby" });
+    return;
+  }
+  if (s.view === "group" || s.view === "room") await loadContext(current, applicable);
 }
-async function loadContext(current = epoch) {
+async function loadContext(current = epoch, applicable = () => true) {
   const groupId = s.groupId,
     activityId = s.activity?.activityId;
   const [messages, groupMembers, members] = await Promise.all([
@@ -149,7 +353,7 @@ async function loadContext(current = epoch) {
       ? request("activity-members", activityId)
       : [],
   ]);
-  if (current !== epoch || groupId !== s.groupId) return;
+  if (current !== epoch || groupId !== s.groupId || !applicable()) return;
   Object.assign(s, {
     messages: [...messages].reverse(),
     groupMembers,
@@ -162,6 +366,16 @@ function navigate(view) {
   s.error = "";
   epoch++;
   render();
+  if (view === "settings" && s.settingsTab === "voice") run(loadAudioDevices);
+}
+async function loadAudioDevices() {
+  const current = epoch, userId = s.userId, leaseId = s.activity?.leaseId;
+  s.audioDevices = null;
+  const [devices, voice] = await Promise.all([bridge.audioDevices(), bridge.voiceSnapshot()]);
+  if (current === epoch && s.userId === userId && s.activity?.leaseId === leaseId) {
+    s.audioDevices = devices;
+    s.voice = voice;
+  }
 }
 async function joinRoom(id, password = null) {
   const r = s.rooms.find((r) => r.id === id);
@@ -179,6 +393,7 @@ async function joinRoom(id, password = null) {
     groupId: r.groupId,
     view: "room",
     voice: null,
+    network: null,
   });
   closeDialog();
   await loadContext();
@@ -188,6 +403,13 @@ async function joinRoom(id, password = null) {
     s.voice = await bridge.voiceSnapshot();
     notify(errorText(error));
   }
+  try {
+    s.network = await bridge.connectNetwork();
+  } catch (error) {
+    s.network = await bridge.networkSnapshot();
+    notify(errorText(error));
+  }
+  if (s.network?.status?.activityId === s.activity?.activityId) s.activity.network = s.network.status.state;
 }
 function createGroup() {
   dialog(
@@ -259,6 +481,129 @@ function help() {
     null,
   );
 }
+async function showFriendRequests(beforeId = null, applicable = () => true) {
+  const current = epoch, userId = s.userId, version = productVersion;
+  const incoming = await request("friend-requests", beforeId);
+  if (current !== epoch || userId !== s.userId || !applicable()) return false;
+  if (!Array.isArray(incoming)) throw new Error("INVALID_SERVER_RESPONSE");
+  const rows = incoming.map(item => `<div class="friend-request-row"><div><strong>${e(item.email)}</strong><p>${item.accountStatus === "ACTIVE" ? "希望添加你为好友" : "该账号当前不可用"}</p></div><div class="friend-request-actions">${item.accountStatus === "ACTIVE" ? button("接受", "accept-friend-request", "primary small", `data-id="${e(item.id)}"`) : ""}${button("拒绝", "reject-friend-request", "ghost small", `data-id="${e(item.id)}"`)}</div></div>`).join("");
+  dialog("好友申请", "仅显示发给你的待处理申请。",
+    (rows || empty("暂无好友申请", "收到新的申请后会显示在这里。")) +
+    `<div class="management-actions">${button("刷新", "refresh-friend-requests")}${incoming.length === 50 ? button("更早的申请", "earlier-friend-requests", "ghost", `data-id="${e(incoming.at(-1).id)}"`) : ""}${beforeId ? button("返回最新", "refresh-friend-requests") : ""}</div>`, null);
+  modalRefresh = {reload: guard => showFriendRequests(beforeId, guard)};
+  modalDirty = productVersion !== version;
+  return true;
+}
+function respondToFriendRequest(target, accept) {
+  return run(async () => {
+    await request(accept ? "friend-accept" : "friend-reject", target.dataset.id, {});
+    await refresh();
+    await showFriendRequests();
+  }, { modal: true });
+}
+async function showGroupMembers(groupId = s.groupId, applicable = () => true) {
+  const current = epoch, userId = s.userId, version = productVersion;
+  const members = await request("group-members", groupId);
+  if (current !== epoch || groupId !== s.groupId || userId !== s.userId || !applicable()) return false;
+  s.groupMembers = members;
+  const role = members.find(member => member.userId === userId)?.role;
+  const names = { OWNER: "群主", ADMIN: "管理员", MEMBER: "成员" };
+  const rows = members.map(member => {
+    const other = member.userId !== userId && member.role !== "OWNER";
+    const attributes = `data-id="${e(member.userId)}" data-group="${e(groupId)}"`;
+    const canRemove = other && (role === "OWNER" || (role === "ADMIN" && member.role === "MEMBER"));
+    return `<div class="group-member-row"><div><strong>${e(member.userId)}</strong><p>${e(names[member.role] || member.role)}${member.userId === userId ? " · 你" : ""}</p></div><div class="group-member-actions">${other && role === "OWNER" ? button(member.role === "ADMIN" ? "取消管理员" : "设为管理员", "change-member-role", "ghost small", `${attributes} data-role="${member.role === "ADMIN" ? "MEMBER" : "ADMIN"}"`) + button("转让群主", "start-owner-transfer", "ghost small", attributes) : ""}${canRemove ? button("移除成员", "remove-group-member", "danger small", attributes) : ""}</div></div>`;
+  }).join("");
+  dialog("群组成员", "角色变更和移除操作将在执行时重新校验权限。", rows + `<div class="management-actions">${button("刷新成员", "group-members")}</div>`, null);
+  modalRefresh = {reload: guard => showGroupMembers(groupId, guard)};
+  modalDirty = productVersion !== version;
+  return true;
+}
+function confirmMemberChange(target, remove) {
+  const { id, group, role } = target.dataset;
+  const title = remove ? "移除成员" : role === "ADMIN" ? "设为管理员" : "取消管理员";
+  dialog(title, remove ? `确认移除成员「${id}」？该成员将失去群组和活动权限；其持有的房间将由群主接管。` : `确认${title}「${id}」？`, "", async () => {
+    await request(remove ? "group-member-remove" : "group-member-role", group, remove ? null : { role }, id);
+    await refresh();
+    await showGroupMembers(group);
+  });
+}
+async function showOwnerTransfers(groupId = s.groupId, applicable = () => true) {
+  const current = epoch, userId = s.userId, version = productVersion;
+  const transfers = await request("owner-transfers", groupId);
+  if (current !== epoch || userId !== s.userId || groupId !== s.groupId || !applicable()) return false;
+  const rows = transfers.map(transfer => `<div class="group-member-row"><div><strong>${e(transfer.fromUserId)} → ${e(transfer.toUserId)}</strong><p>等待指定成员接受 · ${e(new Date(transfer.createdAt).toLocaleString("zh-CN"))}</p></div><div class="group-member-actions">${transfer.toUserId === userId ? button("接受转让", "accept-owner-transfer", "primary small", `data-id="${e(transfer.id)}" data-group="${e(groupId)}"`) : ""}${transfer.fromUserId === userId ? button("撤销转让", "cancel-owner-transfer", "danger small", `data-id="${e(transfer.id)}" data-group="${e(groupId)}"`) : ""}</div></div>`).join("");
+  dialog("群主转让", "只有指定成员接受后归属才会改变，完成前原群主仍负责群组。",
+    (rows || empty("暂无待处理转让", "群主可在群组成员列表选择接收人。")) + `<div class="management-actions">${button("刷新转让", "owner-transfers")}${button("群组成员", "group-members")}${button("人工恢复申请", "owner-recovery")}</div>`, null);
+  modalRefresh = {reload: guard => showOwnerTransfers(groupId, guard)};
+  modalDirty = productVersion !== version;
+  return true;
+}
+function confirmOwnerTransfer(target, operation) {
+  const { id, group } = target.dataset;
+  const details = {
+    create: ["转让群主", `确认将群主转让给「${id}」？对方接受前你仍是群主，仍可撤销。`],
+    accept: ["接受转让", "接受后你将成为群主，原群主将成为普通成员。"],
+    cancel: ["撤销转让", "撤销后对方不能再接受此转让，群主归属保持不变。"],
+  };
+  dialog(...details[operation], "", async () => {
+    await request(`owner-transfer-${operation}`, operation === "create" ? group : id, operation === "create" ? { targetUserId: id } : {});
+    await refresh();
+    await showOwnerTransfers(group);
+  });
+}
+async function showInvitations(groupId = null, beforeId = null, applicable = () => true) {
+  const current = epoch, userId = s.userId, version = productVersion;
+  const invitations = await request(groupId ? "group-invitations" : "invitations", groupId || beforeId, null, groupId ? beforeId : null);
+  if (current !== epoch || userId !== s.userId || (groupId && groupId !== s.groupId) || !applicable()) return false;
+  const rows = invitations.map(invitation => `<div class="group-member-row"><div><strong>${e(groupId ? invitation.inviteeId : invitation.groupName)}</strong><p>邀请人：${e(invitation.inviterId)}</p></div><div class="group-member-actions">${button(groupId ? "撤销邀请" : "接受邀请", groupId ? "revoke-invitation" : "accept-invitation", groupId ? "danger small" : "primary small", `data-id="${e(invitation.id)}" data-group="${e(invitation.groupId)}"`)}</div></div>`).join("");
+  const context = groupId ? `data-group="${e(groupId)}"` : "";
+  dialog(groupId ? "邀请管理" : "群邀请", groupId ? "仅群主和管理员可查看、撤销待接受邀请。" : "仅显示发给你的有效待接受邀请。",
+    (rows || empty("暂无待接受邀请", groupId ? "邀请成员后会显示在这里。" : "收到群组邀请后会显示在这里。")) +
+    `<div class="management-actions">${button("刷新邀请", "refresh-invitations", "ghost", context)}${invitations.length === 50 ? button("更早的邀请", "earlier-invitations", "ghost", `${context} data-id="${e(invitations.at(-1).id)}"`) : ""}${beforeId ? button("返回最新", "refresh-invitations", "ghost", context) : ""}</div>`, null);
+  modalRefresh = {reload: guard => showInvitations(groupId, beforeId, guard)};
+  modalDirty = productVersion !== version;
+  return true;
+}
+function confirmInvitation(target, revoke) {
+  const { id, group } = target.dataset;
+  dialog(revoke ? "撤销邀请" : "接受邀请", revoke ? "撤销后，此邀请将无法再被接受。" : "接受后将加入该群组，获得群内容和房间访问权限。", "", async () => {
+    await request(revoke ? "invitation-revoke" : "invitation-accept", revoke ? group : id, revoke ? null : {}, revoke ? id : null);
+    await refresh();
+    await showInvitations(revoke ? group : null);
+  });
+}
+const auditActions = {
+  ACCOUNT_MEMBERSHIP_REVOKE: "账号失效撤销群资格",
+  GROUP_CREATE: "创建群组", GROUP_UPDATE: "修改群资料", GROUP_INVITE: "邀请成员",
+  GROUP_INVITATION_REVOKE: "撤销邀请", GROUP_INVITATION_ACCEPT: "接受邀请",
+  GROUP_ADMIN_GRANT: "设置管理员", GROUP_ADMIN_REVOKE: "取消管理员",
+  GROUP_MEMBER_REMOVE: "移除群成员", GROUP_LEAVE: "退出群组", GROUP_DISSOLVE: "解散群组",
+  OWNER_TRANSFER_CREATE: "发起群主转让", OWNER_TRANSFER_ACCEPT: "接受群主转让",
+  OWNER_TRANSFER_CANCEL: "撤销群主转让", OWNER_RECOVERY_REQUEST: "提交恢复申请", OWNER_RECOVERY_REVIEW: "人工恢复审核",
+  ROOM_CREATE: "创建房间", ROOM_UPDATE: "修改房间", ROOM_OWNER_ASSIGN: "指定房主",
+  ROOM_OPEN: "开放加入", ROOM_PAUSE: "暂停加入", ROOM_DELETE: "删除房间",
+  ACTIVITY_START: "开始活动", ACTIVITY_END: "结束活动", ACTIVITY_MEMBER_KICK: "踢出活动成员",
+  MESSAGE_DELETE: "管理删除消息",
+};
+const auditTargets = { GROUP: "群组", GROUP_MEMBER: "群成员", INVITATION: "邀请", OWNER_TRANSFER: "群主转让", OWNER_RECOVERY: "恢复申请", ROOM: "房间", ACTIVITY: "活动", ACTIVITY_MEMBER: "活动成员", MESSAGE: "消息" };
+const auditResults = { SUCCESS: "成功", RECOVER: "已完成恢复", REJECT: "已驳回", DISPUTED: "存在争议，归属未变更", INSUFFICIENT_EVIDENCE: "证据不足，归属未变更" };
+async function showAudit(groupId, beforeId = null, applicable = () => true) {
+  const current = epoch, userId = s.userId, version = productVersion;
+  const entries = await request("audit", groupId, null, beforeId);
+  if (current !== epoch || userId !== s.userId || groupId !== s.groupId || !applicable()) return false;
+  const rows = entries.map(entry => {
+    const time = new Date(entry.occurredAt);
+    return `<article class="audit-entry"><strong>${e(auditActions[entry.action] || entry.action)}</strong><time datetime="${e(entry.occurredAt)}">${e(Number.isNaN(time.getTime()) ? "时间不可用" : time.toLocaleString("zh-CN"))}</time><dl><dt>操作者</dt><dd>${e(entry.actorId)}</dd><dt>目标</dt><dd>${e(auditTargets[entry.targetType] || entry.targetType)} · ${e(entry.targetId)}</dd><dt>结果</dt><dd>${e(auditResults[entry.result] || entry.result)}</dd></dl></article>`;
+  }).join("");
+  const context = `data-group="${e(groupId)}"`;
+  dialog("管理记录", "仅当前群主和管理员可查看，记录只读。",
+    (rows ? `<div class="audit-list">${rows}</div>` : empty("暂无管理记录", "当前没有可展示的记录。")) +
+    `<div class="management-actions">${button("刷新记录", "refresh-audit", "ghost", context)}${entries.length === 50 ? button("更早的记录", "earlier-audit", "ghost", `${context} data-id="${e(entries.at(-1).id)}"`) : ""}${beforeId ? button("返回最新", "refresh-audit", "ghost", context) : ""}</div>`, null);
+  modalRefresh = {reload: guard => showAudit(groupId, beforeId, guard)};
+  modalDirty = productVersion !== version;
+  return true;
+}
 async function showMessageHistory(groupId, cursor, applicable = () => true) {
   const current = epoch, userId = s.userId;
   if (!groupId || !cursor) return;
@@ -273,10 +618,56 @@ async function showMessageHistory(groupId, cursor, applicable = () => true) {
   const entries = rows.slice().reverse().map(message => `<article class="message-content"><div class="message-meta"><strong>${e(message.authorId === userId ? "我" : message.authorId)}</strong><time>${e(new Date(message.createdAt).toLocaleString("zh-CN"))}</time></div><div class="message-text">${e(message.deleted ? "此消息已被删除" : message.body)}</div></article>`).join("");
   const older = rows.length === 50 ? button("更早的消息", "message-history", "ghost", `data-id="${e(rows.at(-1).id)}"`) : "";
   dialog("群聊历史", "按发送时间排列；关闭后返回实时群聊。", `<div data-message-history>${entries || empty("没有更早的消息", "你已经看完了这个群的历史消息。")}</div>${older}${button("返回最新消息", "dialog-close", "ghost")}`, null);
+  modalRefresh = {reload: guard => showMessageHistory(groupId, cursor, guard)};
   return true;
 }
 const actions = {
   "message-history": target => run(() => showMessageHistory(s.groupId, target.dataset.id), { modal: true }),
+  "refresh-audit": target => run(() => showAudit(target.dataset.group), { modal: true }),
+  "earlier-audit": target => run(() => showAudit(target.dataset.group, target.dataset.id), { modal: true }),
+  "refresh-room-members": () => run(async () => { await refresh(); }),
+  "assign-room-owner": () => run(async () => {
+    const current = epoch, userId = s.userId, roomId = s.roomId;
+    const room = s.rooms.find(item => item.id === s.roomId);
+    if (!room) return;
+    const members = await request("group-members", room.groupId);
+    if (current !== epoch || userId !== s.userId || roomId !== s.roomId) return;
+    s.groupMembers = members;
+    dialog("指定房主", "仅群主可指定当前有效群成员，立即生效；房主权限仅限该房间。",
+      `<label for="room-owner-target">新的房主</label><select id="room-owner-target" name="targetUserId" required>${members.map(member => `<option value="${e(member.userId)}" ${member.userId === room.ownerUserId ? "selected" : ""}>${e(member.userId)}${member.userId === room.ownerUserId ? "（当前房主）" : ""}</option>`).join("")}</select>`, async data => {
+        await request("room-owner", room.id, { targetUserId: data.get("targetUserId") });
+        closeDialog();
+        await refresh();
+      }, "指定房主");
+  }, { modal: true }),
+  "kick-activity-member": target => {
+    const { id, generation, activity } = target.dataset;
+    dialog("踢出成员", `确认将「${id}」踢出本次活动？语音与联机会被撤销，但不会移出群组或封禁，仍可按当前房间规则重新加入。`, "", async () => {
+      await request("activity-kick", activity, { memberGeneration: Number(generation) }, id);
+      closeDialog();
+      await loadContext();
+    });
+  },
+  "group-invitations": () => run(() => showInvitations(s.groupId), { modal: true }),
+  "refresh-invitations": target => run(() => showInvitations(target.dataset.group || null), { modal: true }),
+  "earlier-invitations": target => run(() => showInvitations(target.dataset.group || null, target.dataset.id), { modal: true }),
+  "accept-invitation": target => confirmInvitation(target, false),
+  "revoke-invitation": target => confirmInvitation(target, true),
+  "owner-transfers": () => run(() => showOwnerTransfers(), { modal: true }),
+  "start-owner-transfer": target => confirmOwnerTransfer(target, "create"),
+  "accept-owner-transfer": target => confirmOwnerTransfer(target, "accept"),
+  "cancel-owner-transfer": target => confirmOwnerTransfer(target, "cancel"),
+  "owner-recovery": () => {
+    const groupId = s.groupId;
+    dialog("人工恢复申请", "群主无法操作时可提交证据引用，等待人工审核；申请不会自动变更归属。请勿填写密码或密钥。",
+      field("evidenceRef", "证据引用或说明", "text", "", 'required maxlength="2000"'), async data => {
+        const result = await request("owner-recovery", groupId, { evidenceRef: data.get("evidenceRef") });
+        dialog("申请已提交", "等待人工审核，群主归属保持不变。", `<p class="invite-id">申请编号：${e(result.id)}</p>`, null);
+      }, "提交申请");
+  },
+  "group-members": () => run(() => showGroupMembers(), { modal: true }),
+  "change-member-role": target => confirmMemberChange(target, false),
+  "remove-group-member": target => confirmMemberChange(target, true),
   "auth-login": () => {
     s.authMode = "login";
     s.error = "";
@@ -315,30 +706,12 @@ const actions = {
     s.friendFilter = "all";
     render();
   },
-  "friend-requests": () =>
-    dialog(
-      "好友申请",
-      "当前服务尚未提供待处理申请列表。",
-      field("id", "已有申请 ID", "text", "", 'required maxlength="128"'),
-      async (data) => {
-        await request("friend-accept", data.get("id"), {});
-        closeDialog();
-        await refresh();
-      },
-      "接受申请",
-    ),
-  invitation: () =>
-    dialog(
-      "接受群邀请",
-      "输入朋友发给你的邀请 ID。",
-      field("id", "邀请 ID", "text", "", 'required maxlength="128"'),
-      async (data) => {
-        await request("invitation-accept", data.get("id"), {});
-        closeDialog();
-        await refresh();
-      },
-      "接受邀请",
-    ),
+  "friend-requests": () => run(() => showFriendRequests()),
+  "refresh-friend-requests": () => run(() => showFriendRequests(), { modal: true }),
+  "earlier-friend-requests": target => run(() => showFriendRequests(target.dataset.id), { modal: true }),
+  "accept-friend-request": target => respondToFriendRequest(target, true),
+  "reject-friend-request": target => respondToFriendRequest(target, false),
+  invitation: () => run(() => showInvitations()),
   "add-friend": () =>
     dialog(
       "添加好友",
@@ -395,6 +768,7 @@ const actions = {
       Object.assign(s, await bridge.leave(), {
         roomId: null,
         voice: null,
+        network: null,
         view: "lobby",
       });
       epoch++;
@@ -406,24 +780,10 @@ const actions = {
         ? "退出后，当前房间的语音和联机将中断。"
         : "确定退出当前账号吗？",
       async () => {
-        await bridge.logout();
+        const snapshot = await bridge.logout();
         epoch++;
-        Object.assign(s, {
-          userId: null,
-          activity: null,
-          voice: null,
-          groups: [],
-          rooms: [],
-          friends: [],
-          messages: [],
-          members: [],
-          groupMembers: [],
-          drafts: {},
-          roomId: null,
-          groupId: null,
-          view: "lobby",
-          authMode: "login",
-        });
+        clearSession();
+        if (snapshot.lastErrorCode) notify(errorText(snapshot.lastErrorCode));
       },
     ),
   mute: () =>
@@ -444,6 +804,13 @@ const actions = {
         s.voice = await bridge.voiceSnapshot();
       }
     }),
+  "retry-network": () => run(async () => {
+    try { s.network = await bridge.connectNetwork(); }
+    finally {
+      s.network = await bridge.networkSnapshot();
+      if (s.network?.status?.activityId === s.activity?.activityId) s.activity.network = s.network.status.state;
+    }
+  }),
   "delete-message": (b) =>
     confirmation("删除消息", "删除后正文将不可见，保留删除标记。", async () => {
       await request("message-delete", b.dataset.id);
@@ -452,37 +819,38 @@ const actions = {
   "invite-member": () =>
     dialog(
       "邀请队友",
-      "邀请账号加入当前群组。",
-      field("userId", "队友账号 ID", "text", "", 'required maxlength="128"'),
+      "通过准确的邮箱邀请账号加入当前群组。",
+      field("email", "队友邮箱", "email", "", 'required maxlength="254"'),
       async (data) => {
-        const result = await request("group-invite", s.groupId, {
-          inviteeId: data.get("userId"),
+        const email = data.get("email").trim();
+        const users = await request("friend-search", email);
+        const user = users.find(item => item.email.toLowerCase() === email.toLowerCase());
+        if (!user) { document.getElementById("dialog-error").textContent = "没有找到此账号。"; return; }
+        await request("group-invite", s.groupId, {
+          inviteeId: user.userId,
         });
         closeDialog();
-        dialog(
-          "邀请已创建",
-          "将邀请 ID 发送给队友。",
-          `<p class="invite-id">${e(result.id)}</p>`,
-          null,
-        );
+        notify("邀请已发送，队友可在「群组 → 群邀请」中接受。");
       },
       "创建邀请",
     ),
   "manage-group": () => {
     const g = s.groups.find((g) => g.id === s.groupId);
+    const role = s.groupMembers.find(member => member.userId === s.userId)?.role;
+    const canEdit = role === "OWNER" || role === "ADMIN";
     dialog(
       "群组管理",
       "权限由服务端在执行时校验。",
-      field("name", "群名称", "text", g.name, 'required maxlength="80"') +
+      (canEdit ? field("name", "群名称", "text", g.name, 'required maxlength="80"') +
         field(
           "description",
           "群简介",
           "text",
           g.description,
           'maxlength="500"',
-        ) + avatarField +
-        `<div class="management-actions">${button("邀请队友", "invite-member")}${button("管理记录", "audit")}${button("退出群组", "leave-group", "danger")}${g.ownerUserId === s.userId ? button("解散群组", "dissolve-group", "danger") : ""}</div>`,
-      async (data) => {
+        ) + avatarField : `<div class="modal-note"><strong>${e(g.name)}</strong><p>${e(g.description)}</p></div>`) +
+        `<div class="management-actions">${button("群组成员", "group-members")}${button("群主转让", "owner-transfers")}${button("邀请队友", "invite-member")}${canEdit ? button("邀请管理", "group-invitations") + button("管理记录", "audit") : ""}${button("退出群组", "leave-group", "danger")}${role === "OWNER" ? button("解散群组", "dissolve-group", "danger") : ""}</div>`,
+      canEdit ? async (data) => {
         await request("group-update", g.id, {
           name: data.get("name"),
           description: data.get("description"),
@@ -490,7 +858,7 @@ const actions = {
         });
         closeDialog();
         await refresh();
-      },
+      } : null,
       "保存",
     );
   },
@@ -524,29 +892,19 @@ const actions = {
       "解散群组",
     );
   },
-  audit: () =>
-    run(async () => {
-      const entries = await request("audit", s.groupId);
-      dialog(
-        "管理记录",
-        "仅展示服务端返回的记录。",
-        entries.length
-          ? `<div class="audit-list">${entries.map((x) => `<p>${e(x.action || x.eventType)} · ${e(x.createdAt)}</p>`).join("")}</div>`
-          : empty("暂无管理记录", "当前没有可展示的记录。"),
-        null,
-      );
-    }),
+  audit: () => run(() => showAudit(s.groupId), { modal: true }),
   "manage-room": () => {
     const r = s.rooms.find((r) => r.id === s.roomId);
+    const permissions = roomPermissions(s, r);
     dialog(
       "房间设置",
       "房间资料与活动分开管理。",
-      field("name", "房间名称", "text", r.name, 'required maxlength="80"') +
+      (permissions.manage ? field("name", "房间名称", "text", r.name, 'required maxlength="80"') +
         field("gameName", "游戏名称", "text", r.gameName, 'maxlength="80"') +
         field("description", "介绍", "text", r.description, 'maxlength="500"') +
         field("password", "新的房间密码（留空清除）", "password") +
-        `<div class="management-actions">${button(r.openState === "OPEN" ? "暂停加入" : "开放加入", "toggle-room")}${button("结束活动", "end-activity", "danger")}${button("删除房间", "delete-room", "danger")}</div>`,
-      async (data) => {
+        `<div class="management-actions">${permissions.assign ? button("指定房主", "assign-room-owner") : ""}${button(r.openState === "OPEN" ? "暂停加入" : "开放加入", "toggle-room")}${button("结束活动", "end-activity", "danger")}${button("删除房间", "delete-room", "danger")}</div>` : `<div class="modal-note"><strong>${e(r.name)}</strong><p>${e(r.description)}</p><p>房主：${e(r.ownerUserId)}</p></div>`),
+      permissions.manage ? async (data) => {
         await request(
           "room-update",
           r.id,
@@ -559,7 +917,7 @@ const actions = {
         );
         closeDialog();
         await refresh();
-      },
+      } : null,
       "保存",
     );
   },
@@ -580,6 +938,7 @@ const actions = {
       Object.assign(s, await bridge.leave(), {
         roomId: null,
         voice: null,
+        network: null,
         view: "lobby",
       });
       await refresh();
@@ -593,6 +952,7 @@ const actions = {
         Object.assign(s, await bridge.leave(), {
           roomId: null,
           voice: null,
+          network: null,
           view: "lobby",
         });
         await refresh();
@@ -625,6 +985,32 @@ document.addEventListener("click", (event) => {
   if (target.dataset.settings) {
     s.settingsTab = target.dataset.settings;
     render();
+    if (s.settingsTab === "voice") run(loadAudioDevices);
+    return;
+  }
+  if (target.dataset.action === "refresh-audio") {
+    run(loadAudioDevices);
+    return;
+  }
+  if (target.dataset.action === "test-microphone") {
+    run(async () => {
+      const current = epoch, userId = s.userId, leaseId = s.activity?.leaseId;
+      const result = await bridge.testMicrophone();
+      if (epoch !== current || s.userId !== userId || s.activity?.leaseId !== leaseId) return;
+      if (!Number.isFinite(result.peak) || !Number.isFinite(result.rms) || result.samples < 96000) throw new Error("AUDIO_TEST_CAPTURE_INTERRUPTED");
+      notify(result.peak > 0.003
+        ? `已收到麦克风信号：峰值 ${(result.peak * 100).toFixed(1)}%，平均电平 ${(result.rms * 100).toFixed(1)}%。`
+        : "已收到采样，但未检测到明显声音，请对着麦克风说话后重试。");
+    });
+    return;
+  }
+  if (target.dataset.action === "test-output") {
+    run(async () => {
+      const current = epoch, userId = s.userId, leaseId = s.activity?.leaseId;
+      await bridge.testOutput();
+      if (epoch !== current || s.userId !== userId || s.activity?.leaseId !== leaseId) return;
+      dialog("输出试听已结束", "是否听到了测试音？播放调用完成不代表设备可听。", `<p>若未听到，请检查系统音量、输出设备和耳机连接，然后重新试听。</p>`, null);
+    });
     return;
   }
   actions[target.dataset.action]?.(target);
@@ -689,10 +1075,26 @@ document.addEventListener("input", (event) => {
   }
 });
 document.addEventListener("change", (event) => {
+  if (event.target.hasAttribute("data-audio-device")) {
+    const selectedId = event.target.value, output = event.target.dataset.audioDevice === "output";
+    run(async () => {
+      const current = epoch, userId = s.userId, leaseId = s.activity?.leaseId;
+      const voice = await bridge.selectAudioDevice(selectedId, output);
+      if (epoch !== current || s.userId !== userId || s.activity?.leaseId !== leaseId) return;
+      s.voice = voice;
+      await loadAudioDevices();
+    });
+  }
   if (event.target.id === "voice-volume") {
     const value = Number(event.target.value);
     run(async () => {
       s.voice = await bridge.setVolume(value);
+    });
+  }
+  if (event.target.hasAttribute("data-member-volume")) {
+    const value = Number(event.target.value), memberId = event.target.dataset.memberVolume;
+    run(async () => {
+      s.voice = await bridge.setVolume(value, memberId);
     });
   }
 });
