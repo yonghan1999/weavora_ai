@@ -566,6 +566,43 @@ class Engine:
                 (self.project_dir(project_id) / "approvals/current.json").unlink(missing_ok=True)
             return state
 
+    def reopen_development(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
+        """原批准范围内返工；保留原证据，发布和验收必须重新审批。"""
+        if role != "workflow_operator" or not actor.strip() or not reason.strip():
+            raise WorkflowError("开发返工须由 workflow_operator 提供执行者和具体原因。")
+        with self.lock(project_id):
+            state = self.load(project_id)
+            if state["stage"] not in {"H_RELEASE", "I_ACCEPTANCE"} or state["status"] not in {
+                "in_progress", "awaiting_approval", "rejected",
+            }:
+                raise WorkflowError("仅执行中、待审批或驳回的发布/验收阶段可返回开发规划。")
+            from .gates import check_stage
+
+            gate = check_stage(self, project_id, "D_PLANNING")
+            if not gate.ok:
+                raise WorkflowError(f"需求、设计或规划基线不满足返工条件：{gate.errors}")
+            pending = self.current_approval_request(project_id, required=False)
+            invalidated = set(state.get("invalidated_approval_ids", []))
+            invalidated.update(item["approval_id"] for item in state.get("approvals", [])
+                               if item["stage"] in {"H_RELEASE", "I_ACCEPTANCE"})
+            if pending:
+                invalidated.add(pending["approval_id"])
+            event = {
+                "event": "development_reopened", "workflow_id": state["workflow_id"],
+                "project_id": project_id, "from_stage": state["stage"], "from_status": state["status"],
+                "stage": "D_PLANNING", "to_status": "in_progress", "at": utc_now(),
+                "actor": actor, "role": role, "reason": reason.strip(),
+                "invalidated_approval_ids": sorted(invalidated), "human_authorization": False,
+            }
+            state.update(stage="D_PLANNING", status="in_progress", resume_status=None,
+                         active_task_id=None, retry_counts={}, invalidated_approval_ids=sorted(invalidated))
+            state.setdefault("history", []).append(event)
+            state["history"] = state["history"][-200:]
+            self.save(project_id, state)
+            self.audit(project_id, event)
+            (self.project_dir(project_id) / "approvals/current.json").unlink(missing_ok=True)
+            return state
+
     def rebaseline(self, project_id: str, actor: str, role: str, reason: str) -> dict[str, Any]:
         """架构在途的需求变更退回 B，保留历史文件但不沿用旧批准。"""
         if role != "workflow_operator" or not actor.strip() or not reason.strip():

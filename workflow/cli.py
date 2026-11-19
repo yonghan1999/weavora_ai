@@ -29,6 +29,7 @@ def parser() -> argparse.ArgumentParser:
         ("reopen-requirements", "按用户范围变更退回需求分析，保留历史与设计资产"),
         ("migrate", "将符合条件的既有项目显式迁移到当前流程"),
         ("rebaseline", "架构在途时返回需求分析，重新评审变更基线"),
+        ("reopen-development", "发布或验收发现缺口，保留历史并返回开发规划"),
         ("pause", "暂停并持久化状态"),
         ("resume", "恢复暂停的工作流"),
         ("fail", "记录执行失败"),
@@ -41,7 +42,7 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--actor", required=True)
         if name not in {"archive"}:
             command.add_argument("--role", default="workflow_operator")
-        if name in {"revise", "reopen-requirements", "migrate", "rebaseline", "pause", "fail", "retry", "cancel"}:
+        if name in {"revise", "reopen-requirements", "migrate", "rebaseline", "reopen-development", "pause", "fail", "retry", "cancel"}:
             command.add_argument("--reason", required=True)
         if name == "fail":
             command.add_argument("--retryable", action="store_true")
@@ -136,6 +137,8 @@ def dispatch(args: argparse.Namespace) -> Any:
         return engine.migrate(args.project_id, args.actor, args.role, args.reason)
     if args.command == "rebaseline":
         return engine.rebaseline(args.project_id, args.actor, args.role, args.reason)
+    if args.command == "reopen-development":
+        return engine.reopen_development(args.project_id, args.actor, args.role, args.reason)
     if args.command == "pause":
         return engine.pause(args.project_id, args.actor, args.role, args.reason)
     if args.command == "resume":

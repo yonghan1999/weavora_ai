@@ -487,6 +487,62 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(len(decisions), 1)
         self.assertIn("负数边界", decisions[0].read_text(encoding="utf-8"))
 
+    def prepare_acceptance_rework(self):
+        self.reach_architecture()
+        base = self.engine.project_dir(self.project_id)
+        sections = self.engine.stages["C_DESIGN"]["documents"]["docs/03-architecture.md"]
+        (base / "docs/03-architecture.md").write_text(
+            "# 架构\n" + "\n".join(f"## {section}\nREQ-001 已设计。" for section in sections), encoding="utf-8")
+        self.approve(self.engine.submit(self.project_id, "architect", "architecture_reviewer")["request"]["approval_id"])
+        self.engine.add_task(self.project_id, {
+            "id": "TASK-001", "title": "加法", "requirement_ids": ["REQ-001"], "depends_on": [],
+            "input": "输入", "output": "输出", "acceptance": "正确加法", "test": "python --version", "rollback": "回退",
+        })
+        for relative, headings in self.engine.stages["D_PLANNING"]["documents"].items():
+            (base / relative).write_text("# 计划\n" + "\n".join(
+                f"## {heading}\nREQ-001 TASK-001 有限修复。" for heading in headings), encoding="utf-8")
+        state = self.engine.load(self.project_id)
+        state.update(stage="I_ACCEPTANCE", status="awaiting_approval")
+        state["approvals"].append({"approval_id": "APR-H-old", "stage": "H_RELEASE", "decision": "approved"})
+        self.engine.save(self.project_id, state)
+        atomic_json(base / "approvals/current.json", {"approval_id": "APR-I-pending"})
+        return base
+
+    def test_reopen_development_preserves_history_and_requires_new_release_approval(self):
+        base = self.prepare_acceptance_rework()
+        paths = [base / "tasks/tasks.json", *list((base / "approvals").glob("*.decision.json"))]
+        before = {path: path.read_bytes() for path in paths}
+        state = self.engine.reopen_development(self.project_id, "operator", "workflow_operator", "验收发现加法缺口")
+        self.assertEqual((state["stage"], state["status"]), ("D_PLANNING", "in_progress"))
+        self.assertIn("APR-H-old", state["invalidated_approval_ids"])
+        self.assertIn("APR-I-pending", state["invalidated_approval_ids"])
+        self.assertIsNone(self.engine.current_approval_request(self.project_id, required=False))
+        self.assertTrue(check_stage(self.engine, self.project_id, "D_PLANNING").ok)
+        self.assertIn("缺少人工批准记录：H_RELEASE", check_stage(self.engine, self.project_id, "I_ACCEPTANCE").errors)
+        for path, content in before.items():
+            self.assertEqual(path.read_bytes(), content)
+        self.assertFalse(state["history"][-1]["human_authorization"])
+
+    def test_reopen_development_guards_and_atomic_rollback(self):
+        base = self.prepare_acceptance_rework()
+        from unittest.mock import patch
+        before = {path: path.read_bytes() for path in [base / "state.json", base / "audit.jsonl", base / "approvals/current.json"]}
+        for actor, role, reason in [("", "workflow_operator", "缺口"), ("operator", "developer", "缺口"),
+                                    ("operator", "workflow_operator", " ")]:
+            with self.assertRaises(WorkflowError):
+                self.engine.reopen_development(self.project_id, actor, role, reason)
+        with patch.object(self.engine, "audit", side_effect=OSError("模拟审计失败")):
+            with self.assertRaises(OSError):
+                self.engine.reopen_development(self.project_id, "operator", "workflow_operator", "缺口")
+        for path, content in before.items():
+            self.assertEqual(path.read_bytes(), content)
+        requirements = base / "docs/02-requirements.md"
+        requirements.write_text(REQUIREMENTS + "\n改变基线\n", encoding="utf-8")
+        with self.assertRaisesRegex(WorkflowError, "基线"):
+            self.engine.reopen_development(self.project_id, "operator", "workflow_operator", "缺口")
+        for path, content in before.items():
+            self.assertEqual(path.read_bytes(), content)
+
     def test_withdraw_pending_approval_for_revision(self):
         first = self.submit_requirements()
         self.engine.revise(self.project_id, "analyst", "requirements_analyst", "用户补充原 IP 优先恢复规则")

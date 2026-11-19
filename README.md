@@ -122,6 +122,14 @@ python zhijie.py archive my-app --actor release-archivist
 
 ## 暂停、恢复、重试和取消
 
+H 发布准备或 I 最终验收发现原批准范围内的功能缺口，可保留历史退回开发规划：
+
+```powershell
+python zhijie.py reopen-development my-app --actor operator --role workflow_operator --reason "验收发现真实链路未贯通，补齐原需求并重新取证"
+```
+
+原需求与设计必须仍有效；命令使 H/I 批准失效，保留任务和证据。补充任务后重新走 E/F/G/H/I，不沿用旧回归代替新实现验证；H/I 仍须由人类审批。
+
 用户明确变更需求时，可在开发前的原型、UI 或架构阶段执行 `python zhijie.py reopen-requirements my-app --actor operator --role workflow_operator --reason "用户要求重新分析范围"`。命令退回需求分析并使历史批准不再适用于新一轮，保留原型/UI 及全部审批历史；不得将其当作人工批准或跳过后续评审。
 
 ```bash
