@@ -130,6 +130,11 @@ MAX_CAPTURE_BYTES = 1_000_000
 def shell_invocation(command: str, platform_name: str | None = None, bash_path: str | None = None) -> tuple[str | list[str], bool, str]:
     if (platform_name or os.name) == "nt":
         bash = bash_path if bash_path is not None else shutil.which("bash")
+        if bash_path is None and bash and Path(bash).parent.name.lower() in {"system32", "windowsapps"}:
+            # Windows 的 bash.exe 可能只是未安装发行版的 WSL 启动器，不能执行本机项目命令。
+            git = shutil.which("git")
+            git_bash = Path(git).parent.parent / "usr/bin/bash.exe" if git else None
+            bash = str(git_bash) if git_bash and git_bash.is_file() else None
         if bash:
             return [bash, "-o", "pipefail", "-c", command], False, "bash -o pipefail -c"
         # /d 禁止注册表 AutoRun 干扰命令结果；仍支持用户显式提供的 shell 语法。

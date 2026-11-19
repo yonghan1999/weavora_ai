@@ -160,6 +160,14 @@ class CliParserTests(unittest.TestCase):
             (root / "src/main.txt").write_text("changed", encoding="utf-8")
             self.assertNotEqual(original, tree_digest(root))
 
+    def test_windows_wsl_launcher_falls_back_to_native_cmd(self):
+        from unittest.mock import patch
+        from workflow.engine import shell_invocation
+        with patch("workflow.engine.shutil.which", side_effect=["C:/Windows/System32/bash.exe", None]):
+            invocation, use_shell, _ = shell_invocation("python --version", "nt")
+        self.assertEqual(invocation, ["cmd.exe", "/d", "/s", "/c", "python --version"])
+        self.assertFalse(use_shell)
+
 
 class CleanCheckoutTests(unittest.TestCase):
     def test_missing_temporary_root_is_created(self):
