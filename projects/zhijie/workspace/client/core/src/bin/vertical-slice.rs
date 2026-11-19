@@ -1,4 +1,14 @@
+use std::io::Read;
 use zhijie_core::{Channel, ClientCore, ClientError, ControlPlaneClient};
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct Configuration {
+    base_url: String,
+    email: String,
+    password: String,
+    room_id: String,
+}
 
 #[tokio::main]
 async fn main() {
@@ -9,26 +19,37 @@ async fn main() {
 }
 
 async fn run() -> Result<(), String> {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() != 5 {
-        return Err("usage: vertical-slice <base-url> <email> <password> <room-id>".into());
+    if std::env::args_os().len() != 1 {
+        return Err("VERTICAL_SLICE_STDIN_REQUIRED".into());
     }
-    let client = ControlPlaneClient::new(&args[1]).map_err(|_| "HTTP_CLIENT_FAILED".to_string())?;
+    // 测试凭据只从匿名 stdin 获取，不进入命令行或配置文件。
+    let mut input = Vec::new();
+    std::io::stdin()
+        .take(16385)
+        .read_to_end(&mut input)
+        .map_err(|_| "VERTICAL_SLICE_INPUT_INVALID")?;
+    if input.len() > 16384 {
+        return Err("VERTICAL_SLICE_INPUT_INVALID".into());
+    }
+    let config: Configuration =
+        serde_json::from_slice(&input).map_err(|_| "VERTICAL_SLICE_INPUT_INVALID")?;
+    let client =
+        ControlPlaneClient::new(&config.base_url).map_err(|_| "HTTP_CLIENT_FAILED".to_string())?;
     let tokens = client
-        .login(&args[2], &args[3], "vertical-slice-device")
+        .login(&config.email, &config.password, "vertical-slice-device")
         .await
         .map_err(error)?;
     let core = ClientCore::default();
     core.session_changed(Some(tokens.user_id.clone()));
     core.begin_activity(
         "vertical-slice-join".into(),
-        args[4].clone(),
+        config.room_id.clone(),
         "vertical-slice-device".into(),
     );
     let joined = client
         .join(
             &tokens.access_token,
-            &args[4],
+            &config.room_id,
             "vertical-slice-device",
             None,
             "vertical-slice-join",
@@ -41,7 +62,7 @@ async fn run() -> Result<(), String> {
         .network_grant(
             &tokens.access_token,
             &joined.activity_id,
-            "cHVibGljLWtleQ==",
+            "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
         )
         .await
         .map_err(error)?;
