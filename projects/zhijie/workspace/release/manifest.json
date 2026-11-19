@@ -31,8 +31,8 @@
     {
       "path": "packaging/windows/verify-package.py",
       "artifactClass": "configuration",
-      "bytes": 3301,
-      "sha256": "c3bcf25fb5b3c02d3fc67a825f1456e228c474d767f0f3f20b92fcb8ddffb6ac"
+      "bytes": 4977,
+      "sha256": "ab0876247dcd91e1a0e4dca088505eeb1bae609892bf6f94a8af05fe85dd4402"
     },
     {
       "path": "packaging/windows/prepare-wintun.py",
