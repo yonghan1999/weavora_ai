@@ -27,6 +27,21 @@ test("only current group managers outside the paused room see its reopen action"
   assert.ok(!renderApp(state).includes('data-action="reopen-room"'));
 });
 
+test("only a manager of the idle room can start an activity, without joining it", () => {
+  const room = { id: "room", groupId: "group", name: "目标房间", openState: "OPEN" };
+  const state = { userId: "viewer", view: "group", groupId: "group", groups: [{ id: "group", name: "test" }],
+    rooms: [room], drafts: {}, groupMembers: [], messages: [] };
+  for (const [role, owner, expected] of [["OWNER", "other", true], ["ADMIN", "other", true],
+    ["MEMBER", "viewer", true], ["MEMBER", "other", false], [null, "viewer", false]]) {
+    state.groupMembers = role ? [{ userId: state.userId, role }] : [];
+    room.ownerUserId = owner;
+    const html = renderApp(state);
+    assert.equal(html.includes('data-action="start-room-activity"'), expected);
+    assert.equal(html.includes("等待管理者开启活动"), !expected);
+    assert.ok(!html.includes('data-action="join-room"'));
+  }
+});
+
 test("network panel explains only the current activity's unresolved fault", () => {
   const state = { userId: "viewer", view: "room", roomTab: "network", roomId: "r", groupId: "g",
     groups: [{id: "g", name: "group"}], rooms: [{id: "r", name: "room"}], members: [],

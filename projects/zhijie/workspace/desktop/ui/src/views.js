@@ -94,6 +94,11 @@ function rail(s) {
 function roomEntry(state, room, withArrow = false) {
   const current = state.activity && state.roomId === room.id;
   const paused = room.openState !== "OPEN";
+  if (!current && !paused && !room.currentActivityId) {
+    if (state.view === "lobby") return button("查看群内房间", "open-group", "small", `data-id="${e(room.groupId)}" ${state.busy ? "disabled" : ""}`);
+    if (roomPermissions(state, room).manage) return button("开启活动", "start-room-activity", "small", `data-id="${e(room.id)}" ${state.busy ? "disabled" : ""}`);
+    return '<span class="room-waiting">等待管理者开启活动</span>';
+  }
   const label = current ? "回到房间" : paused ? "暂停加入" : "加入房间";
   return button(label + (withArrow ? ` ${icon("arrow", 14)}` : ""), current ? "open-room" : "join-room", "small",
     `data-id="${e(room.id)}" ${state.busy || (!current && paused) ? "disabled" : ""}`);

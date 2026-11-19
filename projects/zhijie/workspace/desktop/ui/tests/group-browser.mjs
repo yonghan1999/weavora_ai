@@ -355,9 +355,18 @@ async function roomChannels() {
   await owner.wait('ending activity leaves owner outside paused room', `!document.querySelector('.voice-dock') && document.querySelector('.room-card [data-action=join-room]')?.disabled && document.querySelector('.room-waiting')?.textContent==='等待开启活动'`);
   await owner.click('[data-view=groups]'); await owner.action('open-group'); await owner.action('reopen-room');
   await owner.submit();
-  await member.wait('ordinary member sees reopened room via sync', `document.querySelector('.group-room-item [data-action=join-room]')?.disabled===false && !document.querySelector('[data-action=reopen-room]')`);
+  await member.wait('ordinary member waits for manager to start after reopening', `document.querySelector('.group-room-item')?.textContent.includes('等待管理者开启活动') && !document.querySelector('.group-room-item button')`);
   assert.equal((await native(owner, 'state_snapshot')).activity, null);
   console.log('ROOM_REOPENED_OUTSIDE_WITHOUT_START_OR_JOIN');
+  await owner.click('[data-view=lobby]'); await owner.click('.room-card [data-action=open-group]');
+  await owner.action('start-room-activity'); await owner.submit();
+  await member.wait('new activity enables join for ordinary member', `document.querySelector('.group-room-item [data-action=join-room]')?.disabled===false`);
+  assert.equal((await native(owner, 'state_snapshot')).activity, null);
+  await member.click('.group-room-item [data-action=join-room]'); await member.submit();
+  await member.wait('member entered the new activity', `!!document.querySelector('.room-stage') && !document.querySelector('[role=dialog]')`);
+  const restarted = (await native(member, 'state_snapshot')).activity;
+  assert.ok(restarted?.activityId && restarted.activityId !== previous.activityId);
+  console.log('MANAGER_STARTED_NEW_ACTIVITY_MEMBER_JOINED');
   console.log(`ROOM_CHANNEL_FAILURE_CHAT_KICK_REJOIN_LEAVE_OK kick_ms=${elapsed}`);
 }
 

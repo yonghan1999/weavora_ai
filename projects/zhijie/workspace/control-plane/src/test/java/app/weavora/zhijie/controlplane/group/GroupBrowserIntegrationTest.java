@@ -122,7 +122,8 @@ class GroupBrowserIntegrationTest {
             assertThat(sql.queryForList("SELECT revoked_at IS NOT NULL FROM connection_leases WHERE activity_id=? AND user_id=?", Boolean.class, activity.id(), owner)).containsExactly(true);
             var reopened = rooms.getRoom(owner, room.id());
             assertThat(reopened.openState()).isEqualTo(app.weavora.zhijie.controlplane.room.RoomOpenState.OPEN);
-            assertThat(reopened.currentActivityId()).isNull();
+            assertThat(reopened.currentActivityId()).isNotNull().isNotEqualTo(activity.id());
+            assertThat(sql.queryForList("SELECT user_id FROM connection_leases WHERE activity_id=? AND revoked_at IS NULL", String.class, reopened.currentActivityId())).containsExactly(member);
             assertThat(sql.queryForObject("SELECT count(*) FROM activity_grants WHERE activity_id=? AND user_id=? AND kind='NETWORK' AND member_generation=1 AND revoked_at IS NOT NULL", Integer.class, activity.id(), member)).isGreaterThan(0);
             assertThat(sql.queryForObject("SELECT count(*) FROM connection_leases WHERE activity_id=? AND user_id=? AND revoked_at IS NULL", Integer.class, activity.id(), member)).isZero();
             assertThat(sql.queryForObject("SELECT state FROM activity_members WHERE activity_id=? AND user_id=? AND member_generation=2", String.class, activity.id(), member)).isEqualTo("LEFT");

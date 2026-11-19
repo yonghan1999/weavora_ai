@@ -212,6 +212,7 @@ const errors = {
   GROUP_MEMBER_EXISTS: "该账号已是群成员。",
   GROUP_AVATAR_INVALID: "头像未保存，请选择 2 MiB 以内的有效 PNG 或 JPEG 图片。",
   ACTIVITY_MEMBER_CHANGED: "成员已离开或重新加入，请刷新成员列表后重试。",
+  ACTIVITY_NOT_ACTIVE: "房间当前没有活动，请等管理者开启后再加入。",
   VOICE_CAPACITY_LIMITED: "语音服务尚未接入或暂不可用。",
   ROOM_PASSWORD_REQUIRED: "请输入房间密码。",
   ROOM_REOPEN_OUTSIDE_REQUIRED: "请先离开该房间，再在群页重新开放。",
@@ -384,7 +385,6 @@ async function joinRoom(id, password = null) {
     await loadContext();
     return;
   }
-  if (!r.currentActivityId) await request("activity-start", id, {});
   const result = await bridge.join(id, deviceId, password, crypto.randomUUID());
   Object.assign(s, result, {
     roomId: id,
@@ -939,6 +939,14 @@ const actions = {
       } : null,
       "保存",
     );
+  },
+  "start-room-activity": target => {
+    const room = s.rooms.find(item => item.id === target.dataset.id && item.groupId === s.groupId);
+    if (!room || room.openState !== "OPEN" || room.currentActivityId || !roomPermissions(s, room).manage) return;
+    confirmation("开启活动", `在「${room.name}」开启一次新活动？成员仍需自行加入。`, async () => {
+      await request("activity-start", room.id, {});
+      await refresh();
+    });
   },
   "reopen-room": target => {
     const room = s.rooms.find(item => item.id === target.dataset.id && item.groupId === s.groupId);

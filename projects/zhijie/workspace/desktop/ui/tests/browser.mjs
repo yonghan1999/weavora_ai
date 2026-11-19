@@ -147,6 +147,7 @@ if(p.resource==='group-members')return structuredClone(groupMembers);
 if(p.resource==='group-member-role'||p.resource==='group-member-remove'){await new Promise(r=>setTimeout(r,memberChangeDelay));if(failMemberChange)throw 'CURRENT_GRANT_REQUIRED';if(p.resource==='group-member-role')groupMembers.find(m=>m.userId===p.targetId).role=p.body.role;else groupMembers=groupMembers.filter(m=>m.userId!==p.targetId);return {};}
 if(p.resource==='activity-members')return structuredClone(activityMembers);
 if(p.resource==='room-open'){if(globalThis.denyReopen)throw 'CURRENT_GRANT_REQUIRED';room.openState='OPEN';return structuredClone(room);}
+if(p.resource==='activity-start'){if(globalThis.denyStart)throw 'CURRENT_GRANT_REQUIRED';room.currentActivityId='a1';return {id:'a1'};}
 if(p.resource==='room-owner'){await new Promise(r=>setTimeout(r,roomGovernanceDelay));if(failRoomGovernance)throw 'CURRENT_GRANT_REQUIRED';room.ownerUserId=p.body.targetUserId;return structuredClone(room);}
 if(p.resource==='activity-kick'){await new Promise(r=>setTimeout(r,roomGovernanceDelay));if(failRoomGovernance)throw 'ACTIVITY_MEMBER_CHANGED';activityMembers=activityMembers.filter(m=>m.userId!==p.targetId);return {};}
 if(p.resource==='messages'){if(globalThis.throttleMessages){globalThis.throttledReads++;throw 'RATE_LIMITED';}const rows=[...messages].reverse();if(!p.targetId)return rows.slice(0,50);if(globalThis.failHistory)throw 'SERVICE_UNAVAILABLE';const index=rows.findIndex(row=>row.id===p.targetId);return index<0?[]:rows.slice(index+1,index+51);}
@@ -595,7 +596,7 @@ try {
   await evaluate('globalThis.syncCalls=calls.length;emitProduct({userId:"other-account"})');
   await delay(700);
   await check("其他账号同步通知不触发资源读取", 'calls.slice(syncCalls).every(x=>x.command!=="group_list" && x.command!=="room_list" && x.p.resource!=="messages")');
-  await evaluate('room.openState="PAUSED"');
+  await evaluate('room.openState="PAUSED";room.currentActivityId=null');
   await click('[data-view="lobby"]');
   await click('[data-action="refresh"]');
   await check("大厅禁止新加入暂停房间", 'document.querySelector(".room-card [data-action=join-room]")?.disabled');
@@ -606,7 +607,13 @@ try {
   await click('[data-action="reopen-room"]'); await evaluate('globalThis.denyReopen=true;document.querySelector("[data-form=dialog]").requestSubmit()'); await delay(150);
   await check("重新开放被拒时保留暂停状态", 'room.openState==="PAUSED" && document.getElementById("dialog-error").textContent.includes("没有执行")');
   await evaluate('denyReopen=false;document.querySelector("[data-form=dialog]").requestSubmit()'); await delay(150);
-  await check("确认重新开放后不自动加入", 'document.querySelector(".group-room-item [data-action=join-room]")?.disabled===false && !activity && calls.some(x=>x.p.resource==="room-open" && x.p.id==="r1")');
+  await check("重新开放但无活动时管理者只能开启，不能直接加入", '!!document.querySelector(".group-room-item [data-action=start-room-activity]") && !document.querySelector(".group-room-item [data-action=join-room]") && !activity && !room.currentActivityId');
+  await click('[data-action="start-room-activity"]'); await click('[data-action="dialog-close"]');
+  await check("取消开启不发出管理命令", '!calls.some(x=>x.p.resource==="activity-start")');
+  await click('[data-action="start-room-activity"]'); await evaluate('globalThis.denyStart=true;document.querySelector("[data-form=dialog]").requestSubmit()'); await delay(150);
+  await check("开启被拒时不伪造活动", '!room.currentActivityId && document.getElementById("dialog-error").textContent.includes("没有执行")');
+  await evaluate('denyStart=false;document.querySelector("[data-form=dialog]").requestSubmit()'); await delay(150);
+  await check("开启成功后可加入但不替管理者入房", 'document.querySelector(".group-room-item [data-action=join-room]")?.disabled===false && !activity && !calls.some(x=>x.command==="activity_join")');
   await click('[data-view="lobby"]'); await click('[data-action="refresh"]');
   await evaluate('globalThis.holdVoice=true');
   await click('[data-action="join-room"]');
