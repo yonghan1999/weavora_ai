@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "scope": "supplementary_official_license_texts",
+  "releaseApproved": false,
+  "reviewStatus": "unreviewed",
+  "limitations": [
+    "Generic license text does not establish applicability to each dependency",
+    "Current project pages are not immutable version-specific grants",
+    "HTML saved unchanged; no scripts executed",
+    "Failed downloads remain unresolved"
+  ],
+  "documents": [
+    {
+      "id": "apache-2.0",
+      "requestedUrl": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+      "reviewStatus": "unreviewed",
+      "retrievedAt": "2026-11-18T08:04:58.639246+00:00",
+      "status": "collected_not_reviewed",
+      "finalUrl": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+      "mediaType": "text/plain",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "file": "texts/cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30.txt"
+    },
+    {
+      "id": "epl-1.0",
+      "requestedUrl": "https://www.eclipse.org/legal/epl-v10.html",
+      "reviewStatus": "unreviewed",
+      "retrievedAt": "2026-11-18T08:04:58.640195+00:00",
+      "status": "collected_not_reviewed",
+      "finalUrl": "https://www.eclipse.org/legal/epl/epl-v10.html",
+      "mediaType": "text/html",
+      "bytes": 12637,
+      "sha256": "a40741b59364cc49449255e9b9bfe1fcfe6a2e7ab4d37ca89db3bacbfb14e9d2",
+      "file": "texts/a40741b59364cc49449255e9b9bfe1fcfe6a2e7ab4d37ca89db3bacbfb14e9d2.html"
+    },
+    {
+      "id": "lgpl-2.1",
+      "requestedUrl": "https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html",
+      "reviewStatus": "unreviewed",
+      "retrievedAt": "2026-11-18T08:04:58.640959+00:00",
+      "status": "retrieval_failed",
+      "errorCategory": "URLError"
+    },
+    {
+      "id": "cc0-1.0",
+      "requestedUrl": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.en",
+      "reviewStatus": "unreviewed",
+      "retrievedAt": "2026-11-18T08:04:58.641763+00:00",
+      "status": "retrieval_failed",
+      "errorCategory": "HTTPError"
+    },
+    {
+      "id": "asm-current-license",
+      "requestedUrl": "https://asm.ow2.io/license.html",
+      "reviewStatus": "unreviewed",
+      "retrievedAt": "2026-11-18T08:04:59.346849+00:00",
+      "status": "collected_not_reviewed",
+      "finalUrl": "https://asm.ow2.io/license.html",
+      "mediaType": "text/html; charset=utf-8",
+      "bytes": 3117,
+      "sha256": "5feb76d8adda38acdeeba4e4301d0d8633bb0f40e1e802948b13cee21e68610e",
+      "file": "texts/5feb76d8adda38acdeeba4e4301d0d8633bb0f40e1e802948b13cee21e68610e.html"
+    },
+    {
+      "id": "xz-java-v1.11-copying",
+      "requestedUrl": "https://raw.githubusercontent.com/tukaani-project/xz-java/v1.11/COPYING",
+      "reviewStatus": "unreviewed",
+      "retrievedAt": "2026-11-18T08:04:59.382049+00:00",
+      "status": "collected_not_reviewed",
+      "finalUrl": "https://raw.githubusercontent.com/tukaani-project/xz-java/v1.11/COPYING",
+      "mediaType": "text/plain; charset=utf-8",
+      "bytes": 663,
+      "sha256": "1e77ef26cee5216d6531e49cbf2f6111a0270dc7b322fc65477063c5aff88766",
+      "file": "texts/1e77ef26cee5216d6531e49cbf2f6111a0270dc7b322fc65477063c5aff88766.txt"
+    }
+  ]
+}

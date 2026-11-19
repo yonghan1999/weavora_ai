@@ -4,3 +4,5 @@ cargo-license-header-materials/texts/* binary
 cargo-upstream-license-materials/texts/* binary
 maven-binary-license-originals/texts/* binary
 maven-source-license-materials/texts/* binary
+maven-source-license-materials/logback-source-headers.json -text whitespace=trailing-space,space-before-tab,cr-at-eol
+maven-source-license-materials/official-texts.json -text whitespace=trailing-space,space-before-tab,cr-at-eol

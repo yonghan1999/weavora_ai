@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "scope": "exact_source_header_material",
+  "releaseApproved": false,
+  "documents": [
+    {
+      "coordinate": "ch.qos.logback:logback-classic:jar:1.5.18:compile",
+      "sourceSha256": "56bc4cc1eb147a7c172463b706f1cd521e83d5a659d1360018cb55dfe008ba20",
+      "entry": "ch/qos/logback/classic/AsyncAppender.java",
+      "excerpt": "leading source copyright/license comment only",
+      "file": "texts/79e01a8384de166cd6835dcad524cb805c2171a5432178864e0ab912bee31fb8.txt",
+      "sha256": "79e01a8384de166cd6835dcad524cb805c2171a5432178864e0ab912bee31fb8",
+      "bytes": 484,
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "coordinate": "ch.qos.logback:logback-core:jar:1.5.18:compile",
+      "sourceSha256": "cd66a21d2c396b9afd1fac8e27ca2660883903783ab104009b34be4c50db6b16",
+      "entry": "ch/qos/logback/core/Appender.java",
+      "excerpt": "leading source copyright/license comment only",
+      "file": "texts/79e01a8384de166cd6835dcad524cb805c2171a5432178864e0ab912bee31fb8.txt",
+      "sha256": "79e01a8384de166cd6835dcad524cb805c2171a5432178864e0ab912bee31fb8",
+      "bytes": 484,
+      "reviewStatus": "unreviewed"
+    }
+  ]
+}

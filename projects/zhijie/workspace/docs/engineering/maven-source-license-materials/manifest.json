@@ -1,0 +1,590 @@
+{
+  "schemaVersion": 1,
+  "scope": "maven_central_source_license_materials",
+  "inputSha256": "04ee98a339017c885ab7f7cc206d0bc07479a3d78ff9868502b8bb898e748f47",
+  "reviewStatus": "unreviewed",
+  "releaseApproved": false,
+  "limitations": [
+    "Exact-version sources are supplementary; binary obligations and shaded/native components require review",
+    "Central sidecar checksums are not independent signatures or legal approval",
+    "Missing source packages or license members remain unresolved"
+  ],
+  "summary": {
+    "dependencies": 26,
+    "withCollectedDocuments": 0,
+    "uniqueTexts": 0,
+    "reviewed": 0
+  },
+  "dependencies": [
+    {
+      "coordinate": "ch.qos.logback:logback-classic:jar:1.5.18:compile",
+      "scope": "compile",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Public License - v 1.0",
+          "url": "http://www.eclipse.org/legal/epl-v10.html"
+        },
+        {
+          "name": "GNU Lesser General Public License",
+          "url": "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-classic/1.5.18/logback-classic-1.5.18-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "56bc4cc1eb147a7c172463b706f1cd521e83d5a659d1360018cb55dfe008ba20",
+      "sourceBytes": 247857,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "c18967160fa1b855dd90a43d69e7bad0328cf19c",
+        "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-classic/1.5.18/logback-classic-1.5.18-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "ch.qos.logback:logback-core:jar:1.5.18:compile",
+      "scope": "compile",
+      "declaredLicenses": [
+        {
+          "name": "Eclipse Public License - v 1.0",
+          "url": "http://www.eclipse.org/legal/epl-v10.html"
+        },
+        {
+          "name": "GNU Lesser General Public License",
+          "url": "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-core/1.5.18/logback-core-1.5.18-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "cd66a21d2c396b9afd1fac8e27ca2660883903783ab104009b34be4c50db6b16",
+      "sourceBytes": 491636,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "f0838c78e8957d0ea1a6b55a2df250bf2d559d9c",
+        "url": "https://repo.maven.apache.org/maven2/ch/qos/logback/logback-core/1.5.18/logback-core-1.5.18-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "com.jayway.jsonpath:json-path:jar:2.9.0:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "67d18b2ebb7b946c781310b9c3d0232f44b7a98278be28afe62a9e658806d088",
+      "sourceBytes": 134599,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "67d18b2ebb7b946c781310b9c3d0232f44b7a98278be28afe62a9e658806d088",
+        "url": "https://repo.maven.apache.org/maven2/com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "com.vaadin.external.google:android-json:jar:0.0.20131108.vaadin1:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "Apache License 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "54c781eea645c450cbbc4a5a1b5a474745465452cec1354cb567b781ea6622c3",
+      "sourceBytes": 22294,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "bf42d7e47a3228513b626dd7d37ac6f072aeca4f",
+        "url": "https://repo.maven.apache.org/maven2/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "com.zaxxer:HikariCP:jar:6.3.3:compile",
+      "scope": "compile",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/com/zaxxer/HikariCP/6.3.3/HikariCP-6.3.3-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "65a247c9ddb809885696ad2dbb1e77e923debc82c94972ca4c48f40a83c0e0a5",
+      "sourceBytes": 102075,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "acee821b85e3825f4f2de1bcc3b529c015bcb2ab",
+        "url": "https://repo.maven.apache.org/maven2/com/zaxxer/HikariCP/6.3.3/HikariCP-6.3.3-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "io.zonky.test.postgres:embedded-postgres-binaries-darwin-amd64:jar:14.22.0:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-darwin-amd64/14.22.0/embedded-postgres-binaries-darwin-amd64-14.22.0-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "50952499772680b10478bdee5916819f5d66d8360973c4ec5464b217eb7f015f",
+      "sourceBytes": 261,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "50952499772680b10478bdee5916819f5d66d8360973c4ec5464b217eb7f015f",
+        "url": "https://repo.maven.apache.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-darwin-amd64/14.22.0/embedded-postgres-binaries-darwin-amd64-14.22.0-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "io.zonky.test.postgres:embedded-postgres-binaries-linux-amd64-alpine:jar:14.22.0:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64-alpine/14.22.0/embedded-postgres-binaries-linux-amd64-alpine-14.22.0-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "eb4b9e5e720e764a42eb846161aeacfa7e9d7c85f56dee6fa5cb38434a7cd245",
+      "sourceBytes": 261,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "eb4b9e5e720e764a42eb846161aeacfa7e9d7c85f56dee6fa5cb38434a7cd245",
+        "url": "https://repo.maven.apache.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64-alpine/14.22.0/embedded-postgres-binaries-linux-amd64-alpine-14.22.0-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "io.zonky.test.postgres:embedded-postgres-binaries-linux-amd64:jar:14.22.0:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/14.22.0/embedded-postgres-binaries-linux-amd64-14.22.0-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "5a6fa78b720eafeb6c644b9806aaf540ebae63cfa19bbe4f5c9776a7560021bb",
+      "sourceBytes": 261,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "5a6fa78b720eafeb6c644b9806aaf540ebae63cfa19bbe4f5c9776a7560021bb",
+        "url": "https://repo.maven.apache.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/14.22.0/embedded-postgres-binaries-linux-amd64-14.22.0-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "io.zonky.test.postgres:embedded-postgres-binaries-windows-amd64:jar:17.5.0:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-windows-amd64/17.5.0/embedded-postgres-binaries-windows-amd64-17.5.0-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "54a832a2af11b204238dedd4568f9fd24d346aecccd9a1ab44594ea994918c0b",
+      "sourceBytes": 261,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "54a832a2af11b204238dedd4568f9fd24d346aecccd9a1ab44594ea994918c0b",
+        "url": "https://repo.maven.apache.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-windows-amd64/17.5.0/embedded-postgres-binaries-windows-amd64-17.5.0-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "io.zonky.test:embedded-postgres:jar:2.2.2:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "The Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/io/zonky/test/embedded-postgres/2.2.2/embedded-postgres-2.2.2-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "333939edcfb5941c7bc929abcce9c3f068736f501f47b84fc6df9c96df2dd1b6",
+      "sourceBytes": 35536,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "9927f9b7e891e54deb5264360953aa37d1e6a623",
+        "url": "https://repo.maven.apache.org/maven2/io/zonky/test/embedded-postgres/2.2.2/embedded-postgres-2.2.2-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "jakarta.validation:jakarta.validation-api:jar:3.0.2:compile",
+      "scope": "compile",
+      "declaredLicenses": [
+        {
+          "name": "Apache License 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "77df917738f0f91718dfc5456d1f2b5aaa6326f3bf3bdf5606cf64f6c0512689",
+      "sourceBytes": 97946,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "b1581d1ef516be94c473c0f4d97e59e394c70150",
+        "url": "https://repo.maven.apache.org/maven2/jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "net.minidev:accessors-smart:jar:2.5.2:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo",
+          "comments": "All files under Apache 2"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/net/minidev/accessors-smart/2.5.2/accessors-smart-2.5.2-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "4a117c159c18eadb1fba332c1040fb76492e6001b1c1ed1fd9e41624fda68e6d",
+      "sourceBytes": 24664,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "a15e4228860d5dbb6b7c18070ee6cc798b5be48a",
+        "url": "https://repo.maven.apache.org/maven2/net/minidev/accessors-smart/2.5.2/accessors-smart-2.5.2-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "net.minidev:json-smart:jar:2.5.2:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo",
+          "comments": "All files under Apache 2"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/net/minidev/json-smart/2.5.2/json-smart-2.5.2-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "145a8b3b32c7ce80c553894ef50455eb06c15815aa65cd47fdf37bf64b7e5eb7",
+      "sourceBytes": 65191,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "54ce4d95aae22766435b59a24c2dd4e35696e471",
+        "url": "https://repo.maven.apache.org/maven2/net/minidev/json-smart/2.5.2/json-smart-2.5.2-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.assertj:assertj-core:jar:3.27.4:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/assertj/assertj-core/3.27.4/assertj-core-3.27.4-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "a696a0a98ef4ea0e37c6d799ea651556cdf5d5a1880ee843db6901a9cf86e9a4",
+      "sourceBytes": 1453274,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "a696a0a98ef4ea0e37c6d799ea651556cdf5d5a1880ee843db6901a9cf86e9a4",
+        "url": "https://repo.maven.apache.org/maven2/org/assertj/assertj-core/3.27.4/assertj-core-3.27.4-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.awaitility:awaitility:jar:4.2.2:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "Apache 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/awaitility/awaitility/4.2.2/awaitility-4.2.2-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "b0f6547e305fb6e8196b91ac9bdadd81fb62264a21ba85f9484d391851c8c706",
+      "sourceBytes": 79333,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "e42153d2401c2c827729bd340fdee335875ddfd3",
+        "url": "https://repo.maven.apache.org/maven2/org/awaitility/awaitility/4.2.2/awaitility-4.2.2-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.flywaydb:flyway-database-postgresql:jar:11.7.2:compile",
+      "scope": "compile",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "https://flywaydb.org/licenses/flyway-oss",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/flywaydb/flyway-database-postgresql/11.7.2/flyway-database-postgresql-11.7.2-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "eeb124c67acef84a3d35e8190e1662a5acc7ccd4e1cbbac76962a4108effce83",
+      "sourceBytes": 35834,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "38bf5c480c375925f66bd75f0aad82d227259795",
+        "url": "https://repo.maven.apache.org/maven2/org/flywaydb/flyway-database-postgresql/11.7.2/flyway-database-postgresql-11.7.2-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.hibernate.validator:hibernate-validator:jar:8.0.3.Final:compile",
+      "scope": "compile",
+      "declaredLicenses": [
+        {
+          "name": "Apache License 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/hibernate/validator/hibernate-validator/8.0.3.Final/hibernate-validator-8.0.3.Final-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "5505b435dfc8887ebe2d272831bd77a7e984061e477182932fef897cdc3e197d",
+      "sourceBytes": 950225,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "5505b435dfc8887ebe2d272831bd77a7e984061e477182932fef897cdc3e197d",
+        "url": "https://repo.maven.apache.org/maven2/org/hibernate/validator/hibernate-validator/8.0.3.Final/hibernate-validator-8.0.3.Final-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.jboss.logging:jboss-logging:jar:3.6.1.Final:compile",
+      "scope": "compile",
+      "declaredLicenses": [
+        {
+          "name": "Apache License 2.0",
+          "url": "https://repository.jboss.org/licenses/apache-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/jboss/logging/jboss-logging/3.6.1.Final/jboss-logging-3.6.1.Final-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "43b7c5b4bae1711ffa6b825095555969f4b5455e5cd1b4637f4d30e5ca8f7f5a",
+      "sourceBytes": 46515,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "47222642c3ede6f40f3e27594fe6a9bf180b6938",
+        "url": "https://repo.maven.apache.org/maven2/org/jboss/logging/jboss-logging/3.6.1.Final/jboss-logging-3.6.1.Final-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.latencyutils:LatencyUtils:jar:2.0.3:runtime",
+      "scope": "runtime",
+      "declaredLicenses": [
+        {
+          "name": "Public Domain, per Creative Commons CC0",
+          "url": "http://creativecommons.org/publicdomain/zero/1.0/",
+          "comments": "* This code was Written by Gil Tene of Azul Systems, and released to the\n                * public domain, as explained at http://creativecommons.org/publicdomain/zero/1.0/"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "717e271b5d67c190afba092795d79bba496434256aca7151cf6a02f83564e724",
+      "sourceBytes": 19102,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "fbc38259e2077a428984637d811dac542a6a913e",
+        "url": "https://repo.maven.apache.org/maven2/org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.mybatis.spring.boot:mybatis-spring-boot-autoconfigure:jar:3.0.5:compile",
+      "scope": "compile",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/mybatis/spring/boot/mybatis-spring-boot-autoconfigure/3.0.5/mybatis-spring-boot-autoconfigure-3.0.5-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "b6cdd4f95aedb1a910088dba5eea2907ac9a25f168450932de73dcc2543e0ffa",
+      "sourceBytes": 20794,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "b6cdd4f95aedb1a910088dba5eea2907ac9a25f168450932de73dcc2543e0ffa",
+        "url": "https://repo.maven.apache.org/maven2/org/mybatis/spring/boot/mybatis-spring-boot-autoconfigure/3.0.5/mybatis-spring-boot-autoconfigure-3.0.5-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.mybatis.spring.boot:mybatis-spring-boot-starter:jar:3.0.5:compile",
+      "scope": "compile",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/mybatis/spring/boot/mybatis-spring-boot-starter/3.0.5/mybatis-spring-boot-starter-3.0.5-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "a3d31136aae957e7961f835a28875a5318e4a3c23ca6a7951a3fedd7c3bf9d8c",
+      "sourceBytes": 3668,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "a3d31136aae957e7961f835a28875a5318e4a3c23ca6a7951a3fedd7c3bf9d8c",
+        "url": "https://repo.maven.apache.org/maven2/org/mybatis/spring/boot/mybatis-spring-boot-starter/3.0.5/mybatis-spring-boot-starter-3.0.5-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.ow2.asm:asm:jar:9.7.1:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "BSD-3-Clause",
+          "url": "https://asm.ow2.io/license.html"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.7.1/asm-9.7.1-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "22e9507b0c494daaedb33b8148c30cd618c6dacc3992be8b50eaaafeb6a8ba8d",
+      "sourceBytes": 184800,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "22e9507b0c494daaedb33b8148c30cd618c6dacc3992be8b50eaaafeb6a8ba8d",
+        "url": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.7.1/asm-9.7.1-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.skyscreamer:jsonassert:jar:1.5.3:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/skyscreamer/jsonassert/1.5.3/jsonassert-1.5.3-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "a825c29f8cc40f85ea4e7a431a55d4278a785c34acdeef4cd1be7367f70ea6bb",
+      "sourceBytes": 30213,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "a0820ac5c558fe0032d3d400792b184bf960a328",
+        "url": "https://repo.maven.apache.org/maven2/org/skyscreamer/jsonassert/1.5.3/jsonassert-1.5.3-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.tukaani:xz:jar:1.11:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "0BSD",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/tukaani/xz/1.11/xz-1.11-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "aab470d8c28e718859f9c1f333ed693f926cd44d8e55851c0dda27dd4a6d568c",
+      "sourceBytes": 156496,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "aab470d8c28e718859f9c1f333ed693f926cd44d8e55851c0dda27dd4a6d568c",
+        "url": "https://repo.maven.apache.org/maven2/org/tukaani/xz/1.11/xz-1.11-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.xmlunit:xmlunit-core:jar:2.10.4:test",
+      "scope": "test",
+      "declaredLicenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/xmlunit/xmlunit-core/2.10.4/xmlunit-core-2.10.4-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "bb8dba65e8bc1ade346e4bfd98d7f620f51ae8b9034e9758cd6f3031838e79fd",
+      "sourceBytes": 110885,
+      "centralChecksum": {
+        "algorithm": "sha256",
+        "value": "bb8dba65e8bc1ade346e4bfd98d7f620f51ae8b9034e9758cd6f3031838e79fd",
+        "url": "https://repo.maven.apache.org/maven2/org/xmlunit/xmlunit-core/2.10.4/xmlunit-core-2.10.4-sources.jar.sha256"
+      },
+      "status": "no_source_license_documents"
+    },
+    {
+      "coordinate": "org.yaml:snakeyaml:jar:2.4:compile",
+      "scope": "compile",
+      "declaredLicenses": [
+        {
+          "name": "Apache License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ],
+      "sourceUrl": "https://repo.maven.apache.org/maven2/org/yaml/snakeyaml/2.4/snakeyaml-2.4-sources.jar",
+      "reviewStatus": "unreviewed",
+      "documents": [],
+      "sourceSha256": "0a3c537e86cbb13a9a31ab138c13cee0b2c2cedc17dba38e0dc1f24a2053d8af",
+      "sourceBytes": 209871,
+      "centralChecksum": {
+        "algorithm": "sha1",
+        "value": "57156e2c0fc25e1aecce6ea754fa9aefc8eda671",
+        "url": "https://repo.maven.apache.org/maven2/org/yaml/snakeyaml/2.4/snakeyaml-2.4-sources.jar.sha1"
+      },
+      "status": "no_source_license_documents"
+    }
+  ]
+}
