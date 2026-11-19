@@ -2,9 +2,11 @@
 
 ## 本机试用（不安装）
 
-本机首次试用请搭配**桌面 `3bbc939` 和[离线后端](preview-backend.md) `6a908d1`**。新版桌面通过认证请求头同步消息，不再把访问令牌放入 WebSocket URL。旧后端不支持这种握手方式：已有试用数据时，先保留原桌面和后端组合，或按后端说明停库、备份并核验迁移后再换桌面。不要覆盖数据库，或在同一端口启动两套后端。旧桌面 `target/trial-ab8d325` 保留；新便携目录不共享旧版 WebView 数据，可能需要重新登录。
+本机首次试用请搭配**桌面 `36e5d7a` 和[离线后端](preview-backend.md) `6a908d1`**。房间暂停时，大厅和群页都会阻止新加入，但已在房内的成员可以直接返回；从另一个群返回时，聊天和草稿按群区分。可用一个房主账号暂停房间，返回大厅后从房卡回去，再从群页返回，均不应要求再次加入。
 
-桌面安装包 `target/trial-3bbc939/织界_0.1.0_x64-setup.exe` 为 12,080,333 字节，SHA-256：`f84e6d376d23d745632103b92e5cceeee307dbecdcd0e68d5460dfeaa62b7546`。普通用户无需运行这个未签名安装器。包内八个产品文件与构建输入、便携副本逐一匹配。从该提交导出的源码通过 11 项界面单测和 156 项无头浏览器检查；15 项 Rust 核心测试包含对握手 URL 和认证头的断言。使用同版 Rust 同步探针连接独立解压的后端包，验证了实时接收、断线补收和令牌轮换后重连。记录在 `target/win-3bbc939/`：`unit.log`、`browser.json`、`core.log`、`package-sync.log`、`payload.json` 和 `portable.log`。这些检查没有启动图形桌面、运行安装器或验证实际通话。
+已经使用 `6a908d1` 后端的用户不用迁移数据库或重设密码。旧桌面 `target/trial-3bbc939` 保留；新便携目录不共享旧版 WebView 数据，可能需要重新登录。更早的后端不支持新版桌面的同步认证头，已有数据请按后端说明停库、备份并核验恢复副本，再换桌面。不要覆盖数据库或同时占用同一端口。
+
+未签名安装包 `target/trial-36e5d7a/织界_0.1.0_x64-setup.exe` 为 12,078,797 字节，SHA-256：`ebc9cae4e34e40b62c28b716c50e795d5056adfdff4983c36e49f2190cefd410`。便携试用不需要运行安装器。八个产品文件与构建输入及便携副本逐一匹配；从桌面程序内取出的六个脚本、三份样式与该提交逐字节一致。界面单测 11 项通过，用这九份打包资源运行无头浏览器检查 162 项通过。记录见 `target/win-36e5d7a/` 的 `unit.log`、`embedded.log`、`embedded-browser.json`、`payload.json` 和 `portable.log`。同版源码另用两个原生测试客户端连独立后端验证了暂停后保留当前租约，见 `target/group-browser-room-channels-1330634412420445968/scenario.log`。以上不代表已运行图形桌面或已验收安装、真实语音和虚拟网卡。
 
 以下命令从本机 `projects/zhijie/workspace` 的普通 PowerShell 窗口执行。
 
@@ -15,8 +17,8 @@
 
 ```powershell
 # 先核对便携目录，再启动桌面，使用 trial@example.test 登录
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-3bbc939" --http-port 18829 --check-only
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-3bbc939" --http-port 18829
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-36e5d7a" --http-port 18829 --check-only
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-36e5d7a" --http-port 18829
 # 退出桌面后，仍从 workspace 停止本试用后端；数据库保留
 & "./target/trial-backend-6a908d1/scripts/local-preview/stop.ps1"
 ```
