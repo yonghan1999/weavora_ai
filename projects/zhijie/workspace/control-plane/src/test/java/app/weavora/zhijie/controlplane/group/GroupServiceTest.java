@@ -31,7 +31,8 @@ class GroupServiceTest {
         when(identity.requireActive(anyString())).thenAnswer(invocation -> new UserAccount(
                 invocation.getArgument(0), invocation.getArgument(0) + "@example.com", AccountStatus.ACTIVE, "hidden", Instant.now()
         ));
-        service = new GroupService(repository, identity, Clock.systemUTC(), mock(org.springframework.context.ApplicationEventPublisher.class));
+        service = new GroupService(repository, identity, Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), java.time.ZoneOffset.UTC), mock(org.springframework.context.ApplicationEventPublisher.class),
+                mock(app.weavora.zhijie.controlplane.audit.AuditRecorder.class), mock(app.weavora.zhijie.controlplane.sync.ProductSync.class));
     }
 
     @Test
@@ -42,12 +43,18 @@ class GroupServiceTest {
         GroupInvitation accepted = service.acceptInvitation("member", first.id());
         assertThat(accepted.status()).isEqualTo(InvitationStatus.ACCEPTED);
         assertThat(service.acceptInvitation("member", first.id())).isEqualTo(accepted);
-        assertThat(service.listMembers("member", group.id())).extracting(GroupMember::userId)
+        assertThat(service.listMembers("member", group.id())).extracting(GroupMemberView::userId)
                 .containsExactlyInAnyOrder("owner", "member");
 
+        service.changeRole("owner", group.id(), "member", GroupRole.ADMIN);
         service.removeMember("owner", group.id(), "member");
+        assertThatThrownBy(() -> service.acceptInvitation("member", first.id()))
+                .isInstanceOf(ApiException.class).extracting("code").isEqualTo("INVITATION_NOT_AVAILABLE");
         GroupInvitation second = service.invite("owner", group.id(), "member");
-        service.acceptInvitation("member", second.id());
+        var rejoined = service.acceptInvitation("member", second.id());
+        assertThat(service.acceptInvitation("member", second.id())).isEqualTo(rejoined);
+        assertThatThrownBy(() -> service.acceptInvitation("member", first.id()))
+                .isInstanceOf(ApiException.class).extracting("code").isEqualTo("INVITATION_NOT_AVAILABLE");
         assertThat(repository.findMember(group.id(), "member").orElseThrow().role()).isEqualTo(GroupRole.MEMBER);
     }
 
@@ -117,6 +124,7 @@ class GroupServiceTest {
 
         private String key(String groupId, String userId) { return groupId + ":" + userId; }
         public Optional<Group> findGroup(String groupId) { return Optional.ofNullable(groups.get(groupId)); }
+        public Optional<Group> lockGroup(String groupId) { return findGroup(groupId); }
         public List<Group> listGroupsForUser(String userId) {
             return groups.values().stream().filter(group -> group.status() == GroupStatus.ACTIVE)
                     .filter(group -> findMember(group.id(), userId).filter(m -> m.status() == MemberStatus.ACTIVE).isPresent()).toList();
@@ -124,6 +132,9 @@ class GroupServiceTest {
         public void insertGroup(Group group) { groups.put(group.id(), group); }
         public void updateGroup(Group group) { groups.put(group.id(), group); }
         public Optional<GroupMember> findMember(String groupId, String userId) { return Optional.ofNullable(members.get(key(groupId, userId))); }
+        public List<GroupMemberView> listVisibleMembers(String groupId, Instant onlineSince) {
+            return listActiveMembers(groupId).stream().map(member -> new GroupMemberView(groupId, member.userId(), member.role(), member.status(), member.joinedAt(), member.leftAt(), "OFFLINE")).toList();
+        }
         public List<GroupMember> listActiveMembers(String groupId) {
             return members.values().stream().filter(m -> m.groupId().equals(groupId) && m.status() == MemberStatus.ACTIVE).toList();
         }
@@ -134,7 +145,18 @@ class GroupServiceTest {
         }
         public void insertInvitation(GroupInvitation invitation) { invitations.put(invitation.id(), invitation); }
         public Optional<GroupInvitation> findInvitation(String invitationId) { return Optional.ofNullable(invitations.get(invitationId)); }
+        public List<PendingGroupInvitation> listIncomingInvitations(String userId, String beforeId) { return List.of(); }
+        public List<PendingGroupInvitation> listGroupInvitations(String groupId, String beforeId) { return List.of(); }
+        public Optional<GroupInvitation> findPendingInvitation(String groupId, String inviteeId) {
+            return invitations.values().stream().filter(i -> i.groupId().equals(groupId) && i.inviteeId().equals(inviteeId) && i.status() == InvitationStatus.PENDING).findFirst();
+        }
         public void updateInvitation(GroupInvitation invitation) { invitations.put(invitation.id(), invitation); }
+        public void expireAcceptedInvitations(String groupId, String inviteeId, Instant invalidatedAt) {
+            invitations.replaceAll((id, invitation) -> invitation.groupId().equals(groupId) && invitation.inviteeId().equals(inviteeId)
+                    && invitation.status() == InvitationStatus.ACCEPTED && invitation.invalidatedAt() == null
+                    ? new GroupInvitation(id, groupId, invitation.inviterId(), inviteeId, invitation.status(), invitation.createdAt(),
+                            invitation.acceptedAt(), invitation.revokedAt(), invalidatedAt) : invitation);
+        }
         public List<GroupInvitation> listPendingInvitationsByInviter(String groupId, String inviterId) {
             return invitations.values().stream().filter(i -> i.groupId().equals(groupId) && i.inviterId().equals(inviterId) && i.status() == InvitationStatus.PENDING).toList();
         }

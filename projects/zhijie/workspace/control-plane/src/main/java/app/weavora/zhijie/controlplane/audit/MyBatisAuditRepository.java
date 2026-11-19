@@ -13,5 +13,5 @@ public class MyBatisAuditRepository implements AuditRepository {
     }
 
     public void insert(AuditLog entry) { mapper.insert(entry); }
-    public List<AuditLog> list(String groupId, Instant before, int limit) { return mapper.list(groupId, before, limit); }
+    public List<AuditLog> list(String groupId, Instant before, String beforeId, int limit) { return mapper.list(groupId, before, beforeId, limit); }
 }

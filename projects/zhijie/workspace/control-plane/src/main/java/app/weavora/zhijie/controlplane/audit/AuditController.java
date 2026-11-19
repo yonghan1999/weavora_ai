@@ -25,7 +25,8 @@ public class AuditController {
     @GetMapping("/groups/{groupId}/audit-logs")
     public Map<String, List<AuditLog>> list(@RequestHeader("Authorization") String auth, @PathVariable String groupId,
                                             @RequestParam(required = false) Instant before,
+                                            @RequestParam(required = false) String beforeId,
                                             @RequestParam(defaultValue = "50") int limit) {
-        return Map.of("data", audit.list(identity.authenticate(auth).id(), groupId, before, limit));
+        return Map.of("data", audit.list(identity.authenticate(auth).id(), groupId, before, beforeId, limit));
     }
 }

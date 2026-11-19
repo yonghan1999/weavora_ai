@@ -39,7 +39,9 @@ class RoomServiceTest {
         when(credentials.hashPassword(anyString())).thenReturn("argon2id-hash");
         when(credentials.matchesPassword("secret", "argon2id-hash")).thenReturn(true);
         service = new RoomService(repository, groups, credentials, Clock.systemUTC(),
-                mock(app.weavora.zhijie.controlplane.revocation.RevocationService.class));
+                mock(app.weavora.zhijie.controlplane.revocation.RevocationService.class),
+                mock(app.weavora.zhijie.controlplane.audit.AuditService.class),
+                mock(app.weavora.zhijie.controlplane.sync.ProductSync.class));
     }
 
     @Test
@@ -66,6 +68,9 @@ class RoomServiceTest {
         assertThat(persisted.lifecycle()).isEqualTo(RoomLifecycle.AVAILABLE);
         assertThat(repository.findActivity(activity.id()).orElseThrow().state()).isEqualTo(ActivityState.ENDED);
         assertThat(repository.findActivity(activity.id()).orElseThrow().activityGeneration()).isEqualTo(2L);
+        Activity next = service.startActivity("owner", room.id());
+        service.endActivity("owner", activity.id());
+        assertThat(repository.findRoom(room.id()).orElseThrow().currentActivityId()).isEqualTo(next.id());
     }
 
     @Test

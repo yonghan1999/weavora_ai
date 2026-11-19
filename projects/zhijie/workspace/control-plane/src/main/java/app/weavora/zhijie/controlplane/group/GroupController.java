@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -50,7 +51,7 @@ public class GroupController {
     }
 
     @GetMapping("/groups/{groupId}/members")
-    public Map<String, List<GroupMember>> members(@RequestHeader("Authorization") String auth, @PathVariable String groupId) {
+    public Map<String, List<GroupMemberView>> members(@RequestHeader("Authorization") String auth, @PathVariable String groupId) {
         return Map.of("data", groups.listMembers(actor(auth), groupId));
     }
 
@@ -58,6 +59,18 @@ public class GroupController {
     public Map<String, GroupInvitation> invite(@RequestHeader("Authorization") String auth, @PathVariable String groupId,
                                                @Valid @RequestBody InvitationBody body) {
         return Map.of("data", groups.invite(actor(auth), groupId, body.inviteeId()));
+    }
+
+    @GetMapping("/invitations")
+    public Map<String, List<PendingGroupInvitation>> incoming(@RequestHeader("Authorization") String auth,
+            @RequestParam(required = false) String beforeId) {
+        return Map.of("data", groups.listIncomingInvitations(actor(auth), beforeId));
+    }
+
+    @GetMapping("/groups/{groupId}/invitations")
+    public Map<String, List<PendingGroupInvitation>> invitations(@RequestHeader("Authorization") String auth,
+            @PathVariable String groupId, @RequestParam(required = false) String beforeId) {
+        return Map.of("data", groups.listGroupInvitations(actor(auth), groupId, beforeId));
     }
 
     @DeleteMapping("/groups/{groupId}/invitations/{invitationId}")
@@ -95,6 +108,11 @@ public class GroupController {
     public Map<String, OwnerTransfer> transfer(@RequestHeader("Authorization") String auth, @PathVariable String groupId,
                                                @Valid @RequestBody TransferBody body) {
         return Map.of("data", groups.initiateTransfer(actor(auth), groupId, body.targetUserId()));
+    }
+
+    @GetMapping("/groups/{groupId}/owner-transfers")
+    public Map<String, List<OwnerTransfer>> transfers(@RequestHeader("Authorization") String auth, @PathVariable String groupId) {
+        return Map.of("data", groups.listPendingTransfers(actor(auth), groupId));
     }
 
     @PostMapping("/owner-transfers/{transferId}/accept")

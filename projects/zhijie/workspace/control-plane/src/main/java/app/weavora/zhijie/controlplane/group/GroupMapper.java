@@ -9,17 +9,23 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface GroupMapper {
     Optional<Group> findGroup(String groupId);
+    Optional<Group> lockGroup(String groupId);
     List<Group> listGroupsForUser(String userId);
     void insertGroup(Group group);
     void updateGroup(Group group);
     Optional<GroupMember> findMember(@Param("groupId") String groupId, @Param("userId") String userId);
     List<GroupMember> listActiveMembers(String groupId);
+    List<GroupMemberView> listVisibleMembers(@Param("groupId") String groupId, @Param("onlineSince") Instant onlineSince);
     void insertMember(GroupMember member);
     void updateMember(GroupMember member);
     void deactivateAllMembers(@Param("groupId") String groupId, @Param("leftAt") Instant leftAt);
     void insertInvitation(GroupInvitation invitation);
     Optional<GroupInvitation> findInvitation(String invitationId);
+    List<PendingGroupInvitation> listIncomingInvitations(@Param("userId") String userId, @Param("beforeId") String beforeId);
+    List<PendingGroupInvitation> listGroupInvitations(@Param("groupId") String groupId, @Param("beforeId") String beforeId);
+    Optional<GroupInvitation> findPendingInvitation(@Param("groupId") String groupId, @Param("inviteeId") String inviteeId);
     void updateInvitation(GroupInvitation invitation);
+    void expireAcceptedInvitations(@Param("groupId") String groupId, @Param("inviteeId") String inviteeId, @Param("invalidatedAt") Instant invalidatedAt);
     List<GroupInvitation> listPendingInvitationsByInviter(@Param("groupId") String groupId, @Param("inviterId") String inviterId);
     void invalidateAllPendingInvitations(@Param("groupId") String groupId, @Param("invalidatedAt") Instant invalidatedAt);
     Optional<OwnerTransfer> findPendingTransfer(String groupId);

@@ -22,12 +22,12 @@ class AuditServiceTest {
         List<AuditLog> entries = new ArrayList<>();
         AuditRepository repository = new AuditRepository() {
             public void insert(AuditLog entry) { entries.add(entry); }
-            public List<AuditLog> list(String groupId, Instant before, int limit) { return List.copyOf(entries); }
+            public List<AuditLog> list(String groupId, Instant before, String beforeId, int limit) { return List.copyOf(entries); }
         };
         GroupService groups = mock(GroupService.class);
         when(groups.requireMembership("group", "member")).thenReturn(member("member", GroupRole.MEMBER));
         when(groups.requireMembership("group", "owner")).thenReturn(member("owner", GroupRole.OWNER));
-        AuditService service = new AuditService(repository, groups, Clock.systemUTC());
+        AuditService service = new AuditService(repository, groups, new AuditRecorder(repository, Clock.systemUTC()));
 
         service.record("group", "owner", "MESSAGE", "message", "MESSAGE_DELETE", "SUCCESS", "correlation");
         assertThat(service.list("owner", "group", null, 50)).singleElement()

@@ -35,8 +35,17 @@
             <arg column="created_at" javaType="java.time.Instant"/><arg column="completed_at" javaType="java.time.Instant"/>
         </constructor>
     </resultMap>
+    <resultMap id="PendingGroupInvitation" type="app.weavora.zhijie.controlplane.group.PendingGroupInvitation">
+        <constructor>
+            <idArg column="id" javaType="String"/><arg column="group_id" javaType="String"/>
+            <arg column="group_name" javaType="String"/><arg column="inviter_id" javaType="String"/>
+            <arg column="invitee_id" javaType="String"/><arg column="created_at" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
 
     <select id="findGroup" resultMap="Group">SELECT * FROM groups WHERE id = #{groupId}</select>
+    <!-- 等待群锁后必须重新读取转让/邀请状态，不能复用同事务的本地查询缓存。 -->
+    <select id="lockGroup" resultMap="Group" flushCache="true">SELECT * FROM groups WHERE id = #{groupId} FOR UPDATE</select>
     <select id="listGroupsForUser" resultMap="Group">
         SELECT g.* FROM groups g JOIN group_members m ON m.group_id = g.id
         WHERE m.user_id = #{userId} AND m.status = 'ACTIVE' AND g.status = 'ACTIVE' ORDER BY g.created_at
@@ -55,6 +64,12 @@
     </select>
     <select id="listActiveMembers" resultMap="GroupMember">
         SELECT * FROM group_members WHERE group_id = #{groupId} AND status = 'ACTIVE' ORDER BY joined_at
+    </select>
+    <select id="listVisibleMembers" resultType="app.weavora.zhijie.controlplane.group.GroupMemberView">
+        SELECT m.group_id, m.user_id, m.role, m.status, m.joined_at, m.left_at,
+               CASE WHEN u.status = 'ACTIVE' AND p.last_seen_at >= #{onlineSince} THEN 'ONLINE' ELSE 'OFFLINE' END AS presence
+        FROM group_members m JOIN users u ON u.id = m.user_id LEFT JOIN presence p ON p.user_id = m.user_id
+        WHERE m.group_id = #{groupId} AND m.status = 'ACTIVE' ORDER BY m.joined_at, m.user_id
     </select>
     <insert id="insertMember" parameterType="app.weavora.zhijie.controlplane.group.GroupMember">
         INSERT INTO group_members (group_id, user_id, role, status, joined_at, left_at)
@@ -76,9 +91,39 @@
         VALUES (#{id}, #{groupId}, #{inviterId}, #{inviteeId}, #{status}, #{createdAt}, #{acceptedAt}, #{revokedAt}, #{invalidatedAt})
     </insert>
     <select id="findInvitation" resultMap="GroupInvitation">SELECT * FROM invitations WHERE id = #{invitationId}</select>
+    <select id="findPendingInvitation" resultMap="GroupInvitation">
+        SELECT * FROM invitations WHERE group_id = #{groupId} AND invitee_id = #{inviteeId} AND status = 'PENDING'
+    </select>
+    <sql id="visiblePendingInvitations">
+        SELECT i.id, i.group_id, g.name AS group_name, i.inviter_id, i.invitee_id, i.created_at
+        FROM invitations i JOIN groups g ON g.id = i.group_id AND g.status = 'ACTIVE'
+        WHERE i.status = 'PENDING'
+    </sql>
+    <select id="listIncomingInvitations" resultMap="PendingGroupInvitation">
+        <include refid="visiblePendingInvitations"/>
+        AND i.invitee_id = #{userId}
+        AND EXISTS (SELECT 1 FROM group_members m JOIN users u ON u.id = m.user_id
+            WHERE m.group_id = i.group_id AND m.user_id = i.inviter_id AND m.status = 'ACTIVE' AND u.status = 'ACTIVE')
+        <if test="beforeId != null">
+            AND (i.created_at, i.id) &lt; (SELECT c.created_at, c.id FROM invitations c WHERE c.id = #{beforeId} AND c.invitee_id = #{userId})
+        </if>
+        ORDER BY i.created_at DESC, i.id DESC LIMIT 50
+    </select>
+    <select id="listGroupInvitations" resultMap="PendingGroupInvitation">
+        <include refid="visiblePendingInvitations"/>
+        AND i.group_id = #{groupId}
+        <if test="beforeId != null">
+            AND (i.created_at, i.id) &lt; (SELECT c.created_at, c.id FROM invitations c WHERE c.id = #{beforeId} AND c.group_id = #{groupId})
+        </if>
+        ORDER BY i.created_at DESC, i.id DESC LIMIT 50
+    </select>
     <update id="updateInvitation" parameterType="app.weavora.zhijie.controlplane.group.GroupInvitation">
         UPDATE invitations SET status = #{status}, accepted_at = #{acceptedAt}, revoked_at = #{revokedAt},
             invalidated_at = #{invalidatedAt} WHERE id = #{id}
+    </update>
+    <update id="expireAcceptedInvitations">
+        UPDATE invitations SET invalidated_at = #{invalidatedAt}
+        WHERE group_id = #{groupId} AND invitee_id = #{inviteeId} AND status = 'ACCEPTED' AND invalidated_at IS NULL
     </update>
     <select id="listPendingInvitationsByInviter" resultMap="GroupInvitation">
         SELECT * FROM invitations WHERE group_id = #{groupId} AND inviter_id = #{inviterId} AND status = 'PENDING'
@@ -107,7 +152,7 @@
     </update>
     <insert id="insertRecoveryRequest" parameterType="app.weavora.zhijie.controlplane.group.OwnerRecoveryRequest">
         INSERT INTO owner_recovery_requests
-            (id, group_id, requester_id, evidence_ref, status, reviewer_id, decision_reason, created_at)
-        VALUES (#{id}, #{groupId}, #{requesterId}, #{evidenceRef}, #{status}, #{reviewerId}, #{decisionReason}, #{createdAt})
+            (id, group_id, requester_id, evidence_ref, created_at, expected_owner_user_id)
+        VALUES (#{id}, #{groupId}, #{requesterId}, #{evidenceRef}, #{createdAt}, #{expectedOwnerUserId})
     </insert>
 </mapper>

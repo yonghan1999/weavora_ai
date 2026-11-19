@@ -18,6 +18,9 @@
     <select id="list" resultMap="AuditLog">
         SELECT * FROM audit_logs WHERE group_id = #{groupId}
         <if test="before != null">AND occurred_at &lt; #{before}</if>
+        <if test="beforeId != null">
+            AND (occurred_at, id) &lt; (SELECT occurred_at, id FROM audit_logs WHERE id = #{beforeId} AND group_id = #{groupId})
+        </if>
         ORDER BY occurred_at DESC, id DESC LIMIT #{limit}
     </select>
 </mapper>
