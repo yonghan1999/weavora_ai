@@ -135,23 +135,51 @@ impl VoiceManager {
     }
 
     pub async fn connect(&self, url: &str, token: &str) -> Result<VoiceSnapshot, String> {
-        let (generation, settings) = {
+        let generation = self.begin_connection();
+        self.connect_reserved(generation, url, token).await
+    }
+
+    pub fn begin_connection(&self) -> u64 {
+        let mut state = self.state.lock().expect("voice state lock");
+        if state.session.is_none() {
+            state.generation += 1;
+            set_state(&mut state, VoiceConnectionState::Connecting, None);
+        }
+        state.generation
+    }
+
+    pub fn fail_connection(&self, generation: u64, code: String) -> String {
+        let mut state = self.state.lock().expect("voice state lock");
+        if state.generation != generation {
+            return "VOICE_CONNECTION_SUPERSEDED".into();
+        }
+        if state.session.is_none() {
+            set_state(&mut state, VoiceConnectionState::Failed, Some(code.clone()));
+        }
+        code
+    }
+
+    pub async fn connect_reserved(
+        &self,
+        generation: u64,
+        url: &str,
+        token: &str,
+    ) -> Result<VoiceSnapshot, String> {
+        let _connect_guard = self.connect_lock.lock().await;
+        let settings = {
             let mut state = self.state.lock().expect("voice state lock");
+            if state.generation != generation {
+                return Err("VOICE_CONNECTION_SUPERSEDED".into());
+            }
             if state.session.is_some() {
                 return Ok(state.snapshot.clone());
             }
-            state.generation += 1;
-            set_state(&mut state, VoiceConnectionState::Connecting, None);
             state.snapshot.input_device = None;
             state.snapshot.output_device = None;
             state.snapshot.input_failure_code = None;
             state.snapshot.output_failure_code = None;
-            (state.generation, state.snapshot.clone())
+            state.snapshot.clone()
         };
-        let _connect_guard = self.connect_lock.lock().await;
-        if self.state.lock().expect("voice state lock").generation != generation {
-            return Err("VOICE_CONNECTION_SUPERSEDED".to_string());
-        }
         match LiveKitVoiceSession::connect(url, token, settings.processing, settings.muted).await {
             Ok(mut session) => {
                 let events = session.take_events();
@@ -176,13 +204,7 @@ impl VoiceManager {
                 let _ = session.close().await;
                 Err("VOICE_CONNECTION_SUPERSEDED".to_string())
             }
-            Err(code) => {
-                let mut state = self.state.lock().expect("voice state lock");
-                if state.generation == generation {
-                    set_state(&mut state, VoiceConnectionState::Failed, Some(code.clone()));
-                }
-                Err(code)
-            }
+            Err(code) => Err(self.fail_connection(generation, code)),
         }
     }
 

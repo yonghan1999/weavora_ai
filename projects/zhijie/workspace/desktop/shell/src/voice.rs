@@ -2,51 +2,72 @@ use crate::AppState;
 use zhijie_core::VoiceGrant;
 use zhijie_voice::VoiceSnapshot;
 
-pub async fn connect(state: &AppState, activity_id: &str) -> Result<VoiceSnapshot, String> {
-    connect_with(state, activity_id, |grant| async move {
-        state
-            .voice
-            .connect(&grant.voice_url, &grant.voice_token)
-            .await
-    })
+pub async fn connect(
+    state: &AppState,
+    activity_id: &str,
+    lease_id: &str,
+) -> Result<VoiceSnapshot, String> {
+    connect_with(
+        state,
+        activity_id,
+        lease_id,
+        |generation, grant| async move {
+            state
+                .voice
+                .connect_reserved(generation, &grant.voice_url, &grant.voice_token)
+                .await
+        },
+    )
     .await
 }
 
 async fn connect_with<F, Fut>(
     state: &AppState,
     activity_id: &str,
+    lease_id: &str,
     connector: F,
 ) -> Result<VoiceSnapshot, String>
 where
-    F: FnOnce(VoiceGrant) -> Fut,
+    F: FnOnce(u64, VoiceGrant) -> Fut,
     Fut: std::future::Future<Output = Result<VoiceSnapshot, String>>,
 {
-    let _operation = state.activity_operations.lock().await;
-    if !state
-        .core
-        .snapshot()
-        .activity
-        .is_some_and(|activity| activity.activity_id == activity_id)
-    {
-        return Err("CURRENT_GRANT_REQUIRED".into());
-    }
-    let grant = match state
-        .client
-        .voice_grant(&state.access_token()?, activity_id)
-        .await
-    {
-        Ok(grant) => grant,
+    let (generation, member_generation, token) = {
+        let _activity = state.activity_operations.channel().await;
+        let activity = state
+            .core
+            .snapshot()
+            .activity
+            .filter(|activity| activity.activity_id == activity_id && activity.lease_id == lease_id)
+            .ok_or("CURRENT_GRANT_REQUIRED")?;
+        let token = state.access_token()?;
+        (
+            state.voice.begin_connection(),
+            activity.member_generation,
+            token,
+        )
+    };
+    let grant = match state.client.voice_grant(&token, activity_id).await {
+        Ok(grant)
+            if grant.activity_id == activity_id
+                && grant.lease_id == lease_id
+                && grant.member_generation == member_generation =>
+        {
+            grant
+        }
+        Ok(_) => {
+            return Err(state
+                .voice
+                .fail_connection(generation, "CURRENT_GRANT_REQUIRED".into()))
+        }
         Err(error) => {
             let code = crate::error_code(error);
-            state.voice.fail(code.clone());
-            return Err(code);
+            return Err(state.voice.fail_connection(generation, code));
         }
     };
-    connector(grant).await
+    connector(generation, grant).await
 }
 
 pub async fn disconnect(state: &AppState) -> VoiceSnapshot {
-    // 包括授权请求在内，与连接串行，避免断开后迟到授权重新建立会话。
     let _operation = state.activity_operations.lock().await;
     state.voice.disconnect().await
 }
@@ -92,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn disconnect_waits_for_pending_authorization_and_finishes_after_connect() {
+    fn disconnect_invalidates_pending_authorization_without_blocking_other_operations() {
         tauri::async_runtime::block_on(async {
             let (base, worker) = server(vec![(
                 "/api/v1/activities/activity/voice-grants",
@@ -105,27 +126,15 @@ mod tests {
                 }}),
             )]);
             let state = state(base);
-            let mut connecting = Box::pin(connect_with(&state, "activity", |_| async {
-                // 不打开音频设备；标记连接阶段完成，以验证后续断开覆盖它。
-                Ok(state.voice.fail("CONNECT_COMPLETED".into()))
-            }));
+            let mut connecting = Box::pin(connect(&state, "activity", "lease"));
             poll_fn(|cx| {
                 assert!(connecting.as_mut().poll(cx).is_pending());
                 Poll::Ready(())
             })
             .await;
-            assert!(state.activity_operations.try_lock().is_err());
-            let mut disconnecting = Box::pin(disconnect(&state));
-            poll_fn(|cx| {
-                assert!(disconnecting.as_mut().poll(cx).is_pending());
-                Poll::Ready(())
-            })
-            .await;
-            assert_eq!(
-                connecting.await.unwrap().failure_code.as_deref(),
-                Some("CONNECT_COMPLETED")
-            );
-            let snapshot = disconnecting.await;
+            assert!(state.activity_operations.0.try_write().is_ok());
+            let snapshot = disconnect(&state).await;
+            assert_eq!(connecting.await.unwrap_err(), "VOICE_CONNECTION_SUPERSEDED");
             worker.join().unwrap();
             assert_eq!(
                 snapshot.state,
@@ -147,7 +156,7 @@ mod tests {
                 serde_json::json!({"error":{"code":"CURRENT_GRANT_REQUIRED"}}),
             )]);
             let state = state(base);
-            let result = connect_with(&state, "activity", |_| async {
+            let result = connect_with(&state, "activity", "lease", |_, _| async {
                 panic!("denied grant must not connect media")
             })
             .await;
@@ -158,6 +167,52 @@ mod tests {
                 zhijie_voice::VoiceConnectionState::Disconnected
             );
             assert!(state.core.snapshot().activity.is_some());
+        });
+    }
+
+    #[test]
+    fn stale_caller_and_grant_for_another_lease_cannot_start_media() {
+        tauri::async_runtime::block_on(async {
+            let (base, worker) = server(vec![(
+                "/api/v1/activities/activity/voice-grants",
+                Some("access"),
+                200,
+                serde_json::json!({"data":{"grantId":"grant","activityId":"activity","memberGeneration":1,
+                    "leaseId":"other","sfuUrl":"wss://fixture.invalid","voiceToken":"fixture","expiresAt":"2099-01-01T00:00:00Z"}}),
+            )]);
+            let state = state(base);
+            for lease in ["old", "lease"] {
+                let result = connect_with(&state, "activity", lease, |_, _| async {
+                    panic!("stale lease must not start media")
+                })
+                .await;
+                assert_eq!(result.unwrap_err(), "CURRENT_GRANT_REQUIRED");
+            }
+            worker.join().unwrap();
+        });
+    }
+
+    #[test]
+    fn slow_network_operation_does_not_block_voice_authorization() {
+        tauri::async_runtime::block_on(async {
+            let (base, worker) = server(vec![(
+                "/api/v1/activities/activity/voice-grants",
+                Some("access"),
+                403,
+                serde_json::json!({"error":{"code":"CURRENT_GRANT_REQUIRED"}}),
+            )]);
+            let state = state(base);
+            let _network = state.network.operations.lock().await;
+            let _activity = state.activity_operations.channel().await;
+            assert!(state.activity_operations.0.try_write().is_err());
+            let result = tokio::time::timeout(
+                std::time::Duration::from_secs(3),
+                connect(&state, "activity", "lease"),
+            )
+            .await
+            .unwrap();
+            assert_eq!(result.unwrap_err(), "CURRENT_GRANT_REQUIRED");
+            worker.join().unwrap();
         });
     }
 }

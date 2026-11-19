@@ -10,6 +10,7 @@ use zhijie_helper::model::{HelperRequest, NetworkPath, NetworkStart, NetworkStat
 
 #[derive(Default)]
 pub struct NetworkManager {
+    pub(super) operations: tokio::sync::Mutex<()>,
     current: Mutex<Option<NetworkStart>>,
     pending_renewal: Mutex<Option<NetworkStart>>,
     status: Mutex<NetworkStatus>,

@@ -396,20 +396,36 @@ async function joinRoom(id, password = null) {
     network: null,
   });
   closeDialog();
+  void connectChannel("voice");
+  void connectChannel("network");
   await loadContext();
+}
+const pendingChannels = new Map();
+async function connectChannel(channel) {
+  if (!s.activity?.leaseId) return;
+  const {activityId, leaseId} = s.activity, userId = s.userId;
+  const current = () => s.userId === userId && s.activity?.activityId === activityId && s.activity?.leaseId === leaseId;
+  if (pendingChannels.get(channel) === leaseId) return;
+  pendingChannels.set(channel, leaseId);
   try {
-    s.voice = await bridge.connectVoice(result.activity.activityId);
+    let snapshot;
+    try {
+      snapshot = channel === "voice" ? await bridge.connectVoice(activityId, leaseId) : await bridge.connectNetwork(activityId, leaseId);
+    } catch (error) {
+      if (!current()) return;
+      notify(errorText(error));
+      snapshot = channel === "voice" ? await bridge.voiceSnapshot() : await bridge.networkSnapshot();
+    }
+    if (!current()) return;
+    s[channel] = snapshot;
+    if (channel === "network" && snapshot?.status?.activityId === activityId) s.activity.network = snapshot.status.state;
+    runtimeDirty = true;
+    if (!s.busy && !modalRoot.firstChild && !document.activeElement?.matches("input,textarea,select")) render();
   } catch (error) {
-    s.voice = await bridge.voiceSnapshot();
-    notify(errorText(error));
+    if (current()) notify(errorText(error));
+  } finally {
+    if (pendingChannels.get(channel) === leaseId) pendingChannels.delete(channel);
   }
-  try {
-    s.network = await bridge.connectNetwork();
-  } catch (error) {
-    s.network = await bridge.networkSnapshot();
-    notify(errorText(error));
-  }
-  if (s.network?.status?.activityId === s.activity?.activityId) s.activity.network = s.network.status.state;
 }
 function createGroup() {
   dialog(
@@ -796,21 +812,8 @@ const actions = {
         s.voice?.receiveEnabled === false,
       );
     }),
-  "retry-voice": () =>
-    run(async () => {
-      try {
-        s.voice = await bridge.connectVoice(s.activity.activityId);
-      } finally {
-        s.voice = await bridge.voiceSnapshot();
-      }
-    }),
-  "retry-network": () => run(async () => {
-    try { s.network = await bridge.connectNetwork(); }
-    finally {
-      s.network = await bridge.networkSnapshot();
-      if (s.network?.status?.activityId === s.activity?.activityId) s.activity.network = s.network.status.state;
-    }
-  }),
+  "retry-voice": () => connectChannel("voice"),
+  "retry-network": () => connectChannel("network"),
   "delete-message": (b) =>
     confirmation("删除消息", "删除后正文将不可见，保留删除标记。", async () => {
       await request("message-delete", b.dataset.id);

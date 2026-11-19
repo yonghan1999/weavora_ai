@@ -121,12 +121,12 @@ calls.push({command,p});
 if(command==='session_login'){await new Promise(r=>setTimeout(r,80));if(failLogin)throw 'SERVICE_UNAVAILABLE';return snapshot();}
 if(command==='session_logout')return {userId:null,activity:null,service:'DISCONNECTED',lastErrorCode:'LOGOUT_CLEANUP_PENDING'};
 if(command==='group_list')return [group];if(command==='room_list')return [room];
-if(command==='activity_join'){activity={activityId:'a1',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
+if(command==='activity_join'){activity={activityId:'a1',leaseId:'lease-room',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
 if(command==='activity_leave'){activity=null;return snapshot();}
-if(command==='voice_connect'){voice.state='FAILED';voice.failureCode='VOICE_CAPACITY_LIMITED';throw 'VOICE_CAPACITY_LIMITED';}
+if(command==='voice_connect'){if(globalThis.holdVoice)await new Promise(done=>globalThis.resumeVoice=done);voice.state='FAILED';voice.failureCode='VOICE_CAPACITY_LIMITED';throw 'VOICE_CAPACITY_LIMITED';}
 if(command==='voice_snapshot')return structuredClone(voice);
 if(command==='state_snapshot')return snapshot();
-if(command==='network_connect')throw 'HELPER_UNAVAILABLE';
+if(command==='network_connect'){if(globalThis.holdNetwork)await new Promise(done=>globalThis.resumeNetwork=done);throw 'HELPER_UNAVAILABLE';}
 if(command==='network_snapshot')return {status:{state:activity?'FAILED':'DISCONNECTED',activityId:activity?.activityId},peers:[]};
 if(command==='voice_set_mute'){voice.muted=p.muted;return voice;}
 if(command==='voice_set_receive'){voice.receiveEnabled=p.enabled;return voice;}
@@ -579,11 +579,15 @@ try {
   await delay(700);
   await check("其他账号同步通知不触发资源读取", 'calls.slice(syncCalls).every(x=>x.command!=="group_list" && x.command!=="room_list" && x.p.resource!=="messages")');
   await click('[data-view="lobby"]');
+  await evaluate('globalThis.holdVoice=true');
   await click('[data-action="join-room"]');
   await evaluate(
     'document.querySelector("[data-form=dialog]").requestSubmit()',
   );
   await delay(300);
+  await check('语音等待期间联机已独立尝试且房间可用', 'typeof resumeVoice==="function" && calls.some(call=>call.command==="network_connect" && call.p.leaseId==="lease-room") && !!document.querySelector(".voice-dock")');
+  await evaluate('globalThis.holdVoice=false;resumeVoice()');
+  await delay(150);
   await check(
     "入房后保留独立语音失败和网络未连接",
     '!!document.querySelector(".voice-dock") && document.querySelectorAll(".room-flags [data-connection=failed]").length===2',
@@ -736,9 +740,18 @@ try {
     "document.documentElement.scrollWidth<=innerWidth",
   );
   await shot("room-600");
+  await click('[data-tab="network"]');
+  await evaluate('globalThis.holdNetwork=true;globalThis.beforeRetries=calls.length');
+  await click('[data-action="retry-network"]');
+  await click('[data-action="retry-network"]');
+  await click('[data-action="retry-voice"]');
+  await check('联机重试等待期间仍可重试语音，重复联机请求合并', 'typeof resumeNetwork==="function" && calls.slice(beforeRetries).filter(call=>call.command==="network_connect").length===1 && calls.slice(beforeRetries).some(call=>call.command==="voice_connect" && call.p.leaseId==="lease-room")');
   await evaluate('activity=null');
   await delay(1300);
   await check("活动资格撤销自动返回大厅", '!!document.querySelector(".room-card") && !document.querySelector(".voice-dock")');
+  await evaluate('globalThis.afterRevocation=calls.length;globalThis.holdNetwork=false;resumeNetwork()');
+  await delay(100);
+  await check('旧联机结果不重新读状态或复活房间', '!calls.slice(afterRevocation).some(call=>call.command==="network_snapshot") && !document.querySelector(".voice-dock")');
   await click('[data-view="settings"]');
   await click('[data-settings="account"]');
   await click('[data-action="logout"]');

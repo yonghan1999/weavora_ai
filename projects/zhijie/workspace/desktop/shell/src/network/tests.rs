@@ -305,7 +305,7 @@ fn logged_out_maintenance_retries_failed_cleanup_without_renewing_or_claiming_co
             voice: Default::default(),
             network: manager,
             session: Mutex::new(None),
-            activity_operations: tokio::sync::Mutex::new(()),
+            activity_operations: Default::default(),
         };
         let _operation = state.activity_operations.lock().await;
         state

@@ -33,7 +33,7 @@ fn state() -> AppState {
             access_expires_at: "2099-01-01T00:00:00Z".into(),
             refresh_expires_at: "2099-01-01T00:00:00Z".into(),
         })),
-        activity_operations: tokio::sync::Mutex::new(()),
+        activity_operations: Default::default(),
     }
 }
 

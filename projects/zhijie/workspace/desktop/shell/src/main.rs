@@ -17,7 +17,20 @@ struct AppState {
     voice: zhijie_voice::VoiceManager,
     network: network::NetworkManager,
     session: Mutex<Option<AuthTokens>>,
-    activity_operations: tokio::sync::Mutex<()>,
+    activity_operations: ActivityOperations,
+}
+
+#[derive(Default)]
+struct ActivityOperations(tokio::sync::RwLock<()>);
+
+impl ActivityOperations {
+    async fn lock(&self) -> tokio::sync::RwLockWriteGuard<'_, ()> {
+        self.0.write().await
+    }
+
+    async fn channel(&self) -> tokio::sync::RwLockReadGuard<'_, ()> {
+        self.0.read().await
+    }
 }
 
 impl AppState {
@@ -28,7 +41,7 @@ impl AppState {
             voice: zhijie_voice::VoiceManager::default(),
             network: network::NetworkManager::default(),
             session: Mutex::new(None),
-            activity_operations: tokio::sync::Mutex::new(()),
+            activity_operations: Default::default(),
         }
     }
 
@@ -313,9 +326,10 @@ fn state_snapshot(state: State<'_, AppState>) -> ClientSnapshot {
 #[tauri::command]
 async fn voice_connect(
     activity_id: String,
+    lease_id: String,
     state: State<'_, AppState>,
 ) -> Result<zhijie_voice::VoiceSnapshot, String> {
-    voice::connect(&state, &activity_id).await
+    voice::connect(&state, &activity_id, &lease_id).await
 }
 
 #[tauri::command]
@@ -386,12 +400,18 @@ fn voice_snapshot(state: State<'_, AppState>) -> zhijie_voice::VoiceSnapshot {
 }
 
 #[tauri::command]
-async fn network_connect(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    let _operation = state.activity_operations.lock().await;
+async fn network_connect(
+    activity_id: String,
+    lease_id: String,
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
+    let _network = state.network.operations.lock().await;
+    let _activity = state.activity_operations.channel().await;
     let activity = state
         .core
         .snapshot()
         .activity
+        .filter(|activity| activity.activity_id == activity_id && activity.lease_id == lease_id)
         .ok_or("CURRENT_GRANT_REQUIRED")?;
     match state
         .network
@@ -408,7 +428,8 @@ async fn network_connect(state: State<'_, AppState>) -> Result<serde_json::Value
 
 #[tauri::command]
 async fn network_snapshot(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    let _operation = state.activity_operations.lock().await;
+    let _network = state.network.operations.lock().await;
+    let _activity = state.activity_operations.channel().await;
     match state.network.poll().await {
         Ok(snapshot) => Ok(snapshot),
         Err(code) => {

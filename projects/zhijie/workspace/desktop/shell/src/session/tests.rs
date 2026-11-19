@@ -48,7 +48,7 @@ fn state(base: String, expiring: bool, activity: bool) -> AppState {
         voice: Default::default(),
         network: Default::default(),
         session: Mutex::new(Some(tokens(expiring))),
-        activity_operations: tokio::sync::Mutex::new(()),
+        activity_operations: Default::default(),
     }
 }
 

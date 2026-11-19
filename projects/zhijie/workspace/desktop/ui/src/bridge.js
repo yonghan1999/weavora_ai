@@ -29,8 +29,8 @@ export class CoreBridge {
     return this.invoke("session_logout");
   }
 
-  connectVoice(activityId) {
-    return this.invoke("voice_connect", { activityId });
+  connectVoice(activityId, leaseId) {
+    return this.invoke("voice_connect", { activityId, leaseId });
   }
 
   setMuted(muted) {
@@ -65,7 +65,7 @@ export class CoreBridge {
     return this.invoke("voice_snapshot");
   }
 
-  connectNetwork() { return this.invoke("network_connect"); }
+  connectNetwork(activityId, leaseId) { return this.invoke("network_connect", { activityId, leaseId }); }
 
   networkSnapshot() { return this.invoke("network_snapshot"); }
 
