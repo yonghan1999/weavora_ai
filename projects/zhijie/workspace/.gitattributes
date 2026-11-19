@@ -13,3 +13,29 @@ packaging/macos/app.weavora.zhijie.helper.plist text eol=lf
 packaging/linux/zhijie-helper.service text eol=lf
 release/support-matrix.json text eol=lf
 release/manifest.json text eol=lf
+
+# Preserve formatting of unmodified upstream files; local native patches retain normal checks.
+vendor/webrtc-sys-0.3.52/libwebrtc/prefixed-jni/gradlew.bat text eol=crlf
+vendor/webrtc-sys-0.3.52/libwebrtc/patches/*.patch -whitespace
+vendor/webrtc-sys-0.3.52/src/lazy_load_deps_for/**/*.so.tramp.S -whitespace
+vendor/webrtc-sys-0.3.52/libwebrtc/README.md -whitespace
+vendor/webrtc-sys-0.3.52/README.md -whitespace
+vendor/webrtc-sys-0.3.52/src/av1_bitstream.cpp -whitespace
+vendor/webrtc-sys-0.3.52/src/jetson/av1_encoder_impl.cpp -whitespace
+vendor/webrtc-sys-0.3.52/src/jetson/av1_encoder_impl.h -whitespace
+vendor/webrtc-sys-0.3.52/src/nvidia/h265_decoder_impl.cpp -whitespace
+vendor/webrtc-sys-0.3.52/src/nvidia/h265_decoder_impl.h -whitespace
+vendor/webrtc-sys-0.3.52/src/nvidia/h265_encoder_impl.h -whitespace
+vendor/webrtc-sys-0.3.52/src/nvidia/NvCodec/include/cuviddec.h -whitespace
+vendor/webrtc-sys-0.3.52/src/nvidia/NvCodec/include/nvcuvid.h -whitespace
+vendor/webrtc-sys-0.3.52/src/nvidia/NvCodec/include/nvEncodeAPI.h -whitespace
+vendor/webrtc-sys-0.3.52/src/nvidia/NvCodec/include/Utils/Logger.h -whitespace
+vendor/webrtc-sys-0.3.52/src/nvidia/NvCodec/include/Utils/NvCodecUtils.h -whitespace
+vendor/webrtc-sys-0.3.52/src/nvidia/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp -whitespace
+vendor/webrtc-sys-0.3.52/src/nvidia/NvCodec/NvCodec/NvDecoder/NvDecoder.h -whitespace
+vendor/webrtc-sys-0.3.52/src/rtp_receiver.cpp -whitespace
+vendor/webrtc-sys-0.3.52/src/vaapi/vaapi_encoder_factory.cpp -whitespace
+vendor/webrtc-sys-0.3.52/src/vaapi/vaapi_encoder_factory.h -whitespace
+vendor/webrtc-sys-0.3.52/test/benchmark.cc -whitespace
+vendor/webrtc-sys-0.3.52/test/cpu/cpu_linux.h -whitespace
+vendor/webrtc-sys-0.3.52/test/video_source.h -whitespace

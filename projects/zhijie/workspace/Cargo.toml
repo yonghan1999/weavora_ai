@@ -8,6 +8,10 @@ members = [
 ]
 resolver = "2"
 
+[patch.crates-io]
+libwebrtc = { path = "vendor/libwebrtc-0.3.55" }
+webrtc-sys = { path = "vendor/webrtc-sys-0.3.52" }
+
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
