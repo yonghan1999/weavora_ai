@@ -11,7 +11,21 @@ pub struct ControlPlaneValidator {
 
 impl ControlPlaneValidator {
     pub fn new(base_url: String, management_key: String) -> Result<Self, String> {
+        let base = reqwest::Url::parse(&base_url).map_err(|_| "CONTROL_PLANE_URL_INVALID")?;
+        let loopback = matches!(base.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"));
+        if (base.scheme() != "https" && !(base.scheme() == "http" && loopback))
+            || !base.username().is_empty()
+            || base.password().is_some()
+            || base.query().is_some()
+            || base.fragment().is_some()
+            || base.path() != "/"
+            || management_key.trim().is_empty()
+        {
+            return Err("CONTROL_PLANE_CONFIGURATION_INVALID".into());
+        }
         let http = reqwest::blocking::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .connect_timeout(std::time::Duration::from_secs(1))
             .timeout(std::time::Duration::from_secs(2))
             .build()
             .map_err(|error| error.to_string())?;

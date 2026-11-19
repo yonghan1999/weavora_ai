@@ -8,6 +8,13 @@ license.workspace = true
 reqwest = { version = "0.12.24", default-features = false, features = ["json", "blocking", "rustls-tls"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
+quinn = { version = "0.11.12", default-features = false, features = ["runtime-tokio", "rustls-ring"] }
+rustls = { version = "0.23.46", default-features = false, features = ["std", "ring"] }
+webpki-roots = "1.0.12"
+tokio = { version = "1.48.0", features = ["rt-multi-thread", "net", "sync", "time", "macros"] }
+
+[dev-dependencies]
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring"] }
 
 [lib]
 path = "src/lib.rs"

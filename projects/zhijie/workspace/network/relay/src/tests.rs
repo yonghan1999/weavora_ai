@@ -1,118 +1,141 @@
-use std::collections::HashMap;
-use std::net::{SocketAddr, UdpSocket};
+use std::collections::{HashMap, HashSet};
+use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crate::model::RelayGrant;
-use crate::server::{encode_packet, GrantValidator, RelayServer};
+use crate::quic::{QuicRelayServer, RelayClient};
+use crate::server::GrantValidator;
 
-struct FakeValidator {
+struct Authority {
     grants: HashMap<String, RelayGrant>,
-    calls: Mutex<usize>,
+    rejected: Mutex<HashSet<String>>,
 }
 
-impl GrantValidator for FakeValidator {
-    fn validate(&self, ticket: &str, _endpoint: SocketAddr) -> Result<RelayGrant, String> {
-        *self.calls.lock().unwrap() += 1;
+impl GrantValidator for Authority {
+    fn validate(&self, ticket: &str, _: SocketAddr) -> Result<RelayGrant, String> {
+        if self.rejected.lock().unwrap().contains(ticket) {
+            return Err("RELAY_GRANT_INVALID".into());
+        }
         self.grants
             .get(ticket)
             .cloned()
-            .ok_or_else(|| "RELAY_GRANT_INVALID".into())
+            .ok_or("RELAY_GRANT_INVALID".into())
     }
 }
 
-fn grant(ticket: &str, activity: &str, ip: &str) -> RelayGrant {
+fn grant(ticket: &str, activity: &str, ip: &str, allow_relay: bool) -> RelayGrant {
     RelayGrant {
         ticket: ticket.into(),
         activity_id: activity.into(),
         member_generation: 1,
         lease_id: format!("lease-{ticket}"),
-        user_id: format!("user-{ticket}"),
+        user_id: ticket.into(),
         source_ipv4: ip.into(),
         policy_revision: 1,
-        allow_relay: true,
+        allow_relay,
     }
 }
 
-fn client() -> UdpSocket {
-    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-    socket
-        .set_read_timeout(Some(Duration::from_millis(300)))
-        .unwrap();
-    socket
-}
-
-#[test]
-fn real_udp_datagrams_forward_ciphertext_between_authorized_room_members() {
-    let validator = Arc::new(FakeValidator {
+async fn fixture() -> (QuicRelayServer, Vec<u8>, Arc<Authority>) {
+    let authority = Arc::new(Authority {
         grants: HashMap::from([
-            ("a".into(), grant("a", "activity", "10.231.0.1")),
-            ("b".into(), grant("b", "activity", "10.231.0.2")),
-        ]),
-        calls: Mutex::new(0),
-    });
-    let relay = RelayServer::bind("127.0.0.1:0", validator.clone()).unwrap();
-    relay.start();
-    let a = client();
-    let b = client();
-    a.send_to(
-        &encode_packet("a", "10.231.0.2", b"register-a").unwrap(),
-        relay.local_addr(),
-    )
-    .unwrap();
-    let packet = encode_packet("b", "10.231.0.1", b"wireguard-ciphertext").unwrap();
-    b.send_to(&packet, relay.local_addr()).unwrap();
-    let mut buffer = [0u8; 2048];
-    let (length, source) = a.recv_from(&mut buffer).unwrap();
-    assert_eq!(source, relay.local_addr());
-    assert_eq!(&buffer[..length], b"wireguard-ciphertext");
-    relay.stop();
-    assert!(*validator.calls.lock().unwrap() > 0);
-}
-
-#[test]
-fn cross_activity_disabled_and_revoked_sessions_are_not_forwarded() {
-    let validator = Arc::new(FakeValidator {
-        grants: HashMap::from([
-            ("a".into(), grant("a", "activity", "10.231.0.1")),
-            ("b".into(), grant("b", "activity", "10.231.0.2")),
+            ("a".into(), grant("a", "room", "10.231.0.1", true)),
+            ("b".into(), grant("b", "room", "10.231.0.2", true)),
             (
                 "other".into(),
-                grant("other", "other-activity", "10.231.0.3"),
+                grant("other", "other-room", "10.231.0.1", true),
+            ),
+            (
+                "disabled".into(),
+                grant("disabled", "room", "10.231.0.3", false),
             ),
         ]),
-        calls: Mutex::new(0),
+        rejected: Mutex::default(),
     });
-    let relay = RelayServer::bind("127.0.0.1:0", validator).unwrap();
-    relay.start();
-    let a = client();
-    let other = client();
-    let b = client();
-    other
-        .send_to(
-            &encode_packet("other", "10.231.0.2", b"cross-room").unwrap(),
-            relay.local_addr(),
-        )
-        .unwrap();
-    let mut buffer = [0u8; 128];
-    assert!(b.recv_from(&mut buffer).is_err());
+    let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
+    let der = cert.cert.der().to_vec();
+    let server = QuicRelayServer::bind_der(
+        "127.0.0.1:0".parse().unwrap(),
+        der.clone(),
+        cert.signing_key.serialize_der(),
+        authority.clone(),
+    )
+    .unwrap();
+    (server, der, authority)
+}
 
-    a.send_to(
-        &encode_packet("a", "10.231.0.2", b"register-a").unwrap(),
-        relay.local_addr(),
+async fn connect(server: &QuicRelayServer, cert: &[u8], ticket: &str) -> RelayClient {
+    RelayClient::connect(
+        server.local_addr(),
+        "localhost",
+        Some(cert.to_vec()),
+        ticket,
     )
-    .unwrap();
-    b.send_to(
-        &encode_packet("b", "10.231.0.1", b"register-b").unwrap(),
-        relay.local_addr(),
+    .await
+    .unwrap()
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn real_quic_datagrams_forward_ciphertext_with_server_authoritative_source() {
+    let (server, cert, _) = fixture().await;
+    let a = connect(&server, &cert, "a").await;
+    let b = connect(&server, &cert, "b").await;
+    a.send("10.231.0.2".parse().unwrap(), b"wireguard-ciphertext")
+        .unwrap();
+    let (source, bytes) = tokio::time::timeout(Duration::from_secs(2), b.receive())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(source.to_string(), "10.231.0.1");
+    assert_eq!(bytes, b"wireguard-ciphertext");
+    assert!(a.send(source, &vec![0; 1121]).is_err());
+    drop(a);
+    drop(b);
+    server.stop().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn cross_activity_and_relay_disabled_grants_cannot_forward() {
+    let (server, cert, _) = fixture().await;
+    assert!(RelayClient::connect(
+        server.local_addr(),
+        "localhost",
+        Some(cert.clone()),
+        "disabled"
     )
-    .unwrap();
-    relay.revoke_lease("lease-b");
-    a.send_to(
-        &encode_packet("a", "10.231.0.2", b"after-revoke").unwrap(),
-        relay.local_addr(),
-    )
-    .unwrap();
-    assert!(b.recv_from(&mut buffer).is_err());
-    relay.stop();
+    .await
+    .is_err());
+    let b = connect(&server, &cert, "b").await;
+    let other = connect(&server, &cert, "other").await;
+    other
+        .send("10.231.0.2".parse().unwrap(), b"cross-room")
+        .unwrap();
+    assert!(
+        tokio::time::timeout(Duration::from_millis(300), b.receive())
+            .await
+            .is_err()
+    );
+    drop(other);
+    drop(b);
+    server.stop().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn receiver_revoked_in_control_plane_cannot_receive_from_cached_session() {
+    let (server, cert, authority) = fixture().await;
+    let a = connect(&server, &cert, "a").await;
+    let b = connect(&server, &cert, "b").await;
+    let target = "10.231.0.2".parse().unwrap();
+    a.send(target, b"before").unwrap();
+    assert_eq!(b.receive().await.unwrap().1, b"before");
+    authority.rejected.lock().unwrap().insert("b".into());
+    a.send(target, b"must-not-arrive").unwrap();
+    assert!(tokio::time::timeout(Duration::from_secs(2), b.receive())
+        .await
+        .unwrap()
+        .is_err());
+    drop(a);
+    drop(b);
+    server.stop().await;
 }
