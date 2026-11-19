@@ -1,4 +1,5 @@
 import { CoreBridge } from "./src/index.js";
+import { avatarField, readGroupAvatar } from "./src/group-avatar.js";
 import {
   renderApp,
   escapeHtml as e,
@@ -40,6 +41,7 @@ let epoch = 0,
   returnFocus,
   dialogSubmit;
 const errors = {
+  GROUP_AVATAR_INVALID: "头像未保存，请选择 2 MiB 以内的有效 PNG 或 JPEG 图片。",
   SERVICE_UNAVAILABLE: "无法连接服务，请稍后重试。",
   TAURI_UNAVAILABLE: "请在织界桌面程序中使用账号服务。",
   INVALID_CREDENTIALS: "邮箱或密码不正确。",
@@ -192,12 +194,12 @@ function createGroup() {
     "创建群组",
     "给固定的小队一个集合地。",
     field("name", "群名称", "text", "", 'required maxlength="80"') +
-      field("description", "群简介", "text", "", 'maxlength="500"'),
+      field("description", "群简介", "text", "", 'maxlength="500"') + avatarField,
     async (data) => {
       await request("group-create", null, {
         name: data.get("name"),
         description: data.get("description"),
-        avatar: null,
+        avatar: await readGroupAvatar(data.get("avatar")),
       });
       closeDialog();
       s.view = "groups";
@@ -461,13 +463,13 @@ const actions = {
           "text",
           g.description,
           'maxlength="500"',
-        ) +
+        ) + avatarField +
         `<div class="management-actions">${button("邀请队友", "invite-member")}${button("管理记录", "audit")}${button("退出群组", "leave-group", "danger")}${g.ownerUserId === s.userId ? button("解散群组", "dissolve-group", "danger") : ""}</div>`,
       async (data) => {
         await request("group-update", g.id, {
           name: data.get("name"),
           description: data.get("description"),
-          avatar: g.avatar,
+          avatar: await readGroupAvatar(data.get("avatar"), g.avatar),
         });
         closeDialog();
         await refresh();

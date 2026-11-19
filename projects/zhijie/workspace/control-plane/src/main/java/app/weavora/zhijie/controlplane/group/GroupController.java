@@ -4,6 +4,7 @@ import app.weavora.zhijie.controlplane.identity.IdentityService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -123,7 +124,7 @@ public class GroupController {
         return identity.authenticate(authorization).id();
     }
 
-    public record GroupBody(@NotBlank String name, String avatar, String description) {
+    public record GroupBody(@NotBlank String name, @Size(max = 32768) String avatar, String description) {
     }
     public record InvitationBody(@NotBlank String inviteeId) {
     }

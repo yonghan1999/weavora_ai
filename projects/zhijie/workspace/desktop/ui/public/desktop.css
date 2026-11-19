@@ -1,4 +1,5 @@
 /* 桌面适配仅补充容器行为；产品令牌与组件样式由已批准设计源文件提供。 */
+.group-avatar-image { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 html,
 body,
 #app {
