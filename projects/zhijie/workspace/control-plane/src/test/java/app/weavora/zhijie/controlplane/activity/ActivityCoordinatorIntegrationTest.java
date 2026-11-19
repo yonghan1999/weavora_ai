@@ -152,6 +152,63 @@ class ActivityCoordinatorIntegrationTest {
         return context.getBean(ActivityRepository.class);
     }
 
+    @Test
+    void heartbeatRenewsOnlyTheCurrentDeviceLeaseAndNeverRevivesExpiredOrReplacedAccess() {
+        Fixture fixture = fixture(1);
+        String user = fixture.userIds().get(0);
+        var coordinator = context.getBean(ActivityCoordinator.class);
+        var joined = coordinator.join(user, fixture.roomId(), "device-a", null, "heartbeat");
+        var lease = repository().findLease(joined.leaseId()).orElseThrow();
+        updateExpiry(lease, Instant.now().plusSeconds(5));
+        coordinator.heartbeat(user, fixture.activityId(), "device-a", joined.leaseId(), joined.activityGeneration(), joined.memberGeneration());
+        assertThat(repository().findLease(joined.leaseId()).orElseThrow().expiresAt()).isAfter(Instant.now().plusSeconds(45));
+        for (String wrong : List.of("device-b", "")) {
+            assertThatThrownBy(() -> coordinator.heartbeat(user, fixture.activityId(), wrong, joined.leaseId(), joined.activityGeneration(), joined.memberGeneration()))
+                    .isInstanceOf(ApiException.class);
+        }
+        assertThatThrownBy(() -> coordinator.heartbeat(user, fixture.activityId(), "device-a", "wrong-lease", joined.activityGeneration(), joined.memberGeneration()))
+                .isInstanceOf(ApiException.class);
+        updateExpiry(lease, Instant.now().minusSeconds(1));
+        assertThatThrownBy(() -> coordinator.heartbeat(user, fixture.activityId(), "device-a", joined.leaseId(), joined.activityGeneration(), joined.memberGeneration()))
+                .isInstanceOf(ApiException.class);
+        var replacement = coordinator.join(user, fixture.roomId(), "device-b", null, "replacement");
+        assertThatThrownBy(() -> coordinator.heartbeat(user, fixture.activityId(), "device-a", joined.leaseId(), joined.activityGeneration(), joined.memberGeneration()))
+                .isInstanceOf(ApiException.class);
+        coordinator.heartbeat(user, fixture.activityId(), "device-b", replacement.leaseId(), replacement.activityGeneration(), replacement.memberGeneration());
+        coordinator.leave(user, fixture.activityId());
+        assertThatThrownBy(() -> coordinator.heartbeat(user, fixture.activityId(), "device-b", replacement.leaseId(), replacement.activityGeneration(), replacement.memberGeneration()))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void missedHeartbeatsEnterBoundedGraceAndEventuallyReleaseTheSeatAndIp() {
+        Fixture fixture = fixture(1);
+        String user = fixture.userIds().get(0);
+        var coordinator = context.getBean(ActivityCoordinator.class);
+        var joined = coordinator.join(user, fixture.roomId(), "device-a", null, "expiry");
+        var lease = repository().findLease(joined.leaseId()).orElseThrow();
+        updateExpiry(lease, Instant.now().minusSeconds(2));
+        coordinator.markExpiredConnections();
+        assertThat(repository().findMember(fixture.activityId(), user).orElseThrow().state()).isEqualTo(MemberState.GRACE);
+        assertThat(repository().findMember(fixture.activityId(), user).orElseThrow().graceExpiresAt()).isBefore(Instant.now().plusSeconds(59));
+        assertThat(repository().findAddress(fixture.activityId(), user).orElseThrow().releasedAt()).isNull();
+        assertThat(coordinator.resume(user, fixture.activityId(), "device-a").leaseId()).isEqualTo(joined.leaseId());
+        updateExpiry(lease, Instant.now().minusSeconds(61));
+        assertThatThrownBy(() -> coordinator.resume(user, fixture.activityId(), "device-a")).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> coordinator.join(user, fixture.roomId(), "device-a", null, "late-join")).isInstanceOf(ApiException.class);
+        coordinator.markExpiredConnections();
+        coordinator.cleanupExpiredGrace();
+        assertThat(repository().findAccountActivity(user)).isEmpty();
+        assertThat(repository().findAddress(fixture.activityId(), user).orElseThrow().releasedAt()).isNotNull();
+        assertThat(repository().findLease(joined.leaseId()).orElseThrow().revokedAt()).isNotNull();
+        assertThatThrownBy(() -> coordinator.resume(user, fixture.activityId(), "device-a")).isInstanceOf(ApiException.class);
+    }
+
+    private void updateExpiry(ConnectionLease lease, Instant expiresAt) {
+        repository().updateLease(new ConnectionLease(lease.id(), lease.activityId(), lease.userId(), lease.deviceId(),
+                lease.activityGeneration(), lease.memberGeneration(), lease.policyRevision(), lease.voiceState(), lease.networkState(), expiresAt, lease.revokedAt()));
+    }
+
     private Fixture fixture(int userCount) {
         String prefix = UUID.randomUUID().toString().replace("-", "");
         IdentityRepository identities = context.getBean(IdentityRepository.class);

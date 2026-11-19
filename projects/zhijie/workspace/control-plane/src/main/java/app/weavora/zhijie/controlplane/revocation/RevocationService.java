@@ -65,6 +65,7 @@ public class RevocationService {
                 current.memberGeneration(), lease == null ? null : lease.policyRevision());
         outbox.record(groupId, current.activityId(), current.userId(), "lease.revoked", payload,
                 current.memberGeneration(), lease == null ? null : lease.policyRevision());
+        outbox.record(groupId, null, current.activityId(), "activity.changed", "{}", null, null);
     }
 
     @Transactional

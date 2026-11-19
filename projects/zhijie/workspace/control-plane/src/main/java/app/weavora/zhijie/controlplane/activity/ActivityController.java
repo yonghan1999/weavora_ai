@@ -3,6 +3,7 @@ package app.weavora.zhijie.controlplane.activity;
 import app.weavora.zhijie.controlplane.identity.IdentityService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,10 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class ActivityController {
     private final ActivityCoordinator activities;
     private final IdentityService identity;
+    private final ActivityModerationService moderation;
 
-    public ActivityController(ActivityCoordinator activities, IdentityService identity) {
+    public ActivityController(ActivityCoordinator activities, IdentityService identity, ActivityModerationService moderation) {
         this.activities = activities;
         this.identity = identity;
+        this.moderation = moderation;
     }
 
     @PostMapping("/room-joins")
@@ -41,6 +44,13 @@ public class ActivityController {
         return Map.of("data", Map.of("left", true));
     }
 
+    @PostMapping("/activities/{activityId}/heartbeat")
+    public Map<String, Object> heartbeat(@RequestHeader("Authorization") String auth, @PathVariable String activityId,
+                                         @Valid @RequestBody HeartbeatBody body) {
+        activities.heartbeat(actor(auth), activityId, body.deviceId(), body.leaseId(), body.activityGeneration(), body.memberGeneration());
+        return Map.of("data", Map.of("renewed", true));
+    }
+
     @GetMapping("/activities/{activityId}/members")
     public Map<String, List<ActivityMember>> members(@RequestHeader("Authorization") String auth, @PathVariable String activityId) {
         return Map.of("data", activities.listMembers(actor(auth), activityId));
@@ -48,8 +58,21 @@ public class ActivityController {
 
     private String actor(String authorization) { return identity.authenticate(authorization).id(); }
 
+    @PostMapping("/activities/{activityId}/members/{userId}/kick")
+    public Map<String, Object> kick(@RequestHeader("Authorization") String auth, @PathVariable String activityId,
+            @PathVariable String userId, @Valid @RequestBody KickBody body) {
+        moderation.kick(actor(auth), activityId, userId, body.memberGeneration());
+        return Map.of("data", Map.of("removed", true));
+    }
+
+    public record KickBody(@Positive long memberGeneration) {
+    }
+
     public record JoinBody(@NotBlank String roomId, @NotBlank String deviceId, String password, @NotBlank String operationId) {
     }
     public record DeviceBody(@NotBlank String deviceId) {
+    }
+    public record HeartbeatBody(@NotBlank String deviceId, @NotBlank String leaseId,
+                                @Positive long activityGeneration, @Positive long memberGeneration) {
     }
 }

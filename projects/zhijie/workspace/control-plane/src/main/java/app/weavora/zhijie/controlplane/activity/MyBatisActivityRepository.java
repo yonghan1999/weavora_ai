@@ -32,6 +32,7 @@ public class MyBatisActivityRepository implements ActivityRepository {
     public Optional<IpHistory> findIpHistory(String roomId, String userId) { return mapper.findIpHistory(roomId, userId); }
     public void upsertIpHistory(IpHistory history) { mapper.upsertIpHistory(history); }
     public List<ActivityMember> listExpiredGrace(Instant now) { return mapper.listExpiredGrace(now); }
+    public List<ConnectionLease> listExpiredActiveLeases(Instant now) { return mapper.listExpiredActiveLeases(now); }
     public String findGroupId(String activityId) { return mapper.findGroupId(activityId); }
     public List<ActivityMember> listActiveByGroup(String groupId) { return mapper.listActiveByGroup(groupId); }
 }

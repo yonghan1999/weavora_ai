@@ -28,6 +28,7 @@ public interface ActivityRepository {
     Optional<IpHistory> findIpHistory(String roomId, String userId);
     void upsertIpHistory(IpHistory history);
     List<ActivityMember> listExpiredGrace(Instant now);
+    List<ConnectionLease> listExpiredActiveLeases(Instant now);
     String findGroupId(String activityId);
     List<ActivityMember> listActiveByGroup(String groupId);
 }

@@ -42,11 +42,11 @@
         </constructor>
     </resultMap>
 
-    <select id="lockUser" resultType="String">SELECT id FROM users WHERE id = #{userId} FOR UPDATE</select>
-    <select id="findRoomForUpdate" resultMap="app.weavora.zhijie.controlplane.room.RoomMapper.Room">
+    <select id="lockUser" resultType="String" flushCache="true">SELECT id FROM users WHERE id = #{userId} FOR UPDATE</select>
+    <select id="findRoomForUpdate" resultMap="app.weavora.zhijie.controlplane.room.RoomMapper.Room" flushCache="true">
         SELECT * FROM rooms WHERE id = #{roomId} FOR UPDATE
     </select>
-    <select id="findActivityForUpdate" resultMap="app.weavora.zhijie.controlplane.room.RoomMapper.Activity">
+    <select id="findActivityForUpdate" resultMap="app.weavora.zhijie.controlplane.room.RoomMapper.Activity" flushCache="true">
         SELECT * FROM activities WHERE id = #{activityId} FOR UPDATE
     </select>
     <select id="findAccountActivity" resultMap="AccountActivity">SELECT * FROM account_activity WHERE user_id = #{userId}</select>
@@ -84,7 +84,7 @@
             #{policyRevision}, #{voiceState}, #{networkState}, #{expiresAt}, #{revokedAt})
     </insert>
     <update id="updateLease" parameterType="app.weavora.zhijie.controlplane.activity.ConnectionLease">
-        UPDATE connection_leases SET voice_state = #{voiceState}, network_state = #{networkState},
+        UPDATE connection_leases SET voice_state = #{voiceState}, network_state = #{networkState}, policy_revision = #{policyRevision},
             expires_at = #{expiresAt}, revoked_at = #{revokedAt} WHERE id = #{id}
     </update>
     <select id="listActiveAddresses" resultType="String">
@@ -112,7 +112,12 @@
             last_activity_id = EXCLUDED.last_activity_id, updated_at = EXCLUDED.updated_at
     </insert>
     <select id="listExpiredGrace" resultMap="ActivityMember">
-        SELECT * FROM activity_members WHERE state = 'GRACE' AND grace_expires_at &lt;= #{now}
+        SELECT * FROM activity_members WHERE state = 'GRACE' AND grace_expires_at &lt;= #{now} ORDER BY user_id
+    </select>
+    <select id="listExpiredActiveLeases" resultMap="ConnectionLease">
+        SELECT l.* FROM connection_leases l JOIN activity_members m
+            ON m.activity_id = l.activity_id AND m.user_id = l.user_id AND m.member_generation = l.member_generation
+        WHERE m.state = 'ACTIVE' AND l.revoked_at IS NULL AND l.expires_at &lt;= #{now} ORDER BY l.user_id
     </select>
     <select id="findGroupId" resultType="String">
         SELECT r.group_id FROM activities a JOIN rooms r ON r.id = a.room_id WHERE a.id = #{activityId}

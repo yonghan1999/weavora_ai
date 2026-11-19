@@ -35,21 +35,26 @@ public class ActivityCoordinator {
     private final RoomService rooms;
     private final Clock clock;
     private final app.weavora.zhijie.controlplane.revocation.RevocationService revocation;
+    private final app.weavora.zhijie.controlplane.sync.ProductSync sync;
 
     public ActivityCoordinator(ActivityRepository repository, IdentityService identity, GroupService groups,
                                RoomService rooms, Clock clock,
-                               app.weavora.zhijie.controlplane.revocation.RevocationService revocation) {
+                               app.weavora.zhijie.controlplane.revocation.RevocationService revocation,
+                               app.weavora.zhijie.controlplane.sync.ProductSync sync) {
         this.repository = repository;
         this.identity = identity;
         this.groups = groups;
         this.rooms = rooms;
         this.clock = clock;
         this.revocation = revocation;
+        this.sync = sync;
     }
 
     @Transactional
     public JoinResult join(String userId, String roomId, String deviceId, String password, String operationId) {
         identity.requireActive(userId);
+        // 治理和入房统一先锁群，再锁账号及房间/活动，避免结束活动时形成反向等待。
+        groups.lockGroup(rooms.getRoom(userId, roomId).groupId());
         repository.lockUser(userId);
         AccountActivity previous = repository.findAccountActivity(userId).orElse(null);
         ConnectionLease previousLease = previous == null ? null :
@@ -61,7 +66,7 @@ public class ActivityCoordinator {
 
         if (previous != null && previous.activityId().equals(activity.id()) && previous.deviceId().equals(deviceId)) {
             ActivityMember existing = repository.findMember(activity.id(), userId).orElse(null);
-            if (existing != null && existing.state() == MemberState.ACTIVE) return currentResult(existing);
+            if (existing != null && existing.state() == MemberState.ACTIVE) return resumeActive(existing);
             if (existing != null && existing.state() == MemberState.GRACE) return resumeInternal(existing);
         }
         if (room.openState() != RoomOpenState.OPEN) throw conflict("ROOM_PAUSED", "房间已暂停新加入");
@@ -88,12 +93,14 @@ public class ActivityCoordinator {
         repository.insertLease(lease);
         repository.upsertAccountActivity(new AccountActivity(userId, activity.id(), deviceId, generation, operationId));
         revokePrevious(previous, previousLease, member, now);
+        sync.groupChanged(room.groupId(), "activity.changed");
         return result(member, lease, ipv4);
     }
 
     @Transactional
     public JoinResult resume(String userId, String activityId, String deviceId) {
         identity.requireActive(userId);
+        lockMembership(userId, activityId);
         repository.lockUser(userId);
         AccountActivity pointer = repository.findAccountActivity(userId).orElseThrow(this::resumeUnavailable);
         if (!pointer.activityId().equals(activityId) || !pointer.deviceId().equals(deviceId)) throw resumeUnavailable();
@@ -101,7 +108,7 @@ public class ActivityCoordinator {
         if (activity.state() != ActivityState.ACTIVE) throw resumeUnavailable();
         ActivityMember member = repository.findMember(activityId, userId).orElseThrow(this::resumeUnavailable);
         if (!member.deviceId().equals(deviceId)) throw resumeUnavailable();
-        if (member.state() == MemberState.ACTIVE) return currentResult(member);
+        if (member.state() == MemberState.ACTIVE) return resumeActive(member);
         if (member.state() != MemberState.GRACE || clock.instant().isAfter(member.graceExpiresAt())) throw resumeUnavailable();
         return resumeInternal(member);
     }
@@ -120,6 +127,7 @@ public class ActivityCoordinator {
         repository.updateLease(new ConnectionLease(lease.id(), lease.activityId(), lease.userId(), lease.deviceId(),
                 lease.activityGeneration(), lease.memberGeneration(), lease.policyRevision(), ChannelState.DISCONNECTED,
                 ChannelState.DISCONNECTED, now.plus(GRACE_PERIOD), null));
+        sync.groupChanged(repository.findGroupId(activityId), "activity.changed");
     }
 
     @Transactional
@@ -133,6 +141,52 @@ public class ActivityCoordinator {
             return;
         }
         leaveInternal(member);
+    }
+
+    @Transactional
+    public void heartbeat(String userId, String activityId, String deviceId, String leaseId,
+                          long activityGeneration, long memberGeneration) {
+        identity.requireActive(userId);
+        lockMembership(userId, activityId);
+        repository.lockUser(userId);
+        AccountActivity pointer = repository.findAccountActivity(userId).orElseThrow(this::resumeUnavailable);
+        if (!pointer.activityId().equals(activityId) || !pointer.deviceId().equals(deviceId)
+                || pointer.memberGeneration() != memberGeneration) throw resumeUnavailable();
+        Activity activity = repository.findActivityForUpdate(activityId).orElseThrow(this::resumeUnavailable);
+        if (activity.state() != ActivityState.ACTIVE || activity.activityGeneration() != activityGeneration) throw resumeUnavailable();
+        ActivityMember member = repository.findMember(activityId, userId).orElseThrow(this::resumeUnavailable);
+        if (member.state() != MemberState.ACTIVE || !member.deviceId().equals(deviceId)
+                || member.memberGeneration() != memberGeneration) throw resumeUnavailable();
+        ConnectionLease lease = currentLease(member);
+        if (!lease.id().equals(leaseId) || lease.activityGeneration() != activityGeneration
+                || !lease.deviceId().equals(deviceId) || !clock.instant().isBefore(lease.expiresAt())) throw resumeUnavailable();
+        repository.updateLease(new ConnectionLease(lease.id(), lease.activityId(), lease.userId(), lease.deviceId(),
+                lease.activityGeneration(), lease.memberGeneration(), lease.policyRevision(), lease.voiceState(),
+                lease.networkState(), clock.instant().plus(GRACE_PERIOD), null));
+    }
+
+    @Transactional
+    public int markExpiredConnections() {
+        int changed = 0;
+        Instant now = clock.instant();
+        for (ConnectionLease expired : repository.listExpiredActiveLeases(now)) {
+            repository.lockUser(expired.userId());
+            ConnectionLease lease = repository.findLatestLease(expired.activityId(), expired.userId()).orElse(null);
+            ActivityMember member = repository.findMember(expired.activityId(), expired.userId()).orElse(null);
+            if (lease == null || member == null || !lease.id().equals(expired.id()) || lease.revokedAt() != null
+                    || member.state() != MemberState.ACTIVE || !member.memberGeneration().equals(lease.memberGeneration())
+                    || now.isBefore(lease.expiresAt())) continue;
+            // 从实际失联期限计算保留期，调度延迟不能延长占位。
+            Instant graceEnd = lease.expiresAt().plus(GRACE_PERIOD);
+            repository.upsertMember(new ActivityMember(member.activityId(), member.userId(), member.deviceId(),
+                    member.memberGeneration(), MemberState.GRACE, member.joinedAt(), graceEnd));
+            repository.updateLease(new ConnectionLease(lease.id(), lease.activityId(), lease.userId(), lease.deviceId(),
+                    lease.activityGeneration(), lease.memberGeneration(), lease.policyRevision(), ChannelState.DISCONNECTED,
+                    ChannelState.DISCONNECTED, graceEnd, null));
+            sync.groupChanged(repository.findGroupId(member.activityId()), "activity.changed");
+            changed++;
+        }
+        return changed;
     }
 
     @Transactional
@@ -151,12 +205,14 @@ public class ActivityCoordinator {
         ActivityMember actor = repository.findMember(activityId, userId).orElseThrow(this::roomUnavailable);
         if (actor.state() != MemberState.ACTIVE && actor.state() != MemberState.GRACE) throw roomUnavailable();
         identity.requireActive(userId);
+        groups.requireMembership(repository.findGroupId(activityId), userId);
         return repository.listMembers(activityId).stream()
                 .filter(member -> member.state() == MemberState.ACTIVE || member.state() == MemberState.GRACE).toList();
     }
 
     private JoinResult resumeInternal(ActivityMember member) {
         Instant now = clock.instant();
+        if (member.state() == MemberState.GRACE && !now.isBefore(member.graceExpiresAt())) throw resumeUnavailable();
         Activity activity = repository.findActivityForUpdate(member.activityId()).orElseThrow(this::resumeUnavailable);
         if (activity.state() != ActivityState.ACTIVE) throw resumeUnavailable();
         ActivityMember active = new ActivityMember(member.activityId(), member.userId(), member.deviceId(),
@@ -167,7 +223,16 @@ public class ActivityCoordinator {
                 lease.activityGeneration(), lease.memberGeneration(), lease.policyRevision(), ChannelState.CONNECTING,
                 ChannelState.CONNECTING, now.plus(GRACE_PERIOD), null);
         repository.updateLease(resumed);
+        sync.groupChanged(repository.findGroupId(member.activityId()), "activity.changed");
         return currentResult(active);
+    }
+
+    private JoinResult resumeActive(ActivityMember member) {
+        ConnectionLease lease = currentLease(member);
+        Instant now = clock.instant();
+        if (now.isBefore(lease.expiresAt())) return currentResult(member);
+        if (!now.isBefore(lease.expiresAt().plus(GRACE_PERIOD))) throw resumeUnavailable();
+        return resumeInternal(member);
     }
 
     private String allocateAddress(Room room, Activity activity, String userId, Instant now) {
@@ -234,6 +299,12 @@ public class ActivityCoordinator {
 
     private ApiException roomUnavailable() {
         return new ApiException(HttpStatus.NOT_FOUND, "RESOURCE_NOT_AVAILABLE", "房间或活动不可用", false);
+    }
+    private void lockMembership(String userId, String activityId) {
+        String groupId = repository.findGroupId(activityId);
+        if (groupId == null) throw roomUnavailable();
+        groups.lockGroup(groupId);
+        groups.requireMembership(groupId, userId);
     }
     private ApiException resumeUnavailable() {
         return new ApiException(HttpStatus.CONFLICT, "GENERATION_STALE", "恢复资格无效、已过期或设备不匹配", false);
