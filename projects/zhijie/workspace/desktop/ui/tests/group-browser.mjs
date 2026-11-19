@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -60,8 +61,9 @@ async function page(email, clientPort = port) {
   const { targetId } = await command('Target.createTarget', { url: 'about:blank', browserContextId });
   const { sessionId } = await command('Target.attachToTarget', { targetId, flatten: true });
   const call = (method, params) => command(method, params, sessionId);
+  const helperSocket = process.platform === 'win32' ? `\\\\.\\pipe\\zhijie-test-${randomUUID()}` : join(process.argv[2], 'absent-helper.sock');
   const client = spawn(executable, ['--exact', 'sync::browser_probe::product_page_client', '--ignored', '--nocapture'],
-    { windowsHide: true, stdio: ['pipe', 'pipe', 'inherit'], env: { ...process.env, ZHIJIE_TEST_GROUP_PORT: String(clientPort) } });
+    { windowsHide: true, stdio: ['pipe', 'pipe', 'inherit'], env: { ...process.env, ZHIJIE_HELPER_SOCKET: helperSocket, ZHIJIE_TEST_GROUP_PORT: String(clientPort) } });
   const contexts = new Map();
   let requestId = 0;
   clients.set(sessionId, { client, send({ executionContextId, payload }) {
@@ -221,6 +223,7 @@ try {
     } else { pending.get(message.id)?.(message); pending.delete(message.id); }
   };
   if (scenario === 'social') await socialScenario();
+  else if (scenario === 'room-channels') await roomChannels();
   else {
     assert.ok(['profile-write', 'profile-read'].includes(scenario));
     await groupProfile(await page('owner@example.test'), scenario);
@@ -236,6 +239,52 @@ try {
   if (browser.exitCode === null && browser.signalCode === null) browser.kill();
   await browserClosed;
   await rm(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 });
+}
+
+async function roomChannels() {
+  const owner = await page('owner@example.test'), member = await page('member@example.test');
+  const native = (client, command, args = {}) => client.evaluate(`globalThis.__TAURI__.core.invoke(${JSON.stringify(command)}, ${JSON.stringify(args)})`);
+  async function join(client) {
+    await client.click('[data-view=lobby]');
+    await client.action('join-room');
+    await client.submit();
+    await client.wait('joined the seeded room', `document.querySelector('.room-heading h1')?.textContent==='通道故障试用房'`);
+    return (await native(client, 'state_snapshot')).activity;
+  }
+  const [ownerActivity, previous] = await Promise.all([join(owner), join(member)]);
+  assert.equal(previous.activityId, ownerActivity.activityId);
+  assert.notEqual(previous.leaseId, ownerActivity.leaseId);
+  for (const client of [owner, member]) {
+    await client.wait('both real failures are visible', `document.querySelectorAll('.room-flags [data-connection=failed]').length===2`);
+    assert.equal((await native(client, 'voice_snapshot')).failureCode, 'VOICE_CAPACITY_LIMITED');
+    assert.equal((await native(client, 'network_snapshot')).status.errorCode, 'HELPER_UNAVAILABLE');
+  }
+  await member.evaluate(`document.querySelector('#message-input').value='通道故障时仍可聊天';document.querySelector('[data-form=message]').requestSubmit()`);
+  await owner.wait('chat delivered despite both channel failures', `Array.from(document.querySelectorAll('.message-text')).some(node=>node.textContent==='通道故障时仍可聊天')`);
+  await owner.click('[data-tab=members]');
+  await owner.wait('live member generation visible', `document.querySelector('[data-action=kick-activity-member]')?.dataset.generation===${JSON.stringify(String(previous.memberGeneration))}`);
+  await owner.action('kick-activity-member');
+  const started = performance.now();
+  await owner.submit();
+  await member.wait('native revocation closed room', `!!document.querySelector('.room-card') && !document.querySelector('.voice-dock')`);
+  const elapsed = Math.round(performance.now() - started);
+  assert.ok(elapsed <= 5000, `kick convergence exceeded 5s: ${elapsed}ms`);
+  assert.equal((await native(member, 'state_snapshot')).activity, null);
+  const current = await join(member);
+  assert.equal(current.activityId, previous.activityId);
+  assert.ok(current.memberGeneration > previous.memberGeneration && current.leaseId !== previous.leaseId);
+  const stale = { activityId: previous.activityId, leaseId: previous.leaseId };
+  for (const command of ['voice_connect', 'network_connect']) {
+    const error = await member.evaluate(`globalThis.__TAURI__.core.invoke(${JSON.stringify(command)},${JSON.stringify(stale)}).then(()=>null,error=>error)`);
+    assert.equal(error, 'CURRENT_GRANT_REQUIRED');
+  }
+  assert.equal((await native(member, 'state_snapshot')).activity.leaseId, current.leaseId);
+  await member.action('leave');
+  await member.submit();
+  await member.wait('voluntary leave released second membership', `!!document.querySelector('.room-card') && !document.querySelector('.voice-dock')`);
+  assert.equal((await native(member, 'state_snapshot')).activity, null);
+  assert.equal((await native(owner, 'state_snapshot')).activity.leaseId, ownerActivity.leaseId);
+  console.log(`ROOM_CHANNEL_FAILURE_CHAT_KICK_REJOIN_LEAVE_OK kick_ms=${elapsed}`);
 }
 
 async function socialScenario() {

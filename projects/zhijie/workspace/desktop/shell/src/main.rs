@@ -489,30 +489,35 @@ fn main() {
             Ok(())
         })
         .manage(AppState::new(client))
-        .invoke_handler(tauri::generate_handler![
-            session_login,
-            product_request,
-            activity_leave,
-            group_list,
-            room_list,
-            activity_join,
-            session_logout,
-            state_snapshot,
-            voice_connect,
-            voice_disconnect,
-            voice_set_mute,
-            voice_set_receive,
-            voice_set_volume,
-            audio_select,
-            audio_devices,
-            audio_test_microphone,
-            audio_test_output,
-            voice_snapshot,
-            network_connect,
-            network_snapshot
-        ])
+        .invoke_handler(product_commands())
         .run(tauri::generate_context!())
         .expect("failed to run 织界");
+}
+
+fn product_commands<R: tauri::Runtime>(
+) -> impl Fn(tauri::ipc::Invoke<R>) -> bool + Send + Sync + 'static {
+    tauri::generate_handler![
+        session_login,
+        product_request,
+        activity_leave,
+        group_list,
+        room_list,
+        activity_join,
+        session_logout,
+        state_snapshot,
+        voice_connect,
+        voice_disconnect,
+        voice_set_mute,
+        voice_set_receive,
+        voice_set_volume,
+        audio_select,
+        audio_devices,
+        audio_test_microphone,
+        audio_test_output,
+        voice_snapshot,
+        network_connect,
+        network_snapshot
+    ]
 }
 
 #[cfg(test)]

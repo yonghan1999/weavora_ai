@@ -45,6 +45,7 @@ class GroupBrowserIntegrationTest {
     private ServletWebServerApplicationContext start(EmbeddedPostgres postgres) {
         return (ServletWebServerApplicationContext) new SpringApplication(ControlPlaneApplication.class).run(
                 "--server.address=127.0.0.1", "--server.port=0",
+                "--zhijie.voice.enabled=false",
                 "--spring.web.resources.static-locations=" + ui.resolve("dist").toUri(),
                 "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
                 "--spring.datasource.username=postgres", "--spring.datasource.password=");
@@ -63,6 +64,34 @@ class GroupBrowserIntegrationTest {
         } finally {
             browser.descendants().forEach(ProcessHandle::destroyForcibly);
             browser.destroyForcibly();
+        }
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
+    void roomMembershipSurvivesChannelFailuresAndKickInvalidatesOnlyTheOldLease() throws Exception {
+        prepareClients();
+        try (var postgres = EmbeddedPostgres.start(); var context = start(postgres)) {
+            var identities = context.getBean(IdentityRepository.class);
+            String password = UUID.randomUUID().toString();
+            String hash = context.getBean(CredentialProtector.class).hashPassword(password);
+            String owner = UUID.randomUUID().toString(), member = UUID.randomUUID().toString();
+            identities.insertUser(new UserAccount(owner, "owner@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            identities.insertUser(new UserAccount(member, "member@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            var groups = context.getBean(GroupService.class);
+            var group = groups.createGroup(owner, "双端房间验证", null, "");
+            groups.acceptInvitation(member, groups.invite(owner, group.id(), member).id());
+            var rooms = context.getBean(app.weavora.zhijie.controlplane.room.RoomService.class);
+            var room = rooms.createRoom(owner, group.id(), "通道故障试用房", "", "", null);
+            var activity = rooms.startActivity(owner, room.id());
+            runBrowser(context, password, "room-channels");
+            var sql = context.getBean(JdbcTemplate.class);
+            assertThat(sql.queryForList("SELECT member_generation FROM connection_leases WHERE activity_id=? AND user_id=? ORDER BY member_generation", Long.class, activity.id(), member)).containsExactly(1L, 2L);
+            assertThat(sql.queryForObject("SELECT count(*) FROM connection_leases WHERE activity_id=? AND user_id=? AND revoked_at IS NULL AND member_generation=1", Integer.class, activity.id(), owner)).isOne();
+            assertThat(sql.queryForObject("SELECT count(*) FROM activity_grants WHERE activity_id=? AND user_id=? AND kind='NETWORK' AND member_generation=1 AND revoked_at IS NOT NULL", Integer.class, activity.id(), member)).isGreaterThan(0);
+            assertThat(sql.queryForObject("SELECT count(*) FROM connection_leases WHERE activity_id=? AND user_id=? AND revoked_at IS NULL", Integer.class, activity.id(), member)).isZero();
+            assertThat(sql.queryForObject("SELECT state FROM activity_members WHERE activity_id=? AND user_id=? AND member_generation=2", String.class, activity.id(), member)).isEqualTo("LEFT");
+            assertThat(sql.queryForObject("SELECT count(*) FROM ip_allocations WHERE activity_id=? AND user_id=? AND released_at IS NULL", Integer.class, activity.id(), member)).isZero();
         }
     }
 
