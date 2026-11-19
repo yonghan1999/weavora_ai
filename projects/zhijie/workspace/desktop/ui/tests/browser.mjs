@@ -150,7 +150,7 @@ if(p.resource==='room-owner'){await new Promise(r=>setTimeout(r,roomGovernanceDe
 if(p.resource==='activity-kick'){await new Promise(r=>setTimeout(r,roomGovernanceDelay));if(failRoomGovernance)throw 'ACTIVITY_MEMBER_CHANGED';activityMembers=activityMembers.filter(m=>m.userId!==p.targetId);return {};}
 if(p.resource==='messages'){if(globalThis.throttleMessages){globalThis.throttledReads++;throw 'RATE_LIMITED';}const rows=[...messages].reverse();if(!p.targetId)return rows.slice(0,50);if(globalThis.failHistory)throw 'SERVICE_UNAVAILABLE';const index=rows.findIndex(row=>row.id===p.targetId);return index<0?[]:rows.slice(index+1,index+51);}
 if(p.resource==='message-send'){messages.push({id:'m1',authorId:'u1',body:p.body.body,createdAt:new Date().toISOString()});return messages.at(-1);}
-if(p.resource==='message-delete'){messages[0].deleted=true;return messages[0];}
+if(p.resource==='message-delete'){if(globalThis.failDelete)throw 'CURRENT_GRANT_REQUIRED';const message=messages.find(row=>row.id===p.id);if(!message)throw 'RESOURCE_NOT_AVAILABLE';message.deleted=true;return message;}
 if(p.resource==='friend-search')return [{userId:'u2',email:p.id}];
 if(p.resource==='group-invite')return {id:'invite-1'};
 if(['register','verify','forgot','reset'].includes(p.resource))throw 'EMAIL_DELIVERY_UNAVAILABLE';
@@ -550,6 +550,16 @@ try {
   await check('翻页失败保留页和重试按钮', `document.querySelector('#dialog-error').textContent.length>0 && document.querySelectorAll('[data-message-history] .message-text').length===50`);
   await evaluate('failHistory=false'); await click('[role=dialog] [data-action="message-history"]');
   await check('末页按时间顺序显示删除占位并停止翻页', `JSON.stringify(Array.from(document.querySelectorAll('[data-message-history] .message-text'),node=>node.textContent))===JSON.stringify(['历史 <0>','历史 <1>','此消息已被删除']) && !document.querySelector('[role=dialog] [data-action=message-history]')`);
+  await check('群主在历史页可删除他人消息但不能重复删除', `JSON.stringify(Array.from(document.querySelectorAll('[data-message-history] [data-action=delete-message]'),node=>node.dataset.id))===JSON.stringify(['page-0','page-1'])`);
+  await evaluate('globalThis.deleteStart=calls.length;globalThis.failDelete=true');
+  await click('[data-message-history] [data-id="page-1"]');
+  await check('历史消息删除等待明确确认', `document.querySelector('#dialog-title').textContent==='删除消息' && !calls.slice(deleteStart).some(x=>x.p.resource==='message-delete')`);
+  await click('.modal-actions .primary');
+  await check('服务端拒绝时保留消息并显示错误', `!messages[1].deleted && document.querySelector('#dialog-error').textContent.length>0`);
+  await evaluate('failDelete=false;failHistory=true'); await click('.modal-actions .primary');
+  await check('删除成功后读取失败可单独刷新', `messages[1].deleted && document.querySelector('.modal-actions .primary').textContent==='刷新消息' && document.querySelector('#dialog-error').textContent.length>0`);
+  await evaluate('failHistory=false'); await click('.modal-actions .primary');
+  await check('仅重读原历史页不再次提交删除', `JSON.stringify(calls.slice(deleteStart).filter(x=>x.p.resource==='message-delete').map(x=>x.p.id))===JSON.stringify(['page-1','page-1']) && JSON.stringify(Array.from(document.querySelectorAll('[data-message-history] .message-text'),node=>node.textContent))===JSON.stringify(['历史 <0>','此消息已被删除','此消息已被删除']) && !document.querySelector('[data-message-history] [data-id="page-1"]')`);
   await click('[role=dialog] [data-action="dialog-close"].ghost');
   await check('返回最新后草稿与最新消息保持', `document.querySelector('#message-input').value==='翻页草稿' && Array.from(document.querySelectorAll('.group-chat-body .message-text')).at(-1).textContent==='历史 <102>'`);
   await evaluate('messages=originalMessages'); await click('[data-view="groups"]'); await click('[data-action="open-group"]');

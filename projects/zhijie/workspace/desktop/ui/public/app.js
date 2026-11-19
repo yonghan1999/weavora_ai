@@ -2,6 +2,7 @@ import { CoreBridge } from "./src/index.js";
 import { avatarField, readGroupAvatar } from "./src/group-avatar.js";
 import {
   renderApp,
+  messageDeleteControl,
   escapeHtml as e,
   field,
   button,
@@ -631,7 +632,8 @@ async function showMessageHistory(groupId, cursor, applicable = () => true) {
     throw error;
   }
   if (epoch !== current || groupId !== s.groupId || userId !== s.userId || previous !== modalRoot.firstChild || !applicable()) return false;
-  const entries = rows.slice().reverse().map(message => `<article class="message-content"><div class="message-meta"><strong>${e(message.authorId === userId ? "我" : message.authorId)}</strong><time>${e(new Date(message.createdAt).toLocaleString("zh-CN"))}</time></div><div class="message-text">${e(message.deleted ? "此消息已被删除" : message.body)}</div></article>`).join("");
+  const deleteControl = messageDeleteControl(s);
+  const entries = rows.slice().reverse().map(message => `<article class="message-content"><div class="message-meta"><strong>${e(message.authorId === userId ? "我" : message.authorId)}</strong><time>${e(new Date(message.createdAt).toLocaleString("zh-CN"))}</time>${deleteControl(message)}</div><div class="message-text">${e(message.deleted ? "此消息已被删除" : message.body)}</div></article>`).join("");
   const older = rows.length === 50 ? button("更早的消息", "message-history", "ghost", `data-id="${e(rows.at(-1).id)}"`) : "";
   dialog("群聊历史", "按发送时间排列；关闭后返回实时群聊。", `<div data-message-history>${entries || empty("没有更早的消息", "你已经看完了这个群的历史消息。")}</div>${older}${button("返回最新消息", "dialog-close", "ghost")}`, null);
   modalRefresh = {reload: guard => showMessageHistory(groupId, cursor, guard)};
@@ -814,11 +816,27 @@ const actions = {
     }),
   "retry-voice": () => connectChannel("voice"),
   "retry-network": () => connectChannel("network"),
-  "delete-message": (b) =>
-    confirmation("删除消息", "删除后正文将不可见，保留删除标记。", async () => {
+  "delete-message": (b) => {
+    const history = b.closest("[data-message-history]") ? modalRefresh : null;
+    const current = epoch, groupId = s.groupId;
+    dialog("删除消息", "删除后正文将不可见，保留删除标记。", "", async () => {
+      const previous = modalRoot.firstChild;
+      const applicable = () => current === epoch && groupId === s.groupId && previous === modalRoot.firstChild;
+      const reload = async () => {
+        if (history) await history.reload(applicable);
+        else {
+          await loadContext(current, applicable);
+          if (applicable()) closeDialog();
+        }
+      };
       await request("message-delete", b.dataset.id);
-      await loadContext();
-    }),
+      if (!applicable()) return;
+      dialogSubmit = reload;
+      modalRoot.querySelector(".modal-actions .primary").textContent = "刷新消息";
+      document.getElementById("dialog-description").textContent = "消息已删除，正在重新读取列表。";
+      await reload();
+    });
+  },
   "invite-member": () =>
     dialog(
       "邀请队友",
