@@ -1,27 +1,27 @@
 package app.weavora.zhijie.controlplane.sync;
 
 import app.weavora.zhijie.controlplane.identity.IdentityService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import app.weavora.zhijie.controlplane.common.ApiException;
 import java.net.URI;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class SyncWebSocketHandler extends TextWebSocketHandler {
+    private static final Logger log = LoggerFactory.getLogger(SyncWebSocketHandler.class);
     private static final String USER_ID = "userId";
     private final IdentityService identity;
     private final SyncService sync;
-    private final ObjectMapper objectMapper;
 
-    public SyncWebSocketHandler(IdentityService identity, SyncService sync, ObjectMapper objectMapper) {
+    public SyncWebSocketHandler(IdentityService identity, SyncService sync) {
         this.identity = identity;
         this.sync = sync;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -29,15 +29,22 @@ public class SyncWebSocketHandler extends TextWebSocketHandler {
         try {
             URI uri = session.getUri();
             Map<String, String> parameters = UriComponentsBuilder.fromUri(uri).build().getQueryParams().toSingleValueMap();
-            String userId = identity.authenticate("Bearer " + parameters.getOrDefault("access_token", "")).id();
-            long cursor = Long.parseLong(parameters.getOrDefault("cursor", "0"));
-            session.getAttributes().put(USER_ID, userId);
-            sync.register(userId, session);
-            for (SyncEvent event : sync.history(userId, cursor)) {
-                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(event)));
+            var binding = identity.authenticateSession("Bearer " + parameters.getOrDefault("access_token", ""));
+            long cursor;
+            try { cursor = Long.parseLong(parameters.getOrDefault("cursor", "0")); }
+            catch (NumberFormatException invalid) {
+                session.close(new CloseStatus(1008, "RESYNC_REQUIRED"));
+                return;
             }
+            session.getAttributes().put(USER_ID, binding.userId());
+            sync.connect(binding, session, cursor);
+        } catch (ApiException exception) {
+            String reason = "RESYNC_REQUIRED".equals(exception.code()) ? "RESYNC_REQUIRED" : "ACCESS_TOKEN_INVALID";
+            session.close(new CloseStatus(1008, reason));
         } catch (Exception exception) {
-            session.close(CloseStatus.POLICY_VIOLATION);
+            // 不输出异常正文、堆栈或 URI；其中可能包含查询凭据。
+            log.warn("Sync setup failed: category={}", exception.getClass().getSimpleName());
+            session.close(CloseStatus.SERVER_ERROR);
         }
     }
 
