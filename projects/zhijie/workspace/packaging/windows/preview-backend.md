@@ -1,6 +1,6 @@
 # Windows 本机试用后端（离线包）
 
-**更新候选**：`target/backend-f67715c/preview-backend.zip` 包含并发删除群消息修复，大小为 140,633,165 字节，SHA-256 为 `1b24c669645ed6101ec9b23f87068c9750ffdfc13406537a5a9c881ac27c50b1`。这是后端更新，没有重建桌面。下述 `649e830` 是留存的旧候选。
+**更新候选**：`target/backend-f67715c/preview-backend.zip` 包含并发删除群消息修复，大小为 140,633,165 字节，SHA-256 为 `1b24c669645ed6101ec9b23f87068c9750ffdfc13406537a5a9c881ac27c50b1`。本机已准备配套的 [Windows 便携桌面 `5d5d283` 与启动命令](candidate-build.md)。下述 `649e830` 是留存的旧候选。
 
 在这台构建机的 `workspace` 下，`target/trial-649e830/preview-backend.zip` 是与桌面候选 `649e830` 同版的后端。它不是生产发布包。压缩包 SHA-256：`f8fd92f5be33f09e78082468cab5eb712254565c2ff688b91215cdb80fe98702`。只使用来源可信、摘要匹配的包；摘要本身不是签名。包内没有 JDK、账号、密码、试用数据库或桌面程序。
 
