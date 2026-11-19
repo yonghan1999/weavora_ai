@@ -79,7 +79,8 @@ public class IdentityService {
     @Transactional(noRollbackFor = ApiException.class)
     public AuthTokens refresh(String refreshToken) {
         TokenParts parts = parseToken(refreshToken, "REFRESH_TOKEN_INVALID");
-        AuthSession session = repository.findSessionById(parts.sessionId())
+        // 锁定后再校验秘密与撤销状态，避免并发刷新或退出被旧快照覆盖。
+        AuthSession session = repository.findSessionForUpdate(parts.sessionId())
                 .orElseThrow(this::invalidRefreshToken);
         Instant now = clock.instant();
         if (session.revokedAt() != null || now.isAfter(session.expiresAt())) {
@@ -90,6 +91,7 @@ public class IdentityService {
             repository.updateSession(revoked);
             throw invalidRefreshToken();
         }
+        requireActive(session.userId());
         TokenMaterial material = newTokenMaterial(session.id());
         AuthSession rotated = new AuthSession(
                 session.id(), session.userId(), session.deviceId(), material.refreshHash(), material.accessHash(),
@@ -102,7 +104,7 @@ public class IdentityService {
     @Transactional
     public void logout(String accessToken) {
         TokenParts parts = parseToken(accessToken, "ACCESS_TOKEN_INVALID");
-        AuthSession session = repository.findSessionById(parts.sessionId())
+        AuthSession session = repository.findSessionForUpdate(parts.sessionId())
                 .orElseThrow(this::invalidAccessToken);
         if (!credentials.hashToken(parts.secret()).equals(session.accessTokenHash())) {
             throw invalidAccessToken();
@@ -120,7 +122,7 @@ public class IdentityService {
                 .ifPresent(user -> issueChallenge(user, ChallengePurpose.PASSWORD_RESET));
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public void resetPassword(String email, String code, String newPassword) {
         if (newPassword == null || newPassword.length() < 12) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "WEAK_PASSWORD", "密码至少需要 12 个字符", false);
@@ -145,17 +147,29 @@ public class IdentityService {
     }
 
     public UserAccount authenticate(String authorization) {
+        return requireActive(authenticateSession(authorization).userId());
+    }
+
+    public AuthSession authenticateSession(String authorization) {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             throw invalidAccessToken();
         }
         TokenParts parts = parseToken(authorization.substring(7), "ACCESS_TOKEN_INVALID");
         AuthSession session = repository.findSessionById(parts.sessionId()).orElseThrow(this::invalidAccessToken);
         Instant now = clock.instant();
-        if (session.revokedAt() != null || now.isAfter(session.accessExpiresAt())
+        if (session.revokedAt() != null || !now.isBefore(session.accessExpiresAt())
                 || !credentials.hashToken(parts.secret()).equals(session.accessTokenHash())) {
             throw invalidAccessToken();
         }
-        return requireActive(session.userId());
+        requireActive(session.userId());
+        return session;
+    }
+
+    public void requireSession(String sessionId, long generation, String userId) {
+        AuthSession current = repository.findSessionById(sessionId).orElseThrow(this::invalidAccessToken);
+        if (current.revokedAt() != null || current.generation() != generation || !current.userId().equals(userId)
+                || !clock.instant().isBefore(current.accessExpiresAt())) throw invalidAccessToken();
+        requireActive(current.userId());
     }
 
     private AuthTokens createSession(UserAccount user, String deviceId) {
@@ -193,7 +207,8 @@ public class IdentityService {
     }
 
     private EmailChallenge validateAndConsumeChallenge(UserAccount user, ChallengePurpose purpose, String code) {
-        EmailChallenge challenge = repository.findLatestChallenge(user.id(), purpose).orElseThrow(this::invalidChallenge);
+        // 消费与错误计数在同一验证码行锁下校验，防止并发重放和次数丢失。
+        EmailChallenge challenge = repository.findLatestChallengeForUpdate(user.id(), purpose).orElseThrow(this::invalidChallenge);
         Instant now = clock.instant();
         if (challenge.consumedAt() != null || now.isAfter(challenge.expiresAt())
                 || challenge.attempts() >= MAX_CHALLENGE_ATTEMPTS) {

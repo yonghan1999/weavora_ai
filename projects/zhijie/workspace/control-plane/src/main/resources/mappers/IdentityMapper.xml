@@ -55,6 +55,11 @@
         WHERE user_id = #{userId} AND purpose = #{purpose}
         ORDER BY created_at DESC LIMIT 1
     </select>
+    <select id="findLatestChallengeForUpdate" resultMap="EmailChallenge">
+        SELECT * FROM email_challenges
+        WHERE user_id = #{userId} AND purpose = #{purpose}
+        ORDER BY created_at DESC LIMIT 1 FOR UPDATE
+    </select>
     <insert id="insertChallenge" parameterType="app.weavora.zhijie.controlplane.identity.EmailChallenge">
         INSERT INTO email_challenges
             (id, user_id, purpose, code_hash, expires_at, attempts, consumed_at, created_at)
@@ -67,6 +72,9 @@
 
     <select id="findSessionById" resultMap="AuthSession">
         SELECT * FROM auth_sessions WHERE id = #{sessionId}
+    </select>
+    <select id="findSessionForUpdate" resultMap="AuthSession">
+        SELECT * FROM auth_sessions WHERE id = #{sessionId} FOR UPDATE
     </select>
     <select id="findSessionByAccessTokenHash" resultMap="AuthSession">
         SELECT * FROM auth_sessions WHERE access_token_hash = #{accessTokenHash}

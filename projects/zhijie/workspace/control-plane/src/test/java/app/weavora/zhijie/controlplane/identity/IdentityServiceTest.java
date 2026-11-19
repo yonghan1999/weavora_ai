@@ -76,6 +76,19 @@ class IdentityServiceTest {
     }
 
     @Test
+    void disabledAccountCannotRotateOtherwiseValidRefreshCredentials() {
+        service.register(EMAIL, PASSWORD);
+        service.verifyEmail(EMAIL, emailDispatch.codes.get(ChallengePurpose.VERIFY_EMAIL));
+        AuthTokens tokens = service.login(EMAIL, PASSWORD, "device-a");
+        UserAccount user = repository.findUserById(tokens.userId()).orElseThrow();
+        repository.updateUser(new UserAccount(user.id(), user.emailNormalized(), AccountStatus.DISABLED,
+                user.passwordHash(), user.createdAt()));
+        assertThatThrownBy(() -> service.refresh(tokens.refreshToken())).isInstanceOf(ApiException.class)
+                .extracting("code").isEqualTo("CURRENT_GRANT_REQUIRED");
+        assertThat(repository.findSessionById(tokens.sessionId()).orElseThrow().generation()).isEqualTo(1);
+    }
+
+    @Test
     void verificationChallengeIsSingleUseAndFailedAttemptsAreCounted() {
         service.register(EMAIL, PASSWORD);
         String code = emailDispatch.codes.get(ChallengePurpose.VERIFY_EMAIL);
@@ -180,6 +193,11 @@ class IdentityServiceTest {
         }
 
         @Override
+        public Optional<EmailChallenge> findLatestChallengeForUpdate(String userId, ChallengePurpose purpose) {
+            return findLatestChallenge(userId, purpose);
+        }
+
+        @Override
         public void insertChallenge(EmailChallenge challenge) {
             challenges.put(challenge.id(), challenge);
         }
@@ -192,6 +210,11 @@ class IdentityServiceTest {
         @Override
         public Optional<AuthSession> findSessionById(String sessionId) {
             return Optional.ofNullable(sessions.get(sessionId));
+        }
+
+        @Override
+        public Optional<AuthSession> findSessionForUpdate(String sessionId) {
+            return findSessionById(sessionId);
         }
 
         @Override

@@ -17,11 +17,15 @@ public interface IdentityMapper {
 
     Optional<EmailChallenge> findLatestChallenge(@Param("userId") String userId, @Param("purpose") ChallengePurpose purpose);
 
+    Optional<EmailChallenge> findLatestChallengeForUpdate(@Param("userId") String userId, @Param("purpose") ChallengePurpose purpose);
+
     void insertChallenge(EmailChallenge challenge);
 
     void updateChallenge(EmailChallenge challenge);
 
     Optional<AuthSession> findSessionById(String sessionId);
+
+    Optional<AuthSession> findSessionForUpdate(String sessionId);
 
     Optional<AuthSession> findSessionByAccessTokenHash(String accessTokenHash);
 

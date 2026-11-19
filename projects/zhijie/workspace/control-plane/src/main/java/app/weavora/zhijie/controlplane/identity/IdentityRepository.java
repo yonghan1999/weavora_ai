@@ -14,11 +14,15 @@ public interface IdentityRepository {
 
     Optional<EmailChallenge> findLatestChallenge(String userId, ChallengePurpose purpose);
 
+    Optional<EmailChallenge> findLatestChallengeForUpdate(String userId, ChallengePurpose purpose);
+
     void insertChallenge(EmailChallenge challenge);
 
     void updateChallenge(EmailChallenge challenge);
 
     Optional<AuthSession> findSessionById(String sessionId);
+
+    Optional<AuthSession> findSessionForUpdate(String sessionId);
 
     Optional<AuthSession> findSessionByAccessTokenHash(String accessTokenHash);
 

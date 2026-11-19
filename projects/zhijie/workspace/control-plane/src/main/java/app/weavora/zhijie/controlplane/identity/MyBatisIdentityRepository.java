@@ -38,6 +38,11 @@ public class MyBatisIdentityRepository implements IdentityRepository {
     }
 
     @Override
+    public Optional<EmailChallenge> findLatestChallengeForUpdate(String userId, ChallengePurpose purpose) {
+        return mapper.findLatestChallengeForUpdate(userId, purpose);
+    }
+
+    @Override
     public void insertChallenge(EmailChallenge challenge) {
         mapper.insertChallenge(challenge);
     }
@@ -50,6 +55,11 @@ public class MyBatisIdentityRepository implements IdentityRepository {
     @Override
     public Optional<AuthSession> findSessionById(String sessionId) {
         return mapper.findSessionById(sessionId);
+    }
+
+    @Override
+    public Optional<AuthSession> findSessionForUpdate(String sessionId) {
+        return mapper.findSessionForUpdate(sessionId);
     }
 
     @Override
