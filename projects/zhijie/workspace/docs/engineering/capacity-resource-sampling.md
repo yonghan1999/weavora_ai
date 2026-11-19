@@ -24,7 +24,16 @@ python "scripts/sample-capacity-resources.py" --pid 1234 --pid 5678 --interface 
 
 设置 `ZHIJIE_TEST_CONTROL_LOAD=true` 及 `ZHIJIE_TEST_RESOURCE_INTERFACE`（非空接口名），从 workspace 运行 `./mvnw.cmd -o -pl control-plane "-Dtest=ControlPlaneLoadIntegrationTest#hundredVerifiedAccountsRunRealHttpAndSyncWithPresenceRecovery" test`。可选 `ZHIJIE_TEST_PYTHON` 指向已安装 psutil 的解释器。不设接口时保持原测试流程，无新增 Python 环境要求。台架先确认采样器已写首条样本，再启动业务流量；负载结束后写停止信号，检查子进程、截止原因及覆盖时长。`host-observation/` 与负载 `summary.json`、`operations.jsonl`、`resources.jsonl` 同属于一个新运行目录。
 
-这里的 PID 是运行 Spring 和测试框架的 JVM，不包括 PostgreSQL 子进程或 Node 压测客户端；数据库连接数和堆数据仍在原 `resources.jsonl`。目标机应单独核对进程范围、容器限制、实际限速方向，并由外部负载机通过已核实的接口产生流量。采样器成功只说明采样完成，不能授予 AC-038/039 通过。
+启用宿主采样时，C0 和百账号夹具都通过临时库的 `data_directory/postmaster.pid` 确定主进程，并与当前 SQL 会话的操作系统父 PID 核对。`--pid` 的 CPU、句柄、RSS 仍只计测试 JVM；可选 `--memory-tree-pid` 在每个采样周期独立枚举指定根及当时可见的后代，只读 RSS。所选 PID 与进程树重叠时失败；子进程在读取期间消失可有限重试，根进程退出或无法完成该样本时不汇总成功。原始 `processes` 和 `memoryTree` 都含 PID、创建时间及 RSS。`combinedMemoryPeakMiB` 取每个周期两组 RSS 之和的最大值，不叠加不同周期的峰值。RSS 可能重复计算共享页，短于采样间隔的子进程可能未被观测；它不是整机或容器的实际内存占用。Node 压测客户端不计入，数据库连接数和堆仍见 `resources.jsonl`。
+
+同机实测：`target/baseline-and-load-tree-20261120-032058/maven.log` 两项通过、零跳过。下列数值均由各目录 `host-observation/samples.jsonl` 复核：
+
+| 本机场景（原始记录在 `target/`） | 宿主采样 | JVM RSS 峰值 | PostgreSQL 树 RSS 峰值 | 同周期合计峰值 |
+| --- | --- | ---: | ---: | ---: |
+| 零账号，`control-baseline-12206853101682162654` | 60.85 秒 / 61 条 | 543.37 MiB | 265.74 MiB | 795.68 MiB |
+| 百账号，`control-load-6661463172665070913` | 97.48 秒 / 97 条 | 593.04 MiB | 303.57 MiB | 895.01 MiB |
+
+百账号实际负载 90.03 秒，100 个同步连接，3,706 次 HTTP 请求、p95 19.84 ms，HTTP 和同步均零失败，10 次重连均确认补发。宿主采样还覆盖负载前后的协调时间。两次运行的回环接口计数都未变化，不能报告带宽。测试机未经二核/2 GiB/5 Mbit/s 限制，不能从这些 RSS 或时延数字推断目标机容量或授予 AC-038/039 通过。
 
 ## 已运行的开发验证
 

@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import psutil
 
@@ -21,6 +21,36 @@ def sample(elapsed, cpu, sent, received, created=123):
 
 
 class ResourceSamplerTest(unittest.TestCase):
+    def test_tree_retries_disappearing_child_without_losing_root(self):
+        root = Mock(pid=101)
+        root.is_running.return_value = True
+        child = Mock(pid=102)
+        child.memory_info.side_effect = psutil.NoSuchProcess(child.pid)
+        root.children.side_effect = [[child], []]
+        rows = sampler.tree_memory(root, [100])
+        self.assertEqual([row["pid"] for row in rows], [101])
+        root.children.side_effect = None
+        root.children.return_value = [child]
+        with self.assertRaisesRegex(ValueError, "overlaps"):
+            sampler.tree_memory(root, [102])
+        root.is_running.return_value = False
+        with self.assertRaises(psutil.NoSuchProcess):
+            sampler.tree_memory(root, [100])
+
+    def test_combined_peak_uses_concurrent_samples_not_sum_of_peaks(self):
+        first, last = sample(0, 1, 0, 0), sample(1, 2, 0, 0)
+        first["processes"][0]["rssBytes"] = 20 * 2**20
+        last["processes"][0]["rssBytes"] = 10 * 2**20
+        tree = [[{"pid": 2, "created": 0, "rssBytes": rss * 2**20}] for rss in (3, 7)]
+        with TemporaryDirectory() as temp, patch.object(sampler.psutil, "Process"), \
+                patch.object(sampler, "snapshot", side_effect=[first, last]), \
+                patch.object(sampler, "tree_memory", side_effect=tree), patch.object(sampler.time, "sleep"):
+            output = Path(temp) / "run"
+            sampler.collect([123], "test", 1, 1, output, memory_tree_pid=2)
+            peaks = json.loads((output / "summary.json").read_text())["sampledPeaks"]
+            self.assertEqual((peaks["memoryPeakMiB"], peaks["memoryTreePeakMiB"], peaks["combinedMemoryPeakMiB"]), (20, 7, 23))
+            self.assertEqual([json.loads(row)["memoryTree"] for row in (output / "samples.jsonl").read_text().splitlines()], tree)
+
     def test_cpu_and_interface_rates_use_actual_interval(self):
         rates = sampler.interval_metrics(sample(1, 2, 20, 100), sample(3, 5, 2020, 1100))
         self.assertEqual(rates, {"cpuPeakPercent": 150, "upstreamPeakKbitPerSecond": 8,

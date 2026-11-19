@@ -18,6 +18,7 @@ import java.lang.management.ManagementFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
 import com.zaxxer.hikari.HikariDataSource;
 
 class ControlPlaneLoadIntegrationTest {
@@ -98,6 +99,7 @@ class ControlPlaneLoadIntegrationTest {
                     if (networkInterface != null && !networkInterface.isBlank()) {
                         sampler = new ProcessBuilder(System.getenv().getOrDefault("ZHIJIE_TEST_PYTHON", "python"),
                                 "scripts/sample-capacity-resources.py", "--pid", Long.toString(ProcessHandle.current().pid()),
+                                "--memory-tree-pid", Long.toString(PostgresSamplerTarget.rootPid(context.getBean(JdbcTemplate.class))),
                                 "--interface", networkInterface, "--duration", Integer.toString(durationSeconds + 60), "--stop-file", stopFile.toString(),
                                 "--output", observation.toString()).directory(workspace.toFile()).redirectErrorStream(true)
                                 .redirectOutput(directory.resolve("sampler.log").toFile()).start();
@@ -143,6 +145,7 @@ class ControlPlaneLoadIntegrationTest {
                         var measured = json.readTree(Files.readString(observation.resolve("summary.json")));
                         assertThat(measured.path("endCondition").asText()).isEqualTo("stop-file");
                         assertThat(measured.path("measuredDurationSeconds").asDouble()).isGreaterThanOrEqualTo(durationSeconds);
+                        assertThat(measured.required("sampledPeaks").required("memoryTreePeakMiB").doubleValue()).isPositive();
                     }
                     assertThat(resourceSamples).isGreaterThan((int)(durationSeconds * 0.9));
                     assertThat(process.exitValue()).as("Real control-plane load; inspect %s", log).isZero();

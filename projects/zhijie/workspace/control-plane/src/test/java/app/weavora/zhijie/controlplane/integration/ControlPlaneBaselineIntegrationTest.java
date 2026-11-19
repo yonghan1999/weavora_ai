@@ -43,8 +43,10 @@ class ControlPlaneBaselineIntegrationTest {
             var health = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + context.getWebServer().getPort() + "/actuator/health"))
                     .timeout(Duration.ofSeconds(3)).GET().build();
             Path observation = output.resolve("host-observation"), stop = output.resolve("sampling.stop");
+            long postmaster = PostgresSamplerTarget.rootPid(sql);
             var sampler = new ProcessBuilder(System.getenv().getOrDefault("ZHIJIE_TEST_PYTHON", "python"), "-B",
                     "scripts/sample-capacity-resources.py", "--pid", Long.toString(ProcessHandle.current().pid()),
+                    "--memory-tree-pid", Long.toString(postmaster),
                     "--interface", networkInterface, "--duration", "90", "--stop-file", stop.toString(), "--output", observation.toString())
                     .directory(workspace.toFile()).redirectErrorStream(true).redirectOutput(output.resolve("sampler.log").toFile()).start();
             try (var writer = Files.newBufferedWriter(output.resolve("control.jsonl"))) {
@@ -80,10 +82,14 @@ class ControlPlaneBaselineIntegrationTest {
                 var host = json.readTree(observation.resolve("summary.json").toFile());
                 assertThat(host.path("endCondition").asText()).isEqualTo("stop-file");
                 assertThat(host.path("measuredDurationSeconds").asDouble()).isGreaterThanOrEqualTo(60);
+                assertThat(host.required("memoryTreeRootPid").longValue()).isEqualTo(postmaster);
+                var peaks = host.required("sampledPeaks");
+                assertThat(peaks.required("memoryTreePeakMiB").doubleValue()).isPositive();
+                assertThat(peaks.required("combinedMemoryPeakMiB").doubleValue()).isGreaterThan(peaks.required("memoryPeakMiB").doubleValue());
                 assertThat(sql.queryForObject("SELECT count(*) FROM users", Integer.class)).isZero();
                 json.writeValue(output.resolve("summary.json").toFile(), Map.of("scenario", "C0", "accounts", 0,
                         "idleSeconds", 30, "fixedHealthRequests", 30, "databaseSamples", 60,
-                        "scope", "local-jvm-and-loopback-control", "acceptance", "unverified_target_server"));
+                        "scope", "local-jvm-postgres-rss-and-loopback-control", "acceptance", "unverified_target_server"));
             } finally {
                 if (sampler.isAlive()) sampler.destroyForcibly().waitFor(10, TimeUnit.SECONDS);
             }
