@@ -250,18 +250,28 @@ try {
 async function protectedRoomSwitch() {
   const member = await page('member@example.test');
   const activity = () => member.evaluate(`globalThis.__TAURI__.core.invoke('state_snapshot').then(snapshot=>snapshot.activity)`);
-  async function chooseRoom(name) {
-    await member.click('[data-view=groups]');
-    await member.action('open-group');
-    const entry = `Array.from(document.querySelectorAll('.group-room-item')).find(row=>row.querySelector('strong').textContent===${JSON.stringify(name)})?.querySelector('[data-action=join-room]')`;
-    await member.wait('room entry available', `(${entry})?.disabled===false`);
-    await member.evaluate(`(${entry}).click()`);
+  async function chooseRoom(client, name, lobby = false) {
+    await client.click(lobby ? '[data-view=lobby]' : '[data-view=groups]');
+    if (!lobby) await client.action('open-group');
+    const title = lobby ? '.room-card h3' : '.group-room-item strong';
+    const row = lobby ? '.room-card' : '.group-room-item';
+    const entry = `Array.from(document.querySelectorAll('${title}')).find(node=>node.textContent===${JSON.stringify(name)})?.closest('${row}').querySelector('[data-action=join-room]')`;
+    await client.wait('room entry available', `(${entry})?.disabled===false`);
+    await client.evaluate(`(${entry}).click()`);
   }
-  await chooseRoom('原房间'); await member.submit();
+  const input = `document.querySelector('[data-form=dialog] [name=password]')`;
+  const owner = await page('owner@example.test');
+  await chooseRoom(owner, '密码房', true);
+  await owner.wait('owner can enter without password', `!${input} && document.querySelector('#dialog-description')?.textContent.includes('免密码')`);
+  await owner.submit();
+  await owner.wait('owner entered protected room', `document.querySelector('.room-heading h1')?.textContent==='密码房'`);
+  await chooseRoom(member, '原房间');
+  await member.wait('unprotected room has no password field', `!${input} && document.querySelector('#dialog-description')?.textContent.includes('未设置密码')`);
+  await member.submit();
   await member.wait('original room joined', `document.querySelector('.room-heading h1')?.textContent==='原房间'`);
   const original = await activity();
-  await chooseRoom('密码房');
-  const input = `document.querySelector('[data-form=dialog] [name=password]')`;
+  await chooseRoom(member, '密码房', true);
+  await member.wait('ordinary member must enter a password', `${input}?.required && ${input}.validity.valueMissing`);
   await member.evaluate(`${input}.value='wrong'`); await member.submit();
   await member.wait('wrong password explained in dialog', `document.querySelector('#dialog-error')?.textContent==='房间密码不正确。'`);
   assert.equal(await member.evaluate(`document.querySelector('.voice-now strong')?.textContent`), '原房间');

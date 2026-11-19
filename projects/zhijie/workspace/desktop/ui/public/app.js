@@ -763,22 +763,36 @@ const actions = {
     navigate("room", room.groupId);
     return run((current) => loadContext(current));
   },
-  "join-room": (b) =>
+  "join-room": (b) => {
+    const room = s.rooms.find(item => item.id === b.dataset.id);
+    if (!room) return;
+    const switchNotice = s.activity && s.roomId !== room.id ? "成功切换后才会断开当前房间的语音和联机。" : "";
+    const passwordField = required => field("password", required ? "房间密码（必填）" : "房间密码", "password", "",
+      required ? 'autocomplete="off" required' : 'autocomplete="off"');
+    const required = room.passwordRequired === true;
+    const unknown = room.passwordRequired == null && room.passwordProtected !== false;
+    const hint = required ? "请输入房间密码。" : unknown ? "如需密码请填写，免密成员可留空。"
+      : room.passwordProtected ? "你可以免密码加入此房间。" : "此房间未设置密码。";
     dialog(
       "加入房间",
-      s.activity && s.roomId !== b.dataset.id
-        ? "切换房间会断开当前房间的语音和联机。房间有密码时请填写。"
-        : "房间有密码时请填写；没有密码可以留空。",
-      field(
-        "password",
-        "房间密码（可选）",
-        "password",
-        "",
-        'autocomplete="off"',
-      ),
-      (data) => joinRoom(b.dataset.id, data.get("password") || null),
+      switchNotice + hint,
+      required || unknown ? passwordField(required) : "",
+      async (data) => {
+        const form = modalRoot.querySelector("form");
+        try { await joinRoom(room.id, data.get("password") || null); }
+        catch (error) {
+          if ((error?.message || error) === "ROOM_PASSWORD_INVALID" && form.isConnected && !form.elements.password) {
+            document.getElementById("dialog-description").textContent = switchNotice + "请输入房间密码。";
+            document.getElementById("dialog-error").insertAdjacentHTML("beforebegin", passwordField(true));
+            form.elements.password.focus();
+            throw new Error("ROOM_PASSWORD_REQUIRED");
+          }
+          throw error;
+        }
+      },
       "加入房间",
-    ),
+    );
+  },
   leave: () =>
     confirmation("离开房间", "将断开当前房间的语音和联机连接。", async () => {
       Object.assign(s, await bridge.leave(), {

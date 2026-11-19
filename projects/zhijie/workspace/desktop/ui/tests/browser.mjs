@@ -118,7 +118,7 @@ calls.push({command,p});
 if(command==='session_login'){await new Promise(r=>setTimeout(r,80));if(failLogin)throw 'SERVICE_UNAVAILABLE';return snapshot();}
 if(command==='session_logout')return {userId:null,activity:null,service:'DISCONNECTED',lastErrorCode:'LOGOUT_CLEANUP_PENDING'};
 if(command==='group_list')return [group,...(globalThis.extraGroups??[])];if(command==='room_list')return p.groupId===group.id?[room]:[];
-if(command==='activity_join'){activity={activityId:'a1',leaseId:'lease-room',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
+if(command==='activity_join'){if(globalThis.changedRoomPassword && p.password!=='updated')throw 'ROOM_PASSWORD_INVALID';activity={activityId:'a1',leaseId:'lease-room',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
 if(command==='activity_leave'){activity=null;return snapshot();}
 if(command==='voice_connect'){if(globalThis.holdVoice)await new Promise(done=>globalThis.resumeVoice=done);voice.state='FAILED';voice.failureCode='VOICE_CAPACITY_LIMITED';throw 'VOICE_CAPACITY_LIMITED';}
 if(command==='voice_snapshot'){if(globalThis.failVoiceRead)throw 'SERVICE_UNAVAILABLE';return structuredClone(voice);}
@@ -614,9 +614,14 @@ try {
   await check("开启被拒时不伪造活动", '!room.currentActivityId && document.getElementById("dialog-error").textContent.includes("没有执行")');
   await evaluate('denyStart=false;document.querySelector("[data-form=dialog]").requestSubmit()'); await delay(150);
   await check("开启成功后可加入但不替管理者入房", 'document.querySelector(".group-room-item [data-action=join-room]")?.disabled===false && !activity && !calls.some(x=>x.command==="activity_join")');
+  await evaluate('room.passwordRequired=false;room.passwordProtected=false');
   await click('[data-view="lobby"]'); await click('[data-action="refresh"]');
-  await evaluate('globalThis.holdVoice=true');
+  await evaluate('globalThis.holdVoice=true;globalThis.changedRoomPassword=true');
   await click('[data-action="join-room"]');
+  await check('无密码房不显示多余输入框', '!document.querySelector("[data-form=dialog] [name=password]")');
+  await click('[data-form=dialog] .primary');
+  await check('确认期间房间改为需密码时原窗可重试', 'document.querySelector("[data-form=dialog] [name=password]")?.required && document.querySelector("#dialog-error")?.textContent==="请输入房间密码。" && !activity');
+  await fill('[data-form=dialog] [name=password]', 'updated');
   await evaluate(
     'document.querySelector("[data-form=dialog]").requestSubmit()',
   );
