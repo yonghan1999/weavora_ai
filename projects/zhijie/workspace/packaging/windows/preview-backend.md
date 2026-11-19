@@ -36,6 +36,8 @@ python -B "ops/database/cold-backup.py" verify --backup "<备份目录>" --resto
 
 只有出现 `COLD_RESTORE_COPY_OK` 才启动新包。这一步把备份和实际恢复目录的每个文件摘要及目录结构都与清单核对；验证失败不要启动。保留旧目录和原备份；切回旧目录不会带回升级后才写入的数据。这不是跨 PostgreSQL 主版本升级的方法。
 
+**需要回退时**：用新目录的 `scripts/local-preview/stop.ps1` 正常停库，确认两个端口已释放，保留新目录；若已有新消息等需要保留的变更，先另做一份新版停库快照。对升级前保留的旧目录执行上面的 `verify`，`--backup` 仍指向升级前备份，`--restored-data` 改为 `<旧目录>/target/local-preview/postgres`。仅当出现 `COLD_RESTORE_COPY_OK`，才从旧目录启动旧包并用原账号登录。若校验不符，停止操作，不合并或覆盖数据库，也不要让旧程序打开新版数据目录。
+
 **复建与验证。** 对可信的干净 Windows 源码先执行本地试用说明中的 `test-compile` 和 `dependency:build-classpath`。然后从工具所在工作区运行：
 
 ```powershell
@@ -43,6 +45,6 @@ python -B "packaging/windows/pack-preview-backend.py" --workspace "<已构建的
 & "./packaging/windows/test-backend-zip.ps1" -Package "<D 盘已有目录>/preview-backend.zip" -JavaHome "D:/Program Files/jdk-25"
 ```
 
-给回归命令添加 `-PreviousPackage "<旧试用包.zip>"` 即可验证升级：用独立旧包写消息并停库，核对冷备与恢复副本，在新包校验账号、群、房间和消息，再实际删除测试消息。不加此参数则验证同版重启。新版可选 `-CheckSyncAuth` 来验证两个订阅者收到删除事件，或用 `-CheckRoomReopen` 来验证房内拒绝和结束活动后的房外开放；旧版不启用不支持的检查。回归不接触用户的试用库。
+给回归命令添加 `-PreviousPackage "<旧试用包.zip>"` 即可验证升级和回退：旧包写消息并停库，新包从验证过的副本启动、删除原消息并写入新消息；再停新包，核对旧库与原快照未变，切回旧包重新登录。账号、群、房间和原消息标识必须相同，原消息仍在，且旧库没有新版独有消息。不加此参数则只验证同版重启。新版可选 `-CheckSyncAuth` 验证两个订阅者收到删除事件，或用 `-CheckRoomReopen` 验证房内拒绝和结束活动后的房外开放。回归不接触用户的试用库。
 
 生成器不覆盖同名文件。它只复制试用启动脚本、控制面类、与源码一致的应用配置/映射/迁移和类路径所列 JAR，保留依赖顺序，清单中仅有包内相对路径。回归只针对自行生成的可信包，使用独立目录和回环端口；用例验证本机移位解压后的登录与重启，不代表第二台机器或其他平台已验收。

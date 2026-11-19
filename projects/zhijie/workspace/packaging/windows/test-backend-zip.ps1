@@ -82,6 +82,7 @@ try {
     $env:ZHIJIE_VOICE_ENABLED = 'false'
     $env:ZHIJIE_PREVIEW_PASSWORD = $password
     $marker = [guid]::NewGuid().ToString('N')
+    $upgradeMarker = [guid]::NewGuid().ToString('N')
     $secrets = @($password)
     $caller = (Get-Location).Path
     $portRejected = $false
@@ -92,7 +93,8 @@ try {
         $portRejected = $true
     }
     if (!$portRejected -or (Get-Location).Path -ne $caller) { throw '拒绝重复端口后未保留调用者目录' }
-    $snapshots = foreach ($attempt in 1,2) {
+    $attemptCount = if ($previous) { 3 } else { 2 }
+    $snapshots = foreach ($attempt in 1..$attemptCount) {
         & "$trial/scripts/local-preview/start.ps1" -JavaHome $JavaHome -HttpPort $HttpPort -DatabasePort $DatabasePort | Out-Host
         if ($trial -eq $current -and (Get-Location).Path -ne $caller) { throw '启动后未保留调用者目录' }
         if ((Invoke-RestMethod "$url/actuator/health").status -ne 'UP') { throw '试用后端未就绪' }
@@ -108,7 +110,7 @@ try {
         }
         $messages = (Invoke-RestMethod $history -Headers $headers).data
         if ($rooms.Count -ne 1 -or $messages.Count -ne 2 -or !($messages | Where-Object { $_.id -eq $sent.id -and $_.body -eq $marker })) { throw '用户消息、欢迎消息或房间缺失' }
-        "$($groups[0].id):$($rooms[0].id):$($messages.id -join ':')"
+        "$($login.data.userId):$($groups[0].id):$($rooms[0].id):$($messages.id -join ':')"
         if ($attempt -eq 2) {
             if ($CheckRoomReopen) { Assert-RoomReopen $rooms[0] $headers }
             $sockets = @()
@@ -133,6 +135,16 @@ try {
             } finally {
                 foreach ($socket in $sockets) { $socket.Dispose() }
                 $deadline.Dispose()
+            }
+            if ($previous) {
+                $added = (Invoke-RestMethod $history -Headers $headers -Method Post -ContentType 'application/json' -Body (@{body=$upgradeMarker} | ConvertTo-Json)).data
+                $updated = (Invoke-RestMethod $history -Headers $headers).data
+                if (!$added.id -or !($updated | Where-Object { $_.id -eq $added.id -and $_.body -eq $upgradeMarker }) -or
+                    !($updated | Where-Object { $_.id -eq $sent.id -and $_.deleted -and $null -eq $_.body })) { throw '未读到新版独立的新增消息和删除标记' }
+            }
+        } elseif ($attempt -eq 3) {
+            if ($messages | Where-Object { $_.id -eq $added.id -or $_.body -eq $upgradeMarker -or ($_.id -eq $sent.id -and $_.deleted) }) {
+                throw '切回旧包后错误读到了新版的写入'
             }
         }
         if ($CheckLogPrivacy -and $attempt -eq 2) {
@@ -165,9 +177,13 @@ try {
             & python -B "$workspace/ops/database/cold-backup.py" verify --backup $backup --restored-data "$($runtime.FullName)/postgres" | Out-Host
             if ($LASTEXITCODE) { throw '恢复副本核验失败，拒绝启动' }
             $trial = $current
+        } elseif ($previous -and $attempt -eq 2) {
+            $trial = Join-Path $fixture 'previous'
+            & python -B "$workspace/ops/database/cold-backup.py" verify --backup $backup --restored-data "$trial/target/local-preview/postgres" | Out-Host
+            if ($LASTEXITCODE) { throw '旧库或原快照在新版使用期间已改变，拒绝回退' }
         }
     }
-    if ($snapshots.Count -ne 2 -or $snapshots[0] -ne $snapshots[1]) { throw '重启后数据改变' }
+    if ($snapshots.Count -ne $attemptCount -or @($snapshots | Select-Object -Unique).Count -ne 1) { throw '重启或回退后原始业务标识改变' }
 } finally {
     try {
         if (Test-Path -LiteralPath "$trial/target/local-preview/server.pid") { & "$trial/scripts/local-preview/stop.ps1" | Out-Host }
@@ -187,4 +203,4 @@ if ((Split-Path -Parent $resolved) -ne $target -or (Split-Path -Leaf $resolved) 
 Remove-Item -LiteralPath $resolved -Recurse -Force
 Write-Output 'RELOCATED_PACKAGE_LOGIN_HISTORY_RESTART_OK'
 if ($CheckLogPrivacy) { Write-Output 'PACKAGED_LOGIN_ROOM_AUDIT_AND_SERVER_LOG_PRIVACY_OK' }
-if ($previous) { Write-Output 'BACKEND_PACKAGE_UPGRADE_USER_DATA_OK' }
+if ($previous) { Write-Output 'BACKEND_PACKAGE_UPGRADE_USER_DATA_OK'; Write-Output 'BACKEND_PACKAGE_ROLLBACK_ORIGINAL_DATA_OK' }
