@@ -362,6 +362,79 @@ fn call_test_server(
     }
 }
 
+#[test]
+fn received_start_with_missing_reply_is_not_classified_as_unsent() {
+    use interprocess::local_socket::prelude::*;
+    #[cfg(windows)]
+    let path =
+        std::path::PathBuf::from(format!(r"\\.\pipe\zhijie-delivery-{}", std::process::id()));
+    #[cfg(not(windows))]
+    let path = std::env::temp_dir().join(format!("zhijie-delivery-{}.sock", std::process::id()));
+    let listener = crate::ipc::bind(&path).unwrap();
+    let worker = std::thread::spawn(move || {
+        let mut stream = listener.accept().unwrap();
+        stream.set_nonblocking(true).unwrap();
+        let bytes = crate::ipc::read_frame_until(
+            &mut stream,
+            std::time::Instant::now() + std::time::Duration::from_secs(5),
+            || Ok(()),
+        )
+        .unwrap();
+        let message: HelperRequest = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(message.method, "network.start");
+        assert!(message.start.is_some());
+    });
+    let stream = interprocess::local_socket::Stream::connect(
+        path.to_fs_name::<interprocess::local_socket::GenericFilePath>()
+            .unwrap(),
+    )
+    .unwrap();
+    let mut message = request("network.start");
+    message.start = Some(start());
+    let result = crate::ipc::call_connected(
+        stream,
+        &message,
+        #[cfg(windows)]
+        &std::env::current_exe().unwrap(),
+    );
+    worker.join().unwrap();
+    assert!(matches!(
+        result,
+        Err(crate::ipc::CallFailure::PossiblySent(_))
+    ));
+    #[cfg(not(windows))]
+    let _ = std::fs::remove_file(path);
+}
+
+#[test]
+fn large_start_frame_and_reply_keep_the_request_binding() {
+    #[cfg(windows)]
+    let path = std::path::PathBuf::from(format!(
+        r"\\.\pipe\zhijie-large-start-{}",
+        std::process::id()
+    ));
+    #[cfg(not(windows))]
+    let path = std::env::temp_dir().join(format!("zhijie-large-start-{}.sock", std::process::id()));
+    let backend = Arc::new(RecordingBackend::default());
+    let server = crate::ipc::HelperIpcServer::for_client(
+        Arc::new(HelperService::new(backend.clone())),
+        std::process::id(),
+    )
+    .unwrap();
+    let listener = server.bind(&path).unwrap();
+    let worker = std::thread::spawn(move || server.serve_once(&listener));
+    let mut message = request("network.start");
+    message.request_id = "r".repeat(4096);
+    message.start = Some(start());
+    let response = call_test_server(&path, &message).unwrap();
+    worker.join().unwrap().unwrap();
+    assert!(response.accepted);
+    assert_eq!(response.request_id, message.request_id);
+    assert_eq!(backend.calls.lock().unwrap().as_slice(), ["start"]);
+    #[cfg(not(windows))]
+    let _ = std::fs::remove_file(path);
+}
+
 #[cfg(windows)]
 #[test]
 fn ipc_rejects_same_account_impostor_before_sending_any_secret() {
@@ -444,7 +517,12 @@ fn ipc_rejects_same_account_impostor_before_sending_any_secret() {
         };
         worker.join().unwrap();
         assert_eq!(
-            error.as_deref(),
+            error
+                .and_then(|failure| match failure {
+                    crate::ipc::CallFailure::NotSent(code) => Some(code),
+                    crate::ipc::CallFailure::PossiblySent(_) => None,
+                })
+                .as_deref(),
             Some(if scenario == 0 {
                 "IPC_SERVER_IDENTITY_UNAVAILABLE"
             } else {

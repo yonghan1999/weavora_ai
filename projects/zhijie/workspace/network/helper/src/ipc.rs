@@ -8,6 +8,8 @@ use crate::model::{HelperRequest, HelperResponse, NetworkStatus};
 use crate::service::HelperService;
 
 pub const MAX_IPC_MESSAGE_BYTES: usize = 1024 * 1024;
+#[cfg(windows)]
+const PIPE_WRITE_CHUNK_BYTES: usize = 512;
 
 pub struct HelperIpcServer {
     service: Arc<HelperService>,
@@ -135,9 +137,30 @@ pub fn call(
     path: &std::path::Path,
     request: &HelperRequest,
 ) -> Result<HelperResponse<NetworkStatus>, String> {
+    call_with_delivery(path, request).map_err(CallFailure::into_code)
+}
+
+#[derive(Debug)]
+pub enum CallFailure {
+    NotSent(String),
+    PossiblySent(String),
+}
+
+impl CallFailure {
+    pub fn into_code(self) -> String {
+        match self {
+            Self::NotSent(code) | Self::PossiblySent(code) => code,
+        }
+    }
+}
+
+pub fn call_with_delivery(
+    path: &std::path::Path,
+    request: &HelperRequest,
+) -> Result<HelperResponse<NetworkStatus>, CallFailure> {
     #[cfg(windows)]
     let expected = std::env::current_exe()
-        .map_err(|_| "IPC_SERVER_IDENTITY_UNAVAILABLE")?
+        .map_err(|_| CallFailure::NotSent("IPC_SERVER_IDENTITY_UNAVAILABLE".into()))?
         .with_file_name("zhijie-helper.exe");
     call_inner(
         path,
@@ -153,19 +176,19 @@ pub(crate) fn call_with_server_image(
     request: &HelperRequest,
     expected: &std::path::Path,
 ) -> Result<HelperResponse<NetworkStatus>, String> {
-    call_inner(path, request, expected)
+    call_inner(path, request, expected).map_err(CallFailure::into_code)
 }
 
 fn call_inner(
     path: &std::path::Path,
     request: &HelperRequest,
     #[cfg(windows)] expected: &std::path::Path,
-) -> Result<HelperResponse<NetworkStatus>, String> {
+) -> Result<HelperResponse<NetworkStatus>, CallFailure> {
     let name = path
         .to_fs_name::<interprocess::local_socket::GenericFilePath>()
-        .map_err(|_| "HELPER_UNAVAILABLE")?;
-    let stream =
-        interprocess::local_socket::Stream::connect(name).map_err(|_| "HELPER_UNAVAILABLE")?;
+        .map_err(|_| CallFailure::NotSent("HELPER_UNAVAILABLE".into()))?;
+    let stream = interprocess::local_socket::Stream::connect(name)
+        .map_err(|_| CallFailure::NotSent("HELPER_UNAVAILABLE".into()))?;
     call_connected(
         stream,
         request,
@@ -178,22 +201,24 @@ pub(crate) fn call_connected(
     mut stream: interprocess::local_socket::Stream,
     request: &HelperRequest,
     #[cfg(windows)] expected: &std::path::Path,
-) -> Result<HelperResponse<NetworkStatus>, String> {
+) -> Result<HelperResponse<NetworkStatus>, CallFailure> {
     #[cfg(windows)]
     let server = {
         let pid = stream
             .peer_creds()
-            .map_err(|_| "IPC_SERVER_IDENTITY_UNAVAILABLE")?
+            .map_err(|_| CallFailure::NotSent("IPC_SERVER_IDENTITY_UNAVAILABLE".into()))?
             .pid()
-            .ok_or("IPC_SERVER_IDENTITY_UNAVAILABLE")?;
-        crate::windows_identity::ServerIdentity::verify(pid as u32, expected)?
+            .ok_or_else(|| CallFailure::NotSent("IPC_SERVER_IDENTITY_UNAVAILABLE".into()))?;
+        crate::windows_identity::ServerIdentity::verify(pid as u32, expected)
+            .map_err(CallFailure::NotSent)?
     };
     stream
         .set_nonblocking(true)
-        .map_err(|_| "HELPER_UNAVAILABLE")?;
-    let encoded = serde_json::to_vec(request).map_err(|_| "IPC_SCHEMA_INVALID")?;
+        .map_err(|_| CallFailure::NotSent("HELPER_UNAVAILABLE".into()))?;
+    let encoded = serde_json::to_vec(request)
+        .map_err(|_| CallFailure::NotSent("IPC_SCHEMA_INVALID".into()))?;
     if encoded.len() > MAX_IPC_MESSAGE_BYTES {
-        return Err("IPC_MESSAGE_TOO_LARGE".into());
+        return Err(CallFailure::NotSent("IPC_MESSAGE_TOO_LARGE".into()));
     }
     let check = || {
         #[cfg(windows)]
@@ -212,20 +237,21 @@ pub(crate) fn call_connected(
         &(encoded.len() as u32).to_be_bytes(),
         deadline,
         check,
-    )?;
-    write_all_until(&mut stream, &encoded, deadline, check)?;
-    let body = read_frame_until(&mut stream, deadline, check)?;
-    let response: HelperResponse<NetworkStatus> =
-        serde_json::from_slice(&body).map_err(|_| "IPC_SCHEMA_INVALID")?;
+    )
+    .map_err(CallFailure::PossiblySent)?;
+    write_all_until(&mut stream, &encoded, deadline, check).map_err(CallFailure::PossiblySent)?;
+    let body = read_frame_until(&mut stream, deadline, check).map_err(CallFailure::PossiblySent)?;
+    let response: HelperResponse<NetworkStatus> = serde_json::from_slice(&body)
+        .map_err(|_| CallFailure::PossiblySent("IPC_SCHEMA_INVALID".into()))?;
     if response.protocol_version != 1 || response.request_id != request.request_id {
-        return Err("IPC_RESPONSE_MISMATCH".into());
+        return Err(CallFailure::PossiblySent("IPC_RESPONSE_MISMATCH".into()));
     }
     #[cfg(windows)]
-    server.check_alive()?;
+    server.check_alive().map_err(CallFailure::PossiblySent)?;
     Ok(response)
 }
 
-fn read_frame_until(
+pub(crate) fn read_frame_until(
     stream: &mut impl Read,
     deadline: std::time::Instant,
     mut check: impl FnMut() -> Result<(), String>,
@@ -291,7 +317,14 @@ fn write_all_until(
         if std::time::Instant::now() >= deadline {
             return Err("IPC_TIMEOUT".into());
         }
-        match stream.write(buffer) {
+        #[cfg(windows)]
+        let chunk = &buffer[..buffer.len().min(PIPE_WRITE_CHUNK_BYTES)];
+        #[cfg(not(windows))]
+        let chunk = &*buffer;
+        match stream.write(chunk) {
+            #[cfg(windows)]
+            Ok(0) => std::thread::sleep(std::time::Duration::from_millis(5)),
+            #[cfg(not(windows))]
             Ok(0) => return Err("IPC_CONNECTION_CLOSED".into()),
             Ok(count) => buffer = &buffer[count..],
             Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
