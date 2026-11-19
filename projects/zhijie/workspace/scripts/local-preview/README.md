@@ -1,0 +1,47 @@
+# 本地试用环境
+
+仅在本机使用：后端 `127.0.0.1:8080`，独立 PostgreSQL `127.0.0.1:15432`。数据库使用嵌入式开发依赖，数据保存在忽略目录 `target/local-preview/postgres`，重启保留。不要向局域网或公网开放。
+
+## 使用已有环境
+
+在 `projects/zhijie/workspace` 打开普通 PowerShell，检查后端：
+
+```powershell
+(Invoke-RestMethod -Uri 'http://127.0.0.1:8080/actuator/health' -TimeoutSec 5).status
+```
+
+返回 `UP` 表示进程健康，不表示它已经加载最近编译的接口。如已更新后端代码，请按下节正常停库、备份并重启。手动运行 `./target/debug/zhijie-shell.exe`，用 `trial@example.test` 和首次设置的密码登录。在「本地试用群」的群聊发一条消息，再退出并重新登录，检查消息是否保留。群聊满 50 条时会出现「更早的消息」。示例群和房间只在首次初始化时创建；已改名时使用现有名称。这是试用步骤，不是桌面验收记录。
+
+基础试用无需邮件、麦克风、管理员 Helper 或防火墙规则，不验证跨机联机。连接失败时再检查下节的启动条件；若 8080 已被占用，不要停止未知进程或删除已有数据库。
+
+## 初始化或启动后端
+
+从 `workspace` 使用 JDK 25 执行，按本机安装位置设置 `JAVA_HOME`。桌面试用沿用默认端口；在独立工作区做隔离验证时，可用 `-HttpPort` 和 `-DatabasePort` 指定不同的空闲端口，两者仍只监听回环地址。
+
+```powershell
+$env:JAVA_HOME = "D:/Program Files/jdk-25"
+$list = "local-preview-classpath-$([guid]::NewGuid().ToString('N')).txt"
+./mvnw.cmd -pl control-plane test-compile dependency:build-classpath "-Dmdep.includeScope=test" "-Dmdep.outputFile=target/$list"
+if ($LASTEXITCODE -ne 0) { throw "Maven 准备失败，保留原清单。" }
+$candidate = "control-plane/target/$list"
+$entries = (Get-Content -LiteralPath $candidate -Raw -ErrorAction Stop).Trim() -split ';'
+if (@($entries | Where-Object { !$_ -or !(Test-Path -LiteralPath $_ -PathType Leaf) }).Count) { throw "依赖文件缺失。" }
+Copy-Item -LiteralPath $candidate -Destination "control-plane/target/local-preview-classpath.txt" -ErrorAction Stop
+./scripts/local-preview/start.ps1
+```
+
+每次生成独立文件名，避免 Maven 沿用已存在的旧清单。如果后端正在使用，先正常停止并确认两个监听端口已释放，再用 `ops/database/cold-backup.py snapshot` 将 `target/local-preview/postgres` 备份到限本人访问的新目录，以 `verify --require-directories` 核对后再更新；不要删除数据目录。首次启动交互输入至少 12 位的试用密码；账号为 `trial@example.test`。入口只在独立试用数据库中初始化已激活账号、群组、房间和欢迎消息，不改正式认证流程，不包含邮件模拟成功。嵌入式数据库仅用于可信的单用户开发机，不是多人共享服务器的隔离方案。
+
+后端就绪后启动 `target/debug/zhijie-shell.exe`。未构建时先在 `desktop/ui` 运行 `node scripts/build.mjs`，再从 `workspace` 运行 `cargo build --offline -p zhijie-shell --features tauri/custom-protocol`。
+
+停止：先关闭桌面程序，再在 PowerShell 执行下列命令，正常关闭后端及其嵌入式数据库：
+
+```powershell
+./scripts/local-preview/stop.ps1
+```
+
+可体验登录、群组、房间、群聊及已实现的操作。邮件、外部 SFU、真实音频及 TUN/Relay 不包含在此环境。试用验证不代表发布基线已重新验收。
+
+本机 `Command Processor/AutoRun` 存在异常值，`CleanCmd.cs` 仅为 PostgreSQL 子进程传入 `cmd /d`，不修改注册表或全局环境。启动入口使用测试作用域的嵌入式数据库依赖，与正式服务构建隔离（单一职责）；数据目录、停止信号及日志统一放在忽略目录，不写入工作流审批和历史证据。
+
+准备好类路径后，可运行 `./scripts/local-preview/test-preview.ps1`。它在 `target/preview-test-*` 创建独立试用库，通过 HTTP 验证登录、欢迎消息、历史游标和重启后的群/消息标识；默认使用 18828/15438，不读取原试用库或使用原账号密码。
