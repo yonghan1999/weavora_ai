@@ -24,3 +24,8 @@ python "scripts/sample-capacity-resources.py" --pid 1234 --pid 5678 --interface 
 - 开始和结束均由负载夹具协调后，最终运行 `target/control-load-1985818837874019563`，Maven 日志 `target/profiled-control-load-final-134c1aba47e140a2b3ec16d910e6ed30.log`，指定集成用例 1 项通过、零跳过。100 个并发同步连接，90.35 秒、3,706 个请求、零失败，p95 20.79 ms；49,840 次同步交付、十次指定离线消息补发，在线过期与恢复均观测到。98 条采样跨 98.39 秒，经 UTC 首末记录核对，覆盖首尾业务操作。JVM 采样峰值 CPU 198.35%、RSS 567.19 MiB、句柄 997 个，未计数据库和压测器。
 - 本机 Windows 回环接口读数前后不变，`observedInterfaceTraffic=false`；由于同时存在真实业务收发，**本轮不能给出有效链路带宽值**，不可把 0 Kbit/s 或应用正文大小作为满足 5 Mbit/s 的证据。该机器不是已限额的目标服务器，持续时间也不是一小时。
 - `python "scripts/test-capacity-resource-sampler.py"` 七项通过，覆盖实际间隔与方向、PID/计数器变化、只读实采、禁止覆盖、异常部分结果及停止信号/超时。原同步诊断、容量契约、运行器错误传播检查通过；试用健康 UP，未改变产品制品或试用数据。
+## 从干净源码复跑
+
+从 `workspace` 运行 `node "scripts/test-load-sync-diagnostics.mjs"` 可单独检查同步错误分类、游标和重连诊断。百账号命令需同时具备 Java 测试入口、`scripts/load-control-plane.mjs` 和 `scripts/load-websocket-handshake.mjs`；测试创建自己的输出目录和 PostgreSQL，不应依赖其他试用环境预先生成 `target/`。
+
+本轮在 D 盘单独导出 Git 中的控制面源码、构建文件和已跟踪脚本，只补入本次提交的四个测试源文件。复用本地离线 Maven 依赖，未复制编译产物。按上文 workspace 命令从零编译 149 个生产源文件和 49 个测试源文件；选定用例 1 项通过、无跳过。100 个并发同步连接，90.05 秒内完成 3,710 个 HTTP 请求，p95 为 19.91 ms，HTTP 和同步均零失败；10 次重连均收到指定离线消息，观测到离线及恢复。证据：`target/load-source-run.log`、`target/load-source-41b10a4/target/control-load-46357500962409498/summary.json`。采样持续 97.80 秒，但回环接口计数未变化，不据此报告带宽。此结果不是一小时、目标服务器或双通道满载验收。
