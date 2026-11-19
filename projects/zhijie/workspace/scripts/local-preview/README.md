@@ -4,6 +4,10 @@
 
 ## 使用已有环境
 
+首次在本机试用，请直接按 [Windows 便携桌面启动与停止步骤](../../packaging/windows/candidate-build.md) 操作，配套后端、端口和当前桌面版本以该页为准。已有数据需换后端时，先看[离线包与停库备份说明](../../packaging/windows/preview-backend.md)。下列旧候选只供仍在使用它的用户参考。
+
+### 旧候选（649e830）
+
 本机另已从提交 `649e830` 独立构建 release 候选：`target/trial-649e830`。这是未签名的 Windows x64 试用包，不是正式发布。安装包共 12,079,035 字节，SHA-256 为 `4627b40bbc4a2e7f1679483d4c97af96be47744fa1c296e81b559938303880e7`。安装包内的八个文件已经与同次构建输入和便携副本核对。本人试用无需运行安装器。在本机的 `workspace` 开一个普通 PowerShell，执行：
 
 ```powershell
@@ -14,10 +18,12 @@
 
 对于已准备的 Windows 便携试用目录，先在 `workspace` 执行 `python -B "scripts/local-preview/trial-desktop.py" "target/trial-36a2e08-local" --check-only`；也可替换为其他候选目录。检查会逐个核对 `app/` 中的文件名和 SHA-256；缺失、多余或与清单不符均不会启动。确认后去掉 `--check-only` **手动**启动桌面。这是普通用户试用入口，不运行安装器、Helper 或后端。后端使用非默认端口时传 `--http-port`。入口向桌面子进程传入回环地址、候选目录中的 WebView2 用户数据目录和每次独立的临时目录，不传登录密码、SFU/代理密钥，也不修改系统环境变量。程序退出后清理本次临时目录，保留 `webview/`；不保证 Windows 自身的系统记录零写入。清单比对不是签名或来源认证。
 
-在 `projects/zhijie/workspace` 打开普通 PowerShell，检查后端：
+### 检查后端
+
+在 `projects/zhijie/workspace` 打开普通 PowerShell，按启动时使用的 HTTP 端口检查后端（当前便携试用示例为 `18829`，源码启动默认 `8080`）：
 
 ```powershell
-(Invoke-RestMethod -Uri 'http://127.0.0.1:8080/actuator/health' -TimeoutSec 5).status
+(Invoke-RestMethod -Uri 'http://127.0.0.1:18829/actuator/health' -TimeoutSec 5).status
 ```
 
 返回 `UP` 表示进程健康，不表示它已经加载最近编译的接口。如已更新后端代码，请按下节正常停库、备份并重启。按上述方式打开候选桌面后，用 `trial@example.test` 和首次设置的密码登录。在「本地试用群」的群聊发一条消息，再退出并重新登录，检查消息是否保留。群聊满 50 条时会出现「更早的消息」。示例群和房间只在首次初始化时创建；已改名时使用现有名称。这是试用步骤，不是桌面验收记录。
