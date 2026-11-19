@@ -4,7 +4,7 @@
 
 ## 使用已有环境
 
-对于已准备的 Windows 便携试用目录，先在 `workspace` 执行 `python -B "scripts/local-preview/trial-desktop.py" "target/trial-40bc36b" --check-only`；确认后去掉 `--check-only` **手动**启动。这是普通用户试用入口，不运行安装器、Helper 或后端。后端使用非默认端口时传 `--http-port`。入口向桌面子进程传入回环地址、候选目录中的 WebView2 用户数据目录和每次独立的临时目录，不传登录密码、SFU/代理密钥，也不修改系统环境变量。程序退出后清理本次临时目录，保留 `webview/`；不保证 Windows 自身的系统记录零写入。清单比对仅防止拿错二进制，不是签名或来源认证。
+对于已准备的 Windows 便携试用目录，先在 `workspace` 执行 `python -B "scripts/local-preview/trial-desktop.py" "target/trial-fec203c" --check-only`；确认后去掉 `--check-only` **手动**启动。这是普通用户试用入口，不运行安装器、Helper 或后端。后端使用非默认端口时传 `--http-port`。入口向桌面子进程传入回环地址、候选目录中的 WebView2 用户数据目录和每次独立的临时目录，不传登录密码、SFU/代理密钥，也不修改系统环境变量。程序退出后清理本次临时目录，保留 `webview/`；不保证 Windows 自身的系统记录零写入。清单比对仅防止拿错二进制，不是签名或来源认证。
 
 在 `projects/zhijie/workspace` 打开普通 PowerShell，检查后端：
 
