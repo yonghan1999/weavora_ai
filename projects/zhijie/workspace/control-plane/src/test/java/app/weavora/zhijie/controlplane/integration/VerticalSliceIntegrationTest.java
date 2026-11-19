@@ -29,6 +29,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 class VerticalSliceIntegrationTest {
     @Test
     void rustClientUsesRealHttpServiceThroughJoinFailureIsolationAndCleanup() throws Exception {
+        Path workspace = Path.of(System.getProperty("user.dir")).getParent();
+        var executable = CargoTestClient.build(workspace, "bin", "vertical-slice");
         try (EmbeddedPostgres postgres = EmbeddedPostgres.start()) {
             SpringApplication application = new SpringApplication(ControlPlaneApplication.class);
             application.setWebApplicationType(WebApplicationType.SERVLET);
@@ -47,21 +49,10 @@ class VerticalSliceIntegrationTest {
                 RoomService rooms = context.getBean(RoomService.class);
                 Room room = rooms.createRoom(userId, group.id(), "真实房间", "", "", null);
                 rooms.startActivity(userId, room.id());
-                Path workspace = Path.of(System.getProperty("user.dir")).getParent();
                 var json = context.getBean(com.fasterxml.jackson.databind.ObjectMapper.class);
-                String build = run(workspace, null, Duration.ofSeconds(120), "cargo", "build", "--offline", "--locked", "-p", "zhijie-core", "--bin", "vertical-slice", "--message-format=json");
-                var executables = new java.util.ArrayList<String>();
-                for (String line : build.lines().filter(value -> value.startsWith("{")).toList()) {
-                    var message = json.readTree(line);
-                    if ("compiler-artifact".equals(message.path("reason").asText()) && "vertical-slice".equals(message.path("target").path("name").asText())
-                            && message.path("executable").isTextual()) executables.add(message.get("executable").textValue());
-                }
-                assertThat(executables).hasSize(1);
-                String executable = executables.getFirst();
-                assertThat(Path.of(executable)).isAbsolute().isRegularFile();
                 byte[] configuration = json.writeValueAsBytes(
                         Map.of("baseUrl", "http://127.0.0.1:" + port, "email", "vertical@example.com", "password", password, "roomId", room.id()));
-                String output = run(workspace, configuration, Duration.ofSeconds(30), executable);
+                String output = run(workspace, configuration, Duration.ofSeconds(30), executable.toString());
                 assertThat(output.contains(password)).as("Fixture output must not contain the test password").isFalse();
                 assertThat(output).contains("\"login\":\"verified\"");
                 assertThat(output).contains("\"join\":\"verified\"");
