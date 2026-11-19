@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
@@ -76,7 +77,7 @@ public class LiveKitVoiceGateway implements VoiceGateway, RevocationTarget {
             var encoder = Base64.getUrlEncoder().withoutPadding();
             String header = encoder.encodeToString("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes(StandardCharsets.UTF_8));
             String payload = encoder.encodeToString(json.writeValueAsBytes(Map.of(
-                    "iss", apiKey, "sub", subject, "iat", clock.instant().getEpochSecond(),
+                    "iss", apiKey, "sub", subject, "jti", UUID.randomUUID().toString(), "iat", clock.instant().getEpochSecond(),
                     "nbf", clock.instant().minusSeconds(5).getEpochSecond(),
                     "exp", expiresAt.getEpochSecond(), "video", permissions)));
             String signingInput = header + "." + payload;

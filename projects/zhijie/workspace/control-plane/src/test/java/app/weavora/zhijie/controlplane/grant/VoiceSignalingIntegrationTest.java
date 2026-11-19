@@ -98,10 +98,13 @@ class VoiceSignalingIntegrationTest {
             var joined = coordinator.join(userId, room.id(), "device", null, "join");
             var grants = context.getBean(GrantService.class);
             var issued = grants.voice(userId, joined.activityId());
+            var retry = grants.voice(userId, joined.activityId());
+            assertThat(retry.grantId()).isNotEqualTo(issued.grantId());
+            assertThat(retry.leaseId()).isEqualTo(issued.leaseId());
             assertThat(issued.sfuUrl()).isEqualTo(signalingUrl);
             String token = issued.voiceToken();
             assertThat(status(http, entry, token, false)).isEqualTo(200);
-            assertThat(status(http, entry, token, true)).isEqualTo(200);
+            assertThat(status(http, entry, retry.voiceToken(), true)).isEqualTo(200);
             var websocket = http.newWebSocketBuilder().header("Authorization", "Bearer " + token)
                     .buildAsync(URI.create(entry.replace("http://", "ws://") + "/rtc?protocol=15&auto_subscribe=1"), new WebSocket.Listener() {
                         @Override public CompletionStage<?> onBinary(WebSocket socket, java.nio.ByteBuffer data, boolean last) { socket.request(1); return null; }
@@ -120,7 +123,7 @@ class VoiceSignalingIntegrationTest {
             }
             coordinator.leave(userId, joined.activityId());
             assertThat(status(http, entry, token, false)).isEqualTo(403);
-            assertThat(status(http, entry, token, true)).isEqualTo(403);
+            assertThat(status(http, entry, retry.voiceToken(), true)).isEqualTo(403);
             assertThatThrownBy(() -> http.newWebSocketBuilder().header("Authorization", "Bearer " + token)
                     .buildAsync(URI.create(entry.replace("http://", "ws://") + "/rtc?protocol=15"), new WebSocket.Listener() {})
                     .get(5, TimeUnit.SECONDS)).isInstanceOf(java.util.concurrent.ExecutionException.class);

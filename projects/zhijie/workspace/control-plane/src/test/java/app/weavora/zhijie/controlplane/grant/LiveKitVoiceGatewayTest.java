@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import app.weavora.zhijie.controlplane.common.ApiException;
 import app.weavora.zhijie.controlplane.sync.OutboxEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -43,6 +44,22 @@ class LiveKitVoiceGatewayTest {
         assertThat(grants.has("roomAdmin")).isFalse();
         assertThat(grants.path("canPublishSources").get(0).asText()).isEqualTo("microphone");
         assertThatThrownBy(() -> gateway.issueToken("a", "u", 1, now.plusSeconds(61))).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void immediateRetryIssuesDistinctCredentialsForTheSameParticipantAndExpiry() throws Exception {
+        var gateway = gateway("http://127.0.0.1:7880");
+        Instant deadline = now.plusSeconds(60);
+        String first = gateway.issueToken("activity-a", "user-a", 7L, deadline);
+        String retry = gateway.issueToken("activity-a", "user-a", 7L, deadline);
+        assertThat(first.equals(retry)).as("each issuance must have a distinct token digest").isFalse();
+        var original = (ObjectNode) json.readTree(Base64.getUrlDecoder().decode(first.split("\\.")[1]));
+        var repeated = (ObjectNode) json.readTree(Base64.getUrlDecoder().decode(retry.split("\\.")[1]));
+        assertThat(original.path("jti").asText()).isNotBlank().isNotEqualTo(repeated.path("jti").asText());
+        assertThat(repeated.path("jti").asText()).isNotBlank();
+        original.remove("jti");
+        repeated.remove("jti");
+        assertThat(repeated).isEqualTo(original);
     }
 
     @Test
