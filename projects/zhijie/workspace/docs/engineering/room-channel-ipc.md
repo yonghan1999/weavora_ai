@@ -32,3 +32,10 @@ Helper 缺席时，原生 IPC 现在区分「未发送」与「可能已发送�
 `ChannelCapacityIntegrationTest` 在真实 PostgreSQL 中对两个通道各设两个名额。修复前，同一成员重复签票后，其他两个房间争抢最后一个语音名额均被拒（`target/voice-capacity-before.log`）。修复后，并发申请恰有一个成功；所有原入房票过期后，其他房间仍不能抢占该成员的有效语音租约；该成员离房后等待者可获得资格。控制面回归 10 项通过，日志 `target/voice-capacity-regression.log`。
 
 另设 `ZHIJIE_CAPACITY_VOICE=12`、`ZHIJIE_TEST_VOICE_MEDIA=true`、`ZHIJIE_TEST_COMBINED_CHANNELS=false` 运行 `VoiceSignalingIntegrationTest`。同机真实 LiveKit、nginx、PostgreSQL 和十二个 SDK 端完成五轮心跳与重新签票；初始票过期后信令验证返回 403。75 秒、五个观察窗口共核实 132 个音频方向（`target/voice-capacity-12.log`、`target/voice-entry-3133454918333054278/rust-full-room-media.log`）。不替代真实设备听感、跨机或目标服务器上的双通道满载验收。
+## 桌面会话到期与房间恢复
+
+`DesktopSessionIntegrationTest` 先通过 `desktop/ui/tests/prepare-group-client.mjs` 编译离线、锁版本的 Rust 桌面测试程序，然后才创建真实 PostgreSQL、控制面会话及房间租约。测试构建不生成安装包，也不需要已准备的 Helper 或驱动载荷；正式构建配置不变。测试用匿名标准输入将临时凭据交给子进程，不打开桌面窗口。
+
+复跑：先在 `desktop/ui` 执行 `node scripts/build.mjs`，再从 `workspace` 执行 `mvnw.cmd -o -pl control-plane -Dtest=DesktopSessionIntegrationTest,ProductSyncIntegrationTest test`。快速回归覆盖凭据轮换、排队的同步恢复与心跳刷新并发、退出登录后释放网络资格且另一设备会话不受影响，以及真实 WebSocket 上的群治理通知。设置 `ZHIJIE_TEST_SESSION_LONG=true` 后单跑 `DesktopSessionIntegrationTest#actualFifteenMinuteCredentialsRenewWithoutDroppingActivity`，才会等待服务端签发的原始十五分钟凭据实际到期。
+
+开发验证：从 D 盘独立源码目录运行，快速用例 4 项通过、长测默认跳过（`target/sync-source-final.log`）。显式长测通过，耗时 922.3 秒、62 次心跳检查：原凭据过期超过 15 秒后原租约和虚拟地址仍有效，会话代次变为 2；账号禁用后客户端清除会话与活动。共享构建器的双页面离房重入用例亦通过（`target/sync-source-long.log`）。这些结果验证同机桌面逻辑与控制面，不是系统安装、跨机 TUN 或语音听感验收。
