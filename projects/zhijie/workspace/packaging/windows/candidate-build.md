@@ -2,9 +2,9 @@
 
 ## 本机试用（不安装）
 
-桌面候选 `fb56078` 新增登录失效原因提示：确认失效才要求重新登录，主动退出或暂时读不到状态不会误报。安装包 `target/trial-fb56078/织界_0.1.0_x64-setup.exe` 为 12,075,171 字节，SHA-256：`fceaea0116a7f3c1df620000a8dbb9149d7cf7c8d8450ac94eaf21ffb6b2ce96`。这是未签名候选包；普通用户试用无需运行安装器。
+桌面候选 `ab8d325` 区分服务断连和登录失效。已登录时，服务暂不可达会显示自动重连提示，并允许手动重试；只有确认会话失效才要求重新登录。安装包 `target/trial-ab8d325/织界_0.1.0_x64-setup.exe` 为 12,079,507 字节，SHA-256：`0a555225b666834c8fdac867d48a9591eb44b2f3e0e92efc38d723dbd9f5ba29`。这是未签名候选包；普通用户试用无需运行安装器。
 
-从该提交导出的源码通过 11 项界面单测和 154 项无头浏览器检查。安装包内八个产品文件与构建输入逐个匹配，便携目录通过只读自检；六份界面脚本的压缩字节均在便携桌面程序内找到，解压后与 Git 内容逐字节一致。记录位于 `target/win-fb56078/` 的 `browser.json`、`payload.log` 和 `exe-assets.log`。这些不是实际安装或通话验收。旧便携目录 `target/trial-3f55ac4` 保留；两个版本不共享 WebView 试用目录，新版本可能需要重新登录。
+从该提交导出的源码通过 11 项界面单测和 156 项无头浏览器检查，包括窄屏断连提示和恢复时保留输入焦点。安装包内八个产品文件与构建输入逐个匹配，便携目录通过只读自检；六份界面脚本和 `desktop.css` 的压缩字节均在便携桌面程序内找到，解压后与 Git 内容逐字节一致。记录位于 `target/win-ab8d325/` 的 `browser.json`、`payload.json`、`portable.log` 和 `embedded.log`。这些不是实际安装或通话验收。旧便携目录 `target/trial-fb56078` 保留；两个版本不共享 WebView 试用目录，新版本可能需要重新登录。
 
 以下路径是本构建机 D 盘上的本地文件，不随 Git 下发。从 `projects/zhijie/workspace` 的一个普通 PowerShell 窗口依次执行即可。新版[离线后端](preview-backend.md)已解压到 `target/trial-backend-cwd`，供首次试用；它不会读取旧目录的数据库。若已在 `target/trial-backend-f67715c` 创建账号，可继续使用原后端，只运行下方桌面命令（旧启动脚本会切换目录，桌面命令需从 workspace 执行）。若要将旧数据带入新目录，先按离线后端说明停库、备份并验证。已有后端占用端口时不要重复启动。
 
@@ -15,8 +15,8 @@
 
 ```powershell
 # 先核对便携目录，再启动桌面，使用 trial@example.test 登录
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-fb56078" --http-port 18829 --check-only
-python -B "scripts/local-preview/trial-desktop.py" "target/trial-fb56078" --http-port 18829
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-ab8d325" --http-port 18829 --check-only
+python -B "scripts/local-preview/trial-desktop.py" "target/trial-ab8d325" --http-port 18829
 # 退出桌面后，仍从 workspace 停止本试用后端；数据库保留
 & "./target/trial-backend-cwd/scripts/local-preview/stop.ps1"
 ```
