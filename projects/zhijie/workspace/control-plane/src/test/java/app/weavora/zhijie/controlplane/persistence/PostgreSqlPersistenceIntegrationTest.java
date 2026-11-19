@@ -66,7 +66,6 @@ class PostgreSqlPersistenceIntegrationTest {
             Activity activity = rooms.startActivity(userId, roomId);
             rooms.setOpenState(userId, roomId, app.weavora.zhijie.controlplane.room.RoomOpenState.PAUSED);
             rooms.endActivity(userId, activity.id());
-            context.getBean(AuditService.class).record(groupId, userId, "GROUP", groupId, "GROUP_CREATE", "SUCCESS", "restart-test");
         }
 
         try (ConfigurableApplicationContext restarted = newContext()) {
