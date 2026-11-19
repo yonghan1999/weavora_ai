@@ -1,6 +1,6 @@
 param([Parameter(Mandatory)][string]$Package, [string]$JavaHome = $env:JAVA_HOME,
       [int]$HttpPort = 18831, [int]$DatabasePort = 15441, [string]$PreviousPackage, [switch]$CheckSyncAuth, [switch]$CheckRoomReopen,
-      [switch]$CheckLogPrivacy)
+      [switch]$CheckLogPrivacy, [string]$ControlTlsNginx)
 $ErrorActionPreference = 'Stop'
 $workspace = (Resolve-Path -LiteralPath "$PSScriptRoot/../..").Path
 $target = (Resolve-Path -LiteralPath "$workspace/target").Path
@@ -156,6 +156,10 @@ try {
             $records = (Invoke-RestMethod "$url/api/v1/groups/$($groups[0].id)/audit-logs" -Headers $headers).data
             if (!$protected.passwordProtected -or !($records | Where-Object { $_.action -eq 'ROOM_UPDATE' -and $_.targetId -eq $room.id })) { throw 'Missing protected room or audit record' }
             Assert-NoCredential (ConvertTo-Json -InputObject $records -Depth 10) $secrets 'group audit records'
+        }
+        if ($ControlTlsNginx -and $attempt -eq 2) {
+            $password | python -B "$workspace/ops/test-control-plane-tls.py" --nginx $ControlTlsNginx --upstream-port $HttpPort | Out-Host
+            if ($LASTEXITCODE) { throw '隔离试用包 HTTPS/WSS 验证失败' }
         }
         & "$trial/scripts/local-preview/stop.ps1" | Out-Host
         if ($CheckLogPrivacy) {
