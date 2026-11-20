@@ -114,6 +114,24 @@ class ColdBackupTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             backup.verify(self.destination)
 
+    def test_restore_copies_verified_snapshot_only_to_new_independent_directory(self):
+        (self.source / 'empty').mkdir()
+        backup.snapshot(self.source, self.destination)
+        restored = self.root / 'new kit' / 'postgres'
+        self.assertEqual(backup.restore(self.destination, restored), 2)
+        self.assertEqual(backup.inventory(restored), backup.inventory(self.source))
+        with self.assertRaisesRegex(ValueError, '已存在'):
+            backup.restore(self.destination, restored)
+        nested = self.destination / 'nested'
+        with self.assertRaisesRegex(ValueError, '独立'):
+            backup.restore(self.destination, nested)
+        self.assertFalse(nested.exists())
+        (self.destination / 'data/global/pg_control').write_bytes(b'changed')
+        rejected = self.root / 'rejected'
+        with self.assertRaisesRegex(ValueError, '摘要不一致'):
+            backup.restore(self.destination, rejected)
+        self.assertFalse(rejected.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

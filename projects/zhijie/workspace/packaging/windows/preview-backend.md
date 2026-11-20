@@ -30,15 +30,15 @@
 python -B "ops/database/cold-backup.py" snapshot --source "<旧目录>/target/local-preview/postgres" --destination "<本人专用的新备份目录>"
 ```
 
-快照成功后，将备份内的 `data` 整个目录（含空目录）复制为全新解压目录下的 `target/local-preview/postgres`。若目的数据目录已存在则停止，不要覆盖或合并。**首次启动新包前**执行：
+快照成功后，用 `restore` 校验备份并复制到**尚不存在**的数据目录。以下示例针对单独后端包；整包的目标路径须在 `backend/` 下，详见包内说明。
 
 ```powershell
-python -B "ops/database/cold-backup.py" verify --backup "<备份目录>" --restored-data "<新目录>/target/local-preview/postgres"
+python -B "ops/database/cold-backup.py" restore --backup "<备份目录>" --destination "<新目录>/target/local-preview/postgres"
 ```
 
 只有出现 `COLD_RESTORE_COPY_OK` 才启动新包。这一步把备份和实际恢复目录的每个文件摘要及目录结构都与清单核对；验证失败不要启动。保留旧目录和原备份；切回旧目录不会带回升级后才写入的数据。这不是跨 PostgreSQL 主版本升级的方法。
 
-**需要回退时**：用新目录的 `scripts/local-preview/stop.ps1` 正常停库，确认两个端口已释放，保留新目录；若已有新消息等需要保留的变更，先另做一份新版停库快照。对升级前保留的旧目录执行上面的 `verify`，`--backup` 仍指向升级前备份，`--restored-data` 改为 `<旧目录>/target/local-preview/postgres`。仅当出现 `COLD_RESTORE_COPY_OK`，才从旧目录启动旧包并用原账号登录。若校验不符，停止操作，不合并或覆盖数据库，也不要让旧程序打开新版数据目录。
+**需要回退时**：用新目录的 `scripts/local-preview/stop.ps1` 正常停库，确认两个端口已释放，保留新目录；若已有新消息等需要保留的变更，先另做一份新版停库快照。对升级前保留的旧目录执行 `python -B "ops/database/cold-backup.py" verify --backup "<升级前备份目录>" --restored-data "<旧目录>/target/local-preview/postgres"`。仅当出现 `COLD_RESTORE_COPY_OK`，才从旧目录启动旧包并用原账号登录。若校验不符，停止操作，不合并或覆盖数据库，也不要让旧程序打开新版数据目录。
 
 **回退后再次使用新版**：停止旧包；若回退期间产生了需要保留的旧版写入，先为旧库另做停库快照。用新版停库时的备份核对新版数据目录，确认 `COLD_RESTORE_COPY_OK` 后，从新版原目录启动。两份数据库不会自动合并：回退期间在旧库新增的内容不会出现在新版，新版独有的消息和删除标记则应保留。
 

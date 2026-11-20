@@ -84,6 +84,18 @@ def snapshot(source, destination):
     return verify(destination)
 
 
+def restore(backup, destination):
+    archive = backup.resolve(strict=True)
+    target = destination.resolve()
+    if destination.exists() or destination.is_symlink() or destination.is_junction():
+        raise ValueError("恢复目标已存在；请选择全新目录")
+    if archive in target.parents or target == archive:
+        raise ValueError("恢复目录必须独立于备份目录")
+    verify(archive, require_directories=True)
+    shutil.copytree(archive / "data", target, symlinks=True)
+    return verify(archive, restored_data=target)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -94,13 +106,20 @@ def main():
     check.add_argument("--backup", type=Path, required=True)
     check.add_argument("--require-directories", action="store_true", help="要求清单可验证空目录；拒绝旧版仅文件清单")
     check.add_argument("--restored-data", type=Path, help="启动前只读比对已复制的独立数据目录，包括空目录；要求 v2 清单")
+    recover = commands.add_parser("restore", help="核对冷备并复制到全新目录，已有目录一律不覆盖")
+    recover.add_argument("--backup", type=Path, required=True)
+    recover.add_argument("--destination", type=Path, required=True)
     args = parser.parse_args()
     try:
-        count = (snapshot(args.source, args.destination) if args.command == "snapshot"
-                 else verify(args.backup, require_directories=args.require_directories, restored_data=args.restored_data))
+        if args.command == "snapshot":
+            count = snapshot(args.source, args.destination)
+        elif args.command == "restore":
+            count = restore(args.backup, args.destination)
+        else:
+            count = verify(args.backup, require_directories=args.require_directories, restored_data=args.restored_data)
     except (OSError, ValueError, KeyError) as error:
         parser.exit(1, f"冷备校验失败：{error}\n")
-    label = "COLD_RESTORE_COPY_OK" if args.command == "verify" and args.restored_data is not None else "COLD_BACKUP_OK"
+    label = "COLD_RESTORE_COPY_OK" if args.command == "restore" or args.command == "verify" and args.restored_data is not None else "COLD_BACKUP_OK"
     print(f"{label} files={count}")
 
 
