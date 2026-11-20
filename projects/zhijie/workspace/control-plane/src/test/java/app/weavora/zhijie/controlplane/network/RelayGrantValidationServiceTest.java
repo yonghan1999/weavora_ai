@@ -57,6 +57,15 @@ class RelayGrantValidationServiceTest {
         assertThat(response.allowRelay()).isTrue();
         assertThat(response.sourceIpv4()).isEqualTo("10.231.0.1");
         assertThat(response.memberGeneration()).isEqualTo(2L);
+        assertThat(response.version()).isEqualTo(1);
+        assertThat(response.activityGeneration()).isEqualTo(1L);
+        assertThat(response.deviceId()).isEqualTo("device");
+        assertThat(response.expiresAtUnixMillis()).isEqualTo(Math.min(grant.expiresAt().toEpochMilli(), lease.expiresAt().toEpochMilli()));
+        var shorterLease = new ConnectionLease(lease.id(), lease.activityId(), lease.userId(), lease.deviceId(),
+                lease.activityGeneration(), lease.memberGeneration(), lease.policyRevision(), lease.voiceState(),
+                lease.networkState(), Instant.now().plusSeconds(10), null);
+        when(activities.findLatestLease("activity", "user")).thenReturn(Optional.of(shorterLease));
+        assertThat(service.validate(ticket).expiresAtUnixMillis()).isEqualTo(shorterLease.expiresAt().toEpochMilli());
         assertThatThrownBy(() -> service.validate("invalid"))
                 .isInstanceOf(ApiException.class).extracting("code").isEqualTo("RELAY_GRANT_INVALID");
     }

@@ -512,10 +512,13 @@ mod tests {
                 return Err("revoked".into());
             }
             Ok(zhijie_relay::model::RelayGrant {
+                version: 1,
                 ticket: ticket.into(),
                 activity_id: "room".into(),
+                activity_generation: 1,
                 member_generation: 1,
                 lease_id: format!("lease-{ticket}"),
+                device_id: format!("device-{ticket}"),
                 user_id: ticket.into(),
                 source_ipv4: if ticket == "a" {
                     "10.231.0.1"
@@ -525,6 +528,10 @@ mod tests {
                 .into(),
                 policy_revision: 1,
                 allow_relay: true,
+                expires_at_unix_millis: (std::time::SystemTime::now() + Duration::from_secs(60))
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u64,
             })
         }
     }
@@ -623,10 +630,12 @@ mod tests {
             assert!(ra.connected() && rb.connected());
             *authority.0.lock().unwrap() = false;
             send(&a, ra.outbound(&plain));
-            assert!(tokio::time::timeout(Duration::from_secs(2), b.receive())
-                .await
-                .unwrap()
-                .is_err());
+            tokio::time::timeout(Duration::from_secs(2), async {
+                while b.receive().await.is_ok() {}
+            })
+            .await
+            .expect("authority revocation must close within the original two-second bound");
+            assert!(b.receive().await.is_err());
             drop(a);
             drop(b);
             server.stop().await;

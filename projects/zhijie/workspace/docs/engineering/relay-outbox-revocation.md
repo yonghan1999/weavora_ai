@@ -1,5 +1,7 @@
 # Relay Outbox 主动撤销
 
+后续数据面已增加有界内存授权快照，见 [Relay 内存授权快照](relay-authorization-snapshot.md)。本文逐包远程验权描述保留当时实现边界，不适用于包含该后续变更的新版本，也不追溯到旧试用包。
+
 ## 已实现与边界
 
 控制面原 `UnavailableExternalRevocationTargets.Relay` 对所有网络撤销报未配置，Rust QUIC Relay 只能逐包和空闲定期回查权威服务。本轮接通已批准架构中的 Outbox → Relay deny/disconnect，默认仍关闭；不把新增代码等同于当前试用包或目标服务器已启用。

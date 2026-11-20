@@ -801,10 +801,13 @@ mod tests {
                 return Err("revoked".into());
             }
             Ok(zhijie_relay::model::RelayGrant {
+                version: 1,
                 ticket: ticket.into(),
                 activity_id: "activity".into(),
+                activity_generation: 1,
                 member_generation: 1,
                 lease_id: format!("lease-{ticket}"),
+                device_id: format!("device-{ticket}"),
                 user_id: ticket.into(),
                 source_ipv4: match ticket {
                     "a" => "10.231.0.1",
@@ -815,6 +818,10 @@ mod tests {
                 .into(),
                 policy_revision: 1,
                 allow_relay: true,
+                expires_at_unix_millis: (std::time::SystemTime::now() + Duration::from_secs(60))
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u64,
             })
         }
     }

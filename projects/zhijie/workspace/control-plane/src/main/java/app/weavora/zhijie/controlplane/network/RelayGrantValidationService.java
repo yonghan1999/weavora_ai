@@ -18,8 +18,11 @@ public class RelayGrantValidationService {
             var grant = current.grant();
             boolean allowRelay = current.allowedPaths().contains("RELAY") && grant.allowedPaths() != null
                     && java.util.Arrays.asList(grant.allowedPaths().split(",")).contains("RELAY");
-            return new RelayValidationResponse(ticket, grant.activityId(), grant.memberGeneration(), current.lease().id(),
-                    grant.userId(), current.ipv4(), grant.policyRevision(), allowRelay);
+            var lease = current.lease();
+            var expires = grant.expiresAt().isBefore(lease.expiresAt()) ? grant.expiresAt() : lease.expiresAt();
+            return new RelayValidationResponse(1, ticket, grant.activityId(), lease.activityGeneration(), grant.memberGeneration(),
+                    lease.id(), lease.deviceId(), grant.userId(), current.ipv4(), grant.policyRevision(), allowRelay,
+                    expires.toEpochMilli());
         } catch (ApiException exception) {
             throw new ApiException(HttpStatus.FORBIDDEN, "RELAY_GRANT_INVALID", "中继票据无效或已撤销", false);
         }

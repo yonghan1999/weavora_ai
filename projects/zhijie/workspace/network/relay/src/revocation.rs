@@ -44,6 +44,7 @@ impl RevocationCommand {
 pub(crate) struct Session {
     pub grant: RelayGrant,
     pub connection: Connection,
+    pub authorized_until: Instant,
 }
 
 struct Denial {
@@ -67,7 +68,15 @@ impl SessionState {
     }
 
     pub fn insert(&mut self, key: (String, String), session: Session) -> Result<(), ()> {
-        if self.denied(&session.grant) {
+        if self.denied(&session.grant) || session.authorized_until <= Instant::now() {
+            return Err(());
+        }
+        if self.sessions.get(&key).is_some_and(|previous| {
+            previous.grant.activity_generation > session.grant.activity_generation
+                || previous.grant.policy_revision > session.grant.policy_revision
+                || (previous.grant.user_id == session.grant.user_id
+                    && previous.grant.member_generation > session.grant.member_generation)
+        }) {
             return Err(());
         }
         if let Some(previous) = self.sessions.insert(key, session) {
@@ -78,6 +87,36 @@ impl SessionState {
 
     pub fn target(&self, key: &(String, String)) -> Option<Session> {
         self.sessions.get(key).cloned()
+    }
+
+    pub fn authorized(&self, grant: &RelayGrant, connection: &Connection) -> bool {
+        !self.denied(grant)
+            && self
+                .sessions
+                .get(&(grant.activity_id.clone(), grant.source_ipv4.clone()))
+                .is_some_and(|session| {
+                    session.connection.stable_id() == connection.stable_id()
+                        && session.grant.same_session(grant)
+                        && session.authorized_until > Instant::now()
+                })
+    }
+
+    pub fn refresh(
+        &mut self,
+        grant: RelayGrant,
+        connection: &Connection,
+        authorized_until: Instant,
+    ) -> Result<(), ()> {
+        if authorized_until <= Instant::now() || !self.authorized(&grant, connection) {
+            return Err(());
+        }
+        let session = self
+            .sessions
+            .get_mut(&(grant.activity_id.clone(), grant.source_ipv4.clone()))
+            .ok_or(())?;
+        session.grant = grant;
+        session.authorized_until = authorized_until;
+        Ok(())
     }
 
     pub fn remove(&mut self, key: &(String, String), connection: &Connection) {
@@ -152,14 +191,18 @@ mod tests {
 
     fn grant(generation: u64) -> RelayGrant {
         RelayGrant {
+            version: 1,
             ticket: "ticket".into(),
             activity_id: "activity".into(),
+            activity_generation: 1,
             user_id: "user".into(),
             member_generation: generation,
             lease_id: "lease".into(),
+            device_id: "device".into(),
             source_ipv4: "10.231.0.1".into(),
             policy_revision: 1,
             allow_relay: true,
+            expires_at_unix_millis: 1,
         }
     }
 
