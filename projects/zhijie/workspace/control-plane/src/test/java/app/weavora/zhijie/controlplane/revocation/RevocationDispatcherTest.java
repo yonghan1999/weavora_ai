@@ -13,6 +13,8 @@ import app.weavora.zhijie.controlplane.sync.OutboxEvent;
 import app.weavora.zhijie.controlplane.sync.OutboxRepository;
 import app.weavora.zhijie.controlplane.sync.SyncRevocationTarget;
 import java.time.Instant;
+import java.time.Clock;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -24,7 +26,8 @@ class RevocationDispatcherTest {
                 "{}", 1L, 1L, Instant.now(), null, 0);
         OutboxRepository repository = mock(OutboxRepository.class);
         when(repository.listUnsynchronized(100)).thenReturn(List.of(event), List.of());
-        when(repository.listPendingExternal(100)).thenReturn(List.of(event));
+        Instant now = Instant.parse("2026-01-01T00:00:00Z");
+        when(repository.listDueExternal(100, now)).thenReturn(List.of(event));
         SyncRevocationTarget sync = mock(SyncRevocationTarget.class);
         AtomicInteger attempts = new AtomicInteger();
         RevocationTarget target = new RevocationTarget() {
@@ -33,13 +36,10 @@ class RevocationDispatcherTest {
                 if (attempts.getAndIncrement() == 0) throw new IllegalStateException("temporary");
             }
         };
-        RevocationDispatcher dispatcher = new RevocationDispatcher(repository, List.of(target),
-                new app.weavora.zhijie.controlplane.observability.ObservationService(
-                        new io.micrometer.core.instrument.simple.SimpleMeterRegistry()),
-                sync);
+        var dispatcher = dispatcher(repository, List.of(target), sync, now);
 
         assertThat(dispatcher.dispatchPending().failed()).isEqualTo(1);
-        verify(repository).recordFailure("event");
+        verify(repository).recordExternalFailure("event", now);
         verify(repository, never()).markDelivered("event");
         assertThat(dispatcher.dispatchPending().delivered()).isEqualTo(1);
         verify(repository).markDelivered("event");
@@ -48,7 +48,7 @@ class RevocationDispatcherTest {
         var order = inOrder(sync, repository);
         order.verify(sync).deliver(event);
         order.verify(repository).markSynchronized("event");
-        order.verify(repository).recordFailure("event");
+        order.verify(repository).recordExternalFailure("event", now);
     }
 
     @Test
@@ -61,9 +61,7 @@ class RevocationDispatcherTest {
         when(repository.listUnsynchronized(100)).thenReturn(List.of(first, later));
         var sync = mock(SyncRevocationTarget.class);
         doThrow(new IllegalStateException("temporary")).when(sync).deliver(first);
-        var dispatcher = new RevocationDispatcher(repository, List.of(),
-                new app.weavora.zhijie.controlplane.observability.ObservationService(
-                        new io.micrometer.core.instrument.simple.SimpleMeterRegistry()), sync);
+        var dispatcher = dispatcher(repository, List.of(), sync, Instant.now());
 
         assertThat(dispatcher.dispatchPending()).isEqualTo(new RevocationDispatcher.DispatchResult(0, 1));
         verify(repository).recordFailure("first");
@@ -81,9 +79,7 @@ class RevocationDispatcherTest {
         var repository = mock(OutboxRepository.class);
         when(repository.listUnsynchronized(100)).thenReturn(List.of(first, later));
         var sync = mock(SyncRevocationTarget.class);
-        var dispatcher = new RevocationDispatcher(repository, List.of(),
-                new app.weavora.zhijie.controlplane.observability.ObservationService(
-                        new io.micrometer.core.instrument.simple.SimpleMeterRegistry()), sync);
+        var dispatcher = dispatcher(repository, List.of(), sync, Instant.now());
 
         assertThat(dispatcher.dispatchPending()).isEqualTo(new RevocationDispatcher.DispatchResult(2, 0));
         var order = inOrder(sync, repository);
@@ -94,5 +90,14 @@ class RevocationDispatcherTest {
         order.verify(repository).markSynchronized("later");
         order.verify(repository).markDelivered("later");
         verify(repository, never()).recordFailure(anyString());
+    }
+
+    private RevocationDispatcher dispatcher(OutboxRepository repository, List<RevocationTarget> targets,
+                                             SyncRevocationTarget sync, Instant now) {
+        var status = new OutboxDeliveryStatus(repository,
+                new app.weavora.zhijie.controlplane.observability.ObservationService(
+                        new io.micrometer.core.instrument.simple.SimpleMeterRegistry()));
+        return new RevocationDispatcher(new SyncOutboxDispatcher(repository, targets, sync, status),
+                new ExternalRevocationDispatcher(repository, targets, status, Clock.fixed(now, ZoneOffset.UTC)));
     }
 }

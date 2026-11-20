@@ -1,6 +1,7 @@
 package app.weavora.zhijie.controlplane.sync;
 
 import java.util.List;
+import java.time.Instant;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -23,6 +24,10 @@ public class MyBatisOutboxRepository implements OutboxRepository {
         sequences.assignCommitted();
         return mapper.listUnsynchronized(limit);
     }
+    public List<OutboxEvent> listDueExternal(int limit, Instant now) {
+        sequences.assignCommitted();
+        return mapper.listDueExternal(limit, now);
+    }
     public long latestSequence() {
         sequences.assignCommitted();
         return mapper.latestSequence();
@@ -30,4 +35,5 @@ public class MyBatisOutboxRepository implements OutboxRepository {
     public void markDelivered(String eventId) { mapper.markDelivered(eventId); }
     public void markSynchronized(String eventId) { mapper.markSynchronized(eventId); }
     public void recordFailure(String eventId) { mapper.recordFailure(eventId); }
+    public void recordExternalFailure(String eventId, Instant failedAt) { mapper.recordExternalFailure(eventId, failedAt); }
 }

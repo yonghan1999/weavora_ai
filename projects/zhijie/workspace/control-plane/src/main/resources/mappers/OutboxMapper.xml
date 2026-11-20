@@ -35,8 +35,22 @@
         FROM sync_event_sequences assigned JOIN outbox_events event ON event.event_id=assigned.event_id
         WHERE event.sync_delivered_at IS NULL ORDER BY assigned.sequence LIMIT #{limit}
     </select>
+    <select id="listDueExternal" resultMap="OutboxEvent">
+        SELECT assigned.sequence, event.event_id, event.group_id, event.activity_id, event.aggregate_id,
+            event.type, event.payload, event.generation, event.policy_revision, event.occurred_at, event.delivered_at, event.attempts
+        FROM sync_event_sequences assigned JOIN outbox_events event ON event.event_id=assigned.event_id
+        WHERE event.delivered_at IS NULL AND event.sync_delivered_at IS NOT NULL
+            AND (event.external_next_attempt_at IS NULL OR event.external_next_attempt_at &lt;= #{now})
+        ORDER BY COALESCE(event.external_next_attempt_at, event.occurred_at), assigned.sequence LIMIT #{limit}
+    </select>
     <select id="latestSequence" resultType="long">SELECT COALESCE(MAX(sequence), 0) FROM sync_event_sequences</select>
     <update id="markDelivered">UPDATE outbox_events SET delivered_at = NOW() WHERE event_id = #{eventId}</update>
     <update id="markSynchronized">UPDATE outbox_events SET sync_delivered_at = NOW() WHERE event_id = #{eventId}</update>
     <update id="recordFailure">UPDATE outbox_events SET attempts = attempts + 1 WHERE event_id = #{eventId}</update>
+    <update id="recordExternalFailure">
+        UPDATE outbox_events SET attempts = attempts + 1, external_attempts = LEAST(external_attempts, 30) + 1,
+            external_next_attempt_at = #{failedAt}::timestamptz
+                + make_interval(secs => LEAST(60, power(2, LEAST(external_attempts, 5) + 1))::integer)
+        WHERE event_id = #{eventId}
+    </update>
 </mapper>

@@ -96,6 +96,8 @@ class SyncOutboxIsolationIntegrationTest {
                     var reconnected = http.newWebSocketBuilder().header("Authorization", "Bearer " + token.accessToken())
                             .buildAsync(URI.create(entry + repository.latestSequence()), replacement).get(5, TimeUnit.SECONDS);
                     try {
+                        assertThat(dispatcher.dispatchPending().failed()).isZero();
+                        context.getBean(JdbcTemplate.class).update("UPDATE outbox_events SET external_next_attempt_at=NOW() WHERE event_id=?", revocation.eventId());
                         assertThat(dispatcher.dispatchPending().failed()).isEqualTo(1);
                         String message = context.getBean(MessageService.class).post(user, group.id(), "外部重试后的消息").id();
                         dispatcher.dispatchPending();
@@ -142,6 +144,8 @@ class SyncOutboxIsolationIntegrationTest {
                     "--spring.datasource.url=" + url, "--spring.datasource.username=postgres", "--spring.datasource.password=")) {
                 var repository = context.getBean(OutboxRepository.class);
                 assertThat(repository.listUnsynchronized(100)).isEmpty();
+                assertThat(repository.listPendingExternal(100)).extracting(OutboxEvent::attempts).containsExactly(3);
+                context.getBean(JdbcTemplate.class).update("UPDATE outbox_events SET external_next_attempt_at=NOW() WHERE event_id='pending'");
                 assertThat(context.getBean(RevocationDispatcher.class).dispatchPending().failed()).isEqualTo(1);
                 assertThat(repository.listPendingExternal(100)).extracting(OutboxEvent::attempts).containsExactly(4);
                 assertThat(context.getBean(JdbcTemplate.class).queryForObject(

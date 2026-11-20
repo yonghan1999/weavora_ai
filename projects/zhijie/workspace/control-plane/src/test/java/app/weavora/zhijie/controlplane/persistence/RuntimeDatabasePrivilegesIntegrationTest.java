@@ -114,6 +114,7 @@ class RuntimeDatabasePrivilegesIntegrationTest {
                 context.getBean(app.weavora.zhijie.controlplane.revocation.RevocationDispatcher.class).dispatchPending();
                 assertThat(sql.queryForObject("SELECT count(*) FROM outbox_events WHERE sync_delivered_at IS NULL", Integer.class)).isZero();
                 assertThat(sql.queryForObject("SELECT count(*) FROM outbox_events WHERE sync_delivered_at IS NOT NULL AND delivered_at IS NULL", Integer.class)).isPositive();
+                assertThat(sql.queryForObject("SELECT count(*) FROM outbox_events WHERE external_attempts > 0 AND external_next_attempt_at IS NOT NULL", Integer.class)).isPositive();
                 assertThat(sql.queryForObject("SELECT count(*) FROM audit_logs WHERE action='GROUP_DISSOLVE'", Integer.class)).isEqualTo(1);
             }
             // 新增表不自动授权；迁移历史失配时 runtime 必须停止启动而非跳过校验。
