@@ -4,6 +4,7 @@ import app.weavora.zhijie.controlplane.common.ApiException;
 import app.weavora.zhijie.controlplane.group.GroupMember;
 import app.weavora.zhijie.controlplane.group.GroupService;
 import app.weavora.zhijie.controlplane.identity.IdentityService;
+import app.weavora.zhijie.controlplane.identity.AuthSession;
 import app.weavora.zhijie.controlplane.room.Activity;
 import app.weavora.zhijie.controlplane.room.ActivityState;
 import app.weavora.zhijie.controlplane.room.Room;
@@ -50,11 +51,13 @@ public class ActivityCoordinator {
     }
 
     @Transactional
-    public JoinResult join(String userId, String roomId, String deviceId, String password, String operationId) {
+    public JoinResult join(AuthSession session, String roomId, String password, String operationId) {
+        String userId = session.userId(), deviceId = session.deviceId();
         identity.requireActive(userId);
         // 治理和入房统一先锁群，再锁账号及房间/活动，避免结束活动时形成反向等待。
         groups.lockGroup(rooms.getRoom(userId, roomId).groupId());
         repository.lockUser(userId);
+        identity.lockSession(session);
         AccountActivity previous = repository.findAccountActivity(userId).orElse(null);
         ConnectionLease previousLease = previous == null ? null :
                 repository.findLatestLease(previous.activityId(), userId).orElse(null);
@@ -63,7 +66,8 @@ public class ActivityCoordinator {
         GroupMember groupMember = groups.requireMembership(room.groupId(), userId);
         Activity activity = currentActivity(room);
 
-        if (previous != null && previous.activityId().equals(activity.id()) && previous.deviceId().equals(deviceId)) {
+        if (previous != null && previous.activityId().equals(activity.id()) && previous.deviceId().equals(deviceId)
+                && session.id().equals(previous.authSessionId())) {
             ActivityMember existing = repository.findMember(activity.id(), userId).orElse(null);
             if (existing != null && existing.state() == MemberState.ACTIVE) return resumeActive(existing);
             if (existing != null && existing.state() == MemberState.GRACE) return resumeInternal(existing);
@@ -88,10 +92,16 @@ public class ActivityCoordinator {
                 ChannelState.CONNECTING, now.plus(GRACE_PERIOD), null);
         repository.upsertMember(member);
         repository.insertLease(lease);
-        repository.upsertAccountActivity(new AccountActivity(userId, activity.id(), deviceId, generation, operationId));
+        repository.upsertAccountActivity(new AccountActivity(userId, activity.id(), deviceId, generation, operationId, session.id()));
         revokePrevious(previous, previousLease, member, now);
         sync.groupChanged(room.groupId(), "activity.changed");
         return result(member, lease, ipv4);
+    }
+
+    @Transactional
+    public JoinResult resume(AuthSession session, String activityId) {
+        lockSessionActivity(session, activityId);
+        return resume(session.userId(), activityId, session.deviceId());
     }
 
     @Transactional
@@ -100,6 +110,7 @@ public class ActivityCoordinator {
         lockMembership(userId, activityId);
         repository.lockUser(userId);
         AccountActivity pointer = repository.findAccountActivity(userId).orElseThrow(this::resumeUnavailable);
+        identity.requireActivitySession(pointer.authSessionId(), userId, deviceId);
         if (!pointer.activityId().equals(activityId) || !pointer.deviceId().equals(deviceId)) throw resumeUnavailable();
         Activity activity = repository.findActivityForUpdate(activityId).orElseThrow(this::resumeUnavailable);
         if (activity.state() != ActivityState.ACTIVE) throw resumeUnavailable();
@@ -128,6 +139,15 @@ public class ActivityCoordinator {
     }
 
     @Transactional
+    public boolean leave(AuthSession session, String activityId, String leaseId) {
+        repository.lockUser(session.userId());
+        identity.lockSession(session);
+        AccountActivity pointer = repository.findAccountActivity(session.userId()).orElse(null);
+        if (pointer == null || !session.id().equals(pointer.authSessionId())) return false;
+        return leave(session.userId(), activityId, session.deviceId(), leaseId);
+    }
+
+    @Transactional
     public boolean leave(String userId, String activityId, String deviceId, String leaseId) {
         repository.lockUser(userId);
         AccountActivity pointer = repository.findAccountActivity(userId).orElse(null);
@@ -142,12 +162,19 @@ public class ActivityCoordinator {
     }
 
     @Transactional
+    public void heartbeat(AuthSession session, String activityId, String leaseId, long activityGeneration, long memberGeneration) {
+        lockSessionActivity(session, activityId);
+        heartbeat(session.userId(), activityId, session.deviceId(), leaseId, activityGeneration, memberGeneration);
+    }
+
+    @Transactional
     public void heartbeat(String userId, String activityId, String deviceId, String leaseId,
                           long activityGeneration, long memberGeneration) {
         identity.requireActive(userId);
         lockMembership(userId, activityId);
         repository.lockUser(userId);
         AccountActivity pointer = repository.findAccountActivity(userId).orElseThrow(this::resumeUnavailable);
+        identity.requireActivitySession(pointer.authSessionId(), userId, deviceId);
         if (!pointer.activityId().equals(activityId) || !pointer.deviceId().equals(deviceId)
                 || pointer.memberGeneration() != memberGeneration) throw resumeUnavailable();
         Activity activity = repository.findActivityForUpdate(activityId).orElseThrow(this::resumeUnavailable);
@@ -302,6 +329,13 @@ public class ActivityCoordinator {
 
     private ApiException roomUnavailable() {
         return new ApiException(HttpStatus.NOT_FOUND, "RESOURCE_NOT_AVAILABLE", "房间或活动不可用", false);
+    }
+    private void lockSessionActivity(AuthSession session, String activityId) {
+        lockMembership(session.userId(), activityId);
+        repository.lockUser(session.userId());
+        identity.lockSession(session);
+        AccountActivity pointer = repository.findAccountActivity(session.userId()).orElseThrow(this::resumeUnavailable);
+        if (!session.id().equals(pointer.authSessionId())) throw resumeUnavailable();
     }
     private void lockMembership(String userId, String activityId) {
         String groupId = repository.findGroupId(activityId);

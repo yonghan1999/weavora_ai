@@ -38,7 +38,7 @@ class DisabledAccountIntegrationTest {
             Room room = rooms.createRoom(owner, group.id(), "定时清理房", "", "", null);
             rooms.assignOwner(owner, room.id(), member);
             Activity activity = rooms.startActivity(owner, room.id());
-            context.getBean(ActivityCoordinator.class).join(member, room.id(), "scheduled-device", null, "scheduled-join");
+            AuthenticatedActivities.join(context, member, room.id(), "scheduled-device", null, "scheduled-join");
             context.getBean(JdbcTemplate.class).update("UPDATE users SET status = 'DISABLED' WHERE id = ?", member);
             long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
             var activities = context.getBean(ActivityRepository.class);
@@ -83,8 +83,8 @@ class DisabledAccountIntegrationTest {
             rooms.assignOwner(owner, room.id(), disabled);
             rooms.assignOwner(owner, offline.id(), disabled);
             Activity activity = rooms.startActivity(owner, room.id());
-            coordinator.join(disabled, room.id(), "disabled-device", null, "disabled-join");
-            coordinator.join(active, room.id(), "active-device", null, "active-join");
+            AuthenticatedActivities.join(context, disabled, room.id(), "disabled-device", null, "disabled-join");
+            AuthenticatedActivities.join(context, active, room.id(), "active-device", null, "active-join");
             coordinator.disconnect(disabled, activity.id(), "disabled-device");
             GroupInvitation pending = groups.invite(disabled, group.id(), invitee);
             OwnerTransfer transfer = groups.initiateTransfer(owner, group.id(), disabled);
@@ -125,7 +125,7 @@ class DisabledAccountIntegrationTest {
             context.getBean(DisabledAccountRevocation.class).revoke(new DisabledAccountMapper.Candidate(group.id(), active));
             assertThat(activities.findMember(activity.id(), active).orElseThrow().state()).isEqualTo(MemberState.ACTIVE);
             // 群主账号失效清退其活动，但不能擅自替换群主或阻断其他失效房主接管。
-            coordinator.join(owner, room.id(), "owner-device", null, "owner-join");
+            AuthenticatedActivities.join(context, owner, room.id(), "owner-device", null, "owner-join");
             rooms.assignOwner(owner, offline.id(), active);
             sql.update("UPDATE users SET status = 'DISABLED' WHERE id IN (?, ?)", owner, active);
             scheduler.reconcile();

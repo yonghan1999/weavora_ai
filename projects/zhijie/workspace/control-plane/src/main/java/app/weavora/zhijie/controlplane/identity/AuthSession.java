@@ -13,4 +13,7 @@ public record AuthSession(
         Instant revokedAt,
         Long generation
 ) {
+    public boolean allowsActivity(String user, String device, Instant now) {
+        return revokedAt == null && userId.equals(user) && deviceId.equals(device) && now.isBefore(expiresAt);
+    }
 }

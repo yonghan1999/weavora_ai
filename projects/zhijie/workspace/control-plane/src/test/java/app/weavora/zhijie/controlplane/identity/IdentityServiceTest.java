@@ -76,6 +76,30 @@ class IdentityServiceTest {
     }
 
     @Test
+    void activitySessionTracksLoginLifetimeNotAccessRotationOrAnotherLogin() {
+        service.register(EMAIL, PASSWORD);
+        service.verifyEmail(EMAIL, emailDispatch.codes.get(ChallengePurpose.VERIFY_EMAIL));
+        var original = service.login(EMAIL, PASSWORD, "device-a");
+        var other = service.login(EMAIL, PASSWORD, "device-a");
+        var before = repository.findSessionById(original.sessionId()).orElseThrow();
+        service.requireActivitySession(original.sessionId(), original.userId(), "device-a");
+        var rotated = service.refresh(original.refreshToken());
+        service.requireActivitySession(original.sessionId(), original.userId(), "device-a");
+        assertThatThrownBy(() -> service.lockSession(before)).isInstanceOf(ApiException.class);
+        service.lockSession(repository.findSessionById(rotated.sessionId()).orElseThrow());
+        var current = repository.findSessionById(rotated.sessionId()).orElseThrow();
+        repository.updateSession(new AuthSession(current.id(), current.userId(), current.deviceId(), current.refreshTokenHash(),
+                current.accessTokenHash(), current.expiresAt(), Instant.now().minusSeconds(1), null, current.generation()));
+        service.requireActivitySession(current.id(), current.userId(), "device-a");
+        assertThatThrownBy(() -> service.requireActivitySession(current.id(), current.userId(), "other-device")).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> service.requireActivitySession(current.id(), "other-user", "device-a")).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> service.requireActivitySession(null, current.userId(), "device-a")).isInstanceOf(ApiException.class);
+        service.logout(rotated.accessToken());
+        assertThatThrownBy(() -> service.requireActivitySession(current.id(), current.userId(), "device-a")).isInstanceOf(ApiException.class);
+        service.requireActivitySession(other.sessionId(), other.userId(), "device-a");
+    }
+
+    @Test
     void disabledAccountCannotRotateOtherwiseValidRefreshCredentials() {
         service.register(EMAIL, PASSWORD);
         service.verifyEmail(EMAIL, emailDispatch.codes.get(ChallengePurpose.VERIFY_EMAIL));

@@ -39,8 +39,8 @@ class RoomGovernanceIntegrationTest {
             var room = rooms.createRoom(user, group.id(), "退房验证房", "", "", null);
             var activity = rooms.startActivity(user, room.id());
             var coordinator = context.getBean(ActivityCoordinator.class);
-            var original = coordinator.join(user, room.id(), "device-a", null, "first");
-            var replacement = coordinator.join(user, room.id(), "device-b", null, "second");
+            var original = AuthenticatedActivities.join(context, user, room.id(), "device-a", null, "first");
+            var replacement = AuthenticatedActivities.join(context, user, room.id(), "device-b", null, "second");
             var json = context.getBean(ObjectMapper.class);
             String entry = "http://127.0.0.1:" + ((ServletWebServerApplicationContext)context).getWebServer().getPort();
             String path = "/activities/" + activity.id() + "/leave";
@@ -79,7 +79,7 @@ class RoomGovernanceIntegrationTest {
             assertThat(released.statusCode()).isEqualTo(200);
             assertThat(json.readTree(released.body()).at("/data/left").booleanValue()).isTrue();
             assertThat(repository.countOccupied(activity.id())).isZero();
-            var next = coordinator.join(user, room.id(), "device-b", null, "rejoined");
+            var next = AuthenticatedActivities.join(context, user, room.id(), "device-b", null, "rejoined");
             var repeat = send(http, entry, "POST", path, second, newLease);
             assertThat(repeat.statusCode()).isEqualTo(200);
             assertThat(json.readTree(repeat.body())).isEqualTo(json.valueToTree(Map.of("data", Map.of("left", false))));
@@ -126,7 +126,7 @@ class RoomGovernanceIntegrationTest {
             assertThat(send(http, entry, "POST", roomPath + "/owner", tokens.get(0), json.writeValueAsString(Map.of("targetUserId", other))).statusCode()).isEqualTo(403);
             sql.update("UPDATE users SET status = 'ACTIVE' WHERE id = ?", other);
             var joined = new ArrayList<JoinResult>();
-            for (String user : users.subList(0, 6)) joined.add(coordinator.join(user, room.id(), "device-" + user, "current-password-123", "join-" + user));
+            for (String user : users.subList(0, 6)) joined.add(AuthenticatedActivities.join(context, user, room.id(), "device-" + user, "current-password-123", "join-" + user));
             String memberKick = "/activities/" + activity.id() + "/members/" + member + "/kick";
             String generation = json.writeValueAsString(Map.of("memberGeneration", joined.get(4).memberGeneration()));
             assertThat(send(http, entry, "POST", memberKick, tokens.get(5), generation).statusCode()).isEqualTo(403);
@@ -148,7 +148,7 @@ class RoomGovernanceIntegrationTest {
             assertThat(context.getBean(GroupRepository.class).findMember(group.id(), member).orElseThrow().status()).isEqualTo(MemberStatus.ACTIVE);
             assertThat(send(http, entry, "POST", "/activities/" + activity.id() + "/resume", tokens.get(4), json.writeValueAsString(Map.of("deviceId", "device-" + member))).statusCode()).isEqualTo(409);
             assertThat(send(http, entry, "GET", "/activities/" + activity.id() + "/members", tokens.get(4), null).statusCode()).isEqualTo(404);
-            JoinResult rejoined = coordinator.join(member, room.id(), "device-" + member, "current-password-123", "rejoin");
+            JoinResult rejoined = AuthenticatedActivities.join(context, member, room.id(), "device-" + member, "current-password-123", "rejoin");
             assertThat(rejoined.memberGeneration()).isGreaterThan(joined.get(4).memberGeneration());
             assertThat(send(http, entry, "POST", memberKick, tokens.get(3), generation).statusCode()).isEqualTo(409);
             assertThat(activities.findMember(activity.id(), member).orElseThrow().state()).isEqualTo(MemberState.ACTIVE);
@@ -174,12 +174,12 @@ class RoomGovernanceIntegrationTest {
                 for (int round = 0; round < 3; round++) {
                     Room raceRoom = rooms.createRoom(owner, group.id(), "并发治理-" + round, "", "", null);
                     Activity raceActivity = rooms.startActivity(owner, raceRoom.id());
-                    JoinResult first = coordinator.join(member, raceRoom.id(), "old-device", null, "old-join");
+                    JoinResult first = AuthenticatedActivities.join(context, member, raceRoom.id(), "old-device", null, "old-join");
                     String raceKick = "/activities/" + raceActivity.id() + "/members/" + member + "/kick";
                     String oldGeneration = json.writeValueAsString(Map.of("memberGeneration", first.memberGeneration()));
                     var start = new CountDownLatch(1);
                     var kick = executor.submit(() -> { start.await(); return send(http, entry, "POST", raceKick, tokens.get(0), oldGeneration).statusCode(); });
-                    var replacement = executor.submit(() -> { start.await(); return coordinator.join(member, raceRoom.id(), "new-device", null, "new-join"); });
+                    var replacement = executor.submit(() -> { start.await(); return AuthenticatedActivities.join(context, member, raceRoom.id(), "new-device", null, "new-join"); });
                     start.countDown();
                     assertThat(kick.get(10, TimeUnit.SECONDS)).isIn(200, 409);
                     JoinResult latest = replacement.get(10, TimeUnit.SECONDS);

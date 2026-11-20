@@ -25,14 +25,14 @@ public class GrantController {
     @PostMapping("/activities/{activityId}/voice-grants")
     public Map<String, VoiceGrantResponse> voice(@RequestHeader("Authorization") String auth, @PathVariable String activityId) {
         var session = identity.authenticateSession(auth);
-        return Map.of("data", grants.voice(session.userId(), activityId, session.deviceId()));
+        return Map.of("data", grants.voice(session, activityId));
     }
 
     @PostMapping("/activities/{activityId}/network-grants")
     public Map<String, NetworkGrantResponse> network(@RequestHeader("Authorization") String auth, @PathVariable String activityId,
                                                      @Valid @RequestBody NetworkBody body) {
         var session = identity.authenticateSession(auth);
-        return Map.of("data", grants.network(session.userId(), activityId, session.deviceId(), body.publicKey()));
+        return Map.of("data", grants.network(session, activityId, body.publicKey()));
     }
 
     public record NetworkBody(@NotBlank String publicKey) {

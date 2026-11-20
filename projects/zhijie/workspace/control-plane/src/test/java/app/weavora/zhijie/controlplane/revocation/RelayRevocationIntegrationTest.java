@@ -2,6 +2,7 @@ package app.weavora.zhijie.controlplane.revocation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.group.GroupService;
@@ -52,7 +53,7 @@ class RelayRevocationIntegrationTest {
             var room = rooms.createRoom(user, group.id(), "撤销房间", "", "", null);
             String activity = rooms.startActivity(user, room.id()).id();
             var coordinator = context.getBean(ActivityCoordinator.class);
-            var joined = coordinator.join(user, room.id(), "device", null, "join");
+            var joined = AuthenticatedActivities.join(context, user, room.id(), "device", null, "join");
             var dispatcher = context.getBean(RevocationDispatcher.class);
             dispatcher.dispatchPending();
             coordinator.leave(user, activity, joined.deviceId(), joined.leaseId());

@@ -5,7 +5,7 @@
         <constructor>
             <idArg column="user_id" javaType="String"/><arg column="activity_id" javaType="String"/>
             <arg column="device_id" javaType="String"/><arg column="member_generation" javaType="Long"/>
-            <arg column="operation_id" javaType="String"/>
+            <arg column="operation_id" javaType="String"/><arg column="auth_session_id" javaType="String"/>
         </constructor>
     </resultMap>
     <resultMap id="ActivityMember" type="app.weavora.zhijie.controlplane.activity.ActivityMember">
@@ -51,10 +51,10 @@
     </select>
     <select id="findAccountActivity" resultMap="AccountActivity">SELECT * FROM account_activity WHERE user_id = #{userId}</select>
     <insert id="upsertAccountActivity" parameterType="app.weavora.zhijie.controlplane.activity.AccountActivity">
-        INSERT INTO account_activity (user_id, activity_id, device_id, member_generation, operation_id)
-        VALUES (#{userId}, #{activityId}, #{deviceId}, #{memberGeneration}, #{operationId})
+        INSERT INTO account_activity (user_id, activity_id, device_id, member_generation, operation_id, auth_session_id)
+        VALUES (#{userId}, #{activityId}, #{deviceId}, #{memberGeneration}, #{operationId}, #{authSessionId})
         ON CONFLICT (user_id) DO UPDATE SET activity_id = EXCLUDED.activity_id, device_id = EXCLUDED.device_id,
-            member_generation = EXCLUDED.member_generation, operation_id = EXCLUDED.operation_id
+            member_generation = EXCLUDED.member_generation, operation_id = EXCLUDED.operation_id, auth_session_id = EXCLUDED.auth_session_id
     </insert>
     <delete id="deleteAccountActivity">DELETE FROM account_activity WHERE user_id = #{userId}</delete>
     <select id="countOccupied" resultType="int">

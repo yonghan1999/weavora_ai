@@ -33,21 +33,21 @@ public class ActivityController {
     @PostMapping("/room-joins")
     public Map<String, JoinResult> join(@RequestHeader("Authorization") String auth, @Valid @RequestBody JoinBody body) {
         var session = deviceSession(auth, body.deviceId());
-        return Map.of("data", activities.join(session.userId(), body.roomId(), session.deviceId(), body.password(), body.operationId()));
+        return Map.of("data", activities.join(session, body.roomId(), body.password(), body.operationId()));
     }
 
     @PostMapping("/activities/{activityId}/resume")
     public Map<String, JoinResult> resume(@RequestHeader("Authorization") String auth, @PathVariable String activityId,
                                           @Valid @RequestBody DeviceBody body) {
         var session = deviceSession(auth, body.deviceId());
-        return Map.of("data", activities.resume(session.userId(), activityId, session.deviceId()));
+        return Map.of("data", activities.resume(session, activityId));
     }
 
     @PostMapping("/activities/{activityId}/leave")
     public Map<String, Object> leave(@RequestHeader("Authorization") String auth, @PathVariable String activityId,
                                     @Valid @RequestBody LeaveBody body) {
         var session = identity.authenticateSession(auth);
-        boolean left = activities.leave(session.userId(), activityId, session.deviceId(), body.leaseId());
+        boolean left = activities.leave(session, activityId, body.leaseId());
         return Map.of("data", Map.of("left", left));
     }
 
@@ -55,7 +55,7 @@ public class ActivityController {
     public Map<String, Object> heartbeat(@RequestHeader("Authorization") String auth, @PathVariable String activityId,
                                          @Valid @RequestBody HeartbeatBody body) {
         var session = deviceSession(auth, body.deviceId());
-        activities.heartbeat(session.userId(), activityId, session.deviceId(), body.leaseId(), body.activityGeneration(), body.memberGeneration());
+        activities.heartbeat(session, activityId, body.leaseId(), body.activityGeneration(), body.memberGeneration());
         return Map.of("data", Map.of("renewed", true));
     }
 

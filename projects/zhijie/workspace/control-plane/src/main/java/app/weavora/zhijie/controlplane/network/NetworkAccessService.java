@@ -60,8 +60,10 @@ public class NetworkAccessService {
                 .filter(item -> item.activityGeneration().equals(activity.activityGeneration())
                         && item.memberGeneration().equals(member.memberGeneration()) && item.deviceId().equals(member.deviceId()))
                 .orElseThrow(this::denied);
-        activities.findAccountActivity(grant.userId()).filter(pointer -> pointer.activityId().equals(grant.activityId())
-                && pointer.memberGeneration().equals(member.memberGeneration()) && pointer.deviceId().equals(member.deviceId())).orElseThrow(this::denied);
+        var pointer = activities.findAccountActivity(grant.userId()).filter(item -> item.activityId().equals(grant.activityId())
+                && item.memberGeneration().equals(member.memberGeneration()) && item.deviceId().equals(member.deviceId())).orElseThrow(this::denied);
+        try { identity.requireActivitySession(pointer.authSessionId(), grant.userId(), member.deviceId()); }
+        catch (ApiException exception) { throw denied(); }
         var address = activities.findAddress(grant.activityId(), grant.userId()).filter(item -> item.releasedAt() == null).orElseThrow(this::denied);
         var policy = policies.current();
         if (!grant.policyRevision().equals(policy.revision())) throw denied();

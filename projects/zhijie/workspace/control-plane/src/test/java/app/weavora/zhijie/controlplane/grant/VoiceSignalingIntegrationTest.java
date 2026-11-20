@@ -3,6 +3,7 @@ package app.weavora.zhijie.controlplane.grant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.group.GroupService;
@@ -95,7 +96,7 @@ class VoiceSignalingIntegrationTest {
             var room = rooms.createRoom(userId, group.id(), "受控信令房间", "", "", null);
             rooms.startActivity(userId, room.id());
             var coordinator = context.getBean(ActivityCoordinator.class);
-            var joined = coordinator.join(userId, room.id(), "device", null, "join");
+            var joined = AuthenticatedActivities.join(context, userId, room.id(), "device", null, "join");
             var grants = context.getBean(GrantService.class);
             var issued = grants.voice(userId, joined.activityId(), joined.deviceId());
             var retry = grants.voice(userId, joined.activityId(), joined.deviceId());
@@ -116,7 +117,7 @@ class VoiceSignalingIntegrationTest {
                         secondUser + "@example.test", AccountStatus.ACTIVE, "unused", Instant.now()));
                 var groups = context.getBean(GroupService.class);
                 groups.acceptInvitation(secondUser, groups.invite(userId, group.id(), secondUser).id());
-                var secondJoin = coordinator.join(secondUser, room.id(), "second-device", null, "second-join");
+                var secondJoin = AuthenticatedActivities.join(context, secondUser, room.id(), "second-device", null, "second-join");
                 String secondToken = grants.voice(secondUser, secondJoin.activityId(), secondJoin.deviceId()).voiceToken();
                 runMedia(directory, issued.sfuUrl(), token, secondToken,
                         adminToken(apiKey, apiSecret, joined.activityId()));
@@ -127,7 +128,7 @@ class VoiceSignalingIntegrationTest {
             assertThatThrownBy(() -> http.newWebSocketBuilder().header("Authorization", "Bearer " + token)
                     .buildAsync(URI.create(entry.replace("http://", "ws://") + "/rtc?protocol=15"), new WebSocket.Listener() {})
                     .get(5, TimeUnit.SECONDS)).isInstanceOf(java.util.concurrent.ExecutionException.class);
-            var rejoined = coordinator.join(userId, room.id(), "device", null, "rejoin");
+            var rejoined = AuthenticatedActivities.join(context, userId, room.id(), "device", null, "rejoin");
             String fresh = grants.voice(userId, rejoined.activityId(), rejoined.deviceId()).voiceToken();
             assertThat(status(http, entry, token, false)).isEqualTo(403);
             assertThat(status(http, entry, fresh, false)).isEqualTo(200);
@@ -151,8 +152,8 @@ class VoiceSignalingIntegrationTest {
                 groups.acceptInvitation(secondUser, groups.invite(userId, disabledGroup.id(), secondUser).id());
                 var disabledRoom = rooms.createRoom(userId, disabledGroup.id(), "账号失效媒体房", "", "", null);
                 rooms.startActivity(userId, disabledRoom.id());
-                var disabledJoin = coordinator.join(userId, disabledRoom.id(), "disabled-a", null, "disabled-a");
-                coordinator.join(secondUser, disabledRoom.id(), "disabled-b", null, "disabled-b");
+                var disabledJoin = AuthenticatedActivities.join(context, userId, disabledRoom.id(), "disabled-a", null, "disabled-a");
+                AuthenticatedActivities.join(context, secondUser, disabledRoom.id(), "disabled-b", null, "disabled-b");
                 String disabledFirst = grants.voice(userId, disabledJoin.activityId(), disabledJoin.deviceId()).voiceToken();
                 String disabledSecond = grants.voice(secondUser, disabledJoin.activityId(), "disabled-b").voiceToken();
                 runMedia(directory, entry.replace("http://", "ws://"), disabledFirst, disabledSecond,
@@ -240,9 +241,9 @@ class VoiceSignalingIntegrationTest {
             users.add(user);
         }
         for (int index = 0; index < 12; index++) {
-            joins.add(coordinator.join(users.get(index), room.id(), "full-room-" + index, null, "join-" + index));
+            joins.add(AuthenticatedActivities.join(context, users.get(index), room.id(), "full-room-" + index, null, "join-" + index));
         }
-        assertThatThrownBy(() -> coordinator.join(users.get(12), room.id(), "overflow", null, "overflow"))
+        assertThatThrownBy(() -> AuthenticatedActivities.join(context, users.get(12), room.id(), "overflow", null, "overflow"))
                 .isInstanceOf(app.weavora.zhijie.controlplane.common.ApiException.class)
                 .extracting("code").isEqualTo("CAPACITY_FULL");
         var builder = new ProcessBuilder("cargo", "test", "--offline", "-p", "zhijie-voice", "--test",

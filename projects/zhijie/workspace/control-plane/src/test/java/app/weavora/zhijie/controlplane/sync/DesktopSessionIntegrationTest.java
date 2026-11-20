@@ -1,6 +1,7 @@
 package app.weavora.zhijie.controlplane.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.group.GroupService;
@@ -78,7 +79,7 @@ class DesktopSessionIntegrationTest {
             var rooms = context.getBean(RoomService.class);
             var room = rooms.createRoom(user, group.id(), "续期活动", "", "", null);
             rooms.startActivity(user, room.id());
-            var joined = context.getBean(ActivityCoordinator.class).join(user, room.id(), "shell-session", null, "session-probe");
+            var joined = AuthenticatedActivities.join(context, user, room.id(), "shell-session", null, "session-probe");
             var otherSession = logout ? identity.login("shell-session@example.test", "shell-session-password-123", "other-device") : null;
             var networkGrant = logout ? context.getBean(app.weavora.zhijie.controlplane.grant.GrantService.class).network(
                     user, joined.activityId(), joined.deviceId(), java.util.Base64.getEncoder().encodeToString(new byte[]{

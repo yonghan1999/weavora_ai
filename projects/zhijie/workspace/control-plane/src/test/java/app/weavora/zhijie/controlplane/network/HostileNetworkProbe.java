@@ -2,6 +2,7 @@ package app.weavora.zhijie.controlplane.network;
 
 import static org.assertj.core.api.Assertions.*;
 
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.grant.GrantService;
 import app.weavora.zhijie.controlplane.group.GroupService;
@@ -38,8 +39,8 @@ final class HostileNetworkProbe {
             var room = rooms.createRoom(users.getFirst(), group.id(), "真实失权边界", "", "", null);
             var activity = rooms.startActivity(users.getFirst(), room.id());
             var coordinator = context.getBean(ActivityCoordinator.class);
-            var receiver = coordinator.join(users.getFirst(), room.id(), "receiver", null, "hostile-receiver");
-            var hostile = coordinator.join(users.get(1), room.id(), "hostile", null, "hostile-sender");
+            var receiver = AuthenticatedActivities.join(context, users.getFirst(), room.id(), "receiver", null, "hostile-receiver");
+            var hostile = AuthenticatedActivities.join(context, users.get(1), room.id(), "hostile", null, "hostile-sender");
             var directory = Files.createTempDirectory(Path.of("target"), "network-hostile-").toAbsolutePath();
             var publicFile = directory.resolve("public.json");
             var output = directory.resolve("rust-network.log");

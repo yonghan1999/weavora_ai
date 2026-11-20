@@ -69,9 +69,9 @@ class NetworkPeerIntegrationTest {
         String activity = rooms.startActivity(a, room.id()).id();
         String other = rooms.startActivity(a, otherRoom.id()).id();
         var coordinator = context.getBean(ActivityCoordinator.class);
-        coordinator.join(a, room.id(), "device-a", null, "a");
-        var joinedB = coordinator.join(b, room.id(), "device-b", null, "b");
-        coordinator.join(c, otherRoom.id(), "device-c", null, "c");
+        AuthenticatedActivities.join(context, a, room.id(), "device-a", null, "a");
+        var joinedB = AuthenticatedActivities.join(context, b, room.id(), "device-b", null, "b");
+        AuthenticatedActivities.join(context, c, otherRoom.id(), "device-c", null, "c");
         var grants = context.getBean(GrantService.class);
         var peers = context.getBean(NetworkPeerService.class);
         var access = context.getBean(NetworkAccessService.class);
@@ -133,7 +133,7 @@ class NetworkPeerIntegrationTest {
             assertThat(peer.endpoint()).isEqualTo("127.0.0.1:41005");
         });
         assertThat(access.validate(gc.networkTicket()).grant().id()).isEqualTo(gc.grantId());
-        var transferred = coordinator.join(b, room.id(), "new-device", null, "transfer");
+        var transferred = AuthenticatedActivities.join(context, b, room.id(), "new-device", null, "transfer");
         assertThat(peers.list(a, activity, ga.networkTicket())).isEmpty();
         assertThatThrownBy(() -> access.validate(rotated.networkTicket())).isInstanceOf(ApiException.class);
         var replacement = grants.network(b, activity, transferred.deviceId(), key(4));
@@ -148,7 +148,7 @@ class NetworkPeerIntegrationTest {
         assertThat(http.send(httpRequest, HttpResponse.BodyHandlers.discarding()).statusCode()).isEqualTo(403);
         var relayOnly = grants.network(a, activity, "device-a", key(1));
         assertThat(peers.register(a, activity, relayOnly.networkTicket(), null)).isEmpty();
-        var relayJoin = coordinator.join(b, room.id(), "relay-device", null, "relay-b");
+        var relayJoin = AuthenticatedActivities.join(context, b, room.id(), "relay-device", null, "relay-b");
         var relayB = grants.network(b, activity, relayJoin.deviceId(), key(2));
         assertThat(peers.register(b, activity, relayB.networkTicket(), null)).singleElement().satisfies(peer -> {
             assertThat(peer.userId()).isEqualTo(a);
@@ -212,14 +212,14 @@ class NetworkPeerIntegrationTest {
             var addresses = new HashSet<String>();
             for (int index = 0; index < 12; index++) {
                 String user = users.get(index);
-                leases.add(coordinator.join(user, room.id(), "device-" + index, null, "full-" + index).leaseId());
+                leases.add(AuthenticatedActivities.join(context, user, room.id(), "device-" + index, null, "full-" + index).leaseId());
                 var grant = grants.network(user, activity, "device-" + index, key(index + 1));
                 tickets.add(grant.networkTicket());
                 assertThat(addresses.add(grant.virtualIpv4())).isTrue();
                 peers.register(user, activity, grant.networkTicket(),
                         grant.allowedPaths().contains("DIRECT") ? "127.0.0.1:" + (42000 + index) : null);
             }
-            assertThatThrownBy(() -> coordinator.join(users.get(12), room.id(), "device-13", null, "full-13"))
+            assertThatThrownBy(() -> AuthenticatedActivities.join(context, users.get(12), room.id(), "device-13", null, "full-13"))
                     .isInstanceOf(ApiException.class).extracting("code").isEqualTo("CAPACITY_FULL");
             String entry = "http://127.0.0.1:" + ((ServletWebServerApplicationContext)context).getWebServer().getPort();
             var http = HttpClient.newHttpClient();

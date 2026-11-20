@@ -2,6 +2,7 @@ package app.weavora.zhijie.controlplane.revocation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.grant.GrantService;
@@ -62,8 +63,8 @@ class RelayOutboxIntegrationTest {
             var room = rooms.createRoom(owner, group.id(), "撤销组合", "", "", null);
             String activity = rooms.startActivity(owner, room.id()).id();
             var coordinator = context.getBean(ActivityCoordinator.class);
-            coordinator.join(owner, room.id(), "owner", null, "owner");
-            var joined = coordinator.join(member, room.id(), "member", null, "member");
+            AuthenticatedActivities.join(context, owner, room.id(), "owner", null, "owner");
+            var joined = AuthenticatedActivities.join(context, member, room.id(), "member", null, "member");
             var grants = context.getBean(GrantService.class);
             byte[] publicKey = new byte[32];
             publicKey[0] = 1;
@@ -92,7 +93,7 @@ class RelayOutboxIntegrationTest {
                 assertThat(sql.queryForObject("SELECT delivered_at IS NOT NULL FROM outbox_events WHERE event_id=?", Boolean.class, eventId)).isTrue();
                 assertThat(sql.queryForObject("SELECT delivered_at IS NULL FROM outbox_events WHERE type='voice.revoked'", Boolean.class)).isTrue();
                 expect(input, transcript, "RELAY_OUTBOX_REVOKED");
-                var replacement = coordinator.join(member, room.id(), "member-new", null, "rejoin");
+                var replacement = AuthenticatedActivities.join(context, member, room.id(), "member-new", null, "rejoin");
                 assertThat(replacement.memberGeneration()).isGreaterThan(joined.memberGeneration());
                 var fresh = grants.network(member, activity, "member-new", memberKey);
                 assertThat(fresh.virtualIpv4()).isEqualTo(second.virtualIpv4());

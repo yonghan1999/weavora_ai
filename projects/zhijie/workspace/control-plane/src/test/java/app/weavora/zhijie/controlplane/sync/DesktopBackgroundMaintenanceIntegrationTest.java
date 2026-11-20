@@ -2,6 +2,7 @@ package app.weavora.zhijie.controlplane.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.activity.ActivityModerationService;
@@ -99,8 +100,8 @@ class DesktopBackgroundMaintenanceIntegrationTest {
             groups.acceptInvitation(member, groups.invite(owner, group.id(), member).id());
             var room = rooms.createRoom(owner, group.id(), "后台撤销", "", "", null);
             rooms.startActivity(owner, room.id());
-            var joined = activities.join(member, room.id(), "online-loop", null, "online-probe");
-            var observerJoined = activities.join(owner, room.id(), "observer-loop", null, "observer-probe");
+            var joined = AuthenticatedActivities.join(context, member, room.id(), "online-loop", null, "online-probe");
+            var observerJoined = AuthenticatedActivities.join(context, owner, room.id(), "observer-loop", null, "observer-probe");
             int port = ((ServletWebServerApplicationContext)context).getWebServer().getPort();
             try (var subject = new BackgroundProbe(json, port, tokens, joined, group.id());
                     var observer = new BackgroundProbe(json, port, observerTokens, observerJoined, group.id())) {
@@ -121,11 +122,11 @@ class DesktopBackgroundMaintenanceIntegrationTest {
                     case DELETE_ROOM -> rooms.deleteRoom(owner, room.id());
                     case DISABLE -> jdbc.update("UPDATE users SET status='DISABLED' WHERE id=?", member);
                     case LOGOUT -> identity.logout(tokens.accessToken());
-                    case TAKEOVER -> replacement = activities.join(member, room.id(), "other-device", null, "takeover-probe");
+                    case TAKEOVER -> replacement = AuthenticatedActivities.join(context, member, room.id(), "other-device", null, "takeover-probe");
                     case SWITCH_ROOM -> {
                         var target = rooms.createRoom(owner, group.id(), "切换目标", "", "", null);
                         rooms.startActivity(owner, target.id());
-                        replacement = activities.join(member, target.id(), "online-loop", null, "switch-probe");
+                        replacement = AuthenticatedActivities.join(context, member, target.id(), "online-loop", null, "switch-probe");
                     }
                     case DISSOLVE -> groups.dissolveGroup(owner, group.id());
                 }
@@ -152,20 +153,18 @@ class DesktopBackgroundMaintenanceIntegrationTest {
                     assertThat(jdbc.queryForObject("SELECT ipv4 FROM ip_allocations WHERE activity_id=? AND user_id=? AND released_at IS NULL",
                             String.class, observerJoined.activityId(), owner)).isEqualTo(observerJoined.virtualIpv4());
                 }
-                if (mode != Revocation.LOGOUT) {
-                    assertThat(jdbc.queryForObject("SELECT count(*) FROM connection_leases WHERE id=? AND revoked_at IS NOT NULL",
-                            Integer.class, joined.leaseId())).isOne();
-                    if (replacement == null) {
-                        assertThat(jdbc.queryForObject("SELECT count(*) FROM account_activity WHERE user_id=?", Integer.class, member)).isZero();
-                        assertThat(jdbc.queryForObject("SELECT count(*) FROM ip_allocations WHERE activity_id=? AND user_id=? AND released_at IS NULL",
-                                Integer.class, joined.activityId(), member)).isZero();
-                    } else {
-                        assertThat(jdbc.queryForObject("SELECT activity_id FROM account_activity WHERE user_id=?", String.class, member)).isEqualTo(replacement.activityId());
-                        assertThat(jdbc.queryForObject("SELECT count(*) FROM connection_leases WHERE id=? AND revoked_at IS NULL",
-                                Integer.class, replacement.leaseId())).isOne();
-                        if (mode == Revocation.TAKEOVER) assertThat(replacement.memberGeneration()).isGreaterThan(joined.memberGeneration());
-                        else assertThat(replacement.activityId()).isNotEqualTo(joined.activityId());
-                    }
+                assertThat(jdbc.queryForObject("SELECT count(*) FROM connection_leases WHERE id=? AND revoked_at IS NOT NULL",
+                        Integer.class, joined.leaseId())).isOne();
+                if (replacement == null) {
+                    assertThat(jdbc.queryForObject("SELECT count(*) FROM account_activity WHERE user_id=?", Integer.class, member)).isZero();
+                    assertThat(jdbc.queryForObject("SELECT count(*) FROM ip_allocations WHERE activity_id=? AND user_id=? AND released_at IS NULL",
+                            Integer.class, joined.activityId(), member)).isZero();
+                } else {
+                    assertThat(jdbc.queryForObject("SELECT activity_id FROM account_activity WHERE user_id=?", String.class, member)).isEqualTo(replacement.activityId());
+                    assertThat(jdbc.queryForObject("SELECT count(*) FROM connection_leases WHERE id=? AND revoked_at IS NULL",
+                            Integer.class, replacement.leaseId())).isOne();
+                    if (mode == Revocation.TAKEOVER) assertThat(replacement.memberGeneration()).isGreaterThan(joined.memberGeneration());
+                    else assertThat(replacement.activityId()).isNotEqualTo(joined.activityId());
                 }
                 subject.stop(password);
                 observer.stop(password);
@@ -241,7 +240,7 @@ class DesktopBackgroundMaintenanceIntegrationTest {
             var rooms = context.getBean(RoomService.class);
             var room = rooms.createRoom(user, group.id(), "自动续期活动", "", "", null);
             rooms.startActivity(user, room.id());
-            var joined = context.getBean(ActivityCoordinator.class).join(user, room.id(), "background-loop", null, "background-probe");
+            var joined = AuthenticatedActivities.join(context, user, room.id(), "background-loop", null, "background-probe");
             var json = context.getBean(ObjectMapper.class);
             var jdbc = context.getBean(JdbcTemplate.class);
             var sync = context.getBean(SyncService.class);

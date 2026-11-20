@@ -73,7 +73,7 @@ class GroupGovernanceIntegrationTest {
             rooms.assignOwner(owner, room.id(), removed);
             Activity activity = rooms.startActivity(removed, room.id());
             var activities = context.getBean(ActivityRepository.class);
-            context.getBean(ActivityCoordinator.class).join(removed, room.id(), "removed-device", null, "join-governance");
+            AuthenticatedActivities.join(context, removed, room.id(), "removed-device", null, "join-governance");
             byte[] key = new byte[32];
             for (int index = 0; index < key.length; index++) key[index] = (byte)(index + 1);
             var grant = context.getBean(GrantService.class).network(removed, activity.id(), "removed-device", Base64.getEncoder().encodeToString(key));

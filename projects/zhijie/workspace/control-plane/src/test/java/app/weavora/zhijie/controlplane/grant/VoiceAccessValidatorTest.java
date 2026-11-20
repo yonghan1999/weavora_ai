@@ -38,7 +38,9 @@ class VoiceAccessValidatorTest {
         when(rooms.findRoom("room")).thenReturn(Optional.of(new Room("room", "group", "房间", "", "", null, "user", RoomOpenState.OPEN, RoomLifecycle.AVAILABLE, "activity")));
         member(MemberState.ACTIVE, 7);
         lease(null, now.plusSeconds(60));
-        when(activities.findAccountActivity("user")).thenReturn(Optional.of(new AccountActivity("user", "activity", "device", 7L, "join")));
+        when(activities.findAccountActivity("user")).thenReturn(Optional.of(new AccountActivity("user", "activity", "device", 7L, "join", "session")));
+        when(identities.findSessionById("session")).thenReturn(Optional.of(new AuthSession("session", "user", "device", "refresh", "access",
+                now.plusSeconds(3600), now.plusSeconds(30), null, 1L)));
     }
 
     @Test
@@ -56,7 +58,23 @@ class VoiceAccessValidatorTest {
         lease(null, now.minusSeconds(1));
         denied(token);
         lease(null, now.plusSeconds(60));
-        when(activities.findAccountActivity("user")).thenReturn(Optional.of(new AccountActivity("user", "other-activity", "device", 7L, "switch")));
+        when(activities.findAccountActivity("user")).thenReturn(Optional.of(new AccountActivity("user", "other-activity", "device", 7L, "switch", "session")));
+        denied(token);
+    }
+
+    @Test
+    void boundLoginRevocationExpiryAndDeviceMismatchDenyTokensWithoutWaitingForLeaseCleanup() {
+        for (var session : java.util.List.of(
+                new AuthSession("session", "user", "device", "refresh", "access", now.plusSeconds(60), now.plusSeconds(30), now, 1L),
+                new AuthSession("session", "user", "device", "refresh", "access", now, now.plusSeconds(30), null, 1L),
+                new AuthSession("session", "other", "device", "refresh", "access", now.plusSeconds(60), now.plusSeconds(30), null, 1L),
+                new AuthSession("session", "user", "other-device", "refresh", "access", now.plusSeconds(60), now.plusSeconds(30), null, 1L))) {
+            when(identities.findSessionById("session")).thenReturn(Optional.of(session));
+            denied(token);
+        }
+        when(identities.findSessionById("session")).thenReturn(Optional.empty());
+        denied(token);
+        when(activities.findAccountActivity("user")).thenReturn(Optional.of(new AccountActivity("user", "activity", "device", 7L, "join", null)));
         denied(token);
     }
 

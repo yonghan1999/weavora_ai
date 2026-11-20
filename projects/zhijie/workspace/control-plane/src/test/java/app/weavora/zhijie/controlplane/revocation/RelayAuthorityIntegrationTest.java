@@ -2,6 +2,7 @@ package app.weavora.zhijie.controlplane.revocation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.grant.GrantService;
@@ -92,7 +93,7 @@ class RelayAuthorityIntegrationTest {
             var peers = new ArrayList<Map<String, String>>();
             var leases = new ArrayList<String>();
             for (int index = 0; index < 3; index++) {
-                var joined = coordinator.join(users.get(index), room.id(), "device-" + index, null, "authority-" + index);
+                var joined = AuthenticatedActivities.join(context, users.get(index), room.id(), "device-" + index, null, "authority-" + index);
                 leases.add(joined.leaseId());
                 byte[] publicKey = new byte[32]; Arrays.fill(publicKey, (byte)(index + 1));
                 var grant = context.getBean(GrantService.class).network(users.get(index), activity, "device-" + index,

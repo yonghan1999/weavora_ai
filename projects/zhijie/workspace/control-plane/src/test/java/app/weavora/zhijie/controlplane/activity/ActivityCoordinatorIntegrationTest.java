@@ -57,22 +57,22 @@ class ActivityCoordinatorIntegrationTest {
         ActivityCoordinator coordinator = context.getBean(ActivityCoordinator.class);
         List<JoinResult> joined = new ArrayList<>();
         for (String userId : fixture.userIds().subList(0, 12)) {
-            joined.add(coordinator.join(userId, fixture.roomId(), "device-" + userId, null, "join-" + userId));
+            joined.add(AuthenticatedActivities.join(context, userId, fixture.roomId(), "device-" + userId, null, "join-" + userId));
         }
         assertThat(joined).extracting(JoinResult::virtualIpv4).doesNotHaveDuplicates().hasSize(12);
         String waiting = fixture.userIds().get(12);
-        assertThatThrownBy(() -> coordinator.join(waiting, fixture.roomId(), "device-waiting", null, "join-waiting"))
+        assertThatThrownBy(() -> AuthenticatedActivities.join(context, waiting, fixture.roomId(), "device-waiting", null, "join-waiting"))
                 .isInstanceOf(ApiException.class).extracting("code").isEqualTo("CAPACITY_FULL");
 
         String disconnected = fixture.userIds().get(0);
         coordinator.disconnect(disconnected, fixture.activityId(), "device-" + disconnected);
-        assertThatThrownBy(() -> coordinator.join(waiting, fixture.roomId(), "device-waiting", null, "join-waiting-2"))
+        assertThatThrownBy(() -> AuthenticatedActivities.join(context, waiting, fixture.roomId(), "device-waiting", null, "join-waiting-2"))
                 .isInstanceOf(ApiException.class).extracting("code").isEqualTo("CAPACITY_FULL");
         ActivityMember member = context.getBean(ActivityRepository.class).findMember(fixture.activityId(), disconnected).orElseThrow();
         context.getBean(ActivityRepository.class).upsertMember(new ActivityMember(member.activityId(), member.userId(),
                 member.deviceId(), member.memberGeneration(), MemberState.GRACE, member.joinedAt(), Instant.now().minusSeconds(1)));
         assertThat(coordinator.cleanupExpiredGrace()).isEqualTo(1);
-        assertThat(coordinator.join(waiting, fixture.roomId(), "device-waiting", null, "join-waiting-3").virtualIpv4())
+        assertThat(AuthenticatedActivities.join(context, waiting, fixture.roomId(), "device-waiting", null, "join-waiting-3").virtualIpv4())
                 .isNotBlank();
     }
 
@@ -83,8 +83,8 @@ class ActivityCoordinatorIntegrationTest {
         String userId = fixture.userIds().get(0);
         ExecutorService executor = Executors.newFixedThreadPool(2);
         try {
-            Callable<JoinResult> first = () -> coordinator.join(userId, fixture.roomId(), "device-a", null, "device-a");
-            Callable<JoinResult> second = () -> coordinator.join(userId, fixture.roomId(), "device-b", null, "device-b");
+            Callable<JoinResult> first = () -> AuthenticatedActivities.join(context, userId, fixture.roomId(), "device-a", null, "device-a");
+            Callable<JoinResult> second = () -> AuthenticatedActivities.join(context, userId, fixture.roomId(), "device-b", null, "device-b");
             Future<JoinResult> firstResult = executor.submit(first);
             Future<JoinResult> secondResult = executor.submit(second);
             assertThat(firstResult.get().activityId()).isEqualTo(fixture.activityId());
@@ -111,20 +111,20 @@ class ActivityCoordinatorIntegrationTest {
         Room secondRoom = rooms.createRoom(userId, fixture.groupId(), "目标房", "", "", null);
         Activity secondActivity = rooms.startActivity(userId, secondRoom.id());
         ActivityCoordinator coordinator = context.getBean(ActivityCoordinator.class);
-        JoinResult original = coordinator.join(userId, fixture.roomId(), "device-a", null, "original");
+        JoinResult original = AuthenticatedActivities.join(context, userId, fixture.roomId(), "device-a", null, "original");
         rooms.setOpenState(userId, fixture.roomId(), RoomOpenState.PAUSED);
         assertThatThrownBy(() -> rooms.setOpenState(userId, fixture.roomId(), RoomOpenState.OPEN))
                 .isInstanceOf(ApiException.class).extracting("code").isEqualTo("ROOM_REOPEN_OUTSIDE_REQUIRED");
         assertThat(rooms.getRoom(userId, fixture.roomId()).openState()).isEqualTo(RoomOpenState.PAUSED);
         rooms.setOpenState(userId, secondRoom.id(), RoomOpenState.PAUSED);
 
-        assertThatThrownBy(() -> coordinator.join(userId, secondRoom.id(), "device-a", null, "paused-target"))
+        assertThatThrownBy(() -> AuthenticatedActivities.join(context, userId, secondRoom.id(), "device-a", null, "paused-target"))
                 .isInstanceOf(ApiException.class).extracting("code").isEqualTo("ROOM_PAUSED");
         ActivityRepository repository = context.getBean(ActivityRepository.class);
         assertThat(repository.findAccountActivity(userId).orElseThrow().activityId()).isEqualTo(original.activityId());
 
         rooms.setOpenState(userId, secondRoom.id(), RoomOpenState.OPEN);
-        JoinResult switched = coordinator.join(userId, secondRoom.id(), "device-a", null, "switch-target");
+        JoinResult switched = AuthenticatedActivities.join(context, userId, secondRoom.id(), "device-a", null, "switch-target");
         assertThat(switched.activityId()).isEqualTo(secondActivity.id());
         assertThat(rooms.setOpenState(userId, fixture.roomId(), RoomOpenState.OPEN).openState()).isEqualTo(RoomOpenState.OPEN);
         assertThat(repository.findLease(original.leaseId()).orElseThrow().revokedAt()).isNotNull();
@@ -137,7 +137,7 @@ class ActivityCoordinatorIntegrationTest {
         Fixture fixture = fixture(1);
         String userId = fixture.userIds().get(0);
         ActivityCoordinator coordinator = context.getBean(ActivityCoordinator.class);
-        JoinResult initial = coordinator.join(userId, fixture.roomId(), "device-a", null, "initial");
+        JoinResult initial = AuthenticatedActivities.join(context, userId, fixture.roomId(), "device-a", null, "initial");
         coordinator.disconnect(userId, fixture.activityId(), "device-a");
         JoinResult resumed = coordinator.resume(userId, fixture.activityId(), "device-a");
 
@@ -146,7 +146,7 @@ class ActivityCoordinatorIntegrationTest {
         assertThat(resumed.memberGeneration()).isEqualTo(initial.memberGeneration());
 
         coordinator.leave(userId, fixture.activityId(), resumed.deviceId(), resumed.leaseId());
-        JoinResult rejoined = coordinator.join(userId, fixture.roomId(), "device-a", null, "rejoined");
+        JoinResult rejoined = AuthenticatedActivities.join(context, userId, fixture.roomId(), "device-a", null, "rejoined");
         assertThat(rejoined.virtualIpv4()).isEqualTo(initial.virtualIpv4());
         assertThat(rejoined.leaseId()).isNotEqualTo(initial.leaseId());
         assertThat(rejoined.memberGeneration()).isGreaterThan(initial.memberGeneration());
@@ -159,11 +159,11 @@ class ActivityCoordinatorIntegrationTest {
         var coordinator = context.getBean(ActivityCoordinator.class);
         String user = fixture.userIds().get(0);
         String peer = fixture.userIds().get(1);
-        var occupied = coordinator.join(peer, fixture.roomId(), "peer", null, "peer-join");
+        var occupied = AuthenticatedActivities.join(context, peer, fixture.roomId(), "peer", null, "peer-join");
         assertThat(occupied.virtualIpv4()).isEqualTo("10.231.0.1");
         for (String history : List.of("10.231.0.12", "10.231.0.13", "192.168.1.1", occupied.virtualIpv4())) {
             repository().upsertIpHistory(new IpHistory(fixture.roomId(), user, history, fixture.activityId(), Instant.now()));
-            var joined = coordinator.join(user, fixture.roomId(), "device", null, UUID.randomUUID().toString());
+            var joined = AuthenticatedActivities.join(context, user, fixture.roomId(), "device", null, UUID.randomUUID().toString());
             String expected = history.equals("10.231.0.12") ? history : "10.231.0.2";
             assertThat(joined.virtualIpv4()).isEqualTo(expected);
             assertThat(repository().findIpHistory(fixture.roomId(), user).orElseThrow().lastIpv4()).isEqualTo(expected);
@@ -180,7 +180,7 @@ class ActivityCoordinatorIntegrationTest {
         Fixture fixture = fixture(1);
         String user = fixture.userIds().get(0);
         var coordinator = context.getBean(ActivityCoordinator.class);
-        var joined = coordinator.join(user, fixture.roomId(), "device-a", null, "heartbeat");
+        var joined = AuthenticatedActivities.join(context, user, fixture.roomId(), "device-a", null, "heartbeat");
         var lease = repository().findLease(joined.leaseId()).orElseThrow();
         updateExpiry(lease, Instant.now().plusSeconds(5));
         coordinator.heartbeat(user, fixture.activityId(), "device-a", joined.leaseId(), joined.activityGeneration(), joined.memberGeneration());
@@ -194,7 +194,7 @@ class ActivityCoordinatorIntegrationTest {
         updateExpiry(lease, Instant.now().minusSeconds(1));
         assertThatThrownBy(() -> coordinator.heartbeat(user, fixture.activityId(), "device-a", joined.leaseId(), joined.activityGeneration(), joined.memberGeneration()))
                 .isInstanceOf(ApiException.class);
-        var replacement = coordinator.join(user, fixture.roomId(), "device-b", null, "replacement");
+        var replacement = AuthenticatedActivities.join(context, user, fixture.roomId(), "device-b", null, "replacement");
         assertThatThrownBy(() -> coordinator.heartbeat(user, fixture.activityId(), "device-a", joined.leaseId(), joined.activityGeneration(), joined.memberGeneration()))
                 .isInstanceOf(ApiException.class);
         coordinator.heartbeat(user, fixture.activityId(), "device-b", replacement.leaseId(), replacement.activityGeneration(), replacement.memberGeneration());
@@ -208,7 +208,7 @@ class ActivityCoordinatorIntegrationTest {
         Fixture fixture = fixture(1);
         String user = fixture.userIds().get(0);
         var coordinator = context.getBean(ActivityCoordinator.class);
-        var joined = coordinator.join(user, fixture.roomId(), "device-a", null, "expiry");
+        var joined = AuthenticatedActivities.join(context, user, fixture.roomId(), "device-a", null, "expiry");
         var lease = repository().findLease(joined.leaseId()).orElseThrow();
         updateExpiry(lease, Instant.now().minusSeconds(2));
         coordinator.markExpiredConnections();
@@ -218,7 +218,7 @@ class ActivityCoordinatorIntegrationTest {
         assertThat(coordinator.resume(user, fixture.activityId(), "device-a").leaseId()).isEqualTo(joined.leaseId());
         updateExpiry(lease, Instant.now().minusSeconds(61));
         assertThatThrownBy(() -> coordinator.resume(user, fixture.activityId(), "device-a")).isInstanceOf(ApiException.class);
-        assertThatThrownBy(() -> coordinator.join(user, fixture.roomId(), "device-a", null, "late-join")).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> AuthenticatedActivities.join(context, user, fixture.roomId(), "device-a", null, "late-join")).isInstanceOf(ApiException.class);
         coordinator.markExpiredConnections();
         coordinator.cleanupExpiredGrace();
         assertThat(repository().findAccountActivity(user)).isEmpty();

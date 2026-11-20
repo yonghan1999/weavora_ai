@@ -85,10 +85,13 @@ public class VoiceAccessValidator {
                             && lease.activityGeneration().equals(activity.activityGeneration())
                             && lease.deviceId().equals(member.deviceId()))
                     .orElseThrow(this::denied);
-            activities.findAccountActivity(userId)
-                    .filter(pointer -> pointer.activityId().equals(activityId)
-                            && pointer.memberGeneration() == generation && pointer.deviceId().equals(member.deviceId()))
+            var pointer = activities.findAccountActivity(userId)
+                    .filter(item -> item.activityId().equals(activityId)
+                            && item.memberGeneration() == generation && item.deviceId().equals(member.deviceId()))
                     .orElseThrow(this::denied);
+            if (pointer.authSessionId() == null) throw denied();
+            identities.findSessionById(pointer.authSessionId())
+                    .filter(session -> session.allowsActivity(userId, member.deviceId(), clock.instant())).orElseThrow(this::denied);
         } catch (ApiException exception) {
             throw exception;
         } catch (Exception exception) {

@@ -10,6 +10,7 @@ import app.weavora.zhijie.controlplane.activity.MemberState;
 import app.weavora.zhijie.controlplane.common.ApiException;
 import app.weavora.zhijie.controlplane.identity.CredentialProtector;
 import app.weavora.zhijie.controlplane.identity.IdentityService;
+import app.weavora.zhijie.controlplane.identity.AuthSession;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -83,6 +84,18 @@ public class GrantService {
     }
 
     @Transactional
+    public VoiceGrantResponse voice(AuthSession session, String activityId) {
+        lockSession(session, activityId);
+        return voice(session.userId(), activityId, session.deviceId());
+    }
+
+    @Transactional
+    public NetworkGrantResponse network(AuthSession session, String activityId, String publicKey) {
+        lockSession(session, activityId);
+        return network(session.userId(), activityId, session.deviceId(), publicKey);
+    }
+
+    @Transactional
     public VoiceGrantResponse voice(String userId, String activityId, String deviceId) {
         lockMembership(userId, activityId);
         activities.lockUser(userId);
@@ -149,6 +162,9 @@ public class GrantService {
 
     private ActivityMember currentMember(String userId, String activityId, String deviceId) {
         identity.requireActive(userId);
+        var pointer = activities.findAccountActivity(userId).filter(item -> item.activityId().equals(activityId)
+                && item.deviceId().equals(deviceId)).orElseThrow(this::grantUnavailable);
+        identity.requireActivitySession(pointer.authSessionId(), userId, deviceId);
         ActivityMember member = activities.findMember(activityId, userId).orElseThrow(this::grantUnavailable);
         if (!member.deviceId().equals(deviceId) || (member.state() != MemberState.ACTIVE && member.state() != MemberState.GRACE)) throw grantUnavailable();
         return member;
@@ -168,5 +184,13 @@ public class GrantService {
 
     private ApiException grantUnavailable() {
         return new ApiException(HttpStatus.FORBIDDEN, "CURRENT_GRANT_REQUIRED", "当前活动资格无效或已过期", false);
+    }
+
+    private void lockSession(AuthSession session, String activityId) {
+        lockMembership(session.userId(), activityId);
+        activities.lockUser(session.userId());
+        identity.lockSession(session);
+        var pointer = activities.findAccountActivity(session.userId()).orElseThrow(this::grantUnavailable);
+        if (!session.id().equals(pointer.authSessionId())) throw grantUnavailable();
     }
 }

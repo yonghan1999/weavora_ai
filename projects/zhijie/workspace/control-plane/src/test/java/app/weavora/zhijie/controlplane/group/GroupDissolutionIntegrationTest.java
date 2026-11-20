@@ -58,9 +58,9 @@ class GroupDissolutionIntegrationTest {
             Room firstRoom = rooms.createRoom(owner, group.id(), "活动一", "", "", null);
             Room secondRoom = rooms.createRoom(owner, group.id(), "活动二", "", "", null);
             Activity first = rooms.startActivity(owner, firstRoom.id()), second = rooms.startActivity(owner, secondRoom.id());
-            JoinResult ownerJoin = coordinator.join(owner, firstRoom.id(), "owner-device", null, "owner-join");
-            JoinResult memberJoin = coordinator.join(member, firstRoom.id(), "member-device", null, "member-join");
-            coordinator.join(admin, secondRoom.id(), "admin-device", null, "admin-join");
+            JoinResult ownerJoin = AuthenticatedActivities.join(context, owner, firstRoom.id(), "owner-device", null, "owner-join");
+            JoinResult memberJoin = AuthenticatedActivities.join(context, member, firstRoom.id(), "member-device", null, "member-join");
+            AuthenticatedActivities.join(context, admin, secondRoom.id(), "admin-device", null, "admin-join");
             coordinator.disconnect(member, first.id(), "member-device");
             byte[] key = new byte[32]; Arrays.fill(key, (byte) 7);
             String publicKey = Base64.getEncoder().encodeToString(key);
@@ -72,7 +72,7 @@ class GroupDissolutionIntegrationTest {
             Group unaffected = groups.createGroup(outsider, "保留群", null, "");
             Room unaffectedRoom = rooms.createRoom(outsider, unaffected.id(), "保留房", "", "", null);
             Activity unaffectedActivity = rooms.startActivity(outsider, unaffectedRoom.id());
-            coordinator.join(outsider, unaffectedRoom.id(), "outside-device", null, "outside-join");
+            AuthenticatedActivities.join(context, outsider, unaffectedRoom.id(), "outside-device", null, "outside-join");
             var unaffectedNetwork = grants.network(outsider, unaffectedActivity.id(), "outside-device", publicKey);
             String entry = "http://127.0.0.1:" + ((ServletWebServerApplicationContext) context).getWebServer().getPort();
             var http = HttpClient.newHttpClient();
@@ -144,7 +144,7 @@ class GroupDissolutionIntegrationTest {
                     groups.acceptInvitation(member, groups.invite(owner, race.id(), member).id());
                     Room room = rooms.createRoom(owner, race.id(), "并发房", "", "", null);
                     Activity activity = rooms.startActivity(owner, room.id());
-                    coordinator.join(member, room.id(), "before-device", null, "before-join");
+                    AuthenticatedActivities.join(context, member, room.id(), "before-device", null, "before-join");
                     var start = new CountDownLatch(1);
                     var dissolving = executor.submit(() -> { start.await(); groups.dissolveGroup(owner, race.id()); return true; });
                     var joining = executor.submit(() -> { start.await(); return send(http, entry, "POST", "/room-joins", tokens.get(2), json.writeValueAsString(Map.of("roomId", room.id(), "deviceId", "member-device", "operationId", "after-join"))).statusCode(); });

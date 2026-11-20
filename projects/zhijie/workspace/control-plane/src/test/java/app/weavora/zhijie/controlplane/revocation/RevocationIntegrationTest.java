@@ -3,6 +3,7 @@ package app.weavora.zhijie.controlplane.revocation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.activity.ActivityMember;
@@ -64,7 +65,7 @@ class RevocationIntegrationTest {
         Room room = rooms.createRoom(userId, group.id(), "撤销房", "", "", null);
         Activity activity = rooms.startActivity(userId, room.id());
         ActivityCoordinator coordinator = context.getBean(ActivityCoordinator.class);
-        coordinator.join(userId, room.id(), "device-a", null, "join");
+        AuthenticatedActivities.join(context, userId, room.id(), "device-a", null, "join");
 
         GrantService grantService = context.getBean(GrantService.class);
         String publicKey = java.util.Base64.getEncoder().encodeToString(new byte[] {

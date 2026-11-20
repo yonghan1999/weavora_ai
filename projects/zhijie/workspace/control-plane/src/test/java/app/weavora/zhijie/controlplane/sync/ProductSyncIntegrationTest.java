@@ -2,6 +2,7 @@ package app.weavora.zhijie.controlplane.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.group.*;
 import app.weavora.zhijie.controlplane.identity.*;
@@ -64,7 +65,7 @@ class ProductSyncIntegrationTest {
             var activity = rooms.startActivity(owner, room.id());
             var coordinator = context.getBean(app.weavora.zhijie.controlplane.activity.ActivityCoordinator.class);
             long activityCursor = outbox.latestSequence();
-            var joined = coordinator.join(member, room.id(), "device", null, "join");
+            var joined = AuthenticatedActivities.join(context, member, room.id(), "device", null, "join");
             coordinator.disconnect(member, activity.id(), "device");
             coordinator.resume(member, activity.id(), "device");
             coordinator.leave(member, activity.id(), joined.deviceId(), joined.leaseId());

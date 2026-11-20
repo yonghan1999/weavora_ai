@@ -41,7 +41,7 @@ class RelayGrantValidationServiceTest {
                 Instant.now().plusSeconds(60), null);
         when(activities.findLease("lease")).thenReturn(Optional.of(lease));
         when(activities.findLatestLease("activity", "user")).thenReturn(Optional.of(lease));
-        when(activities.findAccountActivity("user")).thenReturn(Optional.of(new AccountActivity("user", "activity", "device", 2L, "join")));
+        when(activities.findAccountActivity("user")).thenReturn(Optional.of(new AccountActivity("user", "activity", "device", 2L, "join", "session")));
         when(activities.findAddress("activity", "user"))
                 .thenReturn(Optional.of(new IpAllocation("activity", "user", "10.231.0.1", Instant.now(), null)));
         var rooms = mock(RoomRepository.class);

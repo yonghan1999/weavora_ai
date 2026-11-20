@@ -3,6 +3,7 @@ package app.weavora.zhijie.controlplane.observability;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.common.ApiException;
@@ -50,7 +51,7 @@ class ChannelCapacityIntegrationTest {
                 var group = context.getBean(GroupService.class).createGroup(user, "容量验证", null, "");
                 var room = rooms.createRoom(user, group.id(), "容量验证", "", "", null);
                 var activity = rooms.startActivity(user, room.id());
-                var joined = coordinator.join(user, room.id(), "device-" + index, null, "join-" + index);
+                var joined = AuthenticatedActivities.join(context, user, room.id(), "device-" + index, null, "join-" + index);
                 members.add(new Member(user, activity.id(), joined.deviceId(), joined.leaseId()));
             }
             var incumbent = members.removeFirst();

@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.JoinResult;
+import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
+import app.weavora.zhijie.controlplane.grant.GrantService;
+import app.weavora.zhijie.controlplane.common.ApiException;
 import app.weavora.zhijie.controlplane.grant.NetworkGrantResponse;
 import app.weavora.zhijie.controlplane.grant.VoiceGrantResponse;
 import app.weavora.zhijie.controlplane.identity.*;
@@ -18,12 +21,17 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 class IssuedGrantRevocationIntegrationTest {
     private enum Action { LEAVE, KICK, LEAVE_GROUP, REMOVE_MEMBER, END_ACTIVITY, DELETE_ROOM, DISABLE, TAKEOVER, SWITCH_ROOM, DISSOLVE }
@@ -162,26 +170,156 @@ class IssuedGrantRevocationIntegrationTest {
     }
 
     @Test
-    void authenticationOnlyLogoutLeavesIssuedActivityGrantsValidUntilActivityRevocation() throws Exception {
+    void logoutRevokesBoundActivityGrantsWithoutClientLeaveAndPreservesAnotherLogin() throws Exception {
         var scene = scene();
         var subject = scene.subject();
         var other = login(subject.tokens().userId(), scene.password(), "other-device");
+        var preserved = login(subject.tokens().userId(), scene.password(), "member-device");
         assertGrants(subject, true);
         data("POST", "/api/v1/auth/logout", null, Map.of("accessToken", other.accessToken()), JsonNode.class);
         assertGrants(subject, true);
         data("POST", "/api/v1/auth/logout", null, Map.of("accessToken", subject.tokens().accessToken()), JsonNode.class);
+        long confirmed = System.nanoTime();
         assertThat(request("GET", "/api/v1/groups", subject.tokens(), null).statusCode()).isEqualTo(401);
         assertThat(request("POST", "/api/v1/auth/refresh", null, Map.of("refreshToken", subject.tokens().refreshToken())).statusCode()).isEqualTo(401);
-        assertGrants(subject, true);
-        assertPeers(scene.observer(), subject.tokens().userId());
-        assertThat(context.getBean(JdbcTemplate.class).queryForObject("SELECT revoked_at IS NULL FROM connection_leases WHERE id=?",
-                Boolean.class, subject.joined().leaseId())).isTrue();
-        data("POST", "/api/v1/activities/" + scene.activity() + "/members/" + subject.tokens().userId() + "/kick",
-                scene.observer().tokens(), Map.of("memberGeneration", subject.joined().memberGeneration()), JsonNode.class);
         assertGrants(subject, false);
         assertGrants(scene.observer(), true);
         assertPeers(scene.observer(), null);
-        System.out.println("AUTH_ONLY_LOGOUT_BOUNDARY authentication_denied=true issued_network_and_voice_still_valid=true activity_revocation_then_denied=true");
+        assertThat(request("GET", "/api/v1/groups", preserved, null).statusCode()).isEqualTo(200);
+        long deadline = confirmed + TimeUnit.SECONDS.toNanos(5);
+        var sql = context.getBean(JdbcTemplate.class);
+        while (sql.queryForObject("SELECT revoked_at IS NULL FROM connection_leases WHERE id=?", Boolean.class,
+                subject.joined().leaseId()) && System.nanoTime() < deadline) Thread.sleep(10);
+        assertThat(sql.queryForObject("SELECT revoked_at IS NOT NULL FROM connection_leases WHERE id=?", Boolean.class,
+                subject.joined().leaseId())).isTrue();
+        assertThat(sql.queryForObject("SELECT count(*) FROM account_activity WHERE user_id=?", Integer.class, subject.tokens().userId())).isZero();
+        assertThat(sql.queryForObject("SELECT released_at IS NOT NULL FROM ip_allocations WHERE activity_id=? AND user_id=?", Boolean.class,
+                scene.activity(), subject.tokens().userId())).isTrue();
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - confirmed)).isLessThanOrEqualTo(5000);
+        System.out.println("AUTH_LOGOUT_BOUND_ACTIVITY_REVOKED old_network_voice_relay_denied=true other_login_preserved=true cleanup_ms="
+                + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - confirmed));
+    }
+
+    @Test
+    void sameDeviceNewLoginMustExplicitlyTakeOverAndOldLogoutCannotRevokeReplacement() throws Exception {
+        var scene = scene();
+        var old = scene.subject();
+        var next = login(old.tokens().userId(), scene.password(), old.joined().deviceId());
+        String activity = "/api/v1/activities/" + scene.activity();
+        assertThat(request("POST", activity + "/resume", next, Map.of("deviceId", old.joined().deviceId())).statusCode()).isEqualTo(409);
+        assertThat(request("POST", activity + "/voice-grants", next, Map.of()).statusCode()).isEqualTo(403);
+        assertGrants(old, true);
+        var replacement = participant(next, join(next, scene.room()), 3);
+        assertThat(replacement.joined().leaseId()).isNotEqualTo(old.joined().leaseId());
+        assertThat(replacement.joined().memberGeneration()).isGreaterThan(old.joined().memberGeneration());
+        assertGrants(old, false);
+        assertGrants(replacement, true);
+        assertThat(request("POST", activity + "/resume", old.tokens(), Map.of("deviceId", old.joined().deviceId())).statusCode()).isEqualTo(409);
+        assertThat(request("POST", activity + "/heartbeat", old.tokens(), Map.of("deviceId", old.joined().deviceId(),
+                "leaseId", replacement.joined().leaseId(), "activityGeneration", replacement.joined().activityGeneration(),
+                "memberGeneration", replacement.joined().memberGeneration())).statusCode()).isEqualTo(409);
+        assertThat(request("POST", activity + "/network-grants", old.tokens(),
+                Map.of("publicKey", Base64.getEncoder().encodeToString(new byte[32]))).statusCode()).isEqualTo(403);
+        var left = data("POST", activity + "/leave", old.tokens(), Map.of("leaseId", replacement.joined().leaseId()), JsonNode.class);
+        assertThat(left.path("left").asBoolean()).isFalse();
+        data("POST", "/api/v1/auth/logout", null, Map.of("accessToken", old.tokens().accessToken()), JsonNode.class);
+        context.getBean(ActivitySessionRevocation.class).revokeInvalid(old.tokens().userId());
+        Thread.sleep(1100);
+        assertGrants(replacement, true);
+        assertGrants(scene.observer(), true);
+        assertThat(context.getBean(JdbcTemplate.class).queryForObject("SELECT auth_session_id FROM account_activity WHERE user_id=?",
+                String.class, next.userId())).isEqualTo(next.sessionId());
+        System.out.println("SAME_DEVICE_AUTH_TAKEOVER old_logout_preserves_new_lease=true old_commands_denied=true");
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"REFRESH_REPLAY", "PASSWORD_RESET"})
+    void authenticationRevocationAlsoRejectsAlreadyIssuedActivityGrants(String mode) throws Exception {
+        var scene = scene();
+        var subject = scene.subject();
+        assertGrants(subject, true);
+        if (mode.equals("REFRESH_REPLAY")) {
+            data("POST", "/api/v1/auth/refresh", null, Map.of("refreshToken", subject.tokens().refreshToken()), AuthTokens.class);
+            assertGrants(subject, true);
+            assertThat(request("POST", "/api/v1/auth/refresh", null, Map.of("refreshToken", subject.tokens().refreshToken())).statusCode()).isEqualTo(401);
+        } else {
+            var protector = context.getBean(CredentialProtector.class);
+            String code = "654321";
+            context.getBean(IdentityRepository.class).insertChallenge(new EmailChallenge(UUID.randomUUID().toString(), subject.tokens().userId(),
+                    ChallengePurpose.PASSWORD_RESET, protector.hashChallenge(subject.tokens().userId(), ChallengePurpose.PASSWORD_RESET, code),
+                    Instant.now().plusSeconds(60), 0, null, Instant.now()));
+            data("POST", "/api/v1/auth/password/reset", null, Map.of("email", subject.tokens().userId() + "@example.test",
+                    "code", code, "newPassword", UUID.randomUUID().toString()), JsonNode.class);
+        }
+        long confirmed = System.nanoTime();
+        assertGrants(subject, false);
+        assertGrants(scene.observer(), true);
+        assertPeers(scene.observer(), null);
+        var sql = context.getBean(JdbcTemplate.class);
+        while (sql.queryForObject("SELECT count(*) FROM account_activity WHERE user_id=?", Integer.class,
+                subject.tokens().userId()) > 0 && System.nanoTime() - confirmed < TimeUnit.SECONDS.toNanos(5)) Thread.sleep(10);
+        assertThat(sql.queryForObject("SELECT count(*) FROM account_activity WHERE user_id=?", Integer.class, subject.tokens().userId())).isZero();
+        assertThat(sql.queryForObject("SELECT revoked_at IS NOT NULL FROM connection_leases WHERE id=?", Boolean.class,
+                subject.joined().leaseId())).isTrue();
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - confirmed)).isLessThanOrEqualTo(5000);
+        System.out.println("AUTH_REVOCATION_ISSUED_GRANTS " + mode + " CLEANUP_MS=" + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - confirmed));
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"JOIN", "NETWORK", "VOICE", "HEARTBEAT", "RESUME"})
+    void queuedAuthenticatedActivityOperationCannotCommitAfterLogout(String operation) throws Exception {
+        var scene = scene();
+        var subject = scene.subject();
+        var identity = context.getBean(IdentityService.class);
+        var session = identity.authenticateSession("Bearer " + subject.tokens().accessToken());
+        var sql = context.getBean(JdbcTemplate.class);
+        var transaction = new TransactionTemplate(context.getBean(PlatformTransactionManager.class));
+        var held = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var backend = new AtomicInteger();
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var logout = workers.submit(() -> transaction.execute(status -> {
+                backend.set(sql.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                identity.logout(subject.tokens().accessToken());
+                held.countDown();
+                try { assertThat(release.await(10, TimeUnit.SECONDS)).isTrue(); }
+                catch (InterruptedException failure) { Thread.currentThread().interrupt(); throw new IllegalStateException(failure); }
+                return true;
+            }));
+            java.util.concurrent.Future<String> pending = null;
+            try {
+                assertThat(held.await(5, TimeUnit.SECONDS)).isTrue();
+                pending = workers.submit(() -> {
+                    try {
+                        var activities = context.getBean(ActivityCoordinator.class);
+                        var grants = context.getBean(GrantService.class);
+                        switch (operation) {
+                            case "JOIN" -> activities.join(session, scene.room(), null, "queued");
+                            case "NETWORK" -> grants.network(session, scene.activity(), "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=");
+                            case "VOICE" -> grants.voice(session, scene.activity());
+                            case "HEARTBEAT" -> activities.heartbeat(session, scene.activity(), subject.joined().leaseId(),
+                                    subject.joined().activityGeneration(), subject.joined().memberGeneration());
+                            case "RESUME" -> activities.resume(session, scene.activity());
+                        }
+                        return "ACCEPTED";
+                    } catch (ApiException failure) { return failure.code(); }
+                });
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                boolean waiting = false;
+                while (System.nanoTime() < deadline) {
+                    waiting = sql.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE ?=ANY(pg_blocking_pids(pid))",
+                            Integer.class, backend.get()) > 0;
+                    if (waiting) break;
+                    Thread.sleep(10);
+                }
+                assertThat(waiting).as("Real PostgreSQL session lock wait for %s", operation).isTrue();
+            } finally { release.countDown(); }
+            assertThat(logout.get(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(pending.get(5, TimeUnit.SECONDS)).isEqualTo("ACCESS_TOKEN_INVALID");
+        }
+        assertGrants(subject, false);
+        assertGrants(scene.observer(), true);
+        System.out.println("AUTH_LOGOUT_QUEUED_OPERATION_DENIED " + operation);
     }
 
     @Test

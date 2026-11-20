@@ -42,8 +42,8 @@ public final class FullRoomNetworkProbe {
                 for (String user : users.subList(1, users.size())) groups.acceptInvitation(user, groups.invite(owner, group.id(), user).id());
                 var room = rooms.createRoom(owner, group.id(), "实际数据泵", "", "", null);
                 activity = rooms.startActivity(owner, room.id()).id();
-                for (int index = 0; index < 12; index++) joins.add(coordinator.join(users.get(index), room.id(), "device-" + index, null, "real-full-" + index));
-                assertThatThrownBy(() -> coordinator.join(users.get(12), room.id(), "device-13", null, "real-full-13"))
+                for (int index = 0; index < 12; index++) joins.add(AuthenticatedActivities.join(context, users.get(index), room.id(), "device-" + index, null, "real-full-" + index));
+                assertThatThrownBy(() -> AuthenticatedActivities.join(context, users.get(12), room.id(), "device-13", null, "real-full-13"))
                         .isInstanceOf(ApiException.class).extracting("code").isEqualTo("CAPACITY_FULL");
             }
             var directory = java.nio.file.Files.createTempDirectory(java.nio.file.Path.of("target"), "network-room-").toAbsolutePath();

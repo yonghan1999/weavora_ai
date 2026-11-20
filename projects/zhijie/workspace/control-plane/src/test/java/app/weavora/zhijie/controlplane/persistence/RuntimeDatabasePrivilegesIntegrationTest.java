@@ -3,6 +3,7 @@ package app.weavora.zhijie.controlplane.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.group.GroupService;
 import app.weavora.zhijie.controlplane.identity.*;
@@ -80,7 +81,7 @@ class RuntimeDatabasePrivilegesIntegrationTest {
                 var rooms = context.getBean(RoomService.class);
                 var room = rooms.createRoom(owner, group.id(), "权限房间", "", "", null);
                 rooms.startActivity(owner, room.id());
-                var joined = context.getBean(ActivityCoordinator.class).join(owner, room.id(), "device", null, "join");
+                var joined = AuthenticatedActivities.join(context, owner, room.id(), "device", null, "join");
                 context.getBean(MessageService.class).post(owner, group.id(), "持久消息");
                 context.getBean(ActivityCoordinator.class).leave(owner, joined.activityId(), joined.deviceId(), joined.leaseId());
                 groups.updateGroup(owner, group.id(), "更新后", null, "");

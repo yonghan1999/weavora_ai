@@ -172,6 +172,23 @@ public class IdentityService {
         requireActive(current.userId());
     }
 
+    public void requireActivitySession(String sessionId, String userId, String deviceId) {
+        if (sessionId == null) throw invalidAccessToken();
+        repository.findSessionById(sessionId)
+                .filter(session -> session.allowsActivity(userId, deviceId, clock.instant()))
+                .orElseThrow(this::invalidAccessToken);
+        requireActive(userId);
+    }
+
+    public void lockSession(AuthSession expected) {
+        AuthSession current = repository.findSessionForUpdate(expected.id()).orElseThrow(this::invalidAccessToken);
+        if (!current.allowsActivity(expected.userId(), expected.deviceId(), clock.instant())
+                || !current.generation().equals(expected.generation()) || !clock.instant().isBefore(current.accessExpiresAt())) {
+            throw invalidAccessToken();
+        }
+        requireActive(current.userId());
+    }
+
     private AuthTokens createSession(UserAccount user, String deviceId) {
         String sessionId = UUID.randomUUID().toString();
         TokenMaterial material = newTokenMaterial(sessionId);
