@@ -13,7 +13,33 @@ from urllib.request import ProxyHandler, Request, build_opener
 from zipfile import ZipFile
 
 
-def verify(package, digest, java_home, check_restore=False):
+def check_device_leave(api, password, token, room):
+    other = api('auth/login', method='POST', body={
+        'email': 'trial@example.test', 'password': password, 'deviceId': 'takeover'})['accessToken']
+
+    def join(current, device):
+        return api('room-joins', token=current, method='POST', body={
+            'roomId': room['id'], 'deviceId': device, 'operationId': secrets.token_hex(16)})
+
+    old = join(token, 'relocation')
+    current = join(other, 'takeover')
+    activity = room['currentActivityId']
+    if (old['activityId'] != activity or current['activityId'] != activity or old['leaseId'] == current['leaseId']
+            or current['memberGeneration'] <= old['memberGeneration']):
+        raise ValueError('两台设备未接管同一活动')
+    path = f'activities/{activity}/leave'
+    for caller, lease in ((token, old['leaseId']), (token, current['leaseId']), (other, old['leaseId'])):
+        if api(path, token=caller, method='POST', body={'leaseId': lease})['left'] is not False:
+            raise ValueError('过期或非本设备的退房请求影响了当前活动')
+    resumed = api(f'activities/{activity}/resume', token=other, method='POST', body={'deviceId': 'takeover'})
+    if resumed['leaseId'] != current['leaseId']:
+        raise ValueError('接管设备未保留原租约')
+    for expected in (True, False):
+        if api(path, token=other, method='POST', body={'leaseId': current['leaseId']})['left'] is not expected:
+            raise ValueError('当前设备退房或重复退房结果不符')
+
+
+def verify(package, digest, java_home, check_restore=False, check_leave=False):
     workspace = Path(__file__).resolve().parents[2]
     target = workspace / 'target'
     if os.name != 'nt' or target.drive.upper() == os.environ.get('SystemDrive', 'C:').upper() or target.resolve(strict=True) != target:
@@ -88,11 +114,15 @@ def verify(package, digest, java_home, check_restore=False):
                     raise ValueError('房间密码配置或群主免密状态不符')
                 if not any(item['id'] == message_id and item['body'] == marker for item in api(history, token=token)):
                     raise ValueError('未读到本次试用消息')
+                if check_leave:
+                    check_device_leave(api, password, token, room)
             finally:
                 subprocess.run([*command, scripts / 'stop.ps1'], cwd=kit, env=env, check=True, timeout=45)
     print('RELOCATED_TRIAL_KIT_PASSWORD_POLICY_LOGIN_MESSAGE_RESTART_OK')
     if check_restore:
         print('TRIAL_KIT_OFFLINE_BACKUP_RESTORE_LOGIN_OK')
+    if check_leave:
+        print('TRIAL_KIT_DEVICE_BOUND_LEAVE_OK')
 
 
 if __name__ == '__main__':
@@ -101,5 +131,6 @@ if __name__ == '__main__':
     parser.add_argument('--sha256', required=True, help='可信来源提供的整包摘要')
     parser.add_argument('--java-home', required=True, type=Path)
     parser.add_argument('--check-restore', action='store_true', help='用包内工具恢复到另一解压目录，再登录核对数据')
+    parser.add_argument('--check-leave', action='store_true', help='每次启动后验证设备接管和按租约退房；只用于支持该协议的包')
     args = parser.parse_args()
-    verify(args.package, args.sha256, args.java_home, args.check_restore)
+    verify(args.package, args.sha256, args.java_home, args.check_restore, args.check_leave)
