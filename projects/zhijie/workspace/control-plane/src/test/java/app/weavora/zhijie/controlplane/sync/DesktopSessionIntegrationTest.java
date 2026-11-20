@@ -5,6 +5,7 @@ import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.group.GroupService;
 import app.weavora.zhijie.controlplane.identity.*;
+import app.weavora.zhijie.controlplane.message.MessageService;
 import app.weavora.zhijie.controlplane.room.RoomService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
@@ -47,22 +48,25 @@ class DesktopSessionIntegrationTest {
     }
 
     @Test void actualShellMaintenanceRotatesCredentialsKeepsLeaseAndClearsDisabledAccount() throws Exception {
-        runMaintenance(false, false, false);
+        runMaintenance(false, false, false, false);
     }
     @Test void queuedSyncRecoveryCannotReplayCredentialsRotatedByHeartbeat() throws Exception {
-        runMaintenance(false, true, false);
+        runMaintenance(false, true, false, false);
     }
     @Test void actualShellLogoutRevokesCredentialsLeaseAndNetworkGrant() throws Exception {
-        runMaintenance(false, false, true);
+        runMaintenance(false, false, true, false);
+    }
+    @Test void scheduledLifecyclePreservesActivityAcrossCredentialRotation() throws Exception {
+        runMaintenance(false, true, false, true);
     }
     @Test
     @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_SESSION_LONG", matches = "true")
     void actualFifteenMinuteCredentialsRenewWithoutDroppingActivity() throws Exception {
-        runMaintenance(true, false, false);
+        runMaintenance(true, true, false, true);
     }
-    private void runMaintenance(boolean realTime, boolean syncRace, boolean logout) throws Exception {
+    private void runMaintenance(boolean realTime, boolean syncRace, boolean logout, boolean scheduled) throws Exception {
         try (var postgres = EmbeddedPostgres.start(); var context = new SpringApplication(ControlPlaneApplication.class).run(
-                "--server.address=127.0.0.1", "--server.port=0", "--zhijie.scheduling.enabled=false",
+                "--server.address=127.0.0.1", "--server.port=0", "--zhijie.scheduling.enabled=" + scheduled,
                 "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
                 "--spring.datasource.username=postgres", "--spring.datasource.password=")) {
             var identity = context.getBean(IdentityService.class);
@@ -92,7 +96,7 @@ class DesktopSessionIntegrationTest {
                     .directory(workspace.toFile()).redirectError(log.toFile()).start();
             try (var output = process.getOutputStream(); var input = process.inputReader(StandardCharsets.UTF_8)) {
                 send(output, json, Map.of("base", "http://127.0.0.1:" + port, "tokens", tokens, "activity", joined,
-                        "realTime", realTime, "syncRace", syncRace, "logout", logout));
+                        "realTime", realTime, "syncRace", syncRace, "logout", logout, "scheduled", scheduled));
                 if (logout) {
                     expect(process, input, "SESSION_PROBE_LOGGED_OUT", 90, null);
                     var jdbc = context.getBean(JdbcTemplate.class);
@@ -116,10 +120,6 @@ class DesktopSessionIntegrationTest {
                             otherSession.accessToken(), otherSession.refreshToken(), networkGrant.networkTicket());
                     return;
                 }
-                if (syncRace) {
-                    expect(process, input, "SESSION_PROBE_ROTATED", 90, null);
-                    context.getBean(SyncService.class).revalidateSessions();
-                }
                 var jdbc = context.getBean(JdbcTemplate.class);
                 Runnable checkLease = () -> {
                     assertThat(jdbc.queryForObject("SELECT count(*) FROM connection_leases WHERE id = ? AND revoked_at IS NULL AND expires_at > now()",
@@ -129,7 +129,17 @@ class DesktopSessionIntegrationTest {
                     assertThat(jdbc.queryForObject("SELECT state FROM activity_members WHERE activity_id = ? AND user_id = ?",
                             String.class, joined.activityId(), user)).isEqualTo("ACTIVE");
                 };
-                expect(process, input, "SESSION_PROBE_REFRESHED", realTime ? 1050 : 90, realTime ? checkLease : null);
+                Runnable onRotation = syncRace ? () -> {
+                    if (!scheduled) context.getBean(SyncService.class).revalidateSessions();
+                } : null;
+                ProbeCheck onTick = realTime || scheduled ? () -> {
+                    checkLease.run();
+                    if (scheduled) {
+                        var message = context.getBean(MessageService.class).post(user, group.id(), "scheduled-session-probe");
+                        send(output, json, Map.of("messageId", message.id()));
+                    }
+                } : null;
+                expect(process, input, "SESSION_PROBE_REFRESHED", realTime ? 1050 : 90, onTick, onRotation);
                 checkLease.run();
                 if (realTime) assertThat(Instant.now()).isAfter(tokens.accessExpiresAt().plusSeconds(15));
                 assertThat(context.getBean(IdentityRepository.class).findSessionById(tokens.sessionId()).orElseThrow().generation()).isEqualTo(2L);
@@ -148,8 +158,14 @@ class DesktopSessionIntegrationTest {
         output.write(json.writeValueAsBytes(value)); output.write('\n'); output.flush();
     }
     private void expect(Process process, BufferedReader input, String expected, long seconds, Runnable checkLease) throws Exception {
+        expect(process, input, expected, seconds, checkLease == null ? null : checkLease::run, null);
+    }
+    private void expect(Process process, BufferedReader input, String expected, long seconds, ProbeCheck checkLease,
+                        Runnable onRotation) throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(seconds);
         int ticks = 0;
+        int rotations = 0;
+        int messages = 0;
         while (System.nanoTime() < deadline) {
             if (!input.ready()) {
                 assertThat(process.isAlive()).as("Shell probe exited before expected signal").isTrue();
@@ -164,8 +180,28 @@ class DesktopSessionIntegrationTest {
                 System.out.println("SESSION_LONG_TICK " + ++ticks);
                 continue;
             }
-            if (line.startsWith("SESSION_PROBE_")) { assertThat(line).isEqualTo(expected); return; }
+            if (line.equals("SESSION_PROBE_ROTATED") && onRotation != null) {
+                assertThat(++rotations).as("Exactly one credential rotation").isEqualTo(1);
+                onRotation.run();
+                System.out.println("SESSION_SYNC_ROTATED");
+                continue;
+            }
+            if (line.equals("SESSION_SYNC_MESSAGE")) {
+                assertThat(++messages).as("Each maintenance round receives its own message").isEqualTo(ticks);
+                System.out.println("SESSION_SYNC_MESSAGE " + messages);
+                continue;
+            }
+            if (line.startsWith("SESSION_PROBE_")) {
+                assertThat(line).isEqualTo(expected);
+                if (onRotation != null) assertThat(rotations).isEqualTo(1);
+                if (checkLease != null) assertThat(messages).isEqualTo(ticks);
+                return;
+            }
         }
         throw new AssertionError("Shell probe signal deadline");
+    }
+    @FunctionalInterface
+    private interface ProbeCheck {
+        void run() throws Exception;
     }
 }

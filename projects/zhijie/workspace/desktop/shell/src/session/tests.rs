@@ -487,6 +487,65 @@ fn real_control_plane_refresh_and_disabled_cleanup() {
         println!("SESSION_PROBE_{value}");
         std::io::stdout().flush().unwrap();
     }
+    async fn check_scheduled_message(socket: &mut zhijie_core::sync::SyncConnection) {
+        let expected = input()["messageId"].as_str().unwrap().to_owned();
+        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            loop {
+                let event = socket.next().await.expect("Scheduled sync stays connected");
+                if let Some(event) = event {
+                    if event.r#type == "message.created"
+                        && serde_json::from_str::<serde_json::Value>(&event.payload)
+                            .expect("Message payload")["message_id"]
+                            .as_str()
+                            == Some(expected.as_str())
+                    {
+                        break;
+                    }
+                }
+            }
+        })
+        .await
+        .expect("Scheduled message delivery deadline");
+        println!("SESSION_SYNC_MESSAGE");
+        std::io::stdout().flush().unwrap();
+    }
+    async fn reconnect_sync(
+        state: &AppState,
+        old_credentials: &AuthTokens,
+        socket: &mut zhijie_core::sync::SyncConnection,
+    ) -> zhijie_core::sync::SyncConnection {
+        signal("ROTATED");
+        let code = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            loop {
+                if let Err(code) = socket.next().await {
+                    break code;
+                }
+            }
+        })
+        .await
+        .expect("Old socket close deadline");
+        assert!(
+            code == "ACCESS_TOKEN_INVALID",
+            "Real old socket invalidated"
+        );
+        crate::sync::recover(state, old_credentials, code).await;
+        let current = state.access_token().unwrap();
+        let cursor = state
+            .client
+            .sync_cursor(&current)
+            .await
+            .expect("Fresh sync cursor");
+        let fresh = state
+            .client
+            .connect_sync(&current, cursor)
+            .await
+            .expect("Fresh sync connection");
+        assert!(
+            state.core.snapshot().activity.is_some(),
+            "Old socket cannot clear current activity"
+        );
+        fresh
+    }
     tauri::async_runtime::block_on(async {
         let config = input();
         let base = config["base"].as_str().unwrap();
@@ -496,6 +555,7 @@ fn real_control_plane_refresh_and_disabled_cleanup() {
         let original = credentials.access_token.clone();
         let real_time = config["realTime"].as_bool().unwrap_or(false);
         let sync_race = config["syncRace"].as_bool().unwrap_or(false);
+        let scheduled = config["scheduled"].as_bool().unwrap_or(false);
         let old_credentials = credentials.clone();
         let original_expiry = time::OffsetDateTime::parse(
             &credentials.access_expires_at,
@@ -582,6 +642,7 @@ fn real_control_plane_refresh_and_disabled_cleanup() {
             None
         };
         let mut renewal = None;
+        let mut sync_rotated = false;
         if real_time {
             let started = std::time::Instant::now();
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(15));
@@ -606,7 +667,18 @@ fn real_control_plane_refresh_and_disabled_cleanup() {
                         && active.virtual_ipv4.as_deref() == Some(original_ip.as_str())
                 );
                 assert!(renewal.is_some(), "Heartbeat retained throughout renewal");
+                if !sync_rotated && state.access_token().is_ok_and(|value| value != original) {
+                    if let Some(socket) = old_socket.as_mut() {
+                        let fresh = reconnect_sync(&state, &old_credentials, socket).await;
+                        old_socket = Some(fresh);
+                        sync_rotated = true;
+                    }
+                }
                 signal("TICK");
+                if scheduled {
+                    let socket = old_socket.as_mut().expect("Scheduled sync connection");
+                    check_scheduled_message(socket).await;
+                }
                 if time::OffsetDateTime::now_utc() > original_expiry + time::Duration::seconds(15) {
                     break;
                 }
@@ -656,37 +728,14 @@ fn real_control_plane_refresh_and_disabled_cleanup() {
             ),
             "Original credential rejected after rotation"
         );
-        if let Some(socket) = old_socket.as_mut() {
-            signal("ROTATED");
-            let code = tokio::time::timeout(std::time::Duration::from_secs(5), async {
-                loop {
-                    if let Err(code) = socket.next().await {
-                        break code;
-                    }
+        if !sync_rotated {
+            if let Some(socket) = old_socket.as_mut() {
+                let mut fresh = reconnect_sync(&state, &old_credentials, socket).await;
+                if scheduled {
+                    signal("TICK");
+                    check_scheduled_message(&mut fresh).await;
                 }
-            })
-            .await
-            .expect("Old socket close deadline");
-            assert!(
-                code == "ACCESS_TOKEN_INVALID",
-                "Real old socket invalidated"
-            );
-            crate::sync::recover(&state, &old_credentials, code).await;
-            let current = state.access_token().unwrap();
-            let cursor = state
-                .client
-                .sync_cursor(&current)
-                .await
-                .expect("Fresh sync cursor");
-            let _socket = state
-                .client
-                .connect_sync(&current, cursor)
-                .await
-                .expect("Fresh sync connection");
-            assert!(
-                state.core.snapshot().activity.is_some(),
-                "Old socket cannot clear current activity"
-            );
+            }
         }
         signal("REFRESHED");
         assert!(
