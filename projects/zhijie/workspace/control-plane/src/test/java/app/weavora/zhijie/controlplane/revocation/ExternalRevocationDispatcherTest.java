@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import app.weavora.zhijie.controlplane.observability.ObservationService;
 import app.weavora.zhijie.controlplane.sync.OutboxEvent;
 import app.weavora.zhijie.controlplane.sync.OutboxRepository;
+import app.weavora.zhijie.controlplane.sync.ExternalDeliveryChannel;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Clock;
 import java.time.Instant;
@@ -26,7 +27,7 @@ class ExternalRevocationDispatcherTest {
         var ready = new OutboxEvent(2L, "ready", null, null, "user", "test.ready",
                 "{}", null, null, now, null, 0);
         var repository = mock(OutboxRepository.class);
-        when(repository.listDueExternal(100, now)).thenReturn(List.of(failed, ready));
+        when(repository.listDueExternal(100, now, ExternalDeliveryChannel.OTHER)).thenReturn(List.of(failed, ready));
         var target = mock(RevocationTarget.class);
         when(target.supports(anyString())).thenReturn(true);
         doThrow(new IllegalStateException("private-url-and-token")).when(target).deliver(failed);
@@ -37,7 +38,7 @@ class ExternalRevocationDispatcherTest {
         var dispatcher = new ExternalRevocationDispatcher(repository, List.of(target),
                 new OutboxDeliveryStatus(repository, observations), Clock.fixed(now, ZoneOffset.UTC));
 
-        assertThat(dispatcher.dispatchPending()).isEqualTo(new RevocationDispatcher.DispatchResult(1, 1));
+        assertThat(dispatcher.dispatchPending(ExternalDeliveryChannel.OTHER)).isEqualTo(new RevocationDispatcher.DispatchResult(1, 1));
         verify(repository).recordExternalFailure("private-event", now);
         verify(repository, never()).markDelivered("private-event");
         verify(target).deliver(ready);

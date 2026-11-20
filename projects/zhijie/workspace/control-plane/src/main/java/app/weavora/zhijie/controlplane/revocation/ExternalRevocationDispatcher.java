@@ -2,11 +2,12 @@ package app.weavora.zhijie.controlplane.revocation;
 
 import app.weavora.zhijie.controlplane.sync.OutboxEvent;
 import app.weavora.zhijie.controlplane.sync.OutboxRepository;
+import app.weavora.zhijie.controlplane.sync.ExternalDeliveryChannel;
 import java.time.Clock;
 import java.util.List;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +28,11 @@ public class ExternalRevocationDispatcher {
     }
 
     @Transactional
-    @Scheduled(fixedDelay = 1000, scheduler = "externalRevocationScheduler")
-    public RevocationDispatcher.DispatchResult dispatchPending() {
+    public RevocationDispatcher.DispatchResult dispatchPending(ExternalDeliveryChannel channel) {
+        Objects.requireNonNull(channel);
         int delivered = 0;
         int failed = 0;
-        for (OutboxEvent event : repository.listDueExternal(100, clock.instant())) {
+        for (OutboxEvent event : repository.listDueExternal(100, clock.instant(), channel)) {
             try {
                 for (RevocationTarget target : targets) if (target.supports(event.type())) target.deliver(event);
                 status.delivered(event.eventId());

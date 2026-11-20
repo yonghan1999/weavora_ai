@@ -1,5 +1,6 @@
 package app.weavora.zhijie.controlplane.revocation;
 
+import app.weavora.zhijie.controlplane.sync.ExternalDeliveryChannel;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,9 +15,14 @@ public class RevocationDispatcher {
 
     public DispatchResult dispatchPending() {
         var synchronizedEvents = sync.dispatchPending();
-        var externalEvents = external.dispatchPending();
-        return new DispatchResult(synchronizedEvents.delivered() + externalEvents.delivered(),
-                synchronizedEvents.failed() + externalEvents.failed());
+        int delivered = synchronizedEvents.delivered();
+        int failed = synchronizedEvents.failed();
+        for (ExternalDeliveryChannel channel : ExternalDeliveryChannel.values()) {
+            var externalEvents = external.dispatchPending(channel);
+            delivered += externalEvents.delivered();
+            failed += externalEvents.failed();
+        }
+        return new DispatchResult(delivered, failed);
     }
 
     public record DispatchResult(int delivered, int failed) {

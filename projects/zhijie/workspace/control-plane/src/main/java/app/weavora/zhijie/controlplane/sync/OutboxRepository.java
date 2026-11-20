@@ -8,6 +8,7 @@ public interface OutboxRepository {
     List<OutboxEvent> listAfter(long cursor, int limit);
     List<OutboxEvent> listPendingExternal(int limit);
     List<OutboxEvent> listDueExternal(int limit, Instant now);
+    List<OutboxEvent> listDueExternal(int limit, Instant now, ExternalDeliveryChannel channel);
     List<OutboxEvent> listUnsynchronized(int limit);
     long latestSequence();
     void markDelivered(String eventId);

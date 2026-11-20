@@ -25,8 +25,11 @@ public class MyBatisOutboxRepository implements OutboxRepository {
         return mapper.listUnsynchronized(limit);
     }
     public List<OutboxEvent> listDueExternal(int limit, Instant now) {
+        return listDueExternal(limit, now, null);
+    }
+    public List<OutboxEvent> listDueExternal(int limit, Instant now, ExternalDeliveryChannel channel) {
         sequences.assignCommitted();
-        return mapper.listDueExternal(limit, now);
+        return mapper.listDueExternal(limit, now, channel);
     }
     public long latestSequence() {
         sequences.assignCommitted();

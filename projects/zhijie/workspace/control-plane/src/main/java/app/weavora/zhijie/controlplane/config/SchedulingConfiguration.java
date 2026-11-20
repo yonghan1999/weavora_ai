@@ -22,7 +22,7 @@ public class SchedulingConfiguration {
     @Bean
     ThreadPoolTaskScheduler externalRevocationScheduler() {
         var scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(1);
+        scheduler.setPoolSize(3);
         scheduler.setThreadNamePrefix("external-revocation-");
         scheduler.setRemoveOnCancelPolicy(true);
         return scheduler;

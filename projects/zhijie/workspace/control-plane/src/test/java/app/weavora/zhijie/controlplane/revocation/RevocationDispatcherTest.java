@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import app.weavora.zhijie.controlplane.sync.OutboxEvent;
 import app.weavora.zhijie.controlplane.sync.OutboxRepository;
+import app.weavora.zhijie.controlplane.sync.ExternalDeliveryChannel;
 import app.weavora.zhijie.controlplane.sync.SyncRevocationTarget;
 import java.time.Instant;
 import java.time.Clock;
@@ -27,7 +28,7 @@ class RevocationDispatcherTest {
         OutboxRepository repository = mock(OutboxRepository.class);
         when(repository.listUnsynchronized(100)).thenReturn(List.of(event), List.of());
         Instant now = Instant.parse("2026-01-01T00:00:00Z");
-        when(repository.listDueExternal(100, now)).thenReturn(List.of(event));
+        when(repository.listDueExternal(100, now, ExternalDeliveryChannel.VOICE)).thenReturn(List.of(event));
         SyncRevocationTarget sync = mock(SyncRevocationTarget.class);
         AtomicInteger attempts = new AtomicInteger();
         RevocationTarget target = new RevocationTarget() {
