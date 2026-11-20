@@ -2,13 +2,15 @@
 
 ## 本机试用（不安装）
 
-**本机试用入口**：`target/trial-kit-6523e6a/zhijie-windows-x64-trial.zip`（93,048,747 字节，SHA-256：`90ccd1b35fcebc25647248fe3c204daeab99b8021230d0bc341b15608c1a122d`）。后端来自 `6523e6a`：修复连接注销后预取的旧引用仍发送的问题，保留 `ea42650` 的关闭期间重连修复、结构化日志脱敏及设备接管保护。桌面继续使用与之配套且无需改动的 `399db61` 构建。核对摘要后解压到 D 盘全新目录，按包内 `README.md` 启动；如需保留旧数据，先停库、冷备并恢复，不覆盖原目录。包内不含 JDK、Python、WebView2、安装器、试用数据库或凭据。
+**本机试用入口**：`target/trial-kit-9ba3623/zhijie-windows-x64-trial.zip`（93,049,817 字节，SHA-256：`00e6c6f98a486b898f24f0ca23109a9d53460c6955cc24867c6f06b9b36aa23a`）。后端来自 `9ba3623`：增加 V15 独立同步完成标记，避免失败外部撤销积压永久阻挡实时消息，外部重试不再重复关闭已完成同步的用户连接；同时包含固定字段发送诊断及此前注销/重连保护。外部失败仍待重试，不代表渠道已接入。桌面继续使用与之配套且无需改动的 `399db61` 构建。核对摘要后解压到 D 盘全新目录，按包内 `README.md` 启动；如需保留旧数据，先停库、冷备并恢复，不覆盖原目录或在同一数据库混跑旧新版。包内不含 JDK、Python、WebView2、安装器、试用数据库或凭据。
 
-新包首次启动、停库重启和冷备恢复后均通过实际接口登录、读取原消息、双设备接管和按租约退房；旧设备申请语音和网络票据均被拒绝，当前设备获得与租约匹配的网络票据。日志：`target/trial-kit-6523e6a/relocation.log`。实际离线后端还通过登录、重启、两种同步认证、房间重开以及普通日志/管理记录的秘密扫描，见同目录 `backend-lifecycle.log`。与 `ea42650` 整包逐条比对，340 个条目仅 `SyncService.class` 及其 `Connection` 内部类变化，见 `comparison-final.log`；源码竞态复现与二十三项相关回归见 `docs/engineering/sync-unregister-race.md`。历史发送告警和网络偶发退出仍开放。桌面内嵌界面的 170 项检查记录仍在 `target/trial-kit-399db61/embedded-browser.json`。未启动原生窗口，未实测真实通话或跨机网卡。
+新包首次启动、停库重启和冷备恢复后均通过实际接口登录、读取原消息、双设备接管和按租约退房；旧设备申请语音和网络票据均被拒绝，当前设备获得与租约匹配的网络票据。日志：`target/trial-kit-9ba3623/relocation.log`。实际离线后端还通过登录、重启、两种同步认证、房间重开以及普通日志/管理记录的秘密扫描，见同目录 `backend-lifecycle.log`。与 `6523e6a` 整包逐条比对，341 个条目中新增 V15、变更九个后端条目，桌面和依赖不变，见 `comparison-final.log`；其中两个内部类仅行号变化，`javap` 指令/描述符及过滤行号后的完整元数据一致，见 `inner-classes-final.log`。源码失败复现、迁移边界及四十六项相关回归见 `docs/engineering/sync-outbox-isolation.md`。历史发送告警和网络偶发退出仍开放。桌面内嵌界面的 170 项检查记录仍在 `target/trial-kit-399db61/embedded-browser.json`，本轮未重新执行界面检查。未启动原生窗口，未实测真实通话或跨机网卡。
 
 从本机 `workspace` 复建：`python -B "packaging/windows/pack-trial-kit.py" --output "target/新的试用包.zip"`。输入路径和摘要锁定在 `packaging/windows/trial-kit.json`，输出文件必须不存在；此步骤只打包已有候选，不负责构建、签名或发布。
 
-复测命令（从 `workspace` 运行）：`python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-6523e6a/zhijie-windows-x64-trial.zip" --sha256 90ccd1b35fcebc25647248fe3c204daeab99b8021230d0bc341b15608c1a122d --java-home "D:/Program Files/jdk-25" --check-grants --check-restore`。测试使用临时数据库和随机本机端口，不接触已有试用数据。
+复测命令（从 `workspace` 运行）：`python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-9ba3623/zhijie-windows-x64-trial.zip" --sha256 00e6c6f98a486b898f24f0ca23109a9d53460c6955cc24867c6f06b9b36aa23a --java-home "D:/Program Files/jdk-25" --check-grants --check-restore`。测试使用临时数据库和随机本机端口，不接触已有试用数据。旧整包 `target/trial-kit-6523e6a/zhijie-windows-x64-trial.zip` 保留，不包含 V15 和本轮修复。
+
+本轮六项打包单元检查通过，整包使用包内冷备工具恢复 1,111 个文件后再次登录、读取消息和核验设备资格通过；独立后端的旧库升级/原库回退/新版库重新启用见 `upgrade-roundtrip.log` 与[后端说明](preview-backend.md)。`release-final.log` 发布契约通过，但真实 macOS 签名检查跳过，安装器及容量仍未验收。所有新增输出和临时文件在 D 盘，结束后删除本轮构建副本与临时目录共 1,240,833 字节，生命周期测试的一次性解压/数据库目录由测试在停库后清理；保留两个 ZIP、源码归档、日志和字节码比对证据，不删除旧试用包或共享缓存。清理后 C/D 可用约 10.22/46.07 GiB。
 
 ## 旧版试用目录
 
