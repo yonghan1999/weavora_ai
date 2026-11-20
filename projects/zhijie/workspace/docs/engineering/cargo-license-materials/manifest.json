@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "scope": "locked_cargo_registry_license_materials",
-  "cargoLockSha256": "caa46faf411a66c881e39717bb56f7d9e057d73cbfb4bace0c9377fb0bccdf06",
+  "cargoLockSha256": "9557bab3123b58f2aedde1fafd34c409f70e6456a25d2ce374f6d3b645d0376f",
   "inventorySha256": "060549a1f11202e5663be464dec6359f93c056db8289d4f63b5fa13c866015c5",
   "reviewStatus": "unreviewed",
   "releaseApproved": false,

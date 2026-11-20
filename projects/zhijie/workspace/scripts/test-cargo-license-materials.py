@@ -75,6 +75,26 @@ class CargoLicenseMaterialsTest(unittest.TestCase):
             self.collect()
         self.assertFalse(self.output.exists())
 
+    def test_lock_dependency_changes_invalidate_materials_even_when_archives_are_unchanged(self):
+        manifest, texts = self.collect()
+        materials.write_or_check(self.output, manifest, texts)
+        original = (self.output / "manifest.json").read_bytes()
+        lock = self.root / "Cargo.lock"
+        lock.write_bytes(lock.read_bytes() + b'dependencies = ["local"]\n')
+
+        refreshed, refreshed_texts = self.collect()
+
+        self.assertNotEqual(manifest["cargoLockSha256"], refreshed["cargoLockSha256"])
+        self.assertEqual(refreshed["cargoLockSha256"], hashlib.sha256(lock.read_bytes()).hexdigest())
+        self.assertEqual(manifest["dependencies"], refreshed["dependencies"])
+        self.assertEqual(texts, refreshed_texts)
+        with self.assertRaisesRegex(ValueError, "OUTPUT_CHANGED: manifest.json"):
+            materials.write_or_check(self.output, refreshed, refreshed_texts, check=True)
+        self.assertEqual((self.output / "manifest.json").read_bytes(), original)
+
+        materials.write_or_check(self.root / "refreshed", refreshed, refreshed_texts)
+        materials.write_or_check(self.root / "refreshed", *self.collect(), check=True)
+
     def test_archive_declaration_is_checked_against_metadata(self):
         self.package["license"] = "changed"
         data = json.loads(self.inventory.read_text())
