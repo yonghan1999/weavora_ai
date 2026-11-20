@@ -13,9 +13,9 @@
     </resultMap>
     <insert id="insert" parameterType="app.weavora.zhijie.controlplane.sync.OutboxEvent">
         INSERT INTO outbox_events (event_id, group_id, activity_id, aggregate_id, type, payload,
-            generation, policy_revision, occurred_at, delivered_at, attempts)
+            generation, policy_revision, occurred_at, delivered_at, sync_delivered_at, attempts)
         VALUES (#{eventId}, #{groupId}, #{activityId}, #{aggregateId}, #{type}, #{payload},
-            #{generation}, #{policyRevision}, #{occurredAt}, #{deliveredAt}, #{attempts})
+            #{generation}, #{policyRevision}, #{occurredAt}, #{deliveredAt}, #{deliveredAt}, #{attempts})
     </insert>
     <select id="listAfter" resultMap="OutboxEvent">
         SELECT assigned.sequence, event.event_id, event.group_id, event.activity_id, event.aggregate_id,
@@ -23,13 +23,20 @@
         FROM sync_event_sequences assigned JOIN outbox_events event ON event.event_id=assigned.event_id
         WHERE assigned.sequence &gt; #{cursor} ORDER BY assigned.sequence LIMIT #{limit}
     </select>
-    <select id="listUndelivered" resultMap="OutboxEvent">
+    <select id="listPendingExternal" resultMap="OutboxEvent">
         SELECT assigned.sequence, event.event_id, event.group_id, event.activity_id, event.aggregate_id,
             event.type, event.payload, event.generation, event.policy_revision, event.occurred_at, event.delivered_at, event.attempts
         FROM sync_event_sequences assigned JOIN outbox_events event ON event.event_id=assigned.event_id
-        WHERE event.delivered_at IS NULL ORDER BY assigned.sequence LIMIT #{limit}
+        WHERE event.delivered_at IS NULL AND event.sync_delivered_at IS NOT NULL ORDER BY assigned.sequence LIMIT #{limit}
+    </select>
+    <select id="listUnsynchronized" resultMap="OutboxEvent">
+        SELECT assigned.sequence, event.event_id, event.group_id, event.activity_id, event.aggregate_id,
+            event.type, event.payload, event.generation, event.policy_revision, event.occurred_at, event.delivered_at, event.attempts
+        FROM sync_event_sequences assigned JOIN outbox_events event ON event.event_id=assigned.event_id
+        WHERE event.sync_delivered_at IS NULL ORDER BY assigned.sequence LIMIT #{limit}
     </select>
     <select id="latestSequence" resultType="long">SELECT COALESCE(MAX(sequence), 0) FROM sync_event_sequences</select>
     <update id="markDelivered">UPDATE outbox_events SET delivered_at = NOW() WHERE event_id = #{eventId}</update>
+    <update id="markSynchronized">UPDATE outbox_events SET sync_delivered_at = NOW() WHERE event_id = #{eventId}</update>
     <update id="recordFailure">UPDATE outbox_events SET attempts = attempts + 1 WHERE event_id = #{eventId}</update>
 </mapper>

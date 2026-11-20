@@ -97,6 +97,6 @@ class RevocationIntegrationTest {
         RevocationDispatcher.DispatchResult result = context.getBean(RevocationDispatcher.class).dispatchPending();
         assertThat(result.delivered()).isEqualTo(2);
         assertThat(result.failed()).isEqualTo(2);
-        assertThat(context.getBean(OutboxRepository.class).listUndelivered(10)).hasSize(2);
+        assertThat(context.getBean(OutboxRepository.class).listPendingExternal(10)).hasSize(2);
     }
 }

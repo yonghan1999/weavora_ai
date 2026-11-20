@@ -15,14 +15,19 @@ public class MyBatisOutboxRepository implements OutboxRepository {
         sequences.assignCommitted();
         return mapper.listAfter(cursor, limit);
     }
-    public List<OutboxEvent> listUndelivered(int limit) {
+    public List<OutboxEvent> listPendingExternal(int limit) {
         sequences.assignCommitted();
-        return mapper.listUndelivered(limit);
+        return mapper.listPendingExternal(limit);
+    }
+    public List<OutboxEvent> listUnsynchronized(int limit) {
+        sequences.assignCommitted();
+        return mapper.listUnsynchronized(limit);
     }
     public long latestSequence() {
         sequences.assignCommitted();
         return mapper.latestSequence();
     }
     public void markDelivered(String eventId) { mapper.markDelivered(eventId); }
+    public void markSynchronized(String eventId) { mapper.markSynchronized(eventId); }
     public void recordFailure(String eventId) { mapper.recordFailure(eventId); }
 }

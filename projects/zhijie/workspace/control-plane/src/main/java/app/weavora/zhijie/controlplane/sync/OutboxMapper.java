@@ -8,8 +8,10 @@ import org.apache.ibatis.annotations.Param;
 public interface OutboxMapper {
     void insert(OutboxEvent event);
     List<OutboxEvent> listAfter(@Param("cursor") long cursor, @Param("limit") int limit);
-    List<OutboxEvent> listUndelivered(int limit);
+    List<OutboxEvent> listPendingExternal(int limit);
+    List<OutboxEvent> listUnsynchronized(int limit);
     long latestSequence();
     void markDelivered(String eventId);
+    void markSynchronized(String eventId);
     void recordFailure(String eventId);
 }
