@@ -70,11 +70,11 @@ class RevocationIntegrationTest {
         String publicKey = java.util.Base64.getEncoder().encodeToString(new byte[] {
                 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
                 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32 });
-        NetworkGrantResponse network = grantService.network(userId, activity.id(), publicKey);
+        NetworkGrantResponse network = grantService.network(userId, activity.id(), "device-a", publicKey);
         ActivityGrant stored = context.getBean(GrantRepository.class).findById(network.grantId()).orElseThrow();
         assertThat(stored.tokenHash()).isNotEqualTo(network.networkTicket());
         assertThat(stored.publicKey()).isEqualTo(publicKey);
-        assertThatThrownBy(() -> grantService.voice(userId, activity.id()))
+        assertThatThrownBy(() -> grantService.voice(userId, activity.id(), "device-a"))
                 .isInstanceOf(ApiException.class).extracting("code").isEqualTo("VOICE_CAPACITY_LIMITED");
 
         ActivityRepository activities = context.getBean(ActivityRepository.class);
@@ -89,7 +89,7 @@ class RevocationIntegrationTest {
         assertThat(activities.findAccountActivity(userId)).isEmpty();
         assertThat(activities.findAddress(activity.id(), userId).orElseThrow().releasedAt()).isNotNull();
         assertThat(context.getBean(GrantRepository.class).findById(network.grantId()).orElseThrow().revokedAt()).isNotNull();
-        assertThatThrownBy(() -> grantService.network(userId, activity.id(), "new-key"))
+        assertThatThrownBy(() -> grantService.network(userId, activity.id(), "device-a", "new-key"))
                 .isInstanceOf(ApiException.class).extracting("code").isEqualTo("CURRENT_GRANT_REQUIRED");
         assertThat(outbox.listAfter(cursor, 10))
                 .extracting("type").containsExactlyInAnyOrder("voice.revoked", "network.revoked", "lease.revoked", "activity.changed");

@@ -76,7 +76,7 @@ class GroupGovernanceIntegrationTest {
             context.getBean(ActivityCoordinator.class).join(removed, room.id(), "removed-device", null, "join-governance");
             byte[] key = new byte[32];
             for (int index = 0; index < key.length; index++) key[index] = (byte)(index + 1);
-            var grant = context.getBean(GrantService.class).network(removed, activity.id(), Base64.getEncoder().encodeToString(key));
+            var grant = context.getBean(GrantService.class).network(removed, activity.id(), "removed-device", Base64.getEncoder().encodeToString(key));
             var invitation = groups.invite(removed, group.id(), outsider);
             var outbox = context.getBean(OutboxRepository.class);
             long removalCursor = outbox.latestSequence();

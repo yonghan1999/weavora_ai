@@ -57,7 +57,7 @@ class ChannelCapacityIntegrationTest {
             byte[] bytes = new byte[32];
             bytes[0] = 1;
             String firstKey = Base64.getEncoder().encodeToString(bytes);
-            Consumer<Member> voice = member -> grants.voice(member.user(), member.activity());
+            Consumer<Member> voice = member -> grants.voice(member.user(), member.activity(), member.device());
             voice.accept(incumbent);
             voice.accept(incumbent);
             boolean firstVoice = compete(workers, members, voice, "VOICE_CAPACITY_LIMITED");
@@ -66,19 +66,19 @@ class ChannelCapacityIntegrationTest {
             assertThat(sql.update("UPDATE activity_grants SET expires_at = NOW() WHERE user_id = ? AND kind = 'VOICE'", incumbent.user())).isEqualTo(3);
             var waitingVoice = members.get(firstVoice ? 1 : 0);
             assertThatThrownBy(() -> voice.accept(waitingVoice)).isInstanceOf(ApiException.class).extracting("code").isEqualTo("VOICE_CAPACITY_LIMITED");
-            var first = grants.network(incumbent.user(), incumbent.activity(), firstKey);
-            grants.network(incumbent.user(), incumbent.activity(), firstKey);
-            boolean firstAdmitted = compete(workers, members, member -> grants.network(member.user(), member.activity(), firstKey), "NETWORK_CAPACITY_LIMITED");
+            var first = grants.network(incumbent.user(), incumbent.activity(), incumbent.device(), firstKey);
+            grants.network(incumbent.user(), incumbent.activity(), incumbent.device(), firstKey);
+            boolean firstAdmitted = compete(workers, members, member -> grants.network(member.user(), member.activity(), member.device(), firstKey), "NETWORK_CAPACITY_LIMITED");
             var access = context.getBean(NetworkAccessService.class);
-            var overlap = grants.network(incumbent.user(), incumbent.activity(), firstKey);
+            var overlap = grants.network(incumbent.user(), incumbent.activity(), incumbent.device(), firstKey);
             assertThat(access.validate(first.networkTicket()).lease().id()).isEqualTo(overlap.leaseId());
             bytes[0] = 2;
-            var rotated = grants.network(incumbent.user(), incumbent.activity(), Base64.getEncoder().encodeToString(bytes));
+            var rotated = grants.network(incumbent.user(), incumbent.activity(), incumbent.device(), Base64.getEncoder().encodeToString(bytes));
             assertThat(access.validate(rotated.networkTicket()).lease().id()).isEqualTo(first.leaseId());
             var waiting = members.get(firstAdmitted ? 1 : 0);
             coordinator.leave(incumbent.user(), incumbent.activity(), incumbent.device(), incumbent.lease());
             voice.accept(waitingVoice);
-            assertThat(grants.network(waiting.user(), waiting.activity(), firstKey).grantId()).isNotBlank();
+            assertThat(grants.network(waiting.user(), waiting.activity(), waiting.device(), firstKey).grantId()).isNotBlank();
         }
     }
 

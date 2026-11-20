@@ -76,7 +76,7 @@ public final class FullRoomNetworkProbe {
             assertThat(publicData.size()).isEqualTo(12);
             var starts = new ArrayList<Map<String, Object>>();
             for (int index = 0; index < 12; index++) {
-                var grant = grants.network(users.get(index), activity, publicData.get(index).path("publicKey").asText());
+                var grant = grants.network(users.get(index), activity, joins.get(index).deviceId(), publicData.get(index).path("publicKey").asText());
                 peers.register(users.get(index), activity, grant.networkTicket(), mode != NetworkPolicyMode.RELAY_ONLY
                         ? publicData.get(index).path("endpoint").asText() : null);
                 var start = new HashMap<String, Object>();
@@ -112,7 +112,7 @@ public final class FullRoomNetworkProbe {
                 for (int index = 0; index < 12; index++) {
                     var joined = joins.get(index);
                     coordinator.heartbeat(users.get(index), joined.activityId(), joined.deviceId(), joined.leaseId(), joined.activityGeneration(), joined.memberGeneration());
-                    var grant = grants.network(users.get(index), activity, publicData.get(index).path("publicKey").asText());
+                    var grant = grants.network(users.get(index), activity, joins.get(index).deviceId(), publicData.get(index).path("publicKey").asText());
                     assertThat(grant.leaseId()).isEqualTo(starts.get(index).get("leaseId"));
                     assertThat(grant.virtualIpv4()).isEqualTo(starts.get(index).get("virtualIpv4"));
                     assertThat(grant.expiresAt()).isAfter(Instant.parse((String)starts.get(index).get("expiresAt")));

@@ -83,10 +83,10 @@ public class GrantService {
     }
 
     @Transactional
-    public VoiceGrantResponse voice(String userId, String activityId) {
+    public VoiceGrantResponse voice(String userId, String activityId, String deviceId) {
         lockMembership(userId, activityId);
         activities.lockUser(userId);
-        ActivityMember member = currentMember(userId, activityId);
+        ActivityMember member = currentMember(userId, activityId, deviceId);
         ConnectionLease lease = currentLease(member);
         if (!voiceGateway.isAvailable()) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "VOICE_CAPACITY_LIMITED", "语音服务尚未接入或不可用", true);
@@ -99,10 +99,10 @@ public class GrantService {
     }
 
     @Transactional
-    public NetworkGrantResponse network(String userId, String activityId, String publicKey) {
+    public NetworkGrantResponse network(String userId, String activityId, String deviceId, String publicKey) {
         lockMembership(userId, activityId);
         activities.lockUser(userId);
-        ActivityMember member = currentMember(userId, activityId);
+        ActivityMember member = currentMember(userId, activityId, deviceId);
         ConnectionLease lease = currentLease(member);
         if (publicKey == null || publicKey.isBlank()) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_FAILED", "必须提供本机 WireGuard 公钥", false);
@@ -147,10 +147,10 @@ public class GrantService {
         groups.requireMembership(groupId, userId);
     }
 
-    private ActivityMember currentMember(String userId, String activityId) {
+    private ActivityMember currentMember(String userId, String activityId, String deviceId) {
         identity.requireActive(userId);
         ActivityMember member = activities.findMember(activityId, userId).orElseThrow(this::grantUnavailable);
-        if (member.state() != MemberState.ACTIVE && member.state() != MemberState.GRACE) throw grantUnavailable();
+        if (!member.deviceId().equals(deviceId) || (member.state() != MemberState.ACTIVE && member.state() != MemberState.GRACE)) throw grantUnavailable();
         return member;
     }
 
@@ -161,7 +161,7 @@ public class GrantService {
 
     private ConnectionLease currentLease(ActivityMember member) {
         ConnectionLease lease = activities.findLatestLease(member.activityId(), member.userId()).orElseThrow(this::grantUnavailable);
-        if (lease.revokedAt() != null || !lease.memberGeneration().equals(member.memberGeneration())
+        if (lease.revokedAt() != null || !lease.deviceId().equals(member.deviceId()) || !lease.memberGeneration().equals(member.memberGeneration())
                 || !clock.instant().isBefore(lease.expiresAt())) throw grantUnavailable();
         return lease;
     }

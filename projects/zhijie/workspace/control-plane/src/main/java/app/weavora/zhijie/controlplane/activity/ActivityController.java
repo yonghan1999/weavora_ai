@@ -1,6 +1,9 @@
 package app.weavora.zhijie.controlplane.activity;
 
 import app.weavora.zhijie.controlplane.identity.IdentityService;
+import app.weavora.zhijie.controlplane.identity.AuthSession;
+import app.weavora.zhijie.controlplane.common.ApiException;
+import org.springframework.http.HttpStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -29,13 +32,15 @@ public class ActivityController {
 
     @PostMapping("/room-joins")
     public Map<String, JoinResult> join(@RequestHeader("Authorization") String auth, @Valid @RequestBody JoinBody body) {
-        return Map.of("data", activities.join(actor(auth), body.roomId(), body.deviceId(), body.password(), body.operationId()));
+        var session = deviceSession(auth, body.deviceId());
+        return Map.of("data", activities.join(session.userId(), body.roomId(), session.deviceId(), body.password(), body.operationId()));
     }
 
     @PostMapping("/activities/{activityId}/resume")
     public Map<String, JoinResult> resume(@RequestHeader("Authorization") String auth, @PathVariable String activityId,
                                           @Valid @RequestBody DeviceBody body) {
-        return Map.of("data", activities.resume(actor(auth), activityId, body.deviceId()));
+        var session = deviceSession(auth, body.deviceId());
+        return Map.of("data", activities.resume(session.userId(), activityId, session.deviceId()));
     }
 
     @PostMapping("/activities/{activityId}/leave")
@@ -49,7 +54,8 @@ public class ActivityController {
     @PostMapping("/activities/{activityId}/heartbeat")
     public Map<String, Object> heartbeat(@RequestHeader("Authorization") String auth, @PathVariable String activityId,
                                          @Valid @RequestBody HeartbeatBody body) {
-        activities.heartbeat(actor(auth), activityId, body.deviceId(), body.leaseId(), body.activityGeneration(), body.memberGeneration());
+        var session = deviceSession(auth, body.deviceId());
+        activities.heartbeat(session.userId(), activityId, session.deviceId(), body.leaseId(), body.activityGeneration(), body.memberGeneration());
         return Map.of("data", Map.of("renewed", true));
     }
 
@@ -59,6 +65,14 @@ public class ActivityController {
     }
 
     private String actor(String authorization) { return identity.authenticate(authorization).id(); }
+
+    private AuthSession deviceSession(String authorization, String deviceId) {
+        var session = identity.authenticateSession(authorization);
+        if (!session.deviceId().equals(deviceId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "CURRENT_GRANT_REQUIRED", "请求设备与登录会话不符", false);
+        }
+        return session;
+    }
 
     @PostMapping("/activities/{activityId}/members/{userId}/kick")
     public Map<String, Object> kick(@RequestHeader("Authorization") String auth, @PathVariable String activityId,

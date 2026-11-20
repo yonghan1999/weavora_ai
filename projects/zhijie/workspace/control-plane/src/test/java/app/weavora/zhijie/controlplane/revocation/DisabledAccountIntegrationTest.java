@@ -90,8 +90,8 @@ class DisabledAccountIntegrationTest {
             OwnerTransfer transfer = groups.initiateTransfer(owner, group.id(), disabled);
             byte[] key = new byte[32]; Arrays.fill(key, (byte) 3);
             var grants = context.getBean(GrantService.class);
-            var network = grants.network(disabled, activity.id(), Base64.getEncoder().encodeToString(key));
-            var voice = grants.voice(disabled, activity.id());
+            var network = grants.network(disabled, activity.id(), "disabled-device", Base64.getEncoder().encodeToString(key));
+            var voice = grants.voice(disabled, activity.id(), "disabled-device");
 
             // 凭据过期和普通离线不改变房主；只有明确失效进入清理候选。
             scheduler.reconcile();

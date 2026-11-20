@@ -97,8 +97,8 @@ class VoiceSignalingIntegrationTest {
             var coordinator = context.getBean(ActivityCoordinator.class);
             var joined = coordinator.join(userId, room.id(), "device", null, "join");
             var grants = context.getBean(GrantService.class);
-            var issued = grants.voice(userId, joined.activityId());
-            var retry = grants.voice(userId, joined.activityId());
+            var issued = grants.voice(userId, joined.activityId(), joined.deviceId());
+            var retry = grants.voice(userId, joined.activityId(), joined.deviceId());
             assertThat(retry.grantId()).isNotEqualTo(issued.grantId());
             assertThat(retry.leaseId()).isEqualTo(issued.leaseId());
             assertThat(issued.sfuUrl()).isEqualTo(signalingUrl);
@@ -117,7 +117,7 @@ class VoiceSignalingIntegrationTest {
                 var groups = context.getBean(GroupService.class);
                 groups.acceptInvitation(secondUser, groups.invite(userId, group.id(), secondUser).id());
                 var secondJoin = coordinator.join(secondUser, room.id(), "second-device", null, "second-join");
-                String secondToken = grants.voice(secondUser, secondJoin.activityId()).voiceToken();
+                String secondToken = grants.voice(secondUser, secondJoin.activityId(), secondJoin.deviceId()).voiceToken();
                 runMedia(directory, issued.sfuUrl(), token, secondToken,
                         adminToken(apiKey, apiSecret, joined.activityId()));
             }
@@ -128,14 +128,14 @@ class VoiceSignalingIntegrationTest {
                     .buildAsync(URI.create(entry.replace("http://", "ws://") + "/rtc?protocol=15"), new WebSocket.Listener() {})
                     .get(5, TimeUnit.SECONDS)).isInstanceOf(java.util.concurrent.ExecutionException.class);
             var rejoined = coordinator.join(userId, room.id(), "device", null, "rejoin");
-            String fresh = grants.voice(userId, rejoined.activityId()).voiceToken();
+            String fresh = grants.voice(userId, rejoined.activityId(), rejoined.deviceId()).voiceToken();
             assertThat(status(http, entry, token, false)).isEqualTo(403);
             assertThat(status(http, entry, fresh, false)).isEqualTo(200);
             assertThat(http.send(HttpRequest.newBuilder(URI.create(entry + "/twirp/livekit.RoomService/RemoveParticipant")).GET().build(), HttpResponse.BodyHandlers.discarding()).statusCode()).isEqualTo(404);
             if ("true".equals(System.getenv("ZHIJIE_TEST_VOICE_MEDIA"))) {
                 String secondUser = context.getBean(app.weavora.zhijie.controlplane.activity.ActivityRepository.class)
                         .listMembers(joined.activityId()).stream().filter(member -> !member.userId().equals(userId)).findFirst().orElseThrow().userId();
-                String secondToken = grants.voice(secondUser, joined.activityId()).voiceToken();
+                String secondToken = grants.voice(secondUser, joined.activityId(), "second-device").voiceToken();
                 var dispatcher = context.getBean(app.weavora.zhijie.controlplane.revocation.RevocationDispatcher.class);
                 dispatcher.dispatchPending();
                 runMedia(directory, entry.replace("http://", "ws://"), fresh, secondToken,
@@ -153,8 +153,8 @@ class VoiceSignalingIntegrationTest {
                 rooms.startActivity(userId, disabledRoom.id());
                 var disabledJoin = coordinator.join(userId, disabledRoom.id(), "disabled-a", null, "disabled-a");
                 coordinator.join(secondUser, disabledRoom.id(), "disabled-b", null, "disabled-b");
-                String disabledFirst = grants.voice(userId, disabledJoin.activityId()).voiceToken();
-                String disabledSecond = grants.voice(secondUser, disabledJoin.activityId()).voiceToken();
+                String disabledFirst = grants.voice(userId, disabledJoin.activityId(), disabledJoin.deviceId()).voiceToken();
+                String disabledSecond = grants.voice(secondUser, disabledJoin.activityId(), "disabled-b").voiceToken();
                 runMedia(directory, entry.replace("http://", "ws://"), disabledFirst, disabledSecond,
                         adminToken(apiKey, apiSecret, disabledJoin.activityId()), "disabled-account", () -> {
                             context.getBean(org.springframework.jdbc.core.JdbcTemplate.class)
@@ -255,7 +255,7 @@ class VoiceSignalingIntegrationTest {
         }
         var originalTokens = new java.util.ArrayList<String>();
         for (int index = 0; index < 12; index++) {
-            String token = grants.voice(users.get(index), joins.get(index).activityId()).voiceToken();
+            String token = grants.voice(users.get(index), joins.get(index).activityId(), joins.get(index).deviceId()).voiceToken();
             originalTokens.add(token);
             builder.environment().put("ZHIJIE_TEST_VOICE_TOKEN_" + index, token);
         }
@@ -283,7 +283,7 @@ class VoiceSignalingIntegrationTest {
                     var joined = joins.get(index);
                     coordinator.heartbeat(users.get(index), joined.activityId(), joined.deviceId(), joined.leaseId(),
                             joined.activityGeneration(), joined.memberGeneration());
-                    String refreshed = grants.voice(users.get(index), joined.activityId()).voiceToken();
+                    String refreshed = grants.voice(users.get(index), joined.activityId(), joined.deviceId()).voiceToken();
                     assertThat(status(http, entry, refreshed, false)).isEqualTo(200);
                 }
                 renewals++;

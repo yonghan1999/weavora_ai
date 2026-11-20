@@ -21,9 +21,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 class RoomGovernanceIntegrationTest {
     @Test
-    void delayedLeaveOnlyReleasesTheMatchingDeviceLease() throws Exception {
+    void onlyTheCurrentDeviceCanRecoverRenewObtainGrantsOrReleaseItsLease() throws Exception {
         try (var postgres = EmbeddedPostgres.start(); var context = new SpringApplication(ControlPlaneApplication.class).run(
                 "--server.address=127.0.0.1", "--server.port=0", "--zhijie.scheduling.enabled=false",
+                "--zhijie.voice.enabled=true", "--zhijie.voice.url=ws://127.0.0.1:7881",
+                "--zhijie.voice.api-key=fixture", "--zhijie.voice.api-secret=" + UUID.randomUUID(),
                 "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
                 "--spring.datasource.username=postgres", "--spring.datasource.password=")) {
             String user = UUID.randomUUID().toString(), password = UUID.randomUUID().toString(), email = "leave@example.test";
@@ -45,6 +47,23 @@ class RoomGovernanceIntegrationTest {
             var http = HttpClient.newHttpClient();
             String oldLease = json.writeValueAsString(Map.of("leaseId", original.leaseId()));
             String newLease = json.writeValueAsString(Map.of("leaseId", replacement.leaseId()));
+            String prefix = "/activities/" + activity.id();
+            String otherDevice = json.writeValueAsString(Map.of("deviceId", replacement.deviceId()));
+            String heartbeat = json.writeValueAsString(Map.of("deviceId", replacement.deviceId(), "leaseId", replacement.leaseId(),
+                    "activityGeneration", replacement.activityGeneration(), "memberGeneration", replacement.memberGeneration()));
+            String network = json.writeValueAsString(Map.of("publicKey", "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA="));
+            String join = json.writeValueAsString(Map.of("roomId", room.id(), "deviceId", replacement.deviceId(), "operationId", "join"));
+            for (var operation : Map.of("/room-joins", join, prefix + "/resume", otherDevice, prefix + "/heartbeat", heartbeat,
+                    prefix + "/network-grants", network, prefix + "/voice-grants", "{}").entrySet()) {
+                var denied = send(http, entry, "POST", operation.getKey(), first, operation.getValue());
+                assertThat(denied.statusCode()).as(operation.getKey()).isEqualTo(403);
+                assertThat(json.readTree(denied.body()).at("/error/code").asText()).isEqualTo("CURRENT_GRANT_REQUIRED");
+                var allowed = send(http, entry, "POST", operation.getKey(), second, operation.getValue());
+                assertThat(allowed.statusCode()).as(operation.getKey()).isEqualTo(200);
+                var data = json.readTree(allowed.body()).get("data");
+                if (operation.getKey().endsWith("/heartbeat")) assertThat(data.get("renewed").booleanValue()).isTrue();
+                else assertThat(data.get("leaseId").asText()).isEqualTo(replacement.leaseId());
+            }
             var missing = send(http, entry, "POST", path, second, "{}");
             assertThat(missing.statusCode()).isEqualTo(422);
             assertThat(missing.body()).contains("VALIDATION_FAILED");
@@ -87,7 +106,7 @@ class RoomGovernanceIntegrationTest {
             for (int index = 0; index < 7; index++) {
                 String id = UUID.randomUUID().toString(), email = "room-governance-" + index + "@example.test";
                 identities.insertUser(new UserAccount(id, email, AccountStatus.ACTIVE, hash, Instant.now()));
-                users.add(id); tokens.add(identity.login(email, "integration-password-123", "room-governance-device").accessToken());
+                users.add(id); tokens.add(identity.login(email, "integration-password-123", "device-" + id).accessToken());
             }
             String owner = users.get(0), admin = users.get(1), peerAdmin = users.get(2), host = users.get(3), member = users.get(4), other = users.get(5), outsider = users.get(6);
             Group group = groups.createGroup(owner, "房间治理", null, "");
@@ -119,7 +138,7 @@ class RoomGovernanceIntegrationTest {
             assertThat(send(http, entry, "POST", "/activities/" + activity.id() + "/members/" + host + "/kick", tokens.get(3), "{\"memberGeneration\":1}").statusCode()).isEqualTo(403);
             assertThat(send(http, entry, "POST", memberKick, tokens.get(0), "{\"memberGeneration\":0}").statusCode()).isEqualTo(422);
             byte[] key = new byte[32]; Arrays.fill(key, (byte) 7);
-            var grant = context.getBean(GrantService.class).network(member, activity.id(), Base64.getEncoder().encodeToString(key));
+            var grant = context.getBean(GrantService.class).network(member, activity.id(), joined.get(4).deviceId(), Base64.getEncoder().encodeToString(key));
             assertThat(send(http, entry, "POST", memberKick, tokens.get(3), generation).statusCode()).isEqualTo(200);
             assertThat(activities.findMember(activity.id(), member).orElseThrow().state()).isEqualTo(MemberState.REVOKED);
             assertThat(activities.findLatestLease(activity.id(), member).orElseThrow().revokedAt()).isNotNull();
@@ -174,7 +193,7 @@ class RoomGovernanceIntegrationTest {
                     var joining = executor.submit(() -> {
                         endingStart.await();
                         return send(http, entry, "POST", "/room-joins", tokens.get(3),
-                                json.writeValueAsString(Map.of("roomId", raceRoom.id(), "deviceId", "ending-race-device", "operationId", "ending-race")));
+                                json.writeValueAsString(Map.of("roomId", raceRoom.id(), "deviceId", "device-" + host, "operationId", "ending-race")));
                     });
                     endingStart.countDown();
                     assertThat(ending.get(10, TimeUnit.SECONDS)).isTrue();

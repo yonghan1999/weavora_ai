@@ -47,7 +47,7 @@ class GroupDissolutionIntegrationTest {
             for (int index = 0; index < 5; index++) {
                 String id = UUID.randomUUID().toString(), email = "dissolution-" + index + "@example.test";
                 identities.insertUser(new UserAccount(id, email, AccountStatus.ACTIVE, hash, Instant.now()));
-                users.add(id); tokens.add(identity.login(email, "dissolution-password-123", "test-device").accessToken());
+                users.add(id); tokens.add(identity.login(email, "dissolution-password-123", List.of("owner-device", "admin-device", "member-device", "outside-device", "invitee-device").get(index)).accessToken());
             }
             String owner = users.get(0), admin = users.get(1), member = users.get(2), outsider = users.get(3), invitee = users.get(4);
             Group group = groups.createGroup(owner, "解散群", null, "");
@@ -64,8 +64,8 @@ class GroupDissolutionIntegrationTest {
             coordinator.disconnect(member, first.id(), "member-device");
             byte[] key = new byte[32]; Arrays.fill(key, (byte) 7);
             String publicKey = Base64.getEncoder().encodeToString(key);
-            var network = grants.network(member, first.id(), publicKey);
-            var voice = grants.voice(member, first.id());
+            var network = grants.network(member, first.id(), memberJoin.deviceId(), publicKey);
+            var voice = grants.voice(member, first.id(), memberJoin.deviceId());
             context.getBean(NetworkAccessService.class).validate(network.networkTicket());
             context.getBean(VoiceAccessValidator.class).validate(voice.voiceToken());
 
@@ -73,7 +73,7 @@ class GroupDissolutionIntegrationTest {
             Room unaffectedRoom = rooms.createRoom(outsider, unaffected.id(), "保留房", "", "", null);
             Activity unaffectedActivity = rooms.startActivity(outsider, unaffectedRoom.id());
             coordinator.join(outsider, unaffectedRoom.id(), "outside-device", null, "outside-join");
-            var unaffectedNetwork = grants.network(outsider, unaffectedActivity.id(), publicKey);
+            var unaffectedNetwork = grants.network(outsider, unaffectedActivity.id(), "outside-device", publicKey);
             String entry = "http://127.0.0.1:" + ((ServletWebServerApplicationContext) context).getWebServer().getPort();
             var http = HttpClient.newHttpClient();
             String dissolvePath = "/groups/" + group.id() + "/dissolve";
@@ -147,7 +147,7 @@ class GroupDissolutionIntegrationTest {
                     coordinator.join(member, room.id(), "before-device", null, "before-join");
                     var start = new CountDownLatch(1);
                     var dissolving = executor.submit(() -> { start.await(); groups.dissolveGroup(owner, race.id()); return true; });
-                    var joining = executor.submit(() -> { start.await(); return send(http, entry, "POST", "/room-joins", tokens.get(2), json.writeValueAsString(Map.of("roomId", room.id(), "deviceId", "after-device", "operationId", "after-join"))).statusCode(); });
+                    var joining = executor.submit(() -> { start.await(); return send(http, entry, "POST", "/room-joins", tokens.get(2), json.writeValueAsString(Map.of("roomId", room.id(), "deviceId", "member-device", "operationId", "after-join"))).statusCode(); });
                     start.countDown();
                     assertThat(dissolving.get(10, TimeUnit.SECONDS)).isTrue();
                     assertThat(joining.get(10, TimeUnit.SECONDS)).isIn(200, 404);
