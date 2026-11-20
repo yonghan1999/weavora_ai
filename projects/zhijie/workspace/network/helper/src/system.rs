@@ -485,12 +485,11 @@ async fn run_data_plane(
     let mut authorization: Option<AuthorityCheck> = None;
     let mut peer_reply: Option<mpsc::Sender<Result<(), String>>> = None;
     let mut renewal: Option<PendingRenewal> = None;
-    let mut relay = if !request.allowed_paths.contains(&NetworkPath::Direct) {
+    if !request.allowed_paths.contains(&NetworkPath::Direct) {
         router.set_path(NetworkPath::Relay);
-        Some(connect_relay(&relay_config, &request.ticket).await?)
-    } else {
-        None
-    };
+        relay_config.as_ref().map_err(Clone::clone)?;
+    }
+    let mut relay: Option<RelayClient> = None;
     let mut relay_retry_at = tokio::time::Instant::now();
     let mut relay_connect: Option<
         std::pin::Pin<Box<dyn Future<Output = Result<RelayClient, String>> + Send>>,
@@ -514,6 +513,8 @@ async fn run_data_plane(
             }
             return Err("CONTROL_PLANE_UNAVAILABLE".into());
         }
+        let transport_ready =
+            request.allowed_paths.contains(&NetworkPath::Direct) || relay.is_some();
         let actions = tokio::select! {
             command = commands.recv() => match command {
                 Some(Command::Renew(updated, reply)) => {
@@ -615,7 +616,7 @@ async fn run_data_plane(
                     // 重连与 TUN/UDP 并行推进，TLS 超时不能阻塞有效直连。
                     relay_connect = Some(Box::pin(async move { connect_relay(&config, &ticket).await }));
                 }
-                router.tick()
+                if transport_ready { router.tick() } else { Vec::new() }
             },
             result = async {
                 match relay_connect.as_mut() {
@@ -641,7 +642,7 @@ async fn run_data_plane(
                 }
                 continue;
             },
-            received = device.recv(&mut tunnel_buffer) => {
+            received = device.recv(&mut tunnel_buffer), if transport_ready => {
                 let length = received.map_err(|_| "TUN_READ_FAILED")?;
                 router.outbound(&tunnel_buffer[..length])
             },

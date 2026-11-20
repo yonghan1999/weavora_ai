@@ -2,6 +2,9 @@ use super::*;
 use boringtun::x25519::PublicKey;
 use std::io::{Read, Write};
 
+#[path = "relay_startup_tests.rs"]
+mod relay_startup;
+
 struct InputTunnel {
     input: tokio::sync::Mutex<tokio::sync::mpsc::UnboundedReceiver<Vec<u8>>>,
     released: Arc<AtomicBool>,
@@ -182,7 +185,24 @@ async fn fixture() -> Fixture {
 }
 
 async fn fixture_with_deadline(valid_for: Duration, include_peer: bool) -> Fixture {
-    let expiry = OffsetDateTime::now_utc() + time::Duration::seconds(30);
+    fixture_with_policy(
+        valid_for,
+        Duration::from_secs(30),
+        include_peer,
+        vec![NetworkPath::Direct],
+        Err("RELAY_PATH_UNAVAILABLE".into()),
+    )
+    .await
+}
+
+async fn fixture_with_policy(
+    valid_for: Duration,
+    ticket_for: Duration,
+    include_peer: bool,
+    allowed_paths: Vec<NetworkPath>,
+    relay_config: Result<RelayConfig, String>,
+) -> Fixture {
+    let expiry = OffsetDateTime::now_utc() + time::Duration::try_from(ticket_for).unwrap();
     let request = NetworkStart {
         protocol_version: 1,
         request_id: "responsiveness".into(),
@@ -193,7 +213,7 @@ async fn fixture_with_deadline(valid_for: Duration, include_peer: bool) -> Fixtu
         device_id: "device".into(),
         lease_id: "lease".into(),
         policy_revision: 1,
-        allowed_paths: vec![NetworkPath::Direct],
+        allowed_paths,
         private_key: base64::engine::general_purpose::STANDARD.encode([1; 32]),
         virtual_ipv4: "10.231.0.1".into(),
         activity_cidr: "10.231.0.0/27".into(),
@@ -237,7 +257,7 @@ async fn fixture_with_deadline(valid_for: Duration, include_peer: bool) -> Fixtu
         request.clone(),
         Arc::new(AtomicBool::new(false)),
         Arc::new(AtomicU8::new(0)),
-        Err("RELAY_PATH_UNAVAILABLE".into()),
+        relay_config,
     )));
     Fixture {
         server,
