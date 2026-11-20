@@ -2,6 +2,24 @@
 
 ## 当前本机试用（不安装）
 
+最新整包：`target/trial-kit-8da8814/zhijie-windows-x64-trial.zip`（93,078,936 字节，SHA-256：`3abd8fe20686ae595f45228844e55ce050b28ccb4386a2d9af6bfc825c8135c6`）。桌面与 Helper 从已推送 `8da8814` 干净归档实际构建，包含 `5f37ddd` 强制中继首次连接并行修复。首次 QUIC 等待与 Stop、每秒 HTTP 验权、票据/授权快照截止并行；中继未就绪时不提前消耗 TUN 输入或推进握手，避免丢失首包而等待重试。缺配置仍立即失败，Relay-only 不旁路直连，三秒连接超时保持。
+
+没有新增依赖、迁移或默认外部服务开关。已核对后端生产源码、Maven 输入、配套启动脚本与后端打包入口未变化；控制面测试新增不进入后端运行包。因此直接复用 `target/trial-kit-d9a9dfe/preview-backend.zip`（83,839,806 字节，SHA-256：`f953073bd2606beac6532ab217adf9558a0d61ab47acf980aaaa945557d1b653`），不重复复制或编译后端，数据库仍为 V16。
+
+干净归档的优化版 Helper 单测 69 通过、4 个专用子进程入口忽略；13 项界面单测、实际桌面构建和 NSIS 打包通过。证据位于 `target/windows-relay-startup-8da8814/`：`helper-release-tests.log`、`ui-unit.log`、`desktop-release.log`、`payload.json`。未签名安装器为 `target/trial-8da8814/织界_0.1.0_x64-setup.exe`（12,093,663 字节，SHA-256：`ff9860e56892aba1e910c8e52e33f0988f8b52dd6dc804dc042e4560adab4d3b`）。本轮没有运行桌面、生产 Helper 入口或安装器。
+
+八个产品文件与同次构建输入及便携副本逐项核对。桌面 SHA-256 为 `70ca542d3e7ac7b084f627381889e4b6c6661deb9da9e15249812e874ac8b651`，Helper 为 `5ab71d304b3b53162da0b2df73c5e7d1e29d8d4c70fa779d36ecbaed640de6c2`，便携清单为 `8f337ab2ec814e8b0ee5aa22cd07154a318cbceffe4a7a2c1a8c178ad33cbd8c`。`target/trial-kit-8da8814/comparison.log` 确认 1,324 个归档源码文件未被构建改写、348 个整包条目仅桌面/Helper/清单变化、336 个后端条目与复用 ZIP 完全一致，其余依赖、驱动、脚本、许可和资源不变。
+
+六项打包单测、从新桌面二进制提取的 10 份界面文件及 170 项无头浏览器检查通过；内嵌界面与 `0ce6df5` 字节一致、无脚本错误。日志位于 `target/trial-kit-8da8814/`：`backend-unit.log`、`kit-unit.log`、`embedded-binary.log`、`embedded-browser.json`。新整包在 D 盘一次性目录实际完成登录、消息、重启、1,112 文件冷备恢复和旧设备资格拒绝，见 `relocation.log`。复用后端另行通过同版重启、两种同步认证、房间重开和普通日志/管理记录秘密扫描，见 `backend-lifecycle.log`。本轮未重复执行旧库升级/回退，历史记录不冒充新执行。
+
+源码层 127 项 Rust 回归、真实控制面三种十二端/五轮续票及持续旧端发送、接收端控制面失联隔离通过，见 `docs/engineering/network-relay-startup-responsiveness.md`、`docs/engineering/network-hostile-peer-isolation.md`。源码和制品测试范围分别记载，不把源码成功冒充安装后运行验收。
+
+所有验证进程结束后检查 D 盘绝对路径、逐级重解析点和进程引用，仅清理本轮构建源码副本及临时目录共 25,311,291 字节，见 `target/windows-relay-startup-8da8814/cleanup-build.log`。保留源码 ZIP、提取界面、制品、证据和共享缓存；清理后 C/D 可用约 10.15/39.37 GiB。
+
+所有构建缓存、临时目录和制品位于 D 盘，复用已有工具链及本地 NSIS 缓存，没有自动下载到 C 盘。核对整包摘要后解压到 D 盘全新目录，按包内 `README.md` 启动，不覆盖既有用户目录、数据库或混用版本。独立 Relay、证书和管理配置不在 ZIP 内，主动撤销默认关闭，邮件与外部语音不会自动启用。本轮不是原生窗口、实际音频、管理员 TUN、跨机游戏、完整五秒 SLA、三平台安装签名、目标容量、许可人工审核或正式 F/G/H/I 验收；正式阶段仍 E。
+
+## 上一版本试用（0ce6df5）
+
 最新整包：`target/trial-kit-0ce6df5/zhijie-windows-x64-trial.zip`（93,078,848 字节，SHA-256：`310f9c998f2061934750b81dbab8851b78138bbbf7b24c903b1971e158b80581`）。桌面和 Helper 从已推送 `0ce6df5` 干净归档构建；后端复用已验证 `d9a9dfe` 的原始 ZIP，未重复复制或构建。构建前已核对控制面、Maven 输入、配套启动脚本和后端打包入口无源码变化，后端摘要仍为 `f953073bd2606beac6532ab217adf9558a0d61ab47acf980aaaa945557d1b653`。
 
 Helper 将 HTTP 权威轮询及续票与数据转发并行推进，避免慢响应暂停整个数据泵。已验证快照的硬截止从请求建立时起最多三秒，原票据和 Peer 到期继续约束；当前票据明确失权立即停止，成功续票丢弃旧票在途结果。不是无限离线缓存，也不承诺整个 IPC Stop 调用达到数据泵单测的响应时限。缺陷复现、119 项原生回归及真实控制面三种十二端测试见 `docs/engineering/network-authority-responsiveness.md`。无新依赖、迁移或默认外部服务变化，数据库仍为 V16。

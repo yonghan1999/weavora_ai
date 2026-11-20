@@ -42,7 +42,7 @@
 
 同机受控 TunnelDevice、真实 UDP/QUIC、数据库与 HTTP 组合不是跨机真实 TUN、NAT、游戏、弱网、目标容量或端到端失权时限验收。主动 Peer 撤销及失联边界、人工语音、三平台安装更新卸载与签名、许可人工审核和正式流程继续开放。
 
-现有 `target/trial-kit-0ce6df5/zhijie-windows-x64-trial.zip` 不包含本次修复。未重建、安装或启动新的原生桌面制品，不将源码回归冒充试用包验证。
+原 `target/trial-kit-0ce6df5/zhijie-windows-x64-trial.zip` 不包含本次修复。后续已从 `8da8814` 干净归档实际重建桌面/Helper，优化版 Helper 69 项单测通过，成套内容与 170 项提取界面检查通过，并完成新整包登录、重启、冷备恢复与设备资格回归。新入口为 `target/trial-kit-8da8814/zhijie-windows-x64-trial.zip`，SHA-256：`3abd8fe20686ae595f45228844e55ce050b28ccb4386a2d9af6bfc825c8135c6`；见 `packaging/windows/candidate-build.md`。没有安装或启动原生桌面，不将这些制品检查当作本节未完成验收。
 
 ## 原则应用
 

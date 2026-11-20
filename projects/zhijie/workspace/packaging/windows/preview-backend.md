@@ -1,5 +1,11 @@
 # Windows 本机试用后端（离线包）
 
+当前配套整包已更新为 `8da8814`，见[本机试用入口](candidate-build.md)。本轮将 `5f37ddd` 首次中继连接并行修复实际纳入桌面/Helper；后端生产源码、Maven 输入、启动及打包入口无变化，测试源码变化不属于运行制品。继续直接使用 `target/trial-kit-d9a9dfe/preview-backend.zip`，大小 83,839,806 字节、SHA-256 `f953073bd2606beac6532ab217adf9558a0d61ab47acf980aaaa945557d1b653`，没有生成重复副本。新整包内 336 个后端条目逐一相同。
+
+新整包的登录、消息、重启、1,112 文件冷备恢复和设备资格回归见 `target/trial-kit-8da8814/relocation.log`；复用后端的同版重启、两种同步认证、房间重开及普通日志/管理记录秘密扫描见同目录 `backend-lifecycle.log`，均通过。旧库升级/回退未在本轮重跑；依赖、V16 与默认外部服务开关不变。成套使用新包，不能仅换后端获得 Helper 修复。独立 Relay 仍不包含在 ZIP 内，完整实机、签名、容量、许可及正式验收缺口不变。
+
+## 0ce6df5 配套验证记录
+
 当前配套整包已更新为 `0ce6df5`，见[本机试用入口](candidate-build.md)。本次只重建桌面和 Helper，将有界并行验权修复纳入产品；后端仍直接使用 `target/trial-kit-d9a9dfe/preview-backend.zip`（83,839,806 字节，SHA-256：`f953073bd2606beac6532ab217adf9558a0d61ab47acf980aaaa945557d1b653`），没有生成重复后端副本。已核对相关后端源码无变更，并逐条确认新整包 336 个后端条目与原 ZIP 相同。
 
 新版整包的实际登录、消息、停库重启、1,112 文件冷备恢复及设备资格检查通过，见 `target/trial-kit-0ce6df5/relocation.log`；本轮对复用后端重新执行同版生命周期、两种同步认证、房间重开和普通日志/管理记录隐私检查通过，见同目录 `backend-lifecycle.log`。旧库升级/回退没有在本轮重跑，以下历史记录保留其原执行语境。只换后端不会更新旧 Helper，须成套使用新整包。
