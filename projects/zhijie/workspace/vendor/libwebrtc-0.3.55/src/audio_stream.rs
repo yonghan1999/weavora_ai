@@ -29,6 +29,14 @@ pub mod native {
 
     const DEFAULT_QUEUE_SIZE_FRAMES: usize = 10;
 
+    #[cfg(feature = "audio-stream-stats")]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+    pub struct NativeAudioStreamStats {
+        pub received_frames: u64,
+        pub received_samples: u64,
+        pub dropped_frames: u64,
+    }
+
     #[derive(Clone, Debug, Default)]
     pub struct NativeAudioStreamOptions {
         /// Maximum number of queued WebRTC sink frames after the audio callback.
@@ -92,6 +100,11 @@ pub mod native {
 
         pub fn close(&mut self) {
             self.handle.close()
+        }
+
+        #[cfg(feature = "audio-stream-stats")]
+        pub fn stats(&self) -> NativeAudioStreamStats {
+            self.handle.stats()
         }
     }
 

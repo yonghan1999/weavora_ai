@@ -1400,7 +1400,7 @@
       "version": "0.3.55",
       "license": "Apache-2.0",
       "source": "vendor/libwebrtc-0.3.55",
-      "localModifications": "native audio track playout volume bindings; structured remove_track status; dedicated local output probe without capture or media publication",
+      "localModifications": "native audio track playout volume bindings; structured remove_track status; dedicated local output probe without capture or media publication; optional native audio stream callback and overflow counters for diagnostics",
       "licenseFile": "vendor/LICENSE-APACHE-2.0",
       "noticeFile": "vendor/webrtc-sys-0.3.52/NOTICE.md"
     },

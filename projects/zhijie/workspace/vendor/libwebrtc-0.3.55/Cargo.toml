@@ -30,6 +30,7 @@ mode = "powerset"
 
 [features]
 default = []
+audio-stream-stats = []
 glib-main-loop = ["dep:glib"]
 
 [lib]

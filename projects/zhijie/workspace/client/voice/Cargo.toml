@@ -14,6 +14,7 @@ tokio-stream = "0.1.17"
 cc = "1.2.44"
 
 [dev-dependencies]
+libwebrtc = { version = "0.3.55", features = ["audio-stream-stats"] }
 reqwest = { version = "0.12.24", default-features = false, features = ["json", "rustls-tls"] }
 
 [lib]

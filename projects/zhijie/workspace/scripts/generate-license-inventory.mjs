@@ -43,7 +43,8 @@ const dependencies = metadata.packages.filter(item => !patched.has(item.name)).m
 for (const [name, version] of [["libwebrtc", "0.3.55"], ["webrtc-sys", "0.3.52"]]) {
   const path = `vendor/${name}-${version}`;
   dependencies.push({ecosystem: "cargo", name, version, license: "Apache-2.0",
-    source: path, localModifications: "native audio track playout volume bindings; structured remove_track status; dedicated local output probe without capture or media publication",
+    source: path, localModifications: "native audio track playout volume bindings; structured remove_track status; dedicated local output probe without capture or media publication"
+      + (name === "libwebrtc" ? "; optional native audio stream callback and overflow counters for diagnostics" : ""),
     licenseFile: "vendor/LICENSE-APACHE-2.0", noticeFile: "vendor/webrtc-sys-0.3.52/NOTICE.md"});
 }
 

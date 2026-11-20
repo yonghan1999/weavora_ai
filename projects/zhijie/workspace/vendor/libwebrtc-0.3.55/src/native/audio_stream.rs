@@ -61,6 +61,15 @@ impl NativeAudioStream {
         self.audio_track.clone()
     }
 
+    #[cfg(feature = "audio-stream-stats")]
+    pub fn stats(&self) -> crate::audio_stream::native::NativeAudioStreamStats {
+        crate::audio_stream::native::NativeAudioStreamStats {
+            received_frames: self.frame_queue.received_frames.load(Ordering::Relaxed),
+            received_samples: self.frame_queue.received_samples.load(Ordering::Relaxed),
+            dropped_frames: self.frame_queue.dropped_frames.load(Ordering::Relaxed),
+        }
+    }
+
     pub fn close(&mut self) {
         let audio = unsafe { sys_at::ffi::media_to_audio(self.audio_track.sys_handle()) };
         audio.remove_sink(&self.native_sink);
@@ -89,6 +98,11 @@ pub struct AudioTrackObserver {
 
 impl sys_at::AudioSink for AudioTrackObserver {
     fn on_data(&self, data: &[i16], sample_rate: i32, nb_channels: usize, nb_frames: usize) {
+        #[cfg(feature = "audio-stream-stats")]
+        {
+            self.frame_queue.received_frames.fetch_add(1, Ordering::Relaxed);
+            self.frame_queue.received_samples.fetch_add(nb_frames as u64, Ordering::Relaxed);
+        }
         self.frame_queue.push(AudioFrame {
             data: data.to_owned().into(),
             sample_rate: sample_rate as u32,
@@ -102,6 +116,10 @@ struct AudioFrameQueue {
     kind: AudioFrameQueueKind,
     closed: AtomicBool,
     dropped_frames: AtomicU64,
+    #[cfg(feature = "audio-stream-stats")]
+    received_frames: AtomicU64,
+    #[cfg(feature = "audio-stream-stats")]
+    received_samples: AtomicU64,
     waker: Mutex<Option<Waker>>,
 }
 
@@ -138,6 +156,10 @@ impl AudioFrameQueue {
             kind,
             closed: AtomicBool::new(false),
             dropped_frames: AtomicU64::new(0),
+            #[cfg(feature = "audio-stream-stats")]
+            received_frames: AtomicU64::new(0),
+            #[cfg(feature = "audio-stream-stats")]
+            received_samples: AtomicU64::new(0),
             waker: Mutex::new(None),
         }
     }
