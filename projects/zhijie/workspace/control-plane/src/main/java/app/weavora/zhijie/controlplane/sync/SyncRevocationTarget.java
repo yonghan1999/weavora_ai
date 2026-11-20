@@ -15,7 +15,6 @@ public class SyncRevocationTarget {
     }
 
     public void deliver(OutboxEvent event) {
-        sync.broadcast(event);
         if (event.type().endsWith(".revoked")) {
             try {
                 JsonNode payload = objectMapper.readTree(event.payload());
@@ -24,5 +23,6 @@ public class SyncRevocationTarget {
                 throw new IllegalStateException("Invalid revocation payload", exception);
             }
         }
+        sync.broadcast(event);
     }
 }
