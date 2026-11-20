@@ -18,6 +18,10 @@ const desktopEntry = readFileSync(resolve("desktop/shell", linux.bundle.linux.de
 for (const line of ["[Desktop Entry]", "Type=Application", `Name[zh_CN]=${tauri.productName}`, "Exec={{exec}}", "Icon={{icon}}", "Terminal=false"]) {
   assert.ok(desktopEntry.split(/\r?\n/).includes(line), `Missing Linux desktop entry: ${line}`);
 }
+const python = process.platform === "win32" ? "python" : "python3";
+const linuxDeb = spawnSync(python, ["-B", "packaging/linux/test_check_deb.py", "-v"], {encoding: "utf8"});
+assert.equal(linuxDeb.status, 0, linuxDeb.error?.message ?? linuxDeb.stderr);
+process.stdout.write(linuxDeb.stderr);
 
 const windows = JSON.parse(readFileSync("desktop/shell/tauri.windows.conf.json", "utf8"));
 assert.deepEqual(windows.bundle.targets, ["nsis"]);
@@ -32,7 +36,7 @@ assert.deepEqual(windows.bundle.resources, {
   "../../target/windows-bundle/wintun.h": "wintun.h",
   "../../target/windows-bundle/wintun-source.json": "wintun-source.json",
 });
-const macAudio = spawnSync(process.platform === "win32" ? "python" : "python3", ["-B", "packaging/macos/check-audio-bundle.py"], {encoding: "utf8"});
+const macAudio = spawnSync(python, ["-B", "packaging/macos/check-audio-bundle.py"], {encoding: "utf8"});
 assert.equal(macAudio.status, 0, macAudio.error?.message ?? macAudio.stderr);
 const preview = JSON.parse(readFileSync("packaging/windows/preview.conf.json", "utf8"));
 assert.equal(preview.bundle.resources, undefined, "Preview resources must derive from the Windows configuration");
