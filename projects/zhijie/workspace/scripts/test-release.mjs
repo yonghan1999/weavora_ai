@@ -38,6 +38,9 @@ assert.deepEqual(windows.bundle.resources, {
 });
 const macAudio = spawnSync(python, ["-B", "packaging/macos/check-audio-bundle.py"], {encoding: "utf8"});
 assert.equal(macAudio.status, 0, macAudio.error?.message ?? macAudio.stderr);
+const macBundle = spawnSync(python, ["-B", "packaging/macos/test_audio_bundle.py", "-v"], {encoding: "utf8"});
+assert.equal(macBundle.status, 0, macBundle.error?.message ?? macBundle.stderr);
+process.stdout.write(macBundle.stderr);
 const preview = JSON.parse(readFileSync("packaging/windows/preview.conf.json", "utf8"));
 assert.equal(preview.bundle.resources, undefined, "Preview resources must derive from the Windows configuration");
 assert.equal(preview.bundle.windows.nsis.installMode, "currentUser");
