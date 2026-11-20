@@ -28,3 +28,17 @@
 `regression.log` 百账号运行期间仍有十一条 `Sync delivery failed: category=IllegalStateException`，包括续期场景业务期间及结束清理附近。客户端零同步错误不足以解释这些服务端告警；新注销缺陷的修复不关闭历史握手、429 或发送异常根因。Handler 检查另外刻意注入的 `Sync setup failed` 单独区分。
 
 以上只证明已复现注销竞态及相关开发回归，不证明目标二核/2 GB/5 Mbit/s 一小时容量、原生桌面、真实 TUN、跨机、多平台或完整撤销验收。邮件保持默认关闭，用户搁置的音频问题继续保留。正式 E_IMPLEMENTATION/in_progress、TASK-019～023 和 F/G/H/I 不变。
+
+## 配套试用制品
+
+修复提交 `6523e6a` 后，以该提交 Git 归档独立离线编译，不使用历史未提交业务代码。`target/trial-kit-6523e6a/backend-build.log` 构建通过；`comparison-final.log` 确认 328 项后端及 340 项整包均只有 `SyncService.class`、`SyncService$Connection.class` 改变，并与本次编译输入逐字节匹配。初次比较脚本只预期一个类变化而失败，保留 `comparison.log`；补全两个实际变化类的范围后，两类以外均一致。`inner-class-check.log` 另用 JDK `javap -c -p` 核对新旧 `Connection` 方法字节码及签名完全相同；不将内部类的二进制变化误述为另一次行为修改。
+
+- `target/trial-kit-6523e6a/preview-backend.zip`：83,810,691 字节，SHA-256 `25872de81f96c1fa1399f3964f4de733eb39f3dccd887ef68da40151552038dd`。
+- `target/trial-kit-6523e6a/zhijie-windows-x64-trial.zip`：93,048,747 字节，SHA-256 `90ccd1b35fcebc25647248fe3c204daeab99b8021230d0bc341b15608c1a122d`；桌面继续配套 `399db61`。
+- `backend-lifecycle.log`：实际包独立登录、消息读取、停库重启、两种同步认证、房间房外重开和服务日志/管理记录秘密扫描通过。
+- `relocation.log`：整包首次启动、重启、1,110 文件停库冷备恢复后原账号/消息核验，以及双设备接管、旧设备语音/网络拒签、当前设备获票及按租约退房通过。
+- `pack-backend-unit-final.log` 四项、`pack-kit-unit-final.log` 两项通过。首次误用下划线测试文件名，两命令均未执行测试，失败记录仍在不带 `-final` 的日志中；按实际文件名重跑通过，不改产品绕过。
+
+没有启动原生桌面、安装器或 Helper，未创建真实 TUN，未替换用户已有试用目录。打包继续使用既有白名单生成器和测试入口，只更新候选输入及说明（KISS、DRY、YAGNI），不将该未签名本机包称为正式发布或完成验收。
+
+候选索引更新后 `release-final.log` 再次通过，真实 macOS 签名项仍明确跳过。测试数据库由各自入口正常停止并清理；解析绝对路径核对后，另清理本轮同步测试临时目录 102,442,169 字节、打包临时目录 130,522 字节、已归档的展开源码 1,105,427 字节，共 103,678,118 字节。保留 Git 源码 ZIP、字节码对照、失败与成功日志、两份交付 ZIP 和 D 盘共享缓存；未清理此前被拒绝的目录或其他程序文件。

@@ -1,6 +1,6 @@
 # Windows 本机试用后端（离线包）
 
-**首次试用**：优先使用[桌面与后端整包](candidate-build.md)，桌面 `399db61` 配套后端 `ea42650`。单独的后端包在 `target/trial-kit-ea42650/preview-backend.zip`（83,810,172 字节，SHA-256：`994a7e99a1b7c4c7f632de67f8c55bba87b47d767a92b0b1932cc9b1d696111d`）。相较 `6885213` 的 328 个后端条目仅 `SyncService.class` 及其 `Connection` 内部类改变，修复旧连接关闭期间新连接被误删的竞态；原结构化日志脱敏和设备资格保护保留。独立包已实测登录、消息、重启、同步认证、房间重开及普通日志/管理记录隐私，见同目录 `backend-lifecycle.log`。不要覆盖已有数据目录；既有日志不会被追溯修改。
+**首次试用**：优先使用[桌面与后端整包](candidate-build.md)，桌面 `399db61` 配套后端 `6523e6a`。单独的后端包在 `target/trial-kit-6523e6a/preview-backend.zip`（83,810,691 字节，SHA-256：`25872de81f96c1fa1399f3964f4de733eb39f3dccd887ef68da40151552038dd`）。相较 `ea42650` 的 328 个后端条目仅 `SyncService.class` 及其 `Connection` 内部类改变，修复连接注销后预取引用仍发送的竞态；关闭期间重连保护、结构化日志脱敏和设备资格保护保留。独立包已实测登录、消息、重启、同步认证、房间重开及普通日志/管理记录隐私，见同目录 `backend-lifecycle.log`。历史发送告警仍开放。不要覆盖已有数据目录；既有日志不会被追溯修改。
 
 **旧版目录**：`target/trial-backend-b44c82c5` 来自 `target/log-boundary-f5bbaac/preview-backend.zip`（83,803,971 字节，SHA-256：`b44c82c537d6cd6c99316e4dff672087ea19dbc23e3c3a577c26009aab71725b`）。该版较上一精简包仅修改控制台日志转换器，不附加原始异常消息、原因链或堆栈。已有目录和历史日志不会自动改变。
 
