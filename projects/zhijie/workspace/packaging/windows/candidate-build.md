@@ -2,13 +2,13 @@
 
 ## 本机试用（不安装）
 
-**本机试用入口**：`target/trial-kit-6885213/zhijie-windows-x64-trial.zip`（93,048,472 字节，SHA-256：`5a8615cff3b740dbb483007207a77dfa0c1d2ea083a28286421e877ea852ab97`）。后端来自 `6885213`：补齐结构化密码、令牌、网络票据及服务密钥字段的日志脱敏，保留 `59056e8` 的设备接管保护。桌面继续使用与之配套且无需改动的 `399db61` 构建。核对摘要后解压到 D 盘全新目录，按包内 `README.md` 启动；如需保留旧数据，先停库、冷备并恢复，不覆盖原目录。包内不含 JDK、Python、WebView2、安装器、试用数据库或凭据。
+**本机试用入口**：`target/trial-kit-ea42650/zhijie-windows-x64-trial.zip`（93,048,574 字节，SHA-256：`beaabbd7d25d12a0fe5a9ad957ff6e7671b1d7c9cb79816790bc86d3bcbb7135`）。后端来自 `ea42650`：修复关闭旧同步连接时误删新连接登记的问题，保留 `6885213` 的结构化日志脱敏及设备接管保护。桌面继续使用与之配套且无需改动的 `399db61` 构建。核对摘要后解压到 D 盘全新目录，按包内 `README.md` 启动；如需保留旧数据，先停库、冷备并恢复，不覆盖原目录。包内不含 JDK、Python、WebView2、安装器、试用数据库或凭据。
 
-新包首次启动、停库重启和冷备恢复后均通过实际接口登录、读取原消息、双设备接管和按租约退房；旧设备申请语音和网络票据均被拒绝，当前设备获得与租约匹配的网络票据。日志：`target/trial-kit-6885213/relocation.log`。实际离线后端还通过登录、重启、两种同步认证、房间重开以及普通日志/管理记录的秘密扫描，见同目录 `privacy-restart-retest.log`；首次 Java 环境提示导致的脚本中断保留在 `privacy-restart.log`。与 `59056e8` 整包逐条比对，340 个条目仅 `LogSanitizer.class` 变化，见 `comparison-final.log`；桌面内嵌界面的 170 项检查记录仍在 `target/trial-kit-399db61/embedded-browser.json`。未启动原生窗口，未实测真实通话或跨机网卡。
+新包首次启动、停库重启和冷备恢复后均通过实际接口登录、读取原消息、双设备接管和按租约退房；旧设备申请语音和网络票据均被拒绝，当前设备获得与租约匹配的网络票据。日志：`target/trial-kit-ea42650/relocation.log`。实际离线后端还通过登录、重启、两种同步认证、房间重开以及普通日志/管理记录的秘密扫描，见同目录 `backend-lifecycle.log`。与 `6885213` 整包逐条比对，340 个条目仅 `SyncService.class` 及其 `Connection` 内部类变化，见 `comparison-final.log`；源码竞态复现与二十五项相关回归见 `docs/engineering/sync-close-registration-race.md`。桌面内嵌界面的 170 项检查记录仍在 `target/trial-kit-399db61/embedded-browser.json`。未启动原生窗口，未实测真实通话或跨机网卡。
 
 从本机 `workspace` 复建：`python -B "packaging/windows/pack-trial-kit.py" --output "target/新的试用包.zip"`。输入路径和摘要锁定在 `packaging/windows/trial-kit.json`，输出文件必须不存在；此步骤只打包已有候选，不负责构建、签名或发布。
 
-复测命令（从 `workspace` 运行）：`python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-6885213/zhijie-windows-x64-trial.zip" --sha256 5a8615cff3b740dbb483007207a77dfa0c1d2ea083a28286421e877ea852ab97 --java-home "D:/Program Files/jdk-25" --check-grants --check-restore`。测试使用临时数据库和随机本机端口，不接触已有试用数据。
+复测命令（从 `workspace` 运行）：`python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-ea42650/zhijie-windows-x64-trial.zip" --sha256 beaabbd7d25d12a0fe5a9ad957ff6e7671b1d7c9cb79816790bc86d3bcbb7135 --java-home "D:/Program Files/jdk-25" --check-grants --check-restore`。测试使用临时数据库和随机本机端口，不接触已有试用数据。
 
 ## 旧版试用目录
 
