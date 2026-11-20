@@ -24,3 +24,26 @@
    ```
 
 数据保存在 `backend/target/local-preview/postgres`，桌面配置在 `target/desktop/webview`。不要删除唯一的数据副本，也不要分发已使用过的解压目录。如果端口已占用，不要停止未知进程；可在启动命令中选用空闲端口，并使桌面 `--http-port` 与后端 `-HttpPort` 一致。邮件默认关闭；本步骤不验证真实通话或跨机虚拟局域网。
+
+## 已有试用数据：迁入全新目录
+
+如果希望保留旧包里的账号、群、房间和消息，先不要启动新包。仅适用于相同 PostgreSQL 主版本的 Windows 试用后端；不迁移桌面缓存。备份含账号与消息数据，只放在本人可访问的 D 盘目录，不上传。预留备份和新数据目录两份副本的空间。
+
+1. 退出旧桌面，运行**旧包**的 `backend/scripts/local-preview/stop.ps1`，确认已正常停库，迁移期间不要重启。不要手动删除 `postmaster.pid`。
+2. 在**新包解压根目录**打开 PowerShell，把 `$old` 改为旧包的解压路径，`$backup` 改为尚不存在的备份目录：
+
+   ```powershell
+   $old = "D:/织界旧版"
+   $backup = "D:/织界私有备份/升级前"
+   python -B "ops/database/cold-backup.py" snapshot --source "$old/backend/target/local-preview/postgres" --destination "$backup"
+   ```
+
+3. 只有看到 `COLD_BACKUP_OK` 才执行恢复。目标必须不存在，工具不会覆盖、合并或删除原库：
+
+   ```powershell
+   python -B "ops/database/cold-backup.py" restore --backup "$backup" --destination "backend/target/local-preview/postgres"
+   ```
+
+4. 看到 `COLD_RESTORE_COPY_OK` 后，按本文开头的命令启动新包，用**旧账号密码**登录并核对原消息。如果校验失败或意外提示初始化账号密码，停止操作，保留旧目录和快照，不要继续初始化。
+
+**要切回旧版？** 先停新包，为新版新增数据另做一份冷备。仍从新包根目录运行 `python -B "ops/database/cold-backup.py" verify --backup "$backup" --restored-data "$old/backend/target/local-preview/postgres"`；核对通过后再从旧目录启动。切回旧库不会带回新版写入，两份数据库不会自动合并。

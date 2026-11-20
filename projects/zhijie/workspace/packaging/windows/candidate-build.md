@@ -2,13 +2,13 @@
 
 ## 本机试用（不安装）
 
-**本机试用入口**：`target/trial-kit-c5868af/zhijie-windows-x64-trial.zip`（93,043,095 字节，SHA-256：`1eeeb6dc2550fba19d548b198d7d88a5b760906e9bf59a09cc13d79bd7567dc4`）。核对摘要后，完整解压到 D 盘全新目录，按包内 `README.md` 启动。该包包含同一源码版本 `c5868af` 的便携桌面和离线后端，不含 JDK、Python、WebView2、安装器、试用库或登录凭据。不要覆盖已有目录。
+**本机试用入口**：`target/trial-kit-85250e5-restore/zhijie-windows-x64-trial.zip`（93,046,356 字节，SHA-256：`c2de9619a5fc7112f7970551485c180aebb6cb42113f499155ad43ec4a7d70de`）。核对摘要后，完整解压到 D 盘全新目录，按包内 `README.md` 启动。此版加入离线冷备恢复工具并更新说明；与上一包相比，桌面和后端仍是 `c5868af`，其余 337 个条目逐项一致。已有试用环境不必为此重装。包内不含 JDK、Python、WebView2、安装器、试用库或登录凭据。
 
-本包已从独立解压目录启动、登录、设置房间密码并发送消息；停库重启后验证了原房间、群主免密和同一条消息。桌面程序中核对的十个内嵌界面文件通过 170 项无头浏览器检查，无脚本异常。默认试用账号是群主，不能用它验证普通成员必须输入密码。未运行安装器或原生桌面窗口，未验证实际通话或网卡。对应日志为 `target/trial-kit-c5868af/relocation.log`、`embedded-binary.log`、`embedded-browser.json` 和 `backend-verified.log`。
+后端此前已从独立解压目录启动，通过接口登录、设置房间密码并发送消息；停库重启后验证了原房间、群主免密和同一条消息。桌面的十个内嵌界面文件通过 170 项无头浏览器检查，无脚本异常。默认试用账号是群主，不能用它验证普通成员必须输入密码。未运行安装器或原生桌面窗口，未验证实际通话或网卡。对应日志在 `target/trial-kit-c5868af/` 下的 `relocation.log`、`embedded-binary.log`、`embedded-browser.json` 和 `backend-verified.log`。
 
 从本机 `workspace` 复建：`python -B "packaging/windows/pack-trial-kit.py" --output "target/新的试用包.zip"`。输入路径和摘要锁定在 `packaging/windows/trial-kit.json`，输出文件必须不存在；此步骤只打包已有候选，不负责构建、签名或发布。
 
-如需独立复测，可从 `workspace` 运行 `python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-c5868af/zhijie-windows-x64-trial.zip" --sha256 1eeeb6dc2550fba19d548b198d7d88a5b760906e9bf59a09cc13d79bd7567dc4 --java-home "D:/Program Files/jdk-25"`。仅使用随机本机端口和一次性数据库，不启动桌面。
+如需复测包内工具，可从 `workspace` 运行 `python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-85250e5-restore/zhijie-windows-x64-trial.zip" --sha256 c2de9619a5fc7112f7970551485c180aebb6cb42113f499155ad43ec4a7d70de --java-home "D:/Program Files/jdk-25" --check-restore`。它在随机本机端口创建试用数据并重启，用包内工具停库备份、恢复至第二个解压目录，再次用原密码登录并核对账号、群、房间及消息，不启动桌面。开发日志为 `target/trial-kit-85250e5-restore/relocation.log`。
 
 ## 旧版试用目录
 

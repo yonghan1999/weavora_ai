@@ -29,7 +29,8 @@ class TrialKitTest(unittest.TestCase):
         self.backend = self.target / 'backend.zip'
         with ZipFile(self.backend, 'x') as backend:
             backend.writestr('lib/test.jar', b'library')
-        for directory, name in [('packaging/windows', 'trial-kit-guide.md'), ('scripts/local-preview', 'trial-desktop.py')]:
+        for directory, name in [('packaging/windows', 'trial-kit-guide.md'), ('scripts/local-preview', 'trial-desktop.py'),
+                                ('ops/database', 'cold-backup.py')]:
             parent = self.root / directory
             parent.mkdir(parents=True)
             (parent / name).write_text('fixture')
@@ -44,7 +45,7 @@ class TrialKitTest(unittest.TestCase):
         (self.manifest.parent / 'webview/session').write_bytes(b'local')
         kit.pack(self.root, self.output)
         with ZipFile(self.output) as archive:
-            self.assertEqual(set(archive.namelist()), {'README.md', 'scripts/local-preview/trial-desktop.py',
+            self.assertEqual(set(archive.namelist()), {'README.md', 'ops/database/cold-backup.py', 'scripts/local-preview/trial-desktop.py',
                              'target/desktop/manifest.json', 'target/desktop/app/zhijie-shell.exe', 'backend/lib/test.jar'})
         other = self.target / 'second.zip'
         kit.pack(self.root, other)

@@ -43,6 +43,7 @@ def pack(workspace, output):
             try:
                 with ZipFile(stream, 'w') as archive:
                     include(archive, 'README.md', (packaging / 'trial-kit-guide.md').read_bytes())
+                    include(archive, 'ops/database/cold-backup.py', (workspace / 'ops/database/cold-backup.py').read_bytes())
                     include(archive, 'scripts/local-preview/trial-desktop.py', (workspace / 'scripts/local-preview/trial-desktop.py').read_bytes())
                     include(archive, 'target/desktop/manifest.json', data)
                     for name, digest in sorted(product.items()):
