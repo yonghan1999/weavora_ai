@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "scope": "locked_cargo_registry_license_materials",
-  "cargoLockSha256": "9557bab3123b58f2aedde1fafd34c409f70e6456a25d2ce374f6d3b645d0376f",
-  "inventorySha256": "060549a1f11202e5663be464dec6359f93c056db8289d4f63b5fa13c866015c5",
+  "cargoLockSha256": "fd292a7dfc3a302ba611abd8a598677ad92f9499b0668795084f63b1ba617a5a",
+  "inventorySha256": "39b124f2d9545861ff09c370d8e56daee8b17d4dca7c5d3c9dd8383b051948d2",
   "reviewStatus": "unreviewed",
   "releaseApproved": false,
   "summary": {
-    "registryPackages": 575,
+    "registryPackages": 576,
     "localPackagesExcluded": 7,
-    "withOriginals": 523,
-    "documentReferences": 960,
-    "uniqueOriginals": 310,
+    "withOriginals": 524,
+    "documentReferences": 962,
+    "uniqueOriginals": 312,
     "unselectedLockedPackages": 5,
     "unselectedDocumentReferences": 10,
     "reviewed": 0
@@ -4265,6 +4265,32 @@
           "status": "collected_not_reviewed",
           "sha256": "391a5396cec6230bfabd4ef4eb2350eb895bc5efce377a2218f5702ed020d3e3",
           "file": "texts/391a5396cec6230bfabd4ef4eb2350eb895bc5efce377a2218f5702ed020d3e3.txt"
+        }
+      ]
+    },
+    {
+      "name": "httpdate",
+      "version": "1.0.3",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "declaredLicense": "MIT OR Apache-2.0",
+      "declaredLicenseFile": null,
+      "archiveSha256": "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9",
+      "archiveBytes": 10639,
+      "reviewStatus": "unreviewed",
+      "documents": [
+        {
+          "entry": "httpdate-1.0.3/LICENSE-APACHE",
+          "bytes": 10255,
+          "status": "collected_not_reviewed",
+          "sha256": "4d10fe5f3aa176b05b229a248866bad70b834c173f1252a814ff4748d8a13837",
+          "file": "texts/4d10fe5f3aa176b05b229a248866bad70b834c173f1252a814ff4748d8a13837.txt"
+        },
+        {
+          "entry": "httpdate-1.0.3/LICENSE-MIT",
+          "bytes": 1051,
+          "status": "collected_not_reviewed",
+          "sha256": "934887691e05d69d7c86ad3f2c360980fa30c15b035e351f3c9865e99da4debc",
+          "file": "texts/934887691e05d69d7c86ad3f2c360980fa30c15b035e351f3c9865e99da4debc.txt"
         }
       ]
     },
@@ -13766,5 +13792,5 @@
       ]
     }
   ],
-  "indexSha256": "70018ec820957f0858b1799465f007fda40a4d793ec2bfb5fac05da001f196d6"
+  "indexSha256": "6481798f9841e6cab2f5e1dbe11c85e6824382f663fd74542127ccb29c9cf4ac"
 }

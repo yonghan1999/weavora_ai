@@ -14,6 +14,7 @@ class UnavailableExternalRevocationTargets {
     }
 
     @Component
+    @ConditionalOnProperty(name = "zhijie.relay.revocation-enabled", havingValue = "false", matchIfMissing = true)
     static class Relay implements RevocationTarget {
         public boolean supports(String eventType) { return eventType.equals("network.revoked"); }
         public void deliver(OutboxEvent event) { throw new IllegalStateException("Relay is not configured"); }

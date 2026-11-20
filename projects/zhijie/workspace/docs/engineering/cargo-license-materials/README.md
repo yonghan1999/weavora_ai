@@ -1215,6 +1215,13 @@
 - [a60eea817514](texts/a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2.txt)：`httparse-1.10.1/LICENSE-APACHE`（10847 字节）
 - [391a5396cec6](texts/391a5396cec6230bfabd4ef4eb2350eb895bc5efce377a2218f5702ed020d3e3.txt)：`httparse-1.10.1/LICENSE-MIT`（1063 字节）
 
+## httpdate 1.0.3
+
+声明：MIT OR Apache-2.0
+
+- [4d10fe5f3aa1](texts/4d10fe5f3aa176b05b229a248866bad70b834c173f1252a814ff4748d8a13837.txt)：`httpdate-1.0.3/LICENSE-APACHE`（10255 字节）
+- [934887691e05](texts/934887691e05d69d7c86ad3f2c360980fa30c15b035e351f3c9865e99da4debc.txt)：`httpdate-1.0.3/LICENSE-MIT`（1051 字节）
+
 ## hyper 1.12.0
 
 声明：MIT

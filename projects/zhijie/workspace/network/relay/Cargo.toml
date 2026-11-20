@@ -12,6 +12,11 @@ quinn = { version = "0.11.12", default-features = false, features = ["runtime-to
 rustls = { version = "0.23.46", default-features = false, features = ["std", "ring"] }
 webpki-roots = "1.0.12"
 tokio = { version = "1.48.0", features = ["rt-multi-thread", "net", "sync", "time", "macros"] }
+hyper = { version = "1.12.0", default-features = false, features = ["server", "http1"] }
+hyper-util = { version = "0.1.21", default-features = false, features = ["tokio"] }
+http-body-util = "0.1.5"
+bytes = "1.12.1"
+subtle = "2.6.1"
 
 [dev-dependencies]
 rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring"] }

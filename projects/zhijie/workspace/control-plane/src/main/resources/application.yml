@@ -33,6 +33,9 @@ management:
 zhijie:
   relay:
     management-key: ${ZHIJIE_RELAY_MANAGEMENT_KEY:}
+    revocation-enabled: ${ZHIJIE_RELAY_REVOCATION_ENABLED:false}
+    admin-url: ${ZHIJIE_RELAY_ADMIN_URL:http://127.0.0.1:40001}
+    revocation-key: ${ZHIJIE_RELAY_REVOCATION_KEY:}
     validation-burst: ${ZHIJIE_RELAY_VALIDATION_BURST:2048}
     validation-per-second: ${ZHIJIE_RELAY_VALIDATION_PER_SECOND:1024}
   voice:

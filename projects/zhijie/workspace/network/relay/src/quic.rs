@@ -1,6 +1,5 @@
-use std::collections::HashMap;
 use std::net::{Ipv4Addr, SocketAddr};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
 
 use quinn::{Connection, Endpoint};
@@ -8,22 +7,16 @@ use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use tokio::task::JoinSet;
 
 use crate::model::RelayGrant;
+use crate::revocation::{RelayRevocations, Session};
 use crate::server::GrantValidator;
 
 // IPv4 + WireGuard 帧；小于 QUIC 最小路径 MTU 可用载荷，禁止无界缓冲。
 pub const MAX_CIPHERTEXT: usize = 1120;
 const MAX_CONNECTIONS: usize = 128;
-type Sessions = Arc<Mutex<HashMap<(String, String), Session>>>;
-
-#[derive(Clone)]
-struct Session {
-    grant: RelayGrant,
-    connection: Connection,
-}
-
 pub struct QuicRelayServer {
     endpoint: Endpoint,
     worker: Option<tokio::task::JoinHandle<()>>,
+    revocations: RelayRevocations,
 }
 
 impl QuicRelayServer {
@@ -56,8 +49,9 @@ impl QuicRelayServer {
         transport.max_idle_timeout(Some(Duration::from_secs(10).try_into().unwrap()));
         let endpoint = Endpoint::server(config, address).map_err(|_| "RELAY_BIND_FAILED")?;
         let listener = endpoint.clone();
+        let revocations = RelayRevocations::default();
+        let sessions = revocations.clone();
         let worker = tokio::spawn(async move {
-            let sessions: Sessions = Arc::default();
             let mut workers = JoinSet::new();
             loop {
                 tokio::select! {
@@ -81,11 +75,16 @@ impl QuicRelayServer {
         Ok(Self {
             endpoint,
             worker: Some(worker),
+            revocations,
         })
     }
 
     pub fn local_addr(&self) -> SocketAddr {
         self.endpoint.local_addr().expect("relay address")
+    }
+
+    pub fn revocations(&self) -> RelayRevocations {
+        self.revocations.clone()
     }
 
     pub async fn stop(mut self) {
@@ -116,9 +115,13 @@ async fn validate(
         .map_err(|_| "RELAY_VALIDATION_FAILED".to_string())?
 }
 
-async fn serve(connection: Connection, sessions: Sessions, validator: Arc<dyn GrantValidator>) {
+async fn serve(
+    connection: Connection,
+    sessions: RelayRevocations,
+    validator: Arc<dyn GrantValidator>,
+) {
     let authenticated = tokio::time::timeout(Duration::from_secs(3), async {
-        let (mut send, mut receive) = connection.accept_bi().await.map_err(|_| ())?;
+        let (send, mut receive) = connection.accept_bi().await.map_err(|_| ())?;
         let ticket = receive.read_to_end(512).await.map_err(|_| ())?;
         let ticket = String::from_utf8(ticket).map_err(|_| ())?;
         let grant = validate(
@@ -131,25 +134,33 @@ async fn serve(connection: Connection, sessions: Sessions, validator: Arc<dyn Gr
         if !grant.allow_relay || grant.ticket != ticket {
             return Err(());
         }
-        send.write_all(b"OK").await.map_err(|_| ())?;
-        send.finish().map_err(|_| ())?;
-        Ok(grant)
+        Ok((grant, send))
     })
     .await;
-    let Ok(Ok(grant)) = authenticated else {
+    let Ok(Ok((grant, mut send))) = authenticated else {
         connection.close(1u8.into(), b"authorization failed");
         return;
     };
     let key = (grant.activity_id.clone(), grant.source_ipv4.clone());
-    let previous = sessions.lock().expect("quic sessions").insert(
+    let inserted = sessions.state.lock().expect("quic sessions").insert(
         key.clone(),
         Session {
             grant: grant.clone(),
             connection: connection.clone(),
         },
     );
-    if let Some(previous) = previous {
-        previous.connection.close(0u8.into(), b"superseded");
+    if inserted.is_err() {
+        connection.close(1u8.into(), b"authorization revoked");
+        return;
+    }
+    if send.write_all(b"OK").await.is_err() || send.finish().is_err() {
+        connection.close(1u8.into(), b"authorization failed");
+        sessions
+            .state
+            .lock()
+            .expect("quic sessions")
+            .remove(&key, &connection);
+        return;
     }
     let mut recheck = tokio::time::interval(Duration::from_secs(1));
     loop {
@@ -157,6 +168,9 @@ async fn serve(connection: Connection, sessions: Sessions, validator: Arc<dyn Gr
             packet = connection.read_datagram() => match packet { Ok(packet) => Some(packet), Err(_) => break },
             _ = recheck.tick() => None,
         };
+        if sessions.state.lock().expect("quic sessions").denied(&grant) {
+            break;
+        }
         if validate(
             validator.clone(),
             grant.ticket.clone(),
@@ -179,10 +193,10 @@ async fn serve(connection: Connection, sessions: Sessions, validator: Arc<dyn Gr
             continue;
         }
         let target = sessions
+            .state
             .lock()
             .expect("quic sessions")
-            .get(&(grant.activity_id.clone(), target_ip))
-            .cloned();
+            .target(&(grant.activity_id.clone(), target_ip));
         let Some(target) = target else {
             continue;
         };
@@ -209,16 +223,20 @@ async fn serve(connection: Connection, sessions: Sessions, validator: Arc<dyn Gr
         let mut forwarded = Vec::with_capacity(packet.len());
         forwarded.extend_from_slice(&source.octets());
         forwarded.extend_from_slice(&packet[4..]);
-        let _ = target.connection.send_datagram(forwarded.into());
+        let state = sessions.state.lock().expect("quic sessions");
+        if state.denied(&grant) {
+            break;
+        }
+        if !state.denied(&target.grant) {
+            let _ = target.connection.send_datagram(forwarded.into());
+        }
     }
     connection.close(0u8.into(), b"session ended");
-    let mut sessions = sessions.lock().expect("quic sessions");
-    if sessions
-        .get(&key)
-        .is_some_and(|item| item.connection.stable_id() == connection.stable_id())
-    {
-        sessions.remove(&key);
-    }
+    sessions
+        .state
+        .lock()
+        .expect("quic sessions")
+        .remove(&key, &connection);
 }
 
 #[derive(Clone)]
