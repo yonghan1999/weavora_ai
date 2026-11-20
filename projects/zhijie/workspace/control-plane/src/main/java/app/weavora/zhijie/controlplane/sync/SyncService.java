@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -63,10 +64,15 @@ public class SyncService {
     }
 
     public void unregister(String userId, WebSocketSession session) {
+        var removed = new AtomicReference<Connection>();
         sessions.computeIfPresent(userId, (id, current) -> {
-            current.remove(session);
+            removed.set(current.remove(session));
             return current.isEmpty() ? null : current;
         });
+        var connection = removed.get();
+        if (connection != null) {
+            synchronized (connection) { connection.closed = true; }
+        }
     }
 
     public List<SyncEvent> history(String userId, long cursor) {

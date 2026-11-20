@@ -34,6 +34,82 @@ import org.springframework.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
 class SyncServiceTest {
+    @Test void unregisterBlocksDeliveryThroughAPrefetchedConnection() throws Exception {
+        var service = new SyncService(mock(OutboxRepository.class), mock(GroupService.class),
+                mock(ActivityRepository.class), new ObjectMapper().findAndRegisterModules(), mock(IdentityService.class));
+        var sockets = List.of(mock(WebSocketSession.class), mock(WebSocketSession.class));
+        var sending = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var first = new AtomicReference<WebSocketSession>();
+        var delivered = new CopyOnWriteArrayList<WebSocketSession>();
+        for (var socket : sockets) {
+            service.connect(binding(), socket, 0);
+            doAnswer(call -> {
+                if (first.compareAndSet(null, socket)) {
+                    sending.countDown();
+                    assertThat(release.await(3, TimeUnit.SECONDS)).isTrue();
+                }
+                delivered.add(socket);
+                return null;
+            }).when(socket).sendMessage(any(TextMessage.class));
+        }
+        try (var workers = Executors.newSingleThreadExecutor()) {
+            var delivery = workers.submit(() -> service.broadcast(globalEvent(1)));
+            try {
+                assertThat(sending.await(3, TimeUnit.SECONDS)).isTrue();
+                var detached = sockets.stream().filter(socket -> socket != first.get()).findFirst().orElseThrow();
+                service.unregister("user", detached);
+                assertThat(service.sessionCount("user")).isEqualTo(1);
+            } finally { release.countDown(); }
+            delivery.get(3, TimeUnit.SECONDS);
+            assertThat(delivered).containsExactly(first.get());
+            service.broadcast(globalEvent(2));
+            assertThat(delivered).containsExactly(first.get(), first.get());
+        } finally { release.countDown(); }
+    }
+
+    @Test void unregisterWaitsForTheCurrentWriteWithoutBlockingOtherConnections() throws Exception {
+        var service = new SyncService(mock(OutboxRepository.class), mock(GroupService.class),
+                mock(ActivityRepository.class), new ObjectMapper().findAndRegisterModules(), mock(IdentityService.class));
+        var socket = mock(WebSocketSession.class);
+        service.connect(binding(), socket, 0);
+        var sending = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        doAnswer(call -> {
+            sending.countDown();
+            assertThat(release.await(3, TimeUnit.SECONDS)).isTrue();
+            return null;
+        }).when(socket).sendMessage(any(TextMessage.class));
+        var unregisterThread = new AtomicReference<Thread>();
+        var entered = new CountDownLatch(1);
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var delivery = workers.submit(() -> service.broadcast(globalEvent(1)));
+            assertThat(sending.await(3, TimeUnit.SECONDS)).isTrue();
+            var unregistering = workers.submit(() -> {
+                unregisterThread.set(Thread.currentThread());
+                entered.countDown();
+                service.unregister("user", socket);
+            });
+            try {
+                assertThat(entered.await(3, TimeUnit.SECONDS)).isTrue();
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+                while (!unregistering.isDone() && unregisterThread.get().getState() != Thread.State.BLOCKED
+                        && System.nanoTime() < deadline) Thread.yield();
+                assertThat(unregisterThread.get().getState()).isEqualTo(Thread.State.BLOCKED);
+                var replacement = mock(WebSocketSession.class);
+                service.connect(binding(), replacement, 0);
+                assertThat(service.sessionCount("user")).isEqualTo(1);
+                service.unregister("user", replacement);
+                assertThat(service.sessionCount("user")).isZero();
+            } finally { release.countDown(); }
+            delivery.get(3, TimeUnit.SECONDS);
+            unregistering.get(3, TimeUnit.SECONDS);
+            service.broadcast(globalEvent(2));
+            verify(socket).sendMessage(any(TextMessage.class));
+            verify(socket, never()).close(any(CloseStatus.class));
+        } finally { release.countDown(); }
+    }
+
     @Test void reconnectDuringUserCloseKeepsTheReplacementRegisteredAndReceiving() throws Exception {
         var outbox = mock(OutboxRepository.class);
         var service = new SyncService(outbox, mock(GroupService.class), mock(ActivityRepository.class),
