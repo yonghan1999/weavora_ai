@@ -1,5 +1,15 @@
 # Windows 本机试用后端（离线包）
 
+当前后端：`target/trial-kit-d9a9dfe/preview-backend.zip`（83,839,806 字节，SHA-256：`f953073bd2606beac6532ab217adf9558a0d61ab47acf980aaaa945557d1b653`），配套[最新整包](candidate-build.md)。桌面、Helper 和后端均从已推送 `d9a9dfe` 干净归档构建。后端 Peer 到期时间取票据/租约较早值；客户端会话绑定账号、活动代次和租约并执行到期失效。只换后端不会更新旧 Helper，须成套使用新版桌面与 Helper。无新依赖、迁移或默认外部服务开关变化，数据库仍为 V16。
+
+相较 `f86cef2` 的 336 个后端条目，仅 `NetworkPeerService.class` 与内部 `Peer` 类变化；内部类只差调试行号，指令及其余完整元数据一致，见 `target/trial-kit-d9a9dfe/comparison-final.log`、`target/windows-peer-d9a9dfe/inner-class.log`。包内依赖、启动脚本和其余资源字节不变。六项打包单测及整包登录/重启、冷备恢复和设备资格检查通过，详见最新整包记录。独立 Relay 仍不包含在 ZIP 内，默认不启用主动撤销、邮件或外部语音。
+
+本轮同版重启、两种同步认证、房间重开及普通日志/管理记录隐私检查通过，见 `target/trial-kit-d9a9dfe/backend-lifecycle.log`。从 `f86cef2` 旧库迁入新版独立副本、原库回退、再启新版共四次启动通过；旧/新版快照分别逐文件核对 1,111/1,112 文件，见 `upgrade-roundtrip.log`。新旧库各自消息、删除标记和设置按预期保留，没有合并数据。验证进程退出后清理本轮源码副本与临时产物 25,624,436 字节，保留证据、制品与 D 盘共享缓存，详见整包清理记录。
+
+升级前正常停库、保留已核验冷备，恢复到全新数据目录；回退使用匹配旧程序和升级前原库，不在活跃新版库直接运行旧程序。新旧库不自动合并。客户端换设备应使用新私钥，本轮不证明旧私钥持有者重新握手可被区分，也不替代跨机/TUN/真实媒体或正式阶段验收。技术边界见 `docs/engineering/peer-authorization-identity.md`。
+
+## 上一版本（f86cef2）
+
 当前后端：`target/trial-kit-f86cef2/preview-backend.zip`（83,839,495 字节，SHA-256：`ed2670e7181156583aee8a37472c7c48d3ba068215b33181fd46af598575a17e`），配套[最新整包](candidate-build.md)。从已推送 `f86cef2` 干净归档构建，新增 Relay 验权响应版本、活动代次、设备标识及票据/租约较早的绝对期限；无新依赖或迁移，仍为 V16。相较 `a039409` 的 336 个后端条目，仅 `RelayGrantValidationService.class` 和 `RelayValidationResponse.class` 变化，见 `target/trial-kit-f86cef2/comparison.log`。
 
 新 Relay 的内存快照/独立续验/硬截止需要另行部署匹配二进制；试用 ZIP 不包含该独立服务、证书或密钥，不自动开启主动撤销。新 Relay 拒绝旧控制面缺字段，混版未验收，升级/回退须停止相关进程并成套使用匹配程序、配置与停库备份。实现、缓存窗口和实际源码回归见 `docs/engineering/relay-authorization-snapshot.md`；不承诺权威提交后首包零窗口拒绝，也不代表跨机五秒 SLA 已完成。

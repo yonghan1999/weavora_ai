@@ -2,6 +2,24 @@
 
 ## 当前本机试用（不安装）
 
+最新整包：`target/trial-kit-d9a9dfe/zhijie-windows-x64-trial.zip`（93,074,365 字节，SHA-256：`1bb626d926daf265994a20b5a59ec5bf60ebfcd2664bc9d0a314d4504a8e5ca1`）。桌面、Helper 和后端均从已推送 `d9a9dfe` 干净归档重新构建，不混入工作区历史改动。Helper 将 Peer 会话绑定账号、活动代次及租约，并在直连、中继、出站和定时处理时执行授权到期检查；后端下发票据/租约较早期限。正常同身份续票可复用会话，换身份不能继承旧会话密文。源码回归与边界见 `docs/engineering/peer-authorization-identity.md`；无新依赖或迁移，仍为 V16。
+
+未签名安装器保留在 `target/trial-d9a9dfe/织界_0.1.0_x64-setup.exe`（12,093,575 字节，SHA-256：`d339ffe8a3ba6159a4cc38a09c02ac9597d9c589186bbb5c665b83de12bd638f`），本机便携试用无需运行。首次桌面编译通过后，NSIS 下载超时；保留失败日志，核对已有 D 盘 NSIS 和 Tauri 插件固定摘要后复用缓存，仅重跑打包成功。见 `target/windows-peer-d9a9dfe/desktop-release.log`、`desktop-bundle-retry.log`。八个产品文件与本轮构建输入一致，见 `payload.json`；未运行安装器、桌面或 Helper。
+
+本轮 13 项界面单测通过；从新桌面二进制提取的一份 HTML、六个脚本和三份样式均与上一已验证桌面一致，其无头浏览器 170 项检查通过，见 `target/windows-peer-d9a9dfe/ui-unit.log`、`target/trial-kit-d9a9dfe/embedded-binary.log`、`embedded-browser.json`。四项后端打包及两项整包单测通过；整包实际登录、消息、重启、1,112 文件冷备恢复和设备资格拒绝通过，见同目录 `backend-unit.log`、`kit-unit.log`、`relocation.log`。
+
+`comparison.log` 首次严格差异检查发现内部类行号变化后停止，未放宽未知变化；`target/windows-peer-d9a9dfe/inner-class.log` 核对 `NetworkPeerService$Peer` 除调试行号外的完整 `javap` 元数据相同。最终 `comparison-final.log` 逐条核对 348 个整包条目与 336 个后端条目：后端只变更 `NetworkPeerService.class` 及上述内部类；整包另变更桌面、Helper 和清单，其余依赖、脚本、驱动、许可及资源字节不变。
+
+独立后端同版重启、两种同步认证、房间重开与普通日志/管理记录秘密扫描通过，见 `target/trial-kit-d9a9dfe/backend-lifecycle.log`。`f86cef2`→新版独立副本→原库回退→新版再次启用的四次启动通过，分别核对旧/新版停库快照 1,111/1,112 文件，见 `upgrade-roundtrip.log`；没有覆盖已有用户数据或在新版库运行旧程序。
+
+全部验证进程退出后，核对 D 盘绝对路径、逐级无重解析点和进程引用，仅清理本轮源码副本及构建/生命周期临时目录 25,624,436 字节，见 `target/windows-peer-d9a9dfe/cleanup-build.log`。保留制品、源码归档、提取的界面、构建日志和共享编译/打包缓存；release 首次完整编译产生的共享缓存仍在 D 盘，本轮末 C/D 可用约 10.17/39.71 GiB。未清理其他程序文件、未跟踪源码或历史被拒目录。
+
+仅本轮三个文件的暂存区独立候选通过工作区、691 项完整依赖、兼容/发布/性能契约和三层许可材料完整性检查，见 `target/windows-peer-d9a9dfe/package-snapshot.log`；实际 macOS 签名一项明确跳过，容量验收与许可人工审核未完成。验证退出后另清候选快照与临时目录 18,559,372 字节，见 `cleanup-snapshot.log`，累计清理 44,183,808 字节；制品和共享缓存保留。
+
+核对摘要后解压到 D 盘全新目录，按包内 `README.md` 启动，不覆盖原目录或数据库。必须成套替换桌面、Helper 和后端；只换后端不能获得客户端 Peer 保护。独立 Relay 不在 ZIP 内，匹配服务、证书和管理配置须另外部署；主动撤销默认关闭，邮件与外部语音不自动启用。持有同一私钥的旧端重新握手仍无法与新端区分，换设备应使用新密钥；不代表真实音频、管理员 TUN、跨机游戏、完整五秒 SLA、三平台安装签名、目标容量或许可证人工审核完成。正式阶段仍 E。
+
+## 上一版本试用（f86cef2）
+
 最新整包：`target/trial-kit-f86cef2/zhijie-windows-x64-trial.zip`（93,061,790 字节，SHA-256：`588d1bf04507adf9dc842adf7d5526670806e5661bf23d145c9303435f233929`）。后端从已推送 `f86cef2` 干净归档独立构建，桌面仍为 `399db61`。本版后端提供版本化 Relay 授权快照字段及票据/租约较早期限；匹配的新 Relay 将逐包远程验权改为有界内存快照、独立续验和硬截止，保留主动撤销。源码验证见 `docs/engineering/relay-authorization-snapshot.md`：104 项原生测试通过、8 项夹具跳过，21 项 Java 回归及新 JAR 独立迁移角色检查通过。无新依赖或迁移，仍为 V16。
 
 **独立 Relay 不在试用包内。** 包内只有支持新快照响应的控制面；要使用新的 Relay 数据面行为，需另行部署匹配 `f86cef2` 的 Relay 二进制、证书和管理配置。新 Relay 对旧控制面缺少字段安全拒绝，不把混版当成已验收；成套停机升级/回退，不覆盖既有库。邮件/外部语音未自动启用，主动 Relay Outbox 撤销仍默认关闭。
