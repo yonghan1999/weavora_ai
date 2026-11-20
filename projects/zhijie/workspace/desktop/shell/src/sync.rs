@@ -210,4 +210,6 @@ fn notice(user_id: &str, event: Option<&zhijie_core::sync::SyncEvent>) -> serde_
 #[cfg(test)]
 mod browser_probe;
 #[cfg(test)]
+mod maintenance_probe;
+#[cfg(test)]
 mod tests;
