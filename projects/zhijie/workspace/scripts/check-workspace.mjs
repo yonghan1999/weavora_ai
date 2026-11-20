@@ -29,11 +29,13 @@ assert.equal(cargo.status, 0, cargo.stderr);
 const packageNames = JSON.parse(cargo.stdout).packages.map((item) => item.name).sort();
 assert.deepEqual(packageNames, ["zhijie-core", "zhijie-helper", "zhijie-relay", "zhijie-shell", "zhijie-voice"]);
 
-const mavenExecutable = process.platform === "win32" ? "mvnw.cmd" : "./mvnw";
+const mavenExecutable = process.platform === "win32"
+  ? resolve(process.env.SystemRoot ?? "C:/Windows", "System32/cmd.exe") : "./mvnw";
+const mavenArgs = ["-q", "-pl", "control-plane", "-am", "-DskipTests", "validate"];
 const maven = spawnSync(
   mavenExecutable,
-  ["-q", "-pl", "control-plane", "-am", "-DskipTests", "validate"],
-  { cwd: root, env: process.env, encoding: "utf8", shell: process.platform === "win32" },
+  process.platform === "win32" ? ["/d", "/s", "/c", "mvnw.cmd", ...mavenArgs] : mavenArgs,
+  { cwd: root, env: process.env, encoding: "utf8", shell: false },
 );
 assert.equal(maven.status, 0, `${maven.stdout}\n${maven.stderr}`);
 
@@ -42,6 +44,10 @@ assert.equal(inventory.schemaVersion, 1);
 assert.ok(inventory.dependencies.some((item) => item.ecosystem === "cargo"));
 assert.ok(inventory.dependencies.some((item) => item.ecosystem === "npm"));
 assert.ok(inventory.dependencies.some((item) => item.ecosystem === "maven"));
+const inventoryCheck = spawnSync(process.execPath, ["scripts/generate-license-inventory.mjs", "--check"], {
+  cwd: root, env: process.env, encoding: "utf8",
+});
+assert.equal(inventoryCheck.status, 0, `${inventoryCheck.stdout}\n${inventoryCheck.stderr}`);
 
 const pom = readFileSync(resolve(root, "pom.xml"), "utf8");
 assert.match(pom, /<java\.version>(2[1-9]|[3-9][0-9])<\/java\.version>/);
