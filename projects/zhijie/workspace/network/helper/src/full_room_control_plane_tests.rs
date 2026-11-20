@@ -1,6 +1,10 @@
 use super::*;
 use zhijie_relay::control_plane::ControlPlaneValidator;
 
+#[path = "full_room_diagnostics.rs"]
+mod diagnostics;
+use diagnostics::PumpDiagnostic;
+
 // 仅父 Java 集成测试启用；短票和测试私钥通过匿名标准输入传入，不写文件。
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "requires twelve real control-plane members and coordinated revocation"]
@@ -63,6 +67,9 @@ async fn twelve_real_control_plane_data_pumps() {
     let mut connected = Vec::new();
     let mut addresses = Vec::new();
     let mut pumps = Pumps(Vec::new());
+    let phase = Arc::new(AtomicU8::new(0));
+    let renewal_round = Arc::new(AtomicU8::new(0));
+    let started = std::time::Instant::now();
     for (index, (socket, request)) in sockets.into_iter().zip(requests).enumerate() {
         assert_eq!(
             base64::engine::general_purpose::STANDARD
@@ -91,7 +98,14 @@ async fn twelve_real_control_plane_data_pumps() {
         let (command, receiver) = tokio::sync::mpsc::unbounded_channel();
         let path = Arc::new(AtomicU8::new(0));
         let ready = Arc::new(AtomicBool::new(false));
-        pumps.0.push(tokio::spawn(run_data_plane(
+        let diagnostic = PumpDiagnostic::new(
+            mode.clone(),
+            index,
+            phase.clone(),
+            renewal_round.clone(),
+            started,
+        );
+        let pump = run_data_plane(
             ControlledTunnel {
                 input: tokio::sync::Mutex::new(receive),
                 output,
@@ -106,7 +120,13 @@ async fn twelve_real_control_plane_data_pumps() {
             ready.clone(),
             path.clone(),
             Ok(config.clone()),
-        )));
+        );
+        pumps.0.push(tokio::spawn(async move {
+            let mut diagnostic = diagnostic;
+            let result = pump.await;
+            diagnostic.record(&result);
+            result
+        }));
         inputs.push(input);
         outputs.push(capture);
         commands.push(command);
@@ -129,8 +149,8 @@ async fn twelve_real_control_plane_data_pumps() {
                 for (index, pump) in pumps.0.iter_mut().enumerate() {
                     if pump.is_finished() {
                         panic!(
-                            "network startup stopped mode={mode} member={index} result={:?}",
-                            pump.await.unwrap()
+                            "network startup stopped mode={mode} member={index} code={}",
+                            diagnostics::exit_code(&pump.await.unwrap())
                         );
                     }
                 }
@@ -138,7 +158,9 @@ async fn twelve_real_control_plane_data_pumps() {
             }
         }
         // 五轮正常续票跨越原始一分钟票据；每轮后重新核验所有方向。
-        for phase in 1..=7 {
+        for current_phase in 1..=7 {
+            phase.store(current_phase, Ordering::Relaxed);
+            let phase = current_phase;
             let count = if phase == 7 { MEMBERS - 1 } else { MEMBERS };
             // 等待握手队列排空后，真实 UDP/QUIC 报文必须全部交付。
             if phase == 1 {
@@ -180,6 +202,7 @@ async fn twelve_real_control_plane_data_pumps() {
             }
             println!("REAL_NETWORK_ROOM_OK mode={mode} phase={phase} members={count} directions={} packets_per_direction={BURST}", count * (count - 1));
             if phase <= 5 {
+                renewal_round.store(phase, Ordering::Relaxed);
                 std::fs::write(&renew_ready, phase.to_string()).unwrap();
                 let updates: Vec<NetworkStart> = tokio::task::spawn_blocking(|| {
                     let mut line = String::new();
@@ -244,7 +267,8 @@ async fn twelve_real_control_plane_data_pumps() {
                             | "RELAY_AUTH_FAILED"
                             | "RELAY_CONNECTION_LOST")
                     ),
-                    "departed member must fail authorization or lose relay: {ended:?}"
+                    "departed member must fail authorization or lose relay: {}",
+                    diagnostics::exit_code(&ended)
                 );
                 tokio::time::sleep(Duration::from_millis(1200)).await;
                 for source in 0..MEMBERS - 1 {
@@ -286,7 +310,8 @@ async fn twelve_real_control_plane_data_pumps() {
                             | "RELAY_AUTH_FAILED"
                             | "RELAY_CONNECTION_LOST")
                     ),
-                    "old policy pump member={index} result={result:?}"
+                    "old policy pump member={index} code={}",
+                    diagnostics::exit_code(&result)
                 );
             }
         })
