@@ -237,10 +237,15 @@ public class ActivityCoordinator {
         if (existing != null && existing.releasedAt() == null) return existing.ipv4();
         Set<String> used = new HashSet<>(repository.listActiveAddresses(activity.id()));
         String preferred = repository.findIpHistory(room.id(), userId).map(IpHistory::lastIpv4).orElse(null);
-        String selected = preferred != null && !used.contains(preferred) ? preferred : null;
-        for (int host = 1; selected == null && host <= ROOM_CAPACITY; host++) {
+        String selected = null;
+        for (int host = 1; host <= ROOM_CAPACITY; host++) {
             String candidate = "10.231.0." + host;
-            if (!used.contains(candidate)) selected = candidate;
+            if (used.contains(candidate)) continue;
+            if (candidate.equals(preferred)) {
+                selected = candidate;
+                break;
+            }
+            if (selected == null) selected = candidate;
         }
         if (selected == null) throw conflict("IP_CONFLICT", "活动内没有可用虚拟地址");
         repository.upsertAddress(new IpAllocation(activity.id(), userId, selected, now, null));

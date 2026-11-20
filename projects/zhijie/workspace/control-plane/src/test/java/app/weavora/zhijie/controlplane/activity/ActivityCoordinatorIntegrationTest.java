@@ -153,6 +153,24 @@ class ActivityCoordinatorIntegrationTest {
         assertThat(repository().findLease(initial.leaseId()).orElseThrow().revokedAt()).isNotNull();
     }
 
+    @Test
+    void rejoinOnlyPrefersAvailableAddressesFromTheRoomPool() {
+        Fixture fixture = fixture(2);
+        var coordinator = context.getBean(ActivityCoordinator.class);
+        String user = fixture.userIds().get(0);
+        String peer = fixture.userIds().get(1);
+        var occupied = coordinator.join(peer, fixture.roomId(), "peer", null, "peer-join");
+        assertThat(occupied.virtualIpv4()).isEqualTo("10.231.0.1");
+        for (String history : List.of("10.231.0.12", "10.231.0.13", "192.168.1.1", occupied.virtualIpv4())) {
+            repository().upsertIpHistory(new IpHistory(fixture.roomId(), user, history, fixture.activityId(), Instant.now()));
+            var joined = coordinator.join(user, fixture.roomId(), "device", null, UUID.randomUUID().toString());
+            String expected = history.equals("10.231.0.12") ? history : "10.231.0.2";
+            assertThat(joined.virtualIpv4()).isEqualTo(expected);
+            assertThat(repository().findIpHistory(fixture.roomId(), user).orElseThrow().lastIpv4()).isEqualTo(expected);
+            coordinator.leave(user, fixture.activityId());
+        }
+    }
+
     private ActivityRepository repository() {
         return context.getBean(ActivityRepository.class);
     }
