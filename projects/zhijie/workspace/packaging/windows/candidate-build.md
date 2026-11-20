@@ -2,13 +2,13 @@
 
 ## 本机试用（不安装）
 
-**本机试用入口**：`target/trial-kit-399db61/zhijie-windows-x64-trial.zip`（93,047,911 字节，SHA-256：`54e985df9d4ce84c1b4b570efa5ddcd4edfdb6952cca8bf93daa922dcbc03ae2`）。桌面和后端均从 `399db61` 的干净源码构建，包含历史 IP 分配和设备退房修复。核对摘要后完整解压到 D 盘全新目录，按包内 `README.md` 启动；不要混用新旧桌面和后端。要保留旧数据，请先停库，按包内说明冷备并恢复，不覆盖原目录。包内不含 JDK、Python、WebView2、安装器、试用数据库或登录凭据。
+**本机试用入口**：`target/trial-kit-59056e8/zhijie-windows-x64-trial.zip`（93,048,391 字节，SHA-256：`5fb1f145de5701ec05f624e3e7fd6453dd4e21f01731972a78b31f120415c52d`）。后端来自 `59056e8`：设备接管后，旧设备不能再恢复、续期或申请新设备的通道票据。桌面继续使用与之配套且无需改动的 `399db61` 构建。核对摘要后解压到 D 盘全新目录，按包内 `README.md` 启动；如需保留旧数据，先停库、冷备并恢复，不覆盖原目录。包内不含 JDK、Python、WebView2、安装器、试用数据库或凭据。
 
-本包在独立解压目录首次启动、停库重启和冷备恢复后均通过接口登录并读取同一条消息。每次启动均用同账号的两台逻辑设备接管房间，核对旧请求不影响新租约、当前设备能正常退房、重复退房不再释放名额。由 ZIP 中桌面二进制提取的十个界面文件通过 170 项无头浏览器检查，无脚本异常。没有启动原生窗口、提权、安装驱动或验证实际通话。日志在 `target/trial-kit-399db61/` 下：`relocation.log`、`embedded-binary.log`、`embedded-browser.json`。`upgrade.log` 另记录了从 `c5868af` 后端升级、回退旧库并再次启用新版数据的四次启动。
+新包首次启动、停库重启和冷备恢复后均通过实际接口登录、读取原消息、双设备接管和按租约退房；旧设备申请语音和网络票据均被拒绝，当前设备获得与租约匹配的网络票据。日志：`target/trial-kit-59056e8/relocation.log`。与 `399db61` 整包逐条比对，340 个条目中仅后端编译类发生变化，见同目录 `comparison.log`；桌面内嵌界面的 170 项检查记录仍在 `target/trial-kit-399db61/embedded-browser.json`。未启动原生窗口，未实测真实通话或跨机网卡。
 
 从本机 `workspace` 复建：`python -B "packaging/windows/pack-trial-kit.py" --output "target/新的试用包.zip"`。输入路径和摘要锁定在 `packaging/windows/trial-kit.json`，输出文件必须不存在；此步骤只打包已有候选，不负责构建、签名或发布。
 
-复测命令（从 `workspace` 运行）：`python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-399db61/zhijie-windows-x64-trial.zip" --sha256 54e985df9d4ce84c1b4b570efa5ddcd4edfdb6952cca8bf93daa922dcbc03ae2 --java-home "D:/Program Files/jdk-25" --check-leave --check-restore`。测试使用临时数据库和随机本机端口，不接触已有试用数据。
+复测命令（从 `workspace` 运行）：`python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-59056e8/zhijie-windows-x64-trial.zip" --sha256 5fb1f145de5701ec05f624e3e7fd6453dd4e21f01731972a78b31f120415c52d --java-home "D:/Program Files/jdk-25" --check-grants --check-restore`。测试使用临时数据库和随机本机端口，不接触已有试用数据。
 
 ## 旧版试用目录
 

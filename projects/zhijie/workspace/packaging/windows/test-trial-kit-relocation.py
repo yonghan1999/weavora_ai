@@ -9,11 +9,12 @@ import socket
 import subprocess
 import sys
 import tempfile
+from urllib.error import HTTPError
 from urllib.request import ProxyHandler, Request, build_opener
 from zipfile import ZipFile
 
 
-def check_device_leave(api, password, token, room):
+def check_device_leave(api, password, token, room, check_grants):
     other = api('auth/login', method='POST', body={
         'email': 'trial@example.test', 'password': password, 'deviceId': 'takeover'})['accessToken']
 
@@ -27,6 +28,20 @@ def check_device_leave(api, password, token, room):
     if (old['activityId'] != activity or current['activityId'] != activity or old['leaseId'] == current['leaseId']
             or current['memberGeneration'] <= old['memberGeneration']):
         raise ValueError('两台设备未接管同一活动')
+    if check_grants:
+        network = {'publicKey': 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA='}
+        for channel, body in [('voice', {}), ('network', network)]:
+            try:
+                api(f'activities/{activity}/{channel}-grants', token=token, method='POST', body=body)
+            except HTTPError as error:
+                with error:
+                    if error.code != 403 or json.load(error)['error']['code'] != 'CURRENT_GRANT_REQUIRED':
+                        raise ValueError(f'旧设备的 {channel} 授权未按设备资格拒绝') from error
+            else:
+                raise ValueError(f'旧设备取得了 {channel} 授权')
+        grant = api(f'activities/{activity}/network-grants', token=other, method='POST', body=network)
+        if grant['leaseId'] != current['leaseId'] or not grant['networkTicket']:
+            raise ValueError('当前设备未取得与新租约匹配的网络票据')
     path = f'activities/{activity}/leave'
     for caller, lease in ((token, old['leaseId']), (token, current['leaseId']), (other, old['leaseId'])):
         if api(path, token=caller, method='POST', body={'leaseId': lease})['left'] is not False:
@@ -39,7 +54,7 @@ def check_device_leave(api, password, token, room):
             raise ValueError('当前设备退房或重复退房结果不符')
 
 
-def verify(package, digest, java_home, check_restore=False, check_leave=False):
+def verify(package, digest, java_home, check_restore=False, check_leave=False, check_grants=False):
     workspace = Path(__file__).resolve().parents[2]
     target = workspace / 'target'
     if os.name != 'nt' or target.drive.upper() == os.environ.get('SystemDrive', 'C:').upper() or target.resolve(strict=True) != target:
@@ -114,15 +129,17 @@ def verify(package, digest, java_home, check_restore=False, check_leave=False):
                     raise ValueError('房间密码配置或群主免密状态不符')
                 if not any(item['id'] == message_id and item['body'] == marker for item in api(history, token=token)):
                     raise ValueError('未读到本次试用消息')
-                if check_leave:
-                    check_device_leave(api, password, token, room)
+                if check_leave or check_grants:
+                    check_device_leave(api, password, token, room, check_grants)
             finally:
                 subprocess.run([*command, scripts / 'stop.ps1'], cwd=kit, env=env, check=True, timeout=45)
     print('RELOCATED_TRIAL_KIT_PASSWORD_POLICY_LOGIN_MESSAGE_RESTART_OK')
     if check_restore:
         print('TRIAL_KIT_OFFLINE_BACKUP_RESTORE_LOGIN_OK')
-    if check_leave:
+    if check_leave or check_grants:
         print('TRIAL_KIT_DEVICE_BOUND_LEAVE_OK')
+    if check_grants:
+        print('TRIAL_KIT_DEVICE_BOUND_GRANTS_OK')
 
 
 if __name__ == '__main__':
@@ -132,5 +149,6 @@ if __name__ == '__main__':
     parser.add_argument('--java-home', required=True, type=Path)
     parser.add_argument('--check-restore', action='store_true', help='用包内工具恢复到另一解压目录，再登录核对数据')
     parser.add_argument('--check-leave', action='store_true', help='每次启动后验证设备接管和按租约退房；只用于支持该协议的包')
+    parser.add_argument('--check-grants', action='store_true', help='同时验证接管前的设备不能取得语音或网络票据')
     args = parser.parse_args()
-    verify(args.package, args.sha256, args.java_home, args.check_restore, args.check_leave)
+    verify(args.package, args.sha256, args.java_home, args.check_restore, args.check_leave, args.check_grants)
