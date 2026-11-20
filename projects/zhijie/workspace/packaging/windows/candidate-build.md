@@ -2,6 +2,26 @@
 
 ## 当前本机试用（不安装）
 
+最新整包：`target/trial-kit-684e0a9/zhijie-windows-x64-trial.zip`（93,079,280 字节，SHA-256：`ecac7e215dafab1e3ad121ede76caafbbb334406d51d2bf72ab1bbc1b6e254cd`）。后端从已推送 `684e0a9` 干净归档构建，包含同步交付与生命周期调度隔离，以及有效会话复核不等待发送锁的修复；慢广播不再占用默认生命周期调度线程。真实四慢端复现、68 项相关回归通过与一项未启用、两组百账号短测及 34 项独立快照专项见 `docs/engineering/sync-lifecycle-scheduler-isolation.md`；不把约 0.78 秒本机空闲 logout 关闭写成全通道五秒 SLA。
+
+新后端：`target/trial-kit-684e0a9/preview-backend.zip`（83,840,569 字节，SHA-256：`2628e32733850f00804698f791b42b3fb93a197fc82b460e7cb20c41cefb4ddb`）。336 个后端条目与 `f35980f` 逐项比较，仅 `SchedulingConfiguration.class`、`SyncOutboxDispatcher.class`、`SyncService.class` 与内部 `SyncService$Connection.class` 不同，四项均与干净归档编译结果一致；348 个整包条目也仅上述后端条目变化。内部连接类的反汇编指令、签名与常量一致，见 `target/windows-lifecycle-684e0a9/inner-class.log`；差异与摘要见 `target/trial-kit-684e0a9/comparison.log`。依赖、数据库 V16、启动脚本与外部服务默认配置未变。
+
+桌面与 Helper 直接复用 `8da8814` 便携文件，构建前已核对相关源码、启动和打包输入无变化；整包打包时逐个核验产品摘要。便携清单 SHA-256 仍为 `8f337ab2ec814e8b0ee5aa22cd07154a318cbceffe4a7a2c1a8c178ad33cbd8c`。本轮未重建或复制安装器，未启动原生桌面、生产 Helper 或安装器，也未重跑 UI 检查。
+
+六项打包单测通过。新整包实际通过登录、消息、重启、1,112 文件冷备恢复、设备接管与旧资格拒绝，见 `target/trial-kit-684e0a9/relocation.log`；新后端同版重启、两种同步认证、房间重开与普通日志/管理记录秘密扫描通过，见 `backend-lifecycle.log`。从 `f35980f` 旧版独立测试库停库迁入新版副本、回退旧原库、再启新版共四次启动通过；旧/新版冷备逐文件核验 1,111/1,112 文件，各自消息、删除标记与配置保留，两份数据不合并，见 `upgrade-roundtrip.log`。
+
+验证日志 SHA-256：`relocation.log` 为 `ec5efc48c0879e01c0a38fee23fef2c9fc925b2ae9adb73ba4752f3ef8c1b7ef`；`backend-lifecycle.log` 为 `1e56c7959b03cdd0353b05771f69b35248d2ab62284148a86d2d2e1fd4069cea`；`upgrade-roundtrip.log` 为 `197d4f08b6fffe7a317a3c1d0285c78f4b7e89a83ac25fa902cc9d69ebc79018`。
+
+四文件暂存树 `02ac5bbd9f55d221753033883eb5782e0c4dd0c6` 已独立导出完整仓库，通过工作空间、依赖清单、兼容矩阵、发布契约、性能夹具检查及六项打包单测。发布契约内 Linux `dpkg-deb` 实跑因本机缺少工具而跳过，不是 Linux 制品验收。`target/windows-lifecycle-684e0a9/snapshot.log` SHA-256 为 `680a75b1eb3c504181272de0b811f2e95facb6c2bb37d69fa9bbd0b57896a3fd`，此后仅追加结果记录。
+
+本轮验证进程退出后，核验 D 盘绝对路径、逐级重解析点、Git 忽略及进程引用，清理构建源码、展开快照和临时目录共 37,086,138 字节（约 35 MiB），见 `target/windows-lifecycle-684e0a9/cleanup.log`。日志、源码 ZIP、共享缓存、新旧交付物及用户数据保留；结束时 C/D 可用约 10.64/37.96 GiB。
+
+本轮构建和验证使用 D 盘项目专用目录与现有离线工具，仅设置当前进程环境，不覆盖已有试用数据。核对整包摘要后解压到 D 盘全新目录并按包内 `README.md` 启动；迁移前正常停库并核验冷备，回退使用匹配旧包及升级前原库。旧 ZIP 保留，禁止将两份数据库自动合并。
+
+独立 Relay、证书与管理配置不在 ZIP 内，主动 Relay 撤销、邮件和外部语音默认关闭。真实跨机 TUN/游戏、音频、三平台安装签名、目标服务器容量、许可人工审核及正式 F/G/H/I 和人工验收仍未完成，阶段保持 E。本轮制品验证不代替这些验收。
+
+## 上一版本试用（f35980f）
+
 最新整包：`target/trial-kit-f35980f/zhijie-windows-x64-trial.zip`（93,079,191 字节，SHA-256：`68923d552521e11d6cc4374ae0fe2ffb7120c91d014b42472514eb8b8b7f66e0`）。后端从已推送 `f35980f` 干净归档构建，包含同步撤销先关闭目标账号、再向其余连接广播的修复；无关慢接收者不再成为该投递入口关闭目标连接的前置条件。真实三慢端缺陷复现、51 项相关回归及 26 项独立快照专项见 `docs/engineering/sync-revocation-before-fanout.md`；不宣称更早 Outbox 积压、调度等待或全通道五秒目标已经解决。
 
 新后端：`target/trial-kit-f35980f/preview-backend.zip`（83,840,318 字节，SHA-256：`97eecba0a154857caa0eeeee68eaebe096a1fd1f7472d6ac4b4d1821589f84f5`）。336 个后端条目和 348 个整包条目与 `2302a84` 逐项比较，仅 `SyncRevocationTarget.class` 不同；该类与本轮干净归档实际编译结果一致，SHA-256 为 `3fb3f67c4e5dc832279294007bb90ee53c3d6dcdef4516c1243b691cc602f640`。依赖、数据库 V16、启动脚本、桌面和 Helper 均未变化，详见 `target/trial-kit-f35980f/comparison.log`。
