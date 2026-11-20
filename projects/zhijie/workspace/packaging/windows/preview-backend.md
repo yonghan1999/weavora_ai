@@ -1,5 +1,13 @@
 # Windows 本机试用后端（离线包）
 
+当前后端：`target/trial-kit-f35980f/preview-backend.zip`（83,840,318 字节，SHA-256：`97eecba0a154857caa0eeeee68eaebe096a1fd1f7472d6ac4b4d1821589f84f5`），配套整包与启动边界见[本机试用入口](candidate-build.md)。从已推送 `f35980f` 干净归档构建，336 个后端条目与 `2302a84` 比较仅 `SyncRevocationTarget.class` 不同；撤销入口先关闭目标账号，再向其他连接广播，避免无关慢接收者累积拖延目标关闭。保留先前单次阻塞写入两秒期限，没有新增依赖、迁移、线程或队列。
+
+新整包实际通过登录、消息、重启、冷备恢复及设备资格回归；后端同版重启、两种同步认证、房间重开和普通日志/管理记录秘密扫描通过。从 `2302a84` 旧测试库停库迁入新版独立副本、回退旧原库、再启新版共四次启动通过，旧/新版冷备逐文件核验 1,111/1,112 个文件，消息、删除标记和配置按各自版本保留，数据不合并。证据位于 `target/trial-kit-f35980f/relocation.log`、`backend-lifecycle.log`、`upgrade-roundtrip.log`，摘要见配套整包记录。
+
+升级前正常停库并核验冷备，恢复到全新数据目录；回退使用匹配旧包和升级前原库，不让旧程序混跑活跃新版库。旧 ZIP 与用户数据保留，数据库仍为 V16。独立 Relay 不随包部署，主动 Relay 撤销、邮件与外部语音默认关闭；本机结果不证明更早 Outbox 积压或全通道五秒目标，真实跨机、音频、三平台签名、目标容量及正式验收仍开放。
+
+## 2302a84 后端构建与验证记录
+
 当前后端：`target/trial-kit-2302a84/preview-backend.zip`（83,840,318 字节，SHA-256：`15da96f8a617b262a9bdccfeac38c6bc1de85adcaaf5d2905611c737c7db8b21`），配套整包及启动边界见[本机试用入口](candidate-build.md)。从已推送 `2302a84` 干净归档构建，336 个条目仅 `SyncWebSocketHandler.class` 相较 `d9a9dfe` 不同，单次阻塞 WebSocket 写入设置两秒期限；不增加依赖、迁移、队列或生产重试。具体缺陷、真实 TCP 复现及 33 项回归见 `docs/engineering/sync-blocking-write-deadline.md`，不解释为历史所有同步故障已解决。
 
 本轮实际执行同版登录/消息/重启、两种同步认证、房间重开及普通日志/管理记录秘密扫描，通过记录为 `target/trial-kit-2302a84/backend-lifecycle.log`。从旧 `d9a9dfe` 测试库停库迁入新版独立副本、原库回退、再启新版共四次启动通过；旧/新版冷备逐文件核对 1,111/1,112 文件，配置、消息和删除标记各自保留，见 `upgrade-roundtrip.log`。整包还通过 1,112 文件冷备恢复及设备资格拒绝，见 `relocation.log`。

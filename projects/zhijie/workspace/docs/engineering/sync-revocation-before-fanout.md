@@ -32,6 +32,16 @@
 
 此改动只解决已经进入 SyncRevocationTarget 的目标关闭被无关接收者广播拖延的问题。排在更早 Outbox 事件之后、调度器被占用、目标自身多条慢连接、数据库等待或全部通道联合撤销，仍可能超过五秒。广播本身仍串行，慢接收者仍可能拖延其他账号收到事件；没有将目标连接本机约 2 ms 的结果写成全局 SLA。
 
-现有 Windows 试用 ZIP 仍为 `trial-kit-2302a84`，未包含本次顺序调整；不能用源码测试证明旧包已更新。目标服务器容量、实际跨机虚拟网络、音频、三平台安装签名及 F/G/H/I 和人工审批仍未完成。
+Windows 试用包已另行从干净归档构建并验证，详见下节；不将源码测试替代制品实跑。目标服务器容量、实际跨机虚拟网络、音频、三平台安装签名及 F/G/H/I 和人工审批仍未完成。
 
 KISS/YAGNI：使用现有关闭入口，只重排必要操作。DRY：三种撤销复用同一投递路径，真实网络握手夹具复用一个方法。单一职责：撤销入口负责先终止目标连接，原广播继续负责通知当前授权接收者。
+
+## 试用制品更新
+
+修复提交为 `f35980f` 后，从该干净归档实际构建后端，成套整包为 `target/trial-kit-f35980f/zhijie-windows-x64-trial.zip`，SHA-256 `68923d552521e11d6cc4374ae0fe2ffb7120c91d014b42472514eb8b8b7f66e0`。后端 SHA-256 `97eecba0a154857caa0eeeee68eaebe096a1fd1f7472d6ac4b4d1821589f84f5`。相较 `2302a84`，后端与整包都仅一个 `SyncRevocationTarget.class` 条目变化，桌面、Helper、依赖、脚本与 V16 数据库不变。
+
+六项打包单测、整包登录/消息/重启、1,112 文件冷备恢复、设备资格拒绝，以及后端同版生命周期、两种同步认证、房间重开、日志隐私均实际通过。从 `2302a84` 旧测试库停库迁入新版独立副本、回退旧原库、再启新版四次启动通过，旧/新版冷备分别核验 1,111/1,112 个文件；两份数据不合并。
+
+日志位于 `target/trial-kit-f35980f/`：`relocation.log` SHA-256 `13fc3ced92a2d566998ecfaed24bbd5fd3b15db2d20a0927fa94483bce7c01cc`；`backend-lifecycle.log` 为 `8474010b763d7c92a45affd3d27850aef49ee6ece2fb26b9eb567549eb33d6c8`；`upgrade-roundtrip.log` 为 `bff4bb86228da45cee17d2a26196c568e29775f4b19802a1e416bf4a9a31a09e`。完整制品索引、复用输入及未验证边界见 `packaging/windows/candidate-build.md`。
+
+制品索引四文件暂存树 `bf6b847bff2c6678361d95ba73801df1511e6a51` 已完整独立归档，通过工作空间、依赖、兼容/发布/性能契约与六项打包单测；发布契约内 `dpkg-deb` 实跑因工具缺失跳过，不是 Linux 制品验收。`target/windows-sync-f35980f/snapshot.log` SHA-256 为 `18f1269bbf7d6916b1c032341f9f0cb92ed5d2cc600aa1924cf94cecd96fab51`。本轮所有验证进程退出后，仅清理构建副本、快照与临时目录 37,030,909 字节，保留证据、源码 ZIP、共享缓存、新旧制品及用户数据，见同目录 `cleanup.log`。
