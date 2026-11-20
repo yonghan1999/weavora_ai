@@ -1,5 +1,13 @@
 # Windows 本机试用后端（离线包）
 
+当前后端：`target/trial-kit-f86cef2/preview-backend.zip`（83,839,495 字节，SHA-256：`ed2670e7181156583aee8a37472c7c48d3ba068215b33181fd46af598575a17e`），配套[最新整包](candidate-build.md)。从已推送 `f86cef2` 干净归档构建，新增 Relay 验权响应版本、活动代次、设备标识及票据/租约较早的绝对期限；无新依赖或迁移，仍为 V16。相较 `a039409` 的 336 个后端条目，仅 `RelayGrantValidationService.class` 和 `RelayValidationResponse.class` 变化，见 `target/trial-kit-f86cef2/comparison.log`。
+
+新 Relay 的内存快照/独立续验/硬截止需要另行部署匹配二进制；试用 ZIP 不包含该独立服务、证书或密钥，不自动开启主动撤销。新 Relay 拒绝旧控制面缺字段，混版未验收，升级/回退须停止相关进程并成套使用匹配程序、配置与停库备份。实现、缓存窗口和实际源码回归见 `docs/engineering/relay-authorization-snapshot.md`；不承诺权威提交后首包零窗口拒绝，也不代表跨机五秒 SLA 已完成。
+
+同版登录/消息/重启、两种同步认证、房间重开及普通日志/管理记录隐私通过，见 `target/trial-kit-f86cef2/backend-lifecycle.log`。`a039409` 旧库停库迁入新版独立副本、原库回退、再启新版的四次启动通过，旧/新版快照分别核对 1,111/1,112 文件，见 `upgrade-roundtrip.log`；不覆盖现有用户数据，两份库不自动合并。四项后端打包和两项整包单测通过，整包额外冷备恢复及设备资格检查通过。清理后只保留制品、归档和证据，详见最新整包记录；完整交付仍须正式阶段和实机验收。
+
+## 上一版本（a039409）
+
 当前后端：`target/trial-kit-a039409/preview-backend.zip`（83,838,457 字节，SHA-256：`cdca5192fa62aa50357dab48cbec8ba7ca3b198249e3605f432878a1385d9acc`），配套[最新整包](candidate-build.md)。从 `a039409` 干净归档构建，语音、网络与其他外部事件分区调度、独立提交，保留 V16 持久化退避；无新依赖或数据库迁移，主动 Relay 撤销仍默认关闭。实现和实际源码回归见 `docs/engineering/external-revocation-channels.md`，不代表真实媒体或跨机 SLA 验收。
 
 本版实际同版登录/消息/重启、两种同步认证、房间重开、普通日志及管理记录隐私通过，见 `target/trial-kit-a039409/backend-lifecycle.log`。相较 `e45156f`，336 个后端条目中仅新增两个类、变更八个相关条目，依赖不变，见 `comparison.log`。不覆盖既有目录；升级与回退继续使用下述成套冷备及独立数据目录要求。
