@@ -1,5 +1,11 @@
 # Windows 本机试用后端（离线包）
 
+当前后端：`target/trial-kit-e45156f/preview-backend.zip`（83,832,502 字节，SHA-256：`8cbebdc023ad7aad0461e6e458317bcecdda5c3cc376e2483adba44700aab421`），配套[最新整包](candidate-build.md)。从 `e45156f` 干净归档构建，新增可选 Relay Outbox 撤销适配，仍使用 V16、默认关闭主动撤销。独立 Relay 服务及其证书/密钥须另行配置，见 `docs/engineering/relay-outbox-revocation.md`，包内不提供或自动部署。
+
+本机实际验证了同版登录/消息/重启、两种同步认证、房间重开与日志隐私，以及 `0dcaf88` 旧版停库迁入、新版使用、原库回退和新版重新启用。旧/新版快照分别核对 1,111/1,112 个文件，见 `target/trial-kit-e45156f/backend-lifecycle.log`、`upgrade-roundtrip.log`。对前版 333 条内容核对，仅新增一类、修改两条，依赖不变，见 `comparison.log`。无新数据库迁移，仍按下文冷备与成套回退要求操作，不覆盖已有目录。
+
+以下保留前版入口及升级边界；当前试用包大小、摘要和验证记录以上述新版本为准。
+
 **首次试用**：优先使用[桌面与后端整包](candidate-build.md)，桌面 `399db61` 配套后端 `0dcaf88`。单独的后端包在 `target/trial-kit-0dcaf88/preview-backend.zip`（83,823,788 字节，SHA-256：`a8ff2d4699cdcb31db3aa898b85349e34693e291cc56a1c17519d275c7837ae2`）。相较 `9ba3623` 新增三个派发/状态类和 V16、变更七个后端条目，共 333 条；外部撤销与同步使用独立定时器及事务，持久化有界指数退避，避免慢目标拖延默认调度或失败队首永久饥饿，保留原同步隔离、固定字段诊断、注销/重连和设备资格保护。`DispatchResult` 内部类仅行号变化，已核对指令及其余元数据一致，见同目录 `comparison.log`、`inner-class.log`。独立包已实测登录、消息、重启、同步认证、房间重开及普通日志/管理记录隐私，见同目录 `backend-lifecycle.log`。历史发送告警仍开放，外部失败仍待重试，不等于外部渠道接入或五秒 SLA 验收。不要覆盖已有数据目录；既有日志不会被追溯修改。
 
 V15 在原 Outbox 表新增 `sync_delivered_at`，V16 再新增独立外部尝试计数和下次重试时间，不重置事件或同步游标，外部退避跨重启保留。迁移前停止旧控制面及写入进程，保留已核验的升级前停库备份；以迁移角色执行迁移及现有运行授权脚本，不混跑旧新版。从 V14 或更早版本升级仍可能对历史未完成撤销再次同步，不能宣称严格一次投递。回退用匹配旧程序和原升级前备份，不在已升级活跃库直接启动旧程序；技术边界、失败复现及五十四项完整源码回归见 `docs/engineering/external-revocation-isolation.md` 与 V15 的 `docs/engineering/sync-outbox-isolation.md`。旧后端 `target/trial-kit-9ba3623/preview-backend.zip` 保留，不包含本轮 V16 变更。
