@@ -1,5 +1,13 @@
 # Windows 本机试用后端（离线包）
 
+当前后端：`target/trial-kit-a039409/preview-backend.zip`（83,838,457 字节，SHA-256：`cdca5192fa62aa50357dab48cbec8ba7ca3b198249e3605f432878a1385d9acc`），配套[最新整包](candidate-build.md)。从 `a039409` 干净归档构建，语音、网络与其他外部事件分区调度、独立提交，保留 V16 持久化退避；无新依赖或数据库迁移，主动 Relay 撤销仍默认关闭。实现和实际源码回归见 `docs/engineering/external-revocation-channels.md`，不代表真实媒体或跨机 SLA 验收。
+
+本版实际同版登录/消息/重启、两种同步认证、房间重开、普通日志及管理记录隐私通过，见 `target/trial-kit-a039409/backend-lifecycle.log`。相较 `e45156f`，336 个后端条目中仅新增两个类、变更八个相关条目，依赖不变，见 `comparison.log`。不覆盖既有目录；升级与回退继续使用下述成套冷备及独立数据目录要求。
+
+从 `e45156f` 旧版停库迁入新版副本、使用原库回退、再启新版的四次启动通过，见 `target/trial-kit-a039409/upgrade-roundtrip.log`。旧/新版冷备分别核对 1,111/1,112 个文件，原库与新版库各自消息、删除标记和配置按预期保留，两份数据不自动合并。
+
+## 上一版本（e45156f）
+
 当前后端：`target/trial-kit-e45156f/preview-backend.zip`（83,832,502 字节，SHA-256：`8cbebdc023ad7aad0461e6e458317bcecdda5c3cc376e2483adba44700aab421`），配套[最新整包](candidate-build.md)。从 `e45156f` 干净归档构建，新增可选 Relay Outbox 撤销适配，仍使用 V16、默认关闭主动撤销。独立 Relay 服务及其证书/密钥须另行配置，见 `docs/engineering/relay-outbox-revocation.md`，包内不提供或自动部署。
 
 本机实际验证了同版登录/消息/重启、两种同步认证、房间重开与日志隐私，以及 `0dcaf88` 旧版停库迁入、新版使用、原库回退和新版重新启用。旧/新版快照分别核对 1,111/1,112 个文件，见 `target/trial-kit-e45156f/backend-lifecycle.log`、`upgrade-roundtrip.log`。对前版 333 条内容核对，仅新增一类、修改两条，依赖不变，见 `comparison.log`。无新数据库迁移，仍按下文冷备与成套回退要求操作，不覆盖已有目录。
