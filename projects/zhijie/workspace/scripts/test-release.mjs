@@ -25,6 +25,12 @@ process.stdout.write(linuxDeb.stderr);
 
 const windows = JSON.parse(readFileSync("desktop/shell/tauri.windows.conf.json", "utf8"));
 assert.deepEqual(windows.bundle.targets, ["nsis"]);
+assert.equal(windows.bundle.useLocalToolsDir, true, "Keep Windows bundler caches in the project target directory");
+if (process.platform === "win32") {
+  const candidate = spawnSync("powershell", ["-NoProfile", "-NonInteractive", "-File", "packaging/windows/test-build-candidate.ps1"], {encoding: "utf8"});
+  assert.equal(candidate.status, 0, candidate.error?.message ?? candidate.stderr);
+  process.stdout.write(candidate.stdout);
+}
 assert.equal(windows.bundle.windows.nsis.installMode, "perMachine");
 assert.equal(windows.bundle.windows.nsis.installerHooks, "../../packaging/windows/installer-hooks.nsh");
 assert.deepEqual(windows.bundle.resources, {

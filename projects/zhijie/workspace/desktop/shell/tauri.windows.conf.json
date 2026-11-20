@@ -1,6 +1,7 @@
 {
   "bundle": {
     "targets": ["nsis"],
+    "useLocalToolsDir": true,
     "resources": {
       "../../target/windows-bundle/zhijie-helper.exe": "zhijie-helper.exe",
       "../../scripts/local-preview/start-helper.ps1": "start-helper.ps1",

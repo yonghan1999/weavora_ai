@@ -13,8 +13,8 @@
     {
       "path": "desktop/shell/tauri.windows.conf.json",
       "artifactClass": "configuration",
-      "bytes": 824,
-      "sha256": "b44995def6efec25557cfd1e713760fcbb5b1f98c0e2b554214a67e3ad8de20e"
+      "bytes": 854,
+      "sha256": "26ae61fdbd1ce69fc5ec43a107e9d010e4a87c71d59ffba86732bc586b668840"
     },
     {
       "path": "desktop/shell/tauri.macos.conf.json",
@@ -55,8 +55,8 @@
     {
       "path": "packaging/windows/build-candidate.ps1",
       "artifactClass": "configuration",
-      "bytes": 1961,
-      "sha256": "2643fbd8e5eb49952ab56777773248a48c37ac3903cb0063699f8bc92c089701"
+      "bytes": 4020,
+      "sha256": "786d6cb386cd6d486d010f714f6bf13ee1a610e227308285c581f398ba4dfeab"
     },
     {
       "path": "packaging/windows/verify-package.py",
