@@ -1,5 +1,13 @@
 # Windows 本机试用后端（离线包）
 
+当前后端：`target/trial-kit-2302a84/preview-backend.zip`（83,840,318 字节，SHA-256：`15da96f8a617b262a9bdccfeac38c6bc1de85adcaaf5d2905611c737c7db8b21`），配套整包及启动边界见[本机试用入口](candidate-build.md)。从已推送 `2302a84` 干净归档构建，336 个条目仅 `SyncWebSocketHandler.class` 相较 `d9a9dfe` 不同，单次阻塞 WebSocket 写入设置两秒期限；不增加依赖、迁移、队列或生产重试。具体缺陷、真实 TCP 复现及 33 项回归见 `docs/engineering/sync-blocking-write-deadline.md`，不解释为历史所有同步故障已解决。
+
+本轮实际执行同版登录/消息/重启、两种同步认证、房间重开及普通日志/管理记录秘密扫描，通过记录为 `target/trial-kit-2302a84/backend-lifecycle.log`。从旧 `d9a9dfe` 测试库停库迁入新版独立副本、原库回退、再启新版共四次启动通过；旧/新版冷备逐文件核对 1,111/1,112 文件，配置、消息和删除标记各自保留，见 `upgrade-roundtrip.log`。整包还通过 1,112 文件冷备恢复及设备资格拒绝，见 `relocation.log`。
+
+升级前正常停库并核验冷备，恢复到新数据目录；回退用匹配旧程序及升级前原库，不在活跃新版库混跑旧程序，不自动合并两份数据。旧 ZIP 和原用户目录保留。数据库仍为 V16，主动 Relay 撤销、邮件与外部语音默认关闭，独立 Relay 不随包部署。完整实机、三平台签名、目标容量及正式验收仍开放。
+
+## 8da8814 配套验证记录
+
 当前配套整包已更新为 `8da8814`，见[本机试用入口](candidate-build.md)。本轮将 `5f37ddd` 首次中继连接并行修复实际纳入桌面/Helper；后端生产源码、Maven 输入、启动及打包入口无变化，测试源码变化不属于运行制品。继续直接使用 `target/trial-kit-d9a9dfe/preview-backend.zip`，大小 83,839,806 字节、SHA-256 `f953073bd2606beac6532ab217adf9558a0d61ab47acf980aaaa945557d1b653`，没有生成重复副本。新整包内 336 个后端条目逐一相同。
 
 新整包的登录、消息、重启、1,112 文件冷备恢复和设备资格回归见 `target/trial-kit-8da8814/relocation.log`；复用后端的同版重启、两种同步认证、房间重开及普通日志/管理记录秘密扫描见同目录 `backend-lifecycle.log`，均通过。旧库升级/回退未在本轮重跑；依赖、V16 与默认外部服务开关不变。成套使用新包，不能仅换后端获得 Helper 修复。独立 Relay 仍不包含在 ZIP 内，完整实机、签名、容量、许可及正式验收缺口不变。

@@ -33,6 +33,10 @@ SyncWebSocketHandler 现在在认证与回放前，经 Spring NativeWebSocketSes
 
 仅含本次四项变更的暂存树 `6f3369fd49fdc2ab507c1fa5be4bb238ca1fc536` 已归档展开，在无历史未提交变更的快照上通过工作空间、依赖清单、兼容矩阵、发布契约、性能夹具检查及 20 项专项实跑，慢连接清理 1858 ms。日志 `snapshot.log` SHA-256 为 `3c1cdf71feb0edc81c55d047f17d9dabcc46d356a31b8344d372d98cae81c7e2`。此后仅追加本段结果，生产及测试源码与已验证快照一致。
 
+生产修复已提交为 `2302a84`，后续从该干净归档实际构建后端并成套更新 `target/trial-kit-2302a84/zhijie-windows-x64-trial.zip`，整包 SHA-256 为 `7452872fcc8b16aa46e47373d6a768172a86eaf3ff1173bffe613f2dda417dfc`。新包仅一个后端类发生变化；成套登录/重启/冷备恢复/设备资格、两种同步认证、日志隐私、旧库升级/原库回退/新版再启均实际通过，详见 `packaging/windows/candidate-build.md`。没有将旧桌面/Helper 重建或旧 UI 检查写成本轮新执行。
+
+制品验证日志 SHA-256：`target/trial-kit-2302a84/relocation.log` 为 `862feebe532161c871d8dec96bbc56c3c279908e4185dc8000af9ec591f5413b`；`backend-lifecycle.log` 为 `852ec952526468de1c49cb0a3e8aa5407c33c55e442c6bb5a444a20d9d4a07e9`；`upgrade-roundtrip.log` 为 `cc174a570c5e69c3443cea67e13c0e42125214ea864a0333b74ae32d44e98518`。本轮进程退出后清理临时副本 243,943,842 字节，证据、源码归档、共享缓存和交付物保留。
+
 ## 边界与原则
 
 本修复只证明单条实际阻塞写入的有界退出与其连接锁清理，不把两秒当作所有场景的服务端撤销 SLA。广播仍串行，多个不同慢连接、积压事件、数据库延迟和全部通道联合五秒目标仍需更大范围验证。历史百账号握手失败、429 和发送告警没有因此判明或关闭；同机短测不能替代目标二核/2GB/5Mbit、一小时、实际媒体与跨机验收。
