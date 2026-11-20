@@ -2,6 +2,22 @@
 
 ## 当前本机试用（不安装）
 
+最新整包：`target/trial-kit-0ce6df5/zhijie-windows-x64-trial.zip`（93,078,848 字节，SHA-256：`310f9c998f2061934750b81dbab8851b78138bbbf7b24c903b1971e158b80581`）。桌面和 Helper 从已推送 `0ce6df5` 干净归档构建；后端复用已验证 `d9a9dfe` 的原始 ZIP，未重复复制或构建。构建前已核对控制面、Maven 输入、配套启动脚本和后端打包入口无源码变化，后端摘要仍为 `f953073bd2606beac6532ab217adf9558a0d61ab47acf980aaaa945557d1b653`。
+
+Helper 将 HTTP 权威轮询及续票与数据转发并行推进，避免慢响应暂停整个数据泵。已验证快照的硬截止从请求建立时起最多三秒，原票据和 Peer 到期继续约束；当前票据明确失权立即停止，成功续票丢弃旧票在途结果。不是无限离线缓存，也不承诺整个 IPC Stop 调用达到数据泵单测的响应时限。缺陷复现、119 项原生回归及真实控制面三种十二端测试见 `docs/engineering/network-authority-responsiveness.md`。无新依赖、迁移或默认外部服务变化，数据库仍为 V16。
+
+本轮对干净归档实际运行优化版 Helper 单测：61 通过、3 个专用入口忽略，见 `target/windows-responsive-0ce6df5/helper-release-tests-retry.log`。首次执行缺少归档下的本地 `target` 目录，两个文件夹具失败；只创建 D 盘工作目录后重跑，没有改源码或跳过用例，原失败日志 `helper-release-tests.log` 保留。桌面构建及 NSIS 打包成功，八个产品文件与本轮输入一致，见 `desktop-release.log`、`payload.json`。未签名安装器：`target/trial-0ce6df5/织界_0.1.0_x64-setup.exe`（12,093,123 字节，SHA-256：`c67a27a57de012a742ce788d3b7b6a4ea171906be544191de2c3e5bf560e0583`）；便携试用不需要运行安装器，本轮没有启动桌面、Helper 或安装器。
+
+13 项界面单测、从新二进制提取的 10 份界面文件及 170 项无头浏览器检查通过；提取界面与 `d9a9dfe` 字节一致。见 `target/windows-responsive-0ce6df5/ui-unit.log`、`target/trial-kit-0ce6df5/embedded-binary.log`、`embedded-browser.json`。六项打包单测通过；`comparison.log` 确认 1,319 个归档源码文件未被构建修改，348 个整包条目仅桌面、Helper 和清单变化，336 个后端条目与复用原包逐一相同，其余驱动、脚本、许可和依赖均不变。
+
+整包在一次性 D 盘目录通过实际登录、消息、重启、1,112 文件冷备恢复、设备接管及旧资格拒绝，见 `target/trial-kit-0ce6df5/relocation.log`。同一复用后端重新执行同版重启、两种同步认证、房间重开及普通日志/管理记录秘密扫描通过，见 `backend-lifecycle.log`。后端 ZIP 未变化，本轮没有重复执行旧库升级/回退；`d9a9dfe` 原包的历史四次启动记录继续保留，不冒充本轮新执行。
+
+所有测试进程退出后核对 D 盘绝对路径、逐级重解析点与进程引用，仅清理本轮构建源码副本、临时目录共 24,702,792 字节，见 `target/windows-responsive-0ce6df5/cleanup-build.log`；保留源码 ZIP、产品、提取界面、日志和共享缓存。清理后 C/D 可用约 10.17/39.54 GiB。提交前四文件暂存区独立快照检查记录为同目录 `snapshot.log`，仅核验工作区、依赖、兼容/发布/性能契约及许可材料完整性，不代替许可人工审核或正式验收。
+
+核对摘要后解压到 D 盘全新目录，按包内 `README.md` 启动；不要覆盖既有目录、数据库或混用桌面/Helper。独立 Relay 不在 ZIP 内，证书和目标服务仍须另行配置；主动撤销默认关闭，邮件和外部语音不会自动启用。本轮不代表真实音频、管理员 TUN、跨机游戏、完整五秒 SLA、三平台签名安装、目标容量或正式 F/G/H/I 完成，正式阶段仍 E。
+
+## 上一版本试用（d9a9dfe）
+
 最新整包：`target/trial-kit-d9a9dfe/zhijie-windows-x64-trial.zip`（93,074,365 字节，SHA-256：`1bb626d926daf265994a20b5a59ec5bf60ebfcd2664bc9d0a314d4504a8e5ca1`）。桌面、Helper 和后端均从已推送 `d9a9dfe` 干净归档重新构建，不混入工作区历史改动。Helper 将 Peer 会话绑定账号、活动代次及租约，并在直连、中继、出站和定时处理时执行授权到期检查；后端下发票据/租约较早期限。正常同身份续票可复用会话，换身份不能继承旧会话密文。源码回归与边界见 `docs/engineering/peer-authorization-identity.md`；无新依赖或迁移，仍为 V16。
 
 未签名安装器保留在 `target/trial-d9a9dfe/织界_0.1.0_x64-setup.exe`（12,093,575 字节，SHA-256：`d339ffe8a3ba6159a4cc38a09c02ac9597d9c589186bbb5c665b83de12bd638f`），本机便携试用无需运行。首次桌面编译通过后，NSIS 下载超时；保留失败日志，核对已有 D 盘 NSIS 和 Tauri 插件固定摘要后复用缓存，仅重跑打包成功。见 `target/windows-peer-d9a9dfe/desktop-release.log`、`desktop-bundle-retry.log`。八个产品文件与本轮构建输入一致，见 `payload.json`；未运行安装器、桌面或 Helper。

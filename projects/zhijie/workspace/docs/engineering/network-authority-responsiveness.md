@@ -50,7 +50,7 @@
 - 同机受控 TunnelDevice 和实际 UDP/QUIC 测试不等于真实 TUN、跨机 NAT、游戏、弱网或目标容量验证。
 - 三秒快照上限不等于已经证明所有环境都满足服务端确认失权后五秒的端到端目标；主动撤销通知、失联、系统挂起与真实设备场景仍需验收。
 - Windows/macOS/Linux 安装更新卸载、签名、音质、许可人工审核和正式 F/G/H/I 流程仍保持开放。
-- 当前 `d9a9dfe` Windows 试用包不包含本次修复，不能仅修改制品说明宣称其已升级；纳入试用需要重新构建和生命周期回归。
+- `d9a9dfe` Windows 试用包不包含本次修复。后续已从 `0ce6df5` 干净归档实际构建新桌面/Helper，并通过优化版 61 项 Helper 单测、制品内容核对、170 项提取界面浏览器检查及新整包登录/重启/冷备恢复。新入口为 `target/trial-kit-0ce6df5/zhijie-windows-x64-trial.zip`，SHA-256：`310f9c998f2061934750b81dbab8851b78138bbbf7b24c903b1971e158b80581`；未变化的后端直接复用原包，完整记录见 `packaging/windows/candidate-build.md`。这些验证不替代本节列出的实机和正式阶段验收。
 
 ## 原则应用
 

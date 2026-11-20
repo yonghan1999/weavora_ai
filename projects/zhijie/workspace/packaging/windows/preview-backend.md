@@ -1,5 +1,13 @@
 # Windows 本机试用后端（离线包）
 
+当前配套整包已更新为 `0ce6df5`，见[本机试用入口](candidate-build.md)。本次只重建桌面和 Helper，将有界并行验权修复纳入产品；后端仍直接使用 `target/trial-kit-d9a9dfe/preview-backend.zip`（83,839,806 字节，SHA-256：`f953073bd2606beac6532ab217adf9558a0d61ab47acf980aaaa945557d1b653`），没有生成重复后端副本。已核对相关后端源码无变更，并逐条确认新整包 336 个后端条目与原 ZIP 相同。
+
+新版整包的实际登录、消息、停库重启、1,112 文件冷备恢复及设备资格检查通过，见 `target/trial-kit-0ce6df5/relocation.log`；本轮对复用后端重新执行同版生命周期、两种同步认证、房间重开和普通日志/管理记录隐私检查通过，见同目录 `backend-lifecycle.log`。旧库升级/回退没有在本轮重跑，以下历史记录保留其原执行语境。只换后端不会更新旧 Helper，须成套使用新整包。
+
+客户端修复细节和三秒快照边界见 `docs/engineering/network-authority-responsiveness.md`；不把开发测试或本机后端生命周期等同于跨机、真实 TUN/音频、安装签名和五秒端到端撤销验收。依赖、V16 数据库和默认外部服务开关不变，独立 Relay 仍不包含在试用 ZIP 内。
+
+## d9a9dfe 后端构建与原验证记录
+
 当前后端：`target/trial-kit-d9a9dfe/preview-backend.zip`（83,839,806 字节，SHA-256：`f953073bd2606beac6532ab217adf9558a0d61ab47acf980aaaa945557d1b653`），配套[最新整包](candidate-build.md)。桌面、Helper 和后端均从已推送 `d9a9dfe` 干净归档构建。后端 Peer 到期时间取票据/租约较早值；客户端会话绑定账号、活动代次和租约并执行到期失效。只换后端不会更新旧 Helper，须成套使用新版桌面与 Helper。无新依赖、迁移或默认外部服务开关变化，数据库仍为 V16。
 
 相较 `f86cef2` 的 336 个后端条目，仅 `NetworkPeerService.class` 与内部 `Peer` 类变化；内部类只差调试行号，指令及其余完整元数据一致，见 `target/trial-kit-d9a9dfe/comparison-final.log`、`target/windows-peer-d9a9dfe/inner-class.log`。包内依赖、启动脚本和其余资源字节不变。六项打包单测及整包登录/重启、冷备恢复和设备资格检查通过，详见最新整包记录。独立 Relay 仍不包含在 ZIP 内，默认不启用主动撤销、邮件或外部语音。
