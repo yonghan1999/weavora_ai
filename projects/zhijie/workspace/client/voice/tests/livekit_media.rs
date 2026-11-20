@@ -10,6 +10,9 @@ use livekit::webrtc::{
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
 
+#[path = "support/session_revocation.rs"]
+mod session_revocation;
+
 async fn receive_audio(events: &mut mpsc::UnboundedReceiver<RoomEvent>) -> usize {
     while let Some(event) = events.recv().await {
         if let RoomEvent::TrackSubscribed {
