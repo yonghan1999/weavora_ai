@@ -2,13 +2,13 @@
 
 ## 本机试用（不安装）
 
-**本机试用入口**：`target/trial-kit-85250e5-restore/zhijie-windows-x64-trial.zip`（93,046,356 字节，SHA-256：`c2de9619a5fc7112f7970551485c180aebb6cb42113f499155ad43ec4a7d70de`）。核对摘要后，完整解压到 D 盘全新目录，按包内 `README.md` 启动。此版加入离线冷备恢复工具并更新说明；与上一包相比，桌面和后端仍是 `c5868af`，其余 337 个条目逐项一致。已有试用环境不必为此重装。包内不含 JDK、Python、WebView2、安装器、试用库或登录凭据。
+**本机试用入口**：`target/trial-kit-399db61/zhijie-windows-x64-trial.zip`（93,047,911 字节，SHA-256：`54e985df9d4ce84c1b4b570efa5ddcd4edfdb6952cca8bf93daa922dcbc03ae2`）。桌面和后端均从 `399db61` 的干净源码构建，包含历史 IP 分配和设备退房修复。核对摘要后完整解压到 D 盘全新目录，按包内 `README.md` 启动；不要混用新旧桌面和后端。要保留旧数据，请先停库，按包内说明冷备并恢复，不覆盖原目录。包内不含 JDK、Python、WebView2、安装器、试用数据库或登录凭据。
 
-后端此前已从独立解压目录启动，通过接口登录、设置房间密码并发送消息；停库重启后验证了原房间、群主免密和同一条消息。桌面的十个内嵌界面文件通过 170 项无头浏览器检查，无脚本异常。默认试用账号是群主，不能用它验证普通成员必须输入密码。未运行安装器或原生桌面窗口，未验证实际通话或网卡。对应日志在 `target/trial-kit-c5868af/` 下的 `relocation.log`、`embedded-binary.log`、`embedded-browser.json` 和 `backend-verified.log`。
+本包在独立解压目录首次启动、停库重启和冷备恢复后均通过接口登录并读取同一条消息。每次启动均用同账号的两台逻辑设备接管房间，核对旧请求不影响新租约、当前设备能正常退房、重复退房不再释放名额。由 ZIP 中桌面二进制提取的十个界面文件通过 170 项无头浏览器检查，无脚本异常。没有启动原生窗口、提权、安装驱动或验证实际通话。日志在 `target/trial-kit-399db61/` 下：`relocation.log`、`embedded-binary.log`、`embedded-browser.json`。`upgrade.log` 另记录了从 `c5868af` 后端升级、回退旧库并再次启用新版数据的四次启动。
 
 从本机 `workspace` 复建：`python -B "packaging/windows/pack-trial-kit.py" --output "target/新的试用包.zip"`。输入路径和摘要锁定在 `packaging/windows/trial-kit.json`，输出文件必须不存在；此步骤只打包已有候选，不负责构建、签名或发布。
 
-如需复测包内工具，可从 `workspace` 运行 `python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-85250e5-restore/zhijie-windows-x64-trial.zip" --sha256 c2de9619a5fc7112f7970551485c180aebb6cb42113f499155ad43ec4a7d70de --java-home "D:/Program Files/jdk-25" --check-restore`。它在随机本机端口创建试用数据并重启，用包内工具停库备份、恢复至第二个解压目录，再次用原密码登录并核对账号、群、房间及消息，不启动桌面。开发日志为 `target/trial-kit-85250e5-restore/relocation.log`。
+复测命令（从 `workspace` 运行）：`python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-399db61/zhijie-windows-x64-trial.zip" --sha256 54e985df9d4ce84c1b4b570efa5ddcd4edfdb6952cca8bf93daa922dcbc03ae2 --java-home "D:/Program Files/jdk-25" --check-leave --check-restore`。测试使用临时数据库和随机本机端口，不接触已有试用数据。
 
 ## 旧版试用目录
 
