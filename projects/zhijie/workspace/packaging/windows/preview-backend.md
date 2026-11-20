@@ -1,6 +1,8 @@
 # Windows 本机试用后端（离线包）
 
-**首次试用**：与[当前桌面](candidate-build.md)配套的后端已准备在 `target/trial-backend-b44c82c5`。离线包 `target/log-boundary-f5bbaac/preview-backend.zip` 为 83,803,971 字节，SHA-256：`b44c82c537d6cd6c99316e4dff672087ea19dbc23e3c3a577c26009aab71725b`。与上一精简包逐项比较，327 个文件中仅控制台日志转换器发生变化。新包记录异常类型和请求关联编号，不再附加原始异常消息、原因链或堆栈。已有目录和历史日志不会自动改变。
+**首次试用**：优先使用[桌面与后端整包](candidate-build.md)，两端均来自 `c5868af`。单独的后端包在 `target/trial-kit-c5868af/preview-backend.zip`（83,805,423 字节，SHA-256：`7a7144daf0c183d18982b3660da03301cb1d3140c942f6c63b7fe8232931f3d2`）。其房间列表与详情区分房间是否有密码及当前成员是否必须输入密码。不要覆盖已有数据目录。
+
+**旧版目录**：`target/trial-backend-b44c82c5` 来自 `target/log-boundary-f5bbaac/preview-backend.zip`（83,803,971 字节，SHA-256：`b44c82c537d6cd6c99316e4dff672087ea19dbc23e3c3a577c26009aab71725b`）。该版较上一精简包仅修改控制台日志转换器，不附加原始异常消息、原因链或堆栈。已有目录和历史日志不会自动改变。
 
 用 `test-backend-zip.ps1` 的 `-CheckLogPrivacy -CheckSyncAuth -CheckRoomReopen` 选项可在隔离试用库复测：两次登录、消息和重启、同步删除通知、房间重开与设置密码后，核查普通日志和房间管理记录未出现本次明文密码及登录令牌。该检查不证明生产 TLS、数据库存储或所有日志通道满足 AC-033。
 

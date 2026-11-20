@@ -1,6 +1,6 @@
 {
-  "desktopManifest": "target/trial-d26c0f9/manifest.json",
-  "desktopManifestSha256": "7ec11450737b47b7a4becf76d05e7eb1276813d84cada04c0c7b94fcd3b8ab1f",
-  "backendZip": "target/log-boundary-f5bbaac/preview-backend.zip",
-  "backendZipSha256": "b44c82c537d6cd6c99316e4dff672087ea19dbc23e3c3a577c26009aab71725b"
+  "desktopManifest": "target/trial-c5868af/manifest.json",
+  "desktopManifestSha256": "ba2c4549b537d7aded28ddc88a9aa5f44ef9a7c2689a9ab9037ad16a25fa3f76",
+  "backendZip": "target/trial-kit-c5868af/preview-backend.zip",
+  "backendZipSha256": "7a7144daf0c183d18982b3660da03301cb1d3140c942f6c63b7fe8232931f3d2"
 }

@@ -2,11 +2,17 @@
 
 ## 本机试用（不安装）
 
-**不想从仓库启动？** 使用已备好的 `target/trial-kit-801e87c/zhijie-windows-x64-trial.zip`（93,041,008 字节，SHA-256：`2de64651834bf11dfea84a6eb90818f08988ffad4fed2a47728aa644349c29d2`）。核对摘要后，完整解压到 D 盘全新目录，按包内 `README.md` 启动。该包包含便携桌面、离线后端和启动说明，不含 JDK、Python、WebView2、安装器、试用库或登录凭据。不要覆盖已有试用目录。已有环境继续用下方原入口即可。
+**本机试用入口**：`target/trial-kit-c5868af/zhijie-windows-x64-trial.zip`（93,043,095 字节，SHA-256：`1eeeb6dc2550fba19d548b198d7d88a5b760906e9bf59a09cc13d79bd7567dc4`）。核对摘要后，完整解压到 D 盘全新目录，按包内 `README.md` 启动。该包包含同一源码版本 `c5868af` 的便携桌面和离线后端，不含 JDK、Python、WebView2、安装器、试用库或登录凭据。不要覆盖已有目录。
+
+本包已从独立解压目录启动、登录、设置房间密码并发送消息；停库重启后验证了原房间、群主免密和同一条消息。桌面程序中核对的十个内嵌界面文件通过 170 项无头浏览器检查，无脚本异常。默认试用账号是群主，不能用它验证普通成员必须输入密码。未运行安装器或原生桌面窗口，未验证实际通话或网卡。对应日志为 `target/trial-kit-c5868af/relocation.log`、`embedded-binary.log`、`embedded-browser.json` 和 `backend-verified.log`。
 
 从本机 `workspace` 复建：`python -B "packaging/windows/pack-trial-kit.py" --output "target/新的试用包.zip"`。输入路径和摘要锁定在 `packaging/windows/trial-kit.json`，输出文件必须不存在；此步骤只打包已有候选，不负责构建、签名或发布。
 
-本机首次试用请搭配**桌面 `d26c0f9` 和已修复异常日志的[离线后端](preview-backend.md)**。要试一个新活动：在房间设置中暂停加入并结束原活动，到群页点击「重新开放」。此时房间开放但没有活动；房主、群主或群管理员可以在群页点击「开启活动」并确认。开启不会替操作人加入；在活动开始后，普通成员和管理者都可以按原准入规则点击「加入房间」。
+如需独立复测，可从 `workspace` 运行 `python -B "packaging/windows/test-trial-kit-relocation.py" "target/trial-kit-c5868af/zhijie-windows-x64-trial.zip" --sha256 1eeeb6dc2550fba19d548b198d7d88a5b760906e9bf59a09cc13d79bd7567dc4 --java-home "D:/Program Files/jdk-25"`。仅使用随机本机端口和一次性数据库，不启动桌面。
+
+## 旧版试用目录
+
+以下是桌面 `d26c0f9` 和旧[离线后端](preview-backend.md)的入口，仅供已在使用这些目录的人参考。要试一个新活动：在房间设置中暂停加入并结束原活动，到群页点击「重新开放」。此时房间开放但没有活动；房主、群主或群管理员可以在群页点击「开启活动」并确认。开启不会替操作人加入；在活动开始后，普通成员和管理者都可以按原准入规则点击「加入房间」。
 
 如果已使用 `target/trial-backend-038145c`，原有数据仍在旧目录，切换到新目录不会自动迁入。需要保留数据时，请按后端说明先停旧包、冷备并核验恢复副本；不要覆盖旧库或在同一端口重复启动。仅换后端无需重新安装桌面。
 
