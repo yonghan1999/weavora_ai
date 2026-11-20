@@ -262,6 +262,13 @@ class NetworkPeerIntegrationTest {
         FullRoomNetworkProbe.run((ServletWebServerApplicationContext)context, relayManagementKey, mode, null, null, null, null);
     }
 
+    @Test void revokedDirectPeerCannotKeepSendingEvenWhenReceiverLosesControlPlane() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue("true".equals(System.getenv("ZHIJIE_TEST_RELAY_MEDIA")));
+        for (String mode : List.of("online", "offline")) {
+            HostileNetworkProbe.run((ServletWebServerApplicationContext)context, mode);
+        }
+    }
+
     private static String key(int value) {
         byte[] bytes = new byte[32]; Arrays.fill(bytes, (byte)value);
         return Base64.getEncoder().encodeToString(bytes);

@@ -12,6 +12,9 @@ const BURST: u8 = 10;
 #[path = "full_room_control_plane_tests.rs"]
 mod control_plane;
 
+#[path = "hostile_control_plane_tests.rs"]
+mod hostile_control_plane;
+
 struct ControlledTunnel {
     input: tokio::sync::Mutex<tokio::sync::mpsc::UnboundedReceiver<Vec<u8>>>,
     output: tokio::sync::mpsc::UnboundedSender<Vec<u8>>,
