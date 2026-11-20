@@ -216,9 +216,20 @@ async function groupProfile(client, phase) {
 let memberLink;
 try {
   if (scenario === 'social') memberLink = await memberTestLink(port);
-  await until('browser ready', () => existsSync(join(profile, 'DevToolsActivePort')));
-  const [debugPort, path] = readFileSync(join(profile, 'DevToolsActivePort'), 'utf8').trim().split(/\r?\n/);
-  socket = new WebSocket(`ws://127.0.0.1:${debugPort}${path}`);
+  let endpoint;
+  await until('browser ready', () => {
+    try {
+      const [debugPort, path] = readFileSync(join(profile, 'DevToolsActivePort'), 'utf8').trim().split(/\r?\n/);
+      if (!/^\d+$/.test(debugPort) || Number(debugPort) < 1 || Number(debugPort) > 65535 ||
+          !/^\/devtools\/browser\/[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(path)) return false;
+      endpoint = `ws://127.0.0.1:${debugPort}${path}`;
+      return true;
+    } catch (error) {
+      if (['ENOENT', 'EBUSY'].includes(error.code)) return false;
+      throw error;
+    }
+  });
+  socket = new WebSocket(endpoint);
   await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject; });
   socket.onmessage = ({ data }) => { const message = JSON.parse(data);
     if (message.method === 'Runtime.bindingCalled' && message.params.name === 'invokeProbe') {
