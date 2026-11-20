@@ -112,8 +112,10 @@ public class SyncService {
                     if (!validOrClose(entry.getKey(), session, connection)) continue;
                     if (event.sequence() <= connection.cursor) continue;
                     if (authorized(entry.getKey(), event)) {
+                        String operation = "encode";
                         try {
                             if (message == null) message = encode(SyncEvent.from(event));
+                            operation = "send";
                             connection.send(event.sequence(), message);
                         }
                         catch (ApiException invalid) {
@@ -122,7 +124,10 @@ public class SyncService {
                         }
                         catch (RuntimeException failure) {
                             unregister(entry.getKey(), session);
-                            log.warn("Sync delivery failed: category={}", failure.getClass().getSimpleName());
+                            String cause = failure.getCause() == null ? "NONE"
+                                    : failure.getCause() instanceof IOException ? "IO" : "OTHER";
+                            log.warn("Sync delivery failed: category={} operation={} cause={} socket_open={}",
+                                    failure.getClass().getSimpleName(), operation, cause, session.isOpen());
                             try { session.close(CloseStatus.SERVER_ERROR); } catch (IOException ignored) { }
                         }
                     }
