@@ -1,6 +1,8 @@
 package app.weavora.zhijie.controlplane.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.group.GroupService;
@@ -13,11 +15,58 @@ import java.net.http.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.WebSocketSession;
 
 class SyncSessionIntegrationTest {
+    @Test void reconnectDuringOldSocketCloseStillReceivesCommittedMessages() throws Exception {
+        try (var postgres = EmbeddedPostgres.start(); var context = new SpringApplication(ControlPlaneApplication.class).run(
+                "--server.address=127.0.0.1", "--server.port=0", "--zhijie.scheduling.enabled=false",
+                "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
+                "--spring.datasource.username=postgres", "--spring.datasource.password=")) {
+            var identities = context.getBean(IdentityRepository.class);
+            var identity = context.getBean(IdentityService.class);
+            var sync = context.getBean(SyncService.class);
+            var outbox = context.getBean(OutboxRepository.class);
+            var json = context.getBean(ObjectMapper.class);
+            String user = UUID.randomUUID().toString();
+            identities.insertUser(new UserAccount(user, "sync-reconnect@example.test", AccountStatus.ACTIVE,
+                    context.getBean(CredentialProtector.class).hashPassword("sync-reconnect-password-123"), Instant.now()));
+            var group = context.getBean(GroupService.class).createGroup(user, "关闭期间重连", null, "");
+            var token = identity.login("sync-reconnect@example.test", "sync-reconnect-password-123", "replacement");
+            var original = mock(WebSocketSession.class);
+            sync.connect(identity.authenticateSession("Bearer " + token.accessToken()), original, outbox.latestSequence());
+            String entry = "ws://127.0.0.1:" + ((ServletWebServerApplicationContext)context).getWebServer().getPort();
+            var replacement = new Listener();
+            var replacementSocket = new AtomicReference<WebSocket>();
+            try (var http = HttpClient.newHttpClient()) {
+                doAnswer(call -> {
+                    replacementSocket.set(open(http, entry, token.accessToken(), outbox.latestSequence(), replacement));
+                    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+                    while (sync.sessionCount(user) == 0 && System.nanoTime() < deadline) Thread.sleep(10);
+                    assertThat(sync.sessionCount(user)).isGreaterThan(0);
+                    sync.unregister(user, original);
+                    return null;
+                }).when(original).close(CloseStatus.POLICY_VIOLATION);
+                try {
+                    sync.closeUser(user);
+                    assertThat(sync.sessionCount(user)).isEqualTo(1);
+                    String message = context.getBean(MessageService.class).post(user, group.id(), "重连后提交").id();
+                    context.getBean(app.weavora.zhijie.controlplane.revocation.RevocationDispatcher.class).dispatchPending();
+                    awaitMessage(replacement, json, message);
+                    assertThat(replacement.closed.isDone()).isFalse();
+                    assertThat(identity.authenticate("Bearer " + token.accessToken()).id()).isEqualTo(user);
+                } finally {
+                    if (replacementSocket.get() != null) replacementSocket.get().abort();
+                }
+            }
+        }
+    }
+
     @Test void logoutRotationAndExpiryCloseOnlyTheInvalidSocketEvenWhenIdle() throws Exception {
         try (var postgres = EmbeddedPostgres.start(); var context = new SpringApplication(ControlPlaneApplication.class).run(
                 "--server.address=127.0.0.1", "--server.port=0",

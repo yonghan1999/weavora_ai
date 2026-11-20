@@ -138,6 +138,7 @@ public class SyncService {
     }
 
     private boolean validOrClose(String userId, WebSocketSession session, Connection connection) {
+        if (connection.closed) return false;
         try { connection.requireValid(); return true; }
         catch (ApiException failure) {
             unregister(userId, session);
@@ -147,13 +148,16 @@ public class SyncService {
     }
 
     public void closeUser(String userId) {
-        for (WebSocketSession session : sessions.getOrDefault(userId, Map.of()).keySet()) {
-            try {
-                session.close(CloseStatus.POLICY_VIOLATION);
-            } catch (IOException ignored) {
+        var connections = sessions.remove(userId);
+        if (connections == null) return;
+        for (var connection : connections.values()) {
+            synchronized (connection) {
+                connection.closed = true;
+                try {
+                    connection.session.close(CloseStatus.POLICY_VIOLATION);
+                } catch (IOException ignored) { }
             }
         }
-        sessions.remove(userId);
     }
 
     int sessionCount(String userId) {
@@ -182,6 +186,7 @@ public class SyncService {
     private class Connection {
         private final WebSocketSession session;
         private long cursor;
+        private boolean closed;
         private final String sessionId;
         private final long generation;
         private final String userId;

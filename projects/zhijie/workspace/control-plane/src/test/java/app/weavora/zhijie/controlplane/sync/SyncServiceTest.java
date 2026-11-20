@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.*;
 import java.util.stream.LongStream;
 import org.springframework.web.socket.WebSocketSession;
@@ -33,6 +34,68 @@ import org.springframework.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
 class SyncServiceTest {
+    @Test void reconnectDuringUserCloseKeepsTheReplacementRegisteredAndReceiving() throws Exception {
+        var outbox = mock(OutboxRepository.class);
+        var service = new SyncService(outbox, mock(GroupService.class), mock(ActivityRepository.class),
+                new ObjectMapper().findAndRegisterModules(), mock(IdentityService.class));
+        var original = mock(WebSocketSession.class);
+        var replacement = mock(WebSocketSession.class);
+        service.connect(binding(), original, 0);
+        doAnswer(call -> {
+            service.connect(binding(), replacement, 0);
+            service.unregister("user", original);
+            return null;
+        }).when(original).close(CloseStatus.POLICY_VIOLATION);
+
+        service.closeUser("user");
+
+        assertThat(service.sessionCount("user")).isEqualTo(1);
+        service.broadcast(globalEvent(1));
+        verify(replacement).sendMessage(any(TextMessage.class));
+        verify(replacement, never()).close(any(CloseStatus.class));
+        verify(original, never()).sendMessage(any(TextMessage.class));
+    }
+
+    @Test void userCloseWaitsForTheCurrentSocketWriteAndBlocksDetachedDelivery() throws Exception {
+        var service = new SyncService(mock(OutboxRepository.class), mock(GroupService.class),
+                mock(ActivityRepository.class), new ObjectMapper().findAndRegisterModules(), mock(IdentityService.class));
+        var socket = mock(WebSocketSession.class);
+        service.connect(binding(), socket, 0);
+        var sending = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        doAnswer(call -> {
+            sending.countDown();
+            assertThat(release.await(3, TimeUnit.SECONDS)).isTrue();
+            return null;
+        }).when(socket).sendMessage(any(TextMessage.class));
+        var closingThread = new AtomicReference<Thread>();
+        var entered = new CountDownLatch(1);
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var delivery = workers.submit(() -> service.broadcast(globalEvent(1)));
+            assertThat(sending.await(3, TimeUnit.SECONDS)).isTrue();
+            var closing = workers.submit(() -> {
+                closingThread.set(Thread.currentThread());
+                entered.countDown();
+                service.closeUser("user");
+            });
+            try {
+                assertThat(entered.await(3, TimeUnit.SECONDS)).isTrue();
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+                while (!closing.isDone() && closingThread.get().getState() != Thread.State.BLOCKED
+                        && System.nanoTime() < deadline) Thread.yield();
+                assertThat(closingThread.get().getState()).isEqualTo(Thread.State.BLOCKED);
+                assertThat(closing.isDone()).isFalse();
+                verify(socket, never()).close(any(CloseStatus.class));
+            } finally { release.countDown(); }
+            delivery.get(3, TimeUnit.SECONDS);
+            closing.get(3, TimeUnit.SECONDS);
+            service.broadcast(globalEvent(2));
+            verify(socket).sendMessage(any(TextMessage.class));
+            verify(socket).close(CloseStatus.POLICY_VIOLATION);
+            assertThat(service.sessionCount("user")).isZero();
+        } finally { release.countDown(); }
+    }
+
     @Test void hundredRecipientsShareOneEncodingButEachStillRequiresAValidSession() throws Exception {
         var outbox = mock(OutboxRepository.class);
         var identity = mock(IdentityService.class);
