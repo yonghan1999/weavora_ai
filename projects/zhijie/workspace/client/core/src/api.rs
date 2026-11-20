@@ -231,15 +231,19 @@ impl ControlPlaneClient {
         .await
     }
 
-    pub async fn leave(&self, access_token: &str, activity_id: &str) -> Result<(), ClientError> {
-        let response: serde_json::Value = self
+    pub async fn leave(
+        &self,
+        access_token: &str,
+        activity_id: &str,
+        lease_id: &str,
+    ) -> Result<(), ClientError> {
+        let _: serde_json::Value = self
             .post(
                 &format!("/api/v1/activities/{activity_id}/leave"),
                 Some(access_token),
-                &serde_json::json!({}),
+                &serde_json::json!({"leaseId": lease_id}),
             )
             .await?;
-        let _ = response;
         Ok(())
     }
 

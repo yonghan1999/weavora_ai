@@ -48,11 +48,12 @@ class VerticalSliceIntegrationTest {
                 Group group = context.getBean(GroupService.class).createGroup(userId, "垂直切片", null, "");
                 RoomService rooms = context.getBean(RoomService.class);
                 Room room = rooms.createRoom(userId, group.id(), "真实房间", "", "", null);
-                rooms.startActivity(userId, room.id());
+                var activity = rooms.startActivity(userId, room.id());
                 var json = context.getBean(com.fasterxml.jackson.databind.ObjectMapper.class);
                 byte[] configuration = json.writeValueAsBytes(
                         Map.of("baseUrl", "http://127.0.0.1:" + port, "email", "vertical@example.com", "password", password, "roomId", room.id()));
                 String output = run(workspace, configuration, Duration.ofSeconds(30), executable.toString());
+                assertThat(context.getBean(app.weavora.zhijie.controlplane.activity.ActivityRepository.class).countOccupied(activity.id())).isZero();
                 assertThat(output.contains(password)).as("Fixture output must not contain the test password").isFalse();
                 assertThat(output).contains("\"login\":\"verified\"");
                 assertThat(output).contains("\"join\":\"verified\"");

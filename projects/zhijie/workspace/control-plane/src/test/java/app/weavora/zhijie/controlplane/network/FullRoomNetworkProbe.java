@@ -130,7 +130,7 @@ public final class FullRoomNetworkProbe {
             }
             for (int attempt = 0; attempt < 250 && process.isAlive() && !java.nio.file.Files.exists(ready); attempt++) Thread.sleep(100);
             assertThat(java.nio.file.Files.exists(ready)).as("132 directions delivered; inspect %s", output).isTrue();
-            if (sharedUsers == null) coordinator.leave(users.get(11), activity);
+            if (sharedUsers == null) coordinator.leave(users.get(11), activity, joins.get(11).deviceId(), joins.get(11).leaseId());
             else {
                 // 单独撤销网络票据，语音仍使用相同成员与租约。
                 var grant = context.getBean(GrantRepository.class).findByTokenHash(context.getBean(CredentialProtector.class).hashToken((String)starts.get(11).get("ticket"))).orElseThrow();

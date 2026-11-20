@@ -319,7 +319,11 @@ async fn activity_leave(state: State<'_, AppState>) -> Result<ClientSnapshot, St
     if let Some(activity) = state.core.snapshot().activity {
         state
             .client
-            .leave(&state.access_token()?, &activity.activity_id)
+            .leave(
+                &state.access_token()?,
+                &activity.activity_id,
+                &activity.lease_id,
+            )
             .await
             .map_err(error_code)?;
         state.voice.disconnect().await;

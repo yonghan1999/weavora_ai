@@ -117,13 +117,13 @@ class NetworkPeerIntegrationTest {
             assertThat(peer.endpoint()).isEqualTo("127.0.0.1:41005");
         });
         assertThat(access.validate(gc.networkTicket()).grant().id()).isEqualTo(gc.grantId());
-        coordinator.join(b, room.id(), "new-device", null, "transfer");
+        var transferred = coordinator.join(b, room.id(), "new-device", null, "transfer");
         assertThat(peers.list(a, activity, ga.networkTicket())).isEmpty();
         assertThatThrownBy(() -> access.validate(rotated.networkTicket())).isInstanceOf(ApiException.class);
         var replacement = grants.network(b, activity, key(4));
         peers.register(b, activity, replacement.networkTicket(), "127.0.0.1:41004");
         assertThat(peers.list(a, activity, ga.networkTicket())).singleElement().extracting(NetworkPeerService.Peer::publicKey).isEqualTo(key(4));
-        coordinator.leave(b, activity);
+        coordinator.leave(b, activity, transferred.deviceId(), transferred.leaseId());
         assertThat(peers.list(a, activity, ga.networkTicket())).isEmpty();
         assertThatThrownBy(() -> access.validate(replacement.networkTicket())).isInstanceOf(ApiException.class);
         var policies = context.getBean(NetworkPolicyService.class);
@@ -132,7 +132,7 @@ class NetworkPeerIntegrationTest {
         assertThat(http.send(httpRequest, HttpResponse.BodyHandlers.discarding()).statusCode()).isEqualTo(403);
         var relayOnly = grants.network(a, activity, key(1));
         assertThat(peers.register(a, activity, relayOnly.networkTicket(), null)).isEmpty();
-        coordinator.join(b, room.id(), "relay-device", null, "relay-b");
+        var relayJoin = coordinator.join(b, room.id(), "relay-device", null, "relay-b");
         var relayB = grants.network(b, activity, key(2));
         assertThat(peers.register(b, activity, relayB.networkTicket(), null)).singleElement().satisfies(peer -> {
             assertThat(peer.userId()).isEqualTo(a);
@@ -158,7 +158,7 @@ class NetworkPeerIntegrationTest {
             try {
                 for (int attempt = 0; attempt < 100 && process.isAlive() && !java.nio.file.Files.exists(ready); attempt++) Thread.sleep(100);
                 assertThat(java.nio.file.Files.exists(ready)).as("QUIC transfer ready; inspect %s", directory).isTrue();
-                coordinator.leave(b, activity);
+                coordinator.leave(b, activity, relayJoin.deviceId(), relayJoin.leaseId());
                 assertThat(process.waitFor(15, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
                 assertThat(process.exitValue()).as("real control plane QUIC revocation; inspect %s", directory).isZero();
             } finally { if (process.isAlive()) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); } }
@@ -192,10 +192,11 @@ class NetworkPeerIntegrationTest {
             var room = rooms.createRoom(owner, group.id(), "满房 Peer", "", "", null);
             String activity = rooms.startActivity(owner, room.id()).id();
             var tickets = new ArrayList<String>();
+            var leases = new ArrayList<String>();
             var addresses = new HashSet<String>();
             for (int index = 0; index < 12; index++) {
                 String user = users.get(index);
-                coordinator.join(user, room.id(), "device-" + index, null, "full-" + index);
+                leases.add(coordinator.join(user, room.id(), "device-" + index, null, "full-" + index).leaseId());
                 var grant = grants.network(user, activity, key(index + 1));
                 tickets.add(grant.networkTicket());
                 assertThat(addresses.add(grant.virtualIpv4())).isTrue();
@@ -222,7 +223,7 @@ class NetworkPeerIntegrationTest {
                 body.path("peers").forEach(peer -> actual.add(peer.path("userId").asText()));
                 assertThat(actual).isEqualTo(expected);
             }
-            coordinator.leave(users.get(11), activity);
+            coordinator.leave(users.get(11), activity, "device-11", leases.get(11));
             for (int index = 0; index < 11; index++) {
                 assertThat(peers.list(users.get(index), activity, tickets.get(index)))
                         .hasSize(10).extracting(NetworkPeerService.Peer::userId).doesNotContain(users.get(11));

@@ -128,16 +128,17 @@ public class ActivityCoordinator {
     }
 
     @Transactional
-    public void leave(String userId, String activityId) {
+    public boolean leave(String userId, String activityId, String deviceId, String leaseId) {
         repository.lockUser(userId);
         AccountActivity pointer = repository.findAccountActivity(userId).orElse(null);
-        if (pointer == null || !pointer.activityId().equals(activityId)) return;
+        if (pointer == null || !pointer.activityId().equals(activityId) || !pointer.deviceId().equals(deviceId)) return false;
         ActivityMember member = repository.findMember(activityId, userId).orElse(null);
-        if (member == null) {
-            repository.deleteAccountActivity(userId);
-            return;
-        }
+        if (member == null || !member.memberGeneration().equals(pointer.memberGeneration()) || !member.deviceId().equals(deviceId)) return false;
+        ConnectionLease lease = repository.findLatestLease(activityId, userId).orElse(null);
+        if (lease == null || !lease.id().equals(leaseId) || lease.revokedAt() != null
+                || !lease.deviceId().equals(deviceId) || !lease.memberGeneration().equals(member.memberGeneration())) return false;
         leaveInternal(member);
+        return true;
     }
 
     @Transactional

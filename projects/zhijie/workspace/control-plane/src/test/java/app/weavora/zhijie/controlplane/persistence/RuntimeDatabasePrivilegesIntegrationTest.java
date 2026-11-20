@@ -82,7 +82,7 @@ class RuntimeDatabasePrivilegesIntegrationTest {
                 rooms.startActivity(owner, room.id());
                 var joined = context.getBean(ActivityCoordinator.class).join(owner, room.id(), "device", null, "join");
                 context.getBean(MessageService.class).post(owner, group.id(), "持久消息");
-                context.getBean(ActivityCoordinator.class).leave(owner, joined.activityId());
+                context.getBean(ActivityCoordinator.class).leave(owner, joined.activityId(), joined.deviceId(), joined.leaseId());
                 groups.updateGroup(owner, group.id(), "更新后", null, "");
                 assertThat(sql.queryForObject("SELECT count(*) FROM audit_logs", Integer.class)).isGreaterThan(3);
                 for (String forbidden : List.of(

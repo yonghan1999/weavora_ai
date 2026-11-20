@@ -83,7 +83,7 @@ async fn run() -> Result<(), String> {
         zhijie_core::ChannelStatus::Connecting
     );
     client
-        .leave(&tokens.access_token, &joined.activity_id)
+        .leave(&tokens.access_token, &joined.activity_id, &joined.lease_id)
         .await
         .map_err(error)?;
     core.clear_activity(&joined.activity_id);

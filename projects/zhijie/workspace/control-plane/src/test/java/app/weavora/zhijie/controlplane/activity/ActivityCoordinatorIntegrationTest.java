@@ -145,7 +145,7 @@ class ActivityCoordinatorIntegrationTest {
         assertThat(resumed.leaseId()).isEqualTo(initial.leaseId());
         assertThat(resumed.memberGeneration()).isEqualTo(initial.memberGeneration());
 
-        coordinator.leave(userId, fixture.activityId());
+        coordinator.leave(userId, fixture.activityId(), resumed.deviceId(), resumed.leaseId());
         JoinResult rejoined = coordinator.join(userId, fixture.roomId(), "device-a", null, "rejoined");
         assertThat(rejoined.virtualIpv4()).isEqualTo(initial.virtualIpv4());
         assertThat(rejoined.leaseId()).isNotEqualTo(initial.leaseId());
@@ -167,7 +167,7 @@ class ActivityCoordinatorIntegrationTest {
             String expected = history.equals("10.231.0.12") ? history : "10.231.0.2";
             assertThat(joined.virtualIpv4()).isEqualTo(expected);
             assertThat(repository().findIpHistory(fixture.roomId(), user).orElseThrow().lastIpv4()).isEqualTo(expected);
-            coordinator.leave(user, fixture.activityId());
+            coordinator.leave(user, fixture.activityId(), joined.deviceId(), joined.leaseId());
         }
     }
 
@@ -198,7 +198,7 @@ class ActivityCoordinatorIntegrationTest {
         assertThatThrownBy(() -> coordinator.heartbeat(user, fixture.activityId(), "device-a", joined.leaseId(), joined.activityGeneration(), joined.memberGeneration()))
                 .isInstanceOf(ApiException.class);
         coordinator.heartbeat(user, fixture.activityId(), "device-b", replacement.leaseId(), replacement.activityGeneration(), replacement.memberGeneration());
-        coordinator.leave(user, fixture.activityId());
+        coordinator.leave(user, fixture.activityId(), replacement.deviceId(), replacement.leaseId());
         assertThatThrownBy(() -> coordinator.heartbeat(user, fixture.activityId(), "device-b", replacement.leaseId(), replacement.activityGeneration(), replacement.memberGeneration()))
                 .isInstanceOf(ApiException.class);
     }

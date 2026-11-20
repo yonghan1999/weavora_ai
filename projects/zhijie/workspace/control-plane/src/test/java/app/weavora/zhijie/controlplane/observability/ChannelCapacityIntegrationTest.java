@@ -30,7 +30,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class ChannelCapacityIntegrationTest {
-    record Member(String user, String activity) {}
+    record Member(String user, String activity, String device, String lease) {}
 
     @Test void renewalDoesNotUseAnotherSlotAndCompetingRoomsCannotOverbook() throws Exception {
         try (var postgres = EmbeddedPostgres.start();
@@ -50,8 +50,8 @@ class ChannelCapacityIntegrationTest {
                 var group = context.getBean(GroupService.class).createGroup(user, "容量验证", null, "");
                 var room = rooms.createRoom(user, group.id(), "容量验证", "", "", null);
                 var activity = rooms.startActivity(user, room.id());
-                coordinator.join(user, room.id(), "device-" + index, null, "join-" + index);
-                members.add(new Member(user, activity.id()));
+                var joined = coordinator.join(user, room.id(), "device-" + index, null, "join-" + index);
+                members.add(new Member(user, activity.id(), joined.deviceId(), joined.leaseId()));
             }
             var incumbent = members.removeFirst();
             byte[] bytes = new byte[32];
@@ -76,7 +76,7 @@ class ChannelCapacityIntegrationTest {
             var rotated = grants.network(incumbent.user(), incumbent.activity(), Base64.getEncoder().encodeToString(bytes));
             assertThat(access.validate(rotated.networkTicket()).lease().id()).isEqualTo(first.leaseId());
             var waiting = members.get(firstAdmitted ? 1 : 0);
-            coordinator.leave(incumbent.user(), incumbent.activity());
+            coordinator.leave(incumbent.user(), incumbent.activity(), incumbent.device(), incumbent.lease());
             voice.accept(waitingVoice);
             assertThat(grants.network(waiting.user(), waiting.activity(), firstKey).grantId()).isNotBlank();
         }

@@ -39,9 +39,11 @@ public class ActivityController {
     }
 
     @PostMapping("/activities/{activityId}/leave")
-    public Map<String, Object> leave(@RequestHeader("Authorization") String auth, @PathVariable String activityId) {
-        activities.leave(actor(auth), activityId);
-        return Map.of("data", Map.of("left", true));
+    public Map<String, Object> leave(@RequestHeader("Authorization") String auth, @PathVariable String activityId,
+                                    @Valid @RequestBody LeaveBody body) {
+        var session = identity.authenticateSession(auth);
+        boolean left = activities.leave(session.userId(), activityId, session.deviceId(), body.leaseId());
+        return Map.of("data", Map.of("left", left));
     }
 
     @PostMapping("/activities/{activityId}/heartbeat")
@@ -71,6 +73,8 @@ public class ActivityController {
     public record JoinBody(@NotBlank String roomId, @NotBlank String deviceId, String password, @NotBlank String operationId) {
     }
     public record DeviceBody(@NotBlank String deviceId) {
+    }
+    public record LeaveBody(@NotBlank String leaseId) {
     }
     public record HeartbeatBody(@NotBlank String deviceId, @NotBlank String leaseId,
                                 @Positive long activityGeneration, @Positive long memberGeneration) {

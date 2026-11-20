@@ -29,7 +29,11 @@ where
         if let Some(activity) = activity {
             incomplete |= state
                 .client
-                .leave(&tokens.access_token, &activity.activity_id)
+                .leave(
+                    &tokens.access_token,
+                    &activity.activity_id,
+                    &activity.lease_id,
+                )
                 .await
                 .is_err();
         }

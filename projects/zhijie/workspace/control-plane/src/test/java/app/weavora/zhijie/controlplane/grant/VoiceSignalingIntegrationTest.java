@@ -121,7 +121,7 @@ class VoiceSignalingIntegrationTest {
                 runMedia(directory, issued.sfuUrl(), token, secondToken,
                         adminToken(apiKey, apiSecret, joined.activityId()));
             }
-            coordinator.leave(userId, joined.activityId());
+            coordinator.leave(userId, joined.activityId(), joined.deviceId(), joined.leaseId());
             assertThat(status(http, entry, token, false)).isEqualTo(403);
             assertThat(status(http, entry, retry.voiceToken(), true)).isEqualTo(403);
             assertThatThrownBy(() -> http.newWebSocketBuilder().header("Authorization", "Bearer " + token)

@@ -21,6 +21,54 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 class RoomGovernanceIntegrationTest {
     @Test
+    void delayedLeaveOnlyReleasesTheMatchingDeviceLease() throws Exception {
+        try (var postgres = EmbeddedPostgres.start(); var context = new SpringApplication(ControlPlaneApplication.class).run(
+                "--server.address=127.0.0.1", "--server.port=0", "--zhijie.scheduling.enabled=false",
+                "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
+                "--spring.datasource.username=postgres", "--spring.datasource.password=")) {
+            String user = UUID.randomUUID().toString(), password = UUID.randomUUID().toString(), email = "leave@example.test";
+            var hash = context.getBean(CredentialProtector.class).hashPassword(password);
+            context.getBean(IdentityRepository.class).insertUser(new UserAccount(user, email, AccountStatus.ACTIVE, hash, Instant.now()));
+            var identity = context.getBean(IdentityService.class);
+            String first = identity.login(email, password, "device-a").accessToken();
+            String second = identity.login(email, password, "device-b").accessToken();
+            var group = context.getBean(GroupService.class).createGroup(user, "退房验证群", null, "");
+            var rooms = context.getBean(RoomService.class);
+            var room = rooms.createRoom(user, group.id(), "退房验证房", "", "", null);
+            var activity = rooms.startActivity(user, room.id());
+            var coordinator = context.getBean(ActivityCoordinator.class);
+            var original = coordinator.join(user, room.id(), "device-a", null, "first");
+            var replacement = coordinator.join(user, room.id(), "device-b", null, "second");
+            var json = context.getBean(ObjectMapper.class);
+            String entry = "http://127.0.0.1:" + ((ServletWebServerApplicationContext)context).getWebServer().getPort();
+            String path = "/activities/" + activity.id() + "/leave";
+            var http = HttpClient.newHttpClient();
+            String oldLease = json.writeValueAsString(Map.of("leaseId", original.leaseId()));
+            String newLease = json.writeValueAsString(Map.of("leaseId", replacement.leaseId()));
+            var missing = send(http, entry, "POST", path, second, "{}");
+            assertThat(missing.statusCode()).isEqualTo(422);
+            assertThat(missing.body()).contains("VALIDATION_FAILED");
+            for (var request : List.of(List.of(first, oldLease), List.of(first, newLease), List.of(second, oldLease))) {
+                var response = send(http, entry, "POST", path, request.get(0), request.get(1));
+                assertThat(response.statusCode()).isEqualTo(200);
+                assertThat(json.readTree(response.body())).isEqualTo(json.valueToTree(Map.of("data", Map.of("left", false))));
+            }
+            var repository = context.getBean(ActivityRepository.class);
+            assertThat(repository.countOccupied(activity.id())).isOne();
+            assertThat(coordinator.resume(user, activity.id(), "device-b").leaseId()).isEqualTo(replacement.leaseId());
+            var released = send(http, entry, "POST", path, second, newLease);
+            assertThat(released.statusCode()).isEqualTo(200);
+            assertThat(json.readTree(released.body()).at("/data/left").booleanValue()).isTrue();
+            assertThat(repository.countOccupied(activity.id())).isZero();
+            var next = coordinator.join(user, room.id(), "device-b", null, "rejoined");
+            var repeat = send(http, entry, "POST", path, second, newLease);
+            assertThat(repeat.statusCode()).isEqualTo(200);
+            assertThat(json.readTree(repeat.body())).isEqualTo(json.valueToTree(Map.of("data", Map.of("left", false))));
+            assertThat(coordinator.resume(user, activity.id(), "device-b").leaseId()).isEqualTo(next.leaseId());
+        }
+    }
+
+    @Test
     void currentRoomRolesAndMemberGenerationsControlKicksWithoutBanningRejoin() throws Exception {
         try (var postgres = EmbeddedPostgres.start(); var context = new SpringApplication(ControlPlaneApplication.class).run(
                 "--server.address=127.0.0.1", "--server.port=0", "--zhijie.scheduling.enabled=false",
@@ -93,7 +141,7 @@ class RoomGovernanceIntegrationTest {
             assertThat(send(http, entry, "POST", memberKick, tokens.get(3), json.writeValueAsString(Map.of("memberGeneration", rejoined.memberGeneration()))).statusCode()).isEqualTo(403);
             assertThat(send(http, entry, "PATCH", roomPath, tokens.get(3), "{\"name\":\"旧房主页面\"}").statusCode()).isEqualTo(403);
             assertThat(send(http, entry, "POST", "/groups/" + group.id() + "/rooms", tokens.get(5), "{\"name\":\"越权创建\"}").statusCode()).isEqualTo(403);
-            coordinator.leave(other, activity.id());
+            coordinator.leave(other, activity.id(), joined.get(5).deviceId(), joined.get(5).leaseId());
             assertThat(context.getBean(RoomRepository.class).findRoom(room.id()).orElseThrow().ownerUserId()).isEqualTo(other);
             groups.removeMember(owner, group.id(), other);
             assertThat(context.getBean(RoomRepository.class).findRoom(room.id()).orElseThrow().ownerUserId()).isEqualTo(owner);
@@ -101,7 +149,7 @@ class RoomGovernanceIntegrationTest {
             assertThat(sql.queryForObject("SELECT count(*) FROM audit_logs WHERE group_id = ? AND action = 'ROOM_OWNER_ASSIGN'", Integer.class, group.id())).isEqualTo(2);
             assertThat(send(http, entry, "GET", "/groups/" + group.id() + "/audit-logs", tokens.get(0), null).body()).contains("ACTIVITY_MEMBER_KICK", "ROOM_OWNER_ASSIGN");
             assertThat(send(http, entry, "GET", "/groups/" + group.id() + "/audit-logs", tokens.get(3), null).statusCode()).isEqualTo(403);
-            coordinator.leave(host, activity.id());
+            coordinator.leave(host, activity.id(), joined.get(3).deviceId(), joined.get(3).leaseId());
 
             try (var executor = Executors.newFixedThreadPool(2)) {
                 for (int round = 0; round < 3; round++) {

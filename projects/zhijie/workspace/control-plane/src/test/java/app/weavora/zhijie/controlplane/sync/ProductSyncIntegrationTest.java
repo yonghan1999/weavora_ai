@@ -64,10 +64,10 @@ class ProductSyncIntegrationTest {
             var activity = rooms.startActivity(owner, room.id());
             var coordinator = context.getBean(app.weavora.zhijie.controlplane.activity.ActivityCoordinator.class);
             long activityCursor = outbox.latestSequence();
-            coordinator.join(member, room.id(), "device", null, "join");
+            var joined = coordinator.join(member, room.id(), "device", null, "join");
             coordinator.disconnect(member, activity.id(), "device");
             coordinator.resume(member, activity.id(), "device");
-            coordinator.leave(member, activity.id());
+            coordinator.leave(member, activity.id(), joined.deviceId(), joined.leaseId());
             assertThat(sync.history(owner, activityCursor).stream().filter(event -> event.type().equals("activity.changed")))
                     .hasSize(4);
 
