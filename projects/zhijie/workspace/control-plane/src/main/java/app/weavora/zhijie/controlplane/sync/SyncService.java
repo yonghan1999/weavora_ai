@@ -144,7 +144,10 @@ public class SyncService {
     @Scheduled(fixedDelay = 1000)
     public void revalidateSessions() {
         sessions.forEach((userId, connections) -> connections.forEach((session, connection) -> {
-            synchronized (connection) { validOrClose(userId, session, connection); }
+            try { connection.requireValid(); }
+            catch (ApiException invalid) {
+                synchronized (connection) { validOrClose(userId, session, connection); }
+            }
         }));
     }
 

@@ -20,6 +20,15 @@ public class SchedulingConfiguration {
     }
 
     @Bean
+    ThreadPoolTaskScheduler syncDeliveryScheduler() {
+        var scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(1);
+        scheduler.setThreadNamePrefix("sync-delivery-");
+        scheduler.setRemoveOnCancelPolicy(true);
+        return scheduler;
+    }
+
+    @Bean
     ThreadPoolTaskScheduler externalRevocationScheduler() {
         var scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(3);

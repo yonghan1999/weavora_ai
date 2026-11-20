@@ -34,6 +34,71 @@ import org.springframework.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
 class SyncServiceTest {
+    @Test void revalidatingAValidSessionDoesNotWaitForItsCurrentWrite() throws Exception {
+        var service = new SyncService(mock(OutboxRepository.class), mock(GroupService.class),
+                mock(ActivityRepository.class), new ObjectMapper().findAndRegisterModules(), mock(IdentityService.class));
+        var socket = mock(WebSocketSession.class);
+        service.connect(binding(), socket, 0);
+        var sending = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        doAnswer(call -> {
+            sending.countDown();
+            assertThat(release.await(3, TimeUnit.SECONDS)).isTrue();
+            return null;
+        }).when(socket).sendMessage(any(TextMessage.class));
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var delivery = workers.submit(() -> service.broadcast(globalEvent(1)));
+            assertThat(sending.await(3, TimeUnit.SECONDS)).isTrue();
+            try {
+                workers.submit(service::revalidateSessions).get(500, TimeUnit.MILLISECONDS);
+                verify(socket, never()).close(any(CloseStatus.class));
+            } finally { release.countDown(); }
+            delivery.get(3, TimeUnit.SECONDS);
+        } finally { release.countDown(); }
+    }
+
+    @Test void invalidSessionRevalidationStillWaitsForTheCurrentWriteBeforeClosing() throws Exception {
+        var identity = mock(IdentityService.class);
+        var service = new SyncService(mock(OutboxRepository.class), mock(GroupService.class),
+                mock(ActivityRepository.class), new ObjectMapper().findAndRegisterModules(), identity);
+        var socket = mock(WebSocketSession.class);
+        service.connect(binding(), socket, 0);
+        var sending = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        doAnswer(call -> {
+            sending.countDown();
+            assertThat(release.await(3, TimeUnit.SECONDS)).isTrue();
+            return null;
+        }).when(socket).sendMessage(any(TextMessage.class));
+        var revalidationThread = new AtomicReference<Thread>();
+        var entered = new CountDownLatch(1);
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var delivery = workers.submit(() -> service.broadcast(globalEvent(1)));
+            assertThat(sending.await(3, TimeUnit.SECONDS)).isTrue();
+            doThrow(new ApiException(HttpStatus.UNAUTHORIZED, "ACCESS_TOKEN_INVALID", "凭据无效", false))
+                    .when(identity).requireSession("session", 1, "user");
+            var revalidation = workers.submit(() -> {
+                revalidationThread.set(Thread.currentThread());
+                entered.countDown();
+                service.revalidateSessions();
+            });
+            try {
+                assertThat(entered.await(3, TimeUnit.SECONDS)).isTrue();
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+                while (!revalidation.isDone() && revalidationThread.get().getState() != Thread.State.BLOCKED
+                        && System.nanoTime() < deadline) Thread.yield();
+                assertThat(revalidationThread.get().getState()).isEqualTo(Thread.State.BLOCKED);
+                verify(socket, never()).close(any(CloseStatus.class));
+            } finally { release.countDown(); }
+            delivery.get(3, TimeUnit.SECONDS);
+            revalidation.get(3, TimeUnit.SECONDS);
+            service.broadcast(globalEvent(2));
+            verify(socket).sendMessage(any(TextMessage.class));
+            verify(socket).close(new CloseStatus(1008, "ACCESS_TOKEN_INVALID"));
+            assertThat(service.sessionCount("user")).isZero();
+        } finally { release.countDown(); }
+    }
+
     @Test void unregisterBlocksDeliveryThroughAPrefetchedConnection() throws Exception {
         var service = new SyncService(mock(OutboxRepository.class), mock(GroupService.class),
                 mock(ActivityRepository.class), new ObjectMapper().findAndRegisterModules(), mock(IdentityService.class));

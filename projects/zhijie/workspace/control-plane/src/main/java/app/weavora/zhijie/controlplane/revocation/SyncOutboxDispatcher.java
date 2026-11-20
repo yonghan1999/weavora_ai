@@ -24,7 +24,7 @@ public class SyncOutboxDispatcher {
     }
 
     @Transactional
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = 1000, scheduler = "syncDeliveryScheduler")
     public RevocationDispatcher.DispatchResult dispatchPending() {
         int delivered = 0;
         int failed = 0;
