@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.adapter.NativeWebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.slf4j.Logger;
@@ -28,6 +29,12 @@ public class SyncWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         try {
+            if (session instanceof NativeWebSocketSession nativeSession) {
+                var transport = nativeSession.getNativeSession(jakarta.websocket.Session.class);
+                if (transport != null) {
+                    transport.getUserProperties().put("org.apache.tomcat.websocket.BLOCKING_SEND_TIMEOUT", 2000L);
+                }
+            }
             URI uri = session.getUri();
             Map<String, String> parameters = UriComponentsBuilder.fromUri(uri).build().getQueryParams().toSingleValueMap();
             var headers = session.getHandshakeHeaders().get(HttpHeaders.AUTHORIZATION);

@@ -19,9 +19,34 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.adapter.NativeWebSocketSession;
 
 @ExtendWith(OutputCaptureExtension.class)
 class SyncWebSocketHandlerTest {
+    @Test void nativeTransportWriteDeadlineIsSetBeforeAuthenticatedReplay() throws Exception {
+        var identity = mock(IdentityService.class);
+        var sync = mock(SyncService.class);
+        var socket = mock(NativeWebSocketSession.class);
+        var transport = mock(jakarta.websocket.Session.class);
+        var properties = new HashMap<String, Object>();
+        var binding = binding();
+        when(socket.getNativeSession(jakarta.websocket.Session.class)).thenReturn(transport);
+        when(transport.getUserProperties()).thenReturn(properties);
+        when(socket.getHandshakeHeaders()).thenReturn(new HttpHeaders());
+        when(socket.getUri()).thenReturn(URI.create("ws://127.0.0.1/api/v1/ws?cursor=0"));
+        when(socket.getAttributes()).thenReturn(new HashMap<>());
+        when(identity.authenticateSession(any())).thenReturn(binding);
+        doAnswer(call -> {
+            assertThat(properties).containsEntry("org.apache.tomcat.websocket.BLOCKING_SEND_TIMEOUT", 2000L);
+            return null;
+        }).when(sync).connect(binding, socket, 0);
+
+        new SyncWebSocketHandler(identity, sync).afterConnectionEstablished(socket);
+
+        verify(sync).connect(binding, socket, 0);
+        verify(socket, never()).close(any(CloseStatus.class));
+    }
+
     @Test void malformedCursorRequiresSnapshotWithoutRegistering() throws Exception {
         var identity = mock(IdentityService.class);
         var sync = mock(SyncService.class);
