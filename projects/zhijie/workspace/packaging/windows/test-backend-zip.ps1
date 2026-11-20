@@ -1,8 +1,9 @@
 param([Parameter(Mandatory)][string]$Package, [string]$JavaHome = $env:JAVA_HOME,
       [int]$HttpPort = 18831, [int]$DatabasePort = 15441, [string]$PreviousPackage, [switch]$CheckSyncAuth, [switch]$CheckRoomReopen,
-      [switch]$CheckLogPrivacy, [string]$ControlTlsNginx, [string]$ControlTlsRustProbe)
+      [switch]$CheckLogPrivacy, [switch]$CheckActivitySessionUpgrade, [string]$ControlTlsNginx, [string]$ControlTlsRustProbe)
 $ErrorActionPreference = 'Stop'
 if ($ControlTlsRustProbe -and !$ControlTlsNginx) { throw 'Rust TLS 检查需要指定 nginx' }
+if ($CheckActivitySessionUpgrade -and !$PreviousPackage) { throw '活动会话升级检查需要指定 V16 旧包' }
 $workspace = (Resolve-Path -LiteralPath "$PSScriptRoot/../..").Path
 $target = (Resolve-Path -LiteralPath "$workspace/target").Path
 if ([IO.Path]::GetPathRoot($target).TrimEnd('\') -eq $env:SystemDrive) { throw '测试目录不得位于系统盘' }
@@ -23,6 +24,21 @@ function Assert-NoCredential($Text, $Values, $Source) {
         if ([string]::IsNullOrEmpty($value)) { throw 'Missing privacy test credential' }
         if ($Text.Contains($value)) { throw "Credential found in $Source" }
     }
+}
+function Assert-ApiDenied($Path, $Token, $Body, $Status, $Code) {
+    Add-Type -AssemblyName System.Net.Http
+    $client = [Net.Http.HttpClient]::new()
+    try {
+        if ($Token) { $client.DefaultRequestHeaders.Add('Authorization', 'Bearer ' + $Token) }
+        $content = [Net.Http.StringContent]::new(($Body | ConvertTo-Json), [Text.Encoding]::UTF8, 'application/json')
+        try {
+            $response = $client.PostAsync("$url/api/v1/$Path", $content).GetAwaiter().GetResult()
+            try {
+                $result = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult() | ConvertFrom-Json
+                if ([int]$response.StatusCode -ne $Status -or $result.error.code -ne $Code) { throw "资格拒绝结果不符：$Path" }
+            } finally { $response.Dispose() }
+        } finally { $content.Dispose() }
+    } finally { $client.Dispose() }
 }
 function Assert-RoomReopen($Room, $Headers) {
     $endpoint = "$url/api/v1/rooms/$($Room.id)"
@@ -125,6 +141,31 @@ try {
         $history = "$url/api/v1/groups/$($groups[0].id)/messages"
         if ($attempt -eq 1) {
             $sent = (Invoke-RestMethod $history -Headers $headers -Method Post -ContentType 'application/json' -Body (@{body=$marker} | ConvertTo-Json)).data
+        }
+        if ($CheckActivitySessionUpgrade -and $attempt -eq 1) {
+            $legacyToken = $login.data.accessToken
+            $legacyJoin = (Invoke-RestMethod "$url/api/v1/room-joins" -Headers $headers -Method Post -ContentType 'application/json' -Body (
+                    @{roomId=$rooms[0].id;deviceId='relocation-test';operationId=[guid]::NewGuid().ToString('N')} | ConvertTo-Json)).data
+            $legacyGrant = (Invoke-RestMethod "$url/api/v1/activities/$($legacyJoin.activityId)/network-grants" -Headers $headers -Method Post -ContentType 'application/json' -Body (
+                    @{publicKey='AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA='} | ConvertTo-Json)).data
+            $checked = Invoke-RestMethod "$url/api/v1/network-access/validate" -Method Post -ContentType 'application/json' -Body (
+                    @{ticket=$legacyGrant.networkTicket} | ConvertTo-Json)
+            if ($checked.leaseId -ne $legacyJoin.leaseId) { throw 'V16 历史活动未建立有效资格' }
+            $secrets += @($legacyToken, $legacyGrant.networkTicket)
+        } elseif ($CheckActivitySessionUpgrade -and $attempt -eq 2) {
+            if ([DateTimeOffset]::UtcNow -ge [DateTimeOffset]::Parse($legacyGrant.expiresAt)) { throw 'V16 旧票据已到期，不能作为 V17 拒绝历史活动的证据' }
+            Assert-ApiDenied 'network-access/validate' $null @{ticket=$legacyGrant.networkTicket} 403 'NETWORK_GRANT_INVALID'
+            Assert-ApiDenied "activities/$($legacyJoin.activityId)/resume" $login.data.accessToken @{deviceId='relocation-test'} 409 'GENERATION_STALE'
+            $rejoined = (Invoke-RestMethod "$url/api/v1/room-joins" -Headers $headers -Method Post -ContentType 'application/json' -Body (
+                    @{roomId=$rooms[0].id;deviceId='relocation-test';operationId=[guid]::NewGuid().ToString('N')} | ConvertTo-Json)).data
+            if ($rejoined.leaseId -eq $legacyJoin.leaseId -or $rejoined.memberGeneration -le $legacyJoin.memberGeneration) {
+                throw 'V17 显式重入未隔离旧活动租约'
+            }
+            $staleHeaders = @{Authorization=('Bearer ' + $legacyToken)}
+            $staleLeave = (Invoke-RestMethod "$url/api/v1/activities/$($rejoined.activityId)/leave" -Headers $staleHeaders -Method Post -ContentType 'application/json' -Body (
+                    @{leaseId=$rejoined.leaseId} | ConvertTo-Json)).data
+            if ($staleLeave.left) { throw '升级前登录错误退出了新版登录活动' }
+            Write-Host 'PACKAGED_V16_ACTIVITY_REJECTED_V17_EXPLICIT_REJOIN_OK'
         }
         $messages = (Invoke-RestMethod $history -Headers $headers).data
         if ($attempt -eq 1) { $welcome = $messages | Where-Object { $_.id -ne $sent.id } | Select-Object -First 1 }

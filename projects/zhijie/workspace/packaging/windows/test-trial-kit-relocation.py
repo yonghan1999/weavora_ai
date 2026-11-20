@@ -1,5 +1,6 @@
 """在 D 盘一次性目录验证完整试用包；不启动桌面、Helper 或安装器。"""
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -12,6 +13,86 @@ import tempfile
 from urllib.error import HTTPError
 from urllib.request import ProxyHandler, Request, build_opener
 from zipfile import ZipFile
+import time
+
+
+def expect_api_error(api, path, status, code, **arguments):
+    try:
+        api(path, **arguments)
+    except HTTPError as error:
+        with error:
+            if error.code != status or json.load(error)['error']['code'] != code:
+                raise ValueError(f'资格拒绝结果不符：{path}') from error
+    else:
+        raise ValueError(f'失效资格意外通过：{path}')
+
+
+def check_session_revocation(api, password, room):
+    device = 'packaged-session'
+    activity = f'activities/{room["currentActivityId"]}'
+    network = {'publicKey': 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA='}
+
+    def login():
+        return api('auth/login', method='POST', body={
+            'email': 'trial@example.test', 'password': password, 'deviceId': device})
+
+    def join(tokens):
+        return api('room-joins', token=tokens['accessToken'], method='POST', body={
+            'roomId': room['id'], 'deviceId': device, 'operationId': secrets.token_hex(16)})
+
+    def issue(tokens):
+        return api(f'{activity}/network-grants', token=tokens['accessToken'], method='POST', body=network)
+
+    def validate(grant):
+        current = api('network-access/validate', method='POST', body={'ticket': grant['networkTicket']})
+        if current['leaseId'] != grant['leaseId']:
+            raise ValueError('试用包网络准入租约不符')
+
+    def denied(grant):
+        if datetime.now(timezone.utc) >= datetime.fromisoformat(grant['expiresAt'].replace('Z', '+00:00')):
+            raise ValueError('旧票据已经自然到期，不能作为主动撤销证据')
+        expect_api_error(api, 'network-access/validate', 403, 'NETWORK_GRANT_INVALID',
+                         method='POST', body={'ticket': grant['networkTicket']})
+
+    original, preserved = login(), login()
+    first = join(original)
+    first_grant = issue(original)
+    validate(first_grant)
+    rotated = api('auth/refresh', method='POST', body={'refreshToken': original['refreshToken']})
+    validate(first_grant)
+    api('auth/logout', method='POST', body={'accessToken': rotated['accessToken']})
+    denied(first_grant)
+    expect_api_error(api, 'groups', 401, 'ACCESS_TOKEN_INVALID', token=rotated['accessToken'])
+    api('groups', token=preserved['accessToken'])
+    expect_api_error(api, f'{activity}/resume', 409, 'GENERATION_STALE',
+                     token=preserved['accessToken'], method='POST', body={'deviceId': device})
+    time.sleep(1.1)
+    denied(first_grant)
+    replacement = join(preserved)
+    if replacement['leaseId'] == first['leaseId'] or replacement['memberGeneration'] <= first['memberGeneration']:
+        raise ValueError('认证失效后显式重入未创建新租约与成员代次')
+    replacement_grant = issue(preserved)
+    validate(replacement_grant)
+    takeover = login()
+    expect_api_error(api, f'{activity}/network-grants', 403, 'CURRENT_GRANT_REQUIRED',
+                     token=takeover['accessToken'], method='POST', body=network)
+    current = join(takeover)
+    if current['leaseId'] == replacement['leaseId'] or current['memberGeneration'] <= replacement['memberGeneration']:
+        raise ValueError('同设备新登录接管未隔离旧登录租约')
+    current_grant = issue(takeover)
+    denied(replacement_grant)
+    if api(f'{activity}/leave', token=preserved['accessToken'], method='POST', body={'leaseId': current['leaseId']})['left']:
+        raise ValueError('旧登录影响了同设备新登录活动')
+    api('auth/logout', method='POST', body={'accessToken': preserved['accessToken']})
+    time.sleep(1.1)
+    validate(current_grant)
+    refreshed = api('auth/refresh', method='POST', body={'refreshToken': takeover['refreshToken']})
+    validate(current_grant)
+    expect_api_error(api, 'auth/refresh', 401, 'REFRESH_TOKEN_INVALID',
+                     method='POST', body={'refreshToken': takeover['refreshToken']})
+    denied(current_grant)
+    expect_api_error(api, 'groups', 401, 'ACCESS_TOKEN_INVALID', token=refreshed['accessToken'])
+    print('TRIAL_KIT_SESSION_LOGOUT_TAKEOVER_REFRESH_REPLAY_OK')
 
 
 def check_device_leave(api, password, token, room, check_grants):
@@ -54,7 +135,7 @@ def check_device_leave(api, password, token, room, check_grants):
             raise ValueError('当前设备退房或重复退房结果不符')
 
 
-def verify(package, digest, java_home, check_restore=False, check_leave=False, check_grants=False):
+def verify(package, digest, java_home, check_restore=False, check_leave=False, check_grants=False, check_session=False):
     workspace = Path(__file__).resolve().parents[2]
     target = workspace / 'target'
     if os.name != 'nt' or target.drive.upper() == os.environ.get('SystemDrive', 'C:').upper() or target.resolve(strict=True) != target:
@@ -91,7 +172,8 @@ def verify(package, digest, java_home, check_restore=False, check_leave=False, c
             request = Request(f'http://127.0.0.1:{http_port}/api/v1/{path}', method=method, headers=headers,
                               data=json.dumps(body).encode() if body is not None else None)
             with opener.open(request, timeout=10) as response:
-                return json.load(response)['data']
+                document = json.load(response)
+                return document.get('data', document)
 
         command = ['powershell', '-NoProfile', '-NonInteractive', '-File']
         launches = [root, root, restored] if check_restore else [root, root]
@@ -131,6 +213,8 @@ def verify(package, digest, java_home, check_restore=False, check_leave=False, c
                     raise ValueError('未读到本次试用消息')
                 if check_leave or check_grants:
                     check_device_leave(api, password, token, room, check_grants)
+                if check_session:
+                    check_session_revocation(api, password, room)
             finally:
                 subprocess.run([*command, scripts / 'stop.ps1'], cwd=kit, env=env, check=True, timeout=45)
     print('RELOCATED_TRIAL_KIT_PASSWORD_POLICY_LOGIN_MESSAGE_RESTART_OK')
@@ -150,5 +234,6 @@ if __name__ == '__main__':
     parser.add_argument('--check-restore', action='store_true', help='用包内工具恢复到另一解压目录，再登录核对数据')
     parser.add_argument('--check-leave', action='store_true', help='每次启动后验证设备接管和按租约退房；只用于支持该协议的包')
     parser.add_argument('--check-grants', action='store_true', help='同时验证接管前的设备不能取得语音或网络票据')
+    parser.add_argument('--check-session', action='store_true', help='验证具体登录的注销、同设备接管及刷新重放撤销；需要 V17 后端')
     args = parser.parse_args()
-    verify(args.package, args.sha256, args.java_home, args.check_restore, args.check_leave, args.check_grants)
+    verify(args.package, args.sha256, args.java_home, args.check_restore, args.check_leave, args.check_grants, args.check_session)
