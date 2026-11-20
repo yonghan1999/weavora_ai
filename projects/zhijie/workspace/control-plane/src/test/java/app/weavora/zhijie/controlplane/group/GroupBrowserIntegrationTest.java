@@ -84,6 +84,31 @@ class GroupBrowserIntegrationTest {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
+    void secondDeviceTakesOverTheRoomButBothDevicesKeepGroupAccess() throws Exception {
+        prepareClients();
+        try (var postgres = EmbeddedPostgres.start(); var context = start(postgres)) {
+            String password = UUID.randomUUID().toString(), user = UUID.randomUUID().toString();
+            String hash = context.getBean(CredentialProtector.class).hashPassword(password);
+            context.getBean(IdentityRepository.class).insertUser(new UserAccount(user, "owner@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            var group = context.getBean(GroupService.class).createGroup(user, "双端接管群", null, "");
+            var rooms = context.getBean(app.weavora.zhijie.controlplane.room.RoomService.class);
+            var room = rooms.createRoom(user, group.id(), "设备接管房", "", "", null);
+            var activity = rooms.startActivity(user, room.id());
+            runBrowser(context, password, "device-takeover");
+            var repository = context.getBean(ActivityRepository.class);
+            var lease = repository.findLatestLease(activity.id(), user).orElseThrow();
+            var pointer = repository.findAccountActivity(user).orElseThrow();
+            assertThat(pointer.deviceId()).isEqualTo(lease.deviceId());
+            assertThat(pointer.memberGeneration()).isEqualTo(lease.memberGeneration()).isEqualTo(2L);
+            assertThat(repository.countOccupied(activity.id())).isOne();
+            var sql = context.getBean(JdbcTemplate.class);
+            assertThat(sql.queryForList("SELECT revoked_at IS NOT NULL FROM connection_leases WHERE activity_id=? AND user_id=? ORDER BY member_generation", Boolean.class, activity.id(), user)).containsExactly(true, false);
+            assertThat(sql.queryForObject("SELECT count(DISTINCT device_id) FROM auth_sessions WHERE user_id=? AND revoked_at IS NULL", Integer.class, user)).isEqualTo(2);
+        }
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
     void memberRetriesProtectedRoomWithoutLosingOriginalLease() throws Exception {
         prepareClients();
         try (var postgres = EmbeddedPostgres.start(); var context = start(postgres)) {

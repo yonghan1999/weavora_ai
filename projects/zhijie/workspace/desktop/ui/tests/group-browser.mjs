@@ -230,6 +230,7 @@ try {
   else if (scenario === 'history-delete') await historyDelete();
   else if (scenario === 'room-channels') await roomChannels();
   else if (scenario === 'protected-switch') await protectedRoomSwitch();
+  else if (scenario === 'device-takeover') await deviceTakeover();
   else {
     assert.ok(['profile-write', 'profile-read'].includes(scenario));
     await groupProfile(await page('owner@example.test'), scenario);
@@ -285,6 +286,39 @@ async function protectedRoomSwitch() {
   const switched = await activity();
   assert.notEqual(switched.activityId, original.activityId);
   assert.notEqual(switched.leaseId, original.leaseId);
+}
+
+async function deviceTakeover() {
+  const first = await page('owner@example.test');
+  const snapshot = client => client.evaluate(`globalThis.__TAURI__.core.invoke('state_snapshot')`);
+  async function join(client) {
+    await client.click('[data-view=lobby]'); await client.action('join-room'); await client.submit();
+    await client.wait('inside room', `document.querySelector('.room-heading h1')?.textContent==='设备接管房'`);
+    return (await snapshot(client)).activity;
+  }
+  const original = await join(first);
+  const second = await page('owner@example.test');
+  assert.equal((await snapshot(first)).activity.leaseId, original.leaseId);
+  assert.equal((await snapshot(second)).activity, null);
+  const current = await join(second);
+  assert.equal(current.activityId, original.activityId);
+  assert.notEqual(current.deviceId, original.deviceId);
+  assert.notEqual(current.leaseId, original.leaseId);
+  assert.ok(current.memberGeneration > original.memberGeneration);
+  await first.wait('old device returns to lobby without logging out', `!!document.querySelector('.room-card') && !document.querySelector('.voice-dock')`);
+  assert.equal((await snapshot(first)).activity, null);
+  const stale = JSON.stringify({activityId: original.activityId, leaseId: original.leaseId});
+  for (const command of ['voice_connect', 'network_connect']) {
+    const error = await first.evaluate(`globalThis.__TAURI__.core.invoke('${command}',${stale}).then(()=>null,error=>error)`);
+    assert.equal(error, 'CURRENT_GRANT_REQUIRED');
+  }
+  await first.click('[data-view=groups]'); await first.action('open-group');
+  await first.wait('group composer is ready', `document.querySelector('[data-form=message] button')?.disabled===false`);
+  await first.evaluate(`document.querySelector('#message-input').value='原设备仍可群聊';document.querySelector('[data-form=message] button').click()`);
+  const messageVisible = `Array.from(document.querySelectorAll('.message-text')).some(node=>node.textContent==='原设备仍可群聊')`;
+  await first.wait('old device sends group message without room access', messageVisible);
+  await second.wait('active device receives group message', messageVisible);
+  assert.equal((await snapshot(second)).activity.leaseId, current.leaseId);
 }
 
 async function sessionRevoked() {
