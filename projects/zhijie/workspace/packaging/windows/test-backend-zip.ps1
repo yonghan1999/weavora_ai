@@ -98,7 +98,7 @@ try {
         $portRejected = $true
     }
     if (!$portRejected -or (Get-Location).Path -ne $caller) { throw '拒绝重复端口后未保留调用者目录' }
-    $attemptCount = if ($previous) { 3 } else { 2 }
+    $attemptCount = if ($previous) { 4 } else { 2 }
     $snapshots = foreach ($attempt in 1..$attemptCount) {
         & "$trial/scripts/local-preview/start.ps1" -JavaHome $JavaHome -HttpPort $HttpPort -DatabasePort $DatabasePort | Out-Host
         if ($trial -eq $current -and (Get-Location).Path -ne $caller) { throw '启动后未保留调用者目录' }
@@ -109,13 +109,31 @@ try {
         $groups = (Invoke-RestMethod "$url/api/v1/groups" -Headers $headers).data
         if ($groups.Count -ne 1) { throw '群数量不符' }
         $rooms = (Invoke-RestMethod "$url/api/v1/groups/$($groups[0].id)/rooms" -Headers $headers).data
+        if ($rooms.Count -ne 1) { throw '预期的唯一试用房间不存在' }
+        if ($previous -and $attempt -eq 1) {
+            $room = $rooms[0]
+            $originalRoomName = 'Upgrade-' + $marker
+            $oldRoomPassword = [guid]::NewGuid().ToString('N')
+            $secrets += $oldRoomPassword
+            $settings = @{name=$originalRoomName;description=$room.description;gameName=$room.gameName;password=$oldRoomPassword} | ConvertTo-Json
+            $configured = (Invoke-RestMethod "$url/api/v1/rooms/$($room.id)" -Method Patch -Headers $headers -ContentType 'application/json' -Body $settings).data
+            if ($configured.passwordProtected -ne $true -or $configured.name -ne $originalRoomName) { throw '旧包设置密码房失败' }
+        } elseif ($previous) {
+            $expectedName = if ($attempt -eq 4 -and $CheckLogPrivacy) { 'Privacy test' } else { $originalRoomName }
+            if ($rooms[0].passwordProtected -ne $true -or $rooms[0].name -ne $expectedName) { throw '恢复后的房间配置不符' }
+        }
         $history = "$url/api/v1/groups/$($groups[0].id)/messages"
         if ($attempt -eq 1) {
             $sent = (Invoke-RestMethod $history -Headers $headers -Method Post -ContentType 'application/json' -Body (@{body=$marker} | ConvertTo-Json)).data
         }
         $messages = (Invoke-RestMethod $history -Headers $headers).data
-        if ($rooms.Count -ne 1 -or $messages.Count -ne 2 -or !($messages | Where-Object { $_.id -eq $sent.id -and $_.body -eq $marker })) { throw '用户消息、欢迎消息或房间缺失' }
-        "$($login.data.userId):$($groups[0].id):$($rooms[0].id):$($messages.id -join ':')"
+        if ($attempt -eq 1) { $welcome = $messages | Where-Object { $_.id -ne $sent.id } | Select-Object -First 1 }
+        if (!$welcome.id -or !($messages | Where-Object { $_.id -eq $welcome.id -and $_.body -eq $welcome.body })) { throw '原欢迎消息缺失或变化' }
+        if ($attempt -eq 4) {
+            if ($messages.Count -ne 3 -or !($messages | Where-Object { $_.id -eq $added.id -and $_.body -eq $upgradeMarker }) -or
+                !($messages | Where-Object { $_.id -eq $sent.id -and $_.deleted -and $null -eq $_.body })) { throw '重新启用新版后，新版消息或删除标记丢失' }
+        } elseif ($messages.Count -ne 2 -or !($messages | Where-Object { $_.id -eq $sent.id -and $_.body -eq $marker })) { throw '原试用消息缺失或已改变' }
+        "$($login.data.userId):$($groups[0].id):$($rooms[0].id)"
         if ($attempt -eq 2) {
             $sockets = @()
             $deadline = [Threading.CancellationTokenSource]::new(15000)
@@ -188,9 +206,16 @@ try {
             if ($LASTEXITCODE) { throw '恢复副本核验失败，拒绝启动' }
             $trial = $current
         } elseif ($previous -and $attempt -eq 2) {
+            $newBackup = Join-Path $fixture 'new-snapshot'
+            & python -B "$workspace/ops/database/cold-backup.py" snapshot --source "$current/target/local-preview/postgres" --destination $newBackup | Out-Host
+            if ($LASTEXITCODE) { throw '新版停库快照失败' }
             $trial = Join-Path $fixture 'previous'
             & python -B "$workspace/ops/database/cold-backup.py" verify --backup $backup --restored-data "$trial/target/local-preview/postgres" | Out-Host
             if ($LASTEXITCODE) { throw '旧库或原快照在新版使用期间已改变，拒绝回退' }
+        } elseif ($previous -and $attempt -eq 3) {
+            & python -B "$workspace/ops/database/cold-backup.py" verify --backup $newBackup --restored-data "$current/target/local-preview/postgres" | Out-Host
+            if ($LASTEXITCODE) { throw '新版数据在回退期间已改变，拒绝启动' }
+            $trial = $current
         }
     }
     if ($snapshots.Count -ne $attemptCount -or @($snapshots | Select-Object -Unique).Count -ne 1) { throw '重启或回退后原始业务标识改变' }
@@ -213,4 +238,4 @@ if ((Split-Path -Parent $resolved) -ne $target -or (Split-Path -Leaf $resolved) 
 Remove-Item -LiteralPath $resolved -Recurse -Force
 Write-Output 'RELOCATED_PACKAGE_LOGIN_HISTORY_RESTART_OK'
 if ($CheckLogPrivacy) { Write-Output 'PACKAGED_LOGIN_ROOM_AUDIT_AND_SERVER_LOG_PRIVACY_OK' }
-if ($previous) { Write-Output 'BACKEND_PACKAGE_UPGRADE_USER_DATA_OK'; Write-Output 'BACKEND_PACKAGE_ROLLBACK_ORIGINAL_DATA_OK' }
+if ($previous) { Write-Output 'BACKEND_PACKAGE_UPGRADE_USER_DATA_OK'; Write-Output 'BACKEND_PACKAGE_ROLLBACK_ORIGINAL_DATA_OK'; Write-Output 'BACKEND_PACKAGE_RESUME_UPGRADED_DATA_OK' }

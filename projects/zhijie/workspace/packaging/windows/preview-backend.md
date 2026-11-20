@@ -40,6 +40,8 @@ python -B "ops/database/cold-backup.py" verify --backup "<备份目录>" --resto
 
 **需要回退时**：用新目录的 `scripts/local-preview/stop.ps1` 正常停库，确认两个端口已释放，保留新目录；若已有新消息等需要保留的变更，先另做一份新版停库快照。对升级前保留的旧目录执行上面的 `verify`，`--backup` 仍指向升级前备份，`--restored-data` 改为 `<旧目录>/target/local-preview/postgres`。仅当出现 `COLD_RESTORE_COPY_OK`，才从旧目录启动旧包并用原账号登录。若校验不符，停止操作，不合并或覆盖数据库，也不要让旧程序打开新版数据目录。
 
+**回退后再次使用新版**：停止旧包；若回退期间产生了需要保留的旧版写入，先为旧库另做停库快照。用新版停库时的备份核对新版数据目录，确认 `COLD_RESTORE_COPY_OK` 后，从新版原目录启动。两份数据库不会自动合并：回退期间在旧库新增的内容不会出现在新版，新版独有的消息和删除标记则应保留。
+
 **复建与验证。** 对可信的干净 Windows 源码先执行本地试用说明中的 `test-compile` 和 `dependency:build-classpath`。然后从工具所在工作区运行：
 
 ```powershell
@@ -47,6 +49,8 @@ python -B "packaging/windows/pack-preview-backend.py" --workspace "<已构建的
 & "./packaging/windows/test-backend-zip.ps1" -Package "<D 盘已有目录>/preview-backend.zip" -JavaHome "D:/Program Files/jdk-25"
 ```
 
-给回归命令添加 `-PreviousPackage "<旧试用包.zip>"` 即可验证升级和回退：旧包写消息并停库，新包从验证过的副本启动、删除原消息并写入新消息；再停新包，核对旧库与原快照未变，切回旧包重新登录。账号、群、房间和原消息标识必须相同，原消息仍在，且旧库没有新版独有消息。不加此参数则只验证同版重启。新版可选 `-CheckSyncAuth` 验证两个订阅者收到删除事件，或用 `-CheckRoomReopen` 验证房内拒绝和结束活动后的房外开放。回归不接触用户的试用库。
+给回归命令添加 `-PreviousPackage "<旧试用包.zip>"` 即可依次验证旧版、新版、回退旧版、重新启用新版。旧版先设置密码房并发送消息；新版在独立副本中删除原消息并写入另一条。回退旧版应仍能读到原消息；再次启用新版应读到新版消息和删除标记。每次用原账号登录，核对群、房间、欢迎消息和房间配置。不加此参数只验证同版重启。可选 `-CheckSyncAuth` 验证两个订阅者收到删除事件，`-CheckRoomReopen` 验证房间重新开放，`-CheckLogPrivacy` 验证普通服务日志与管理记录不含测试凭据。回归不接触现有试用数据。
 
 生成器不覆盖同名文件。它只复制试用启动脚本、控制面类、与源码一致的应用配置/映射/迁移和类路径所列 JAR，保留依赖顺序，清单中仅有包内相对路径。回归只针对自行生成的可信包，使用独立目录和回环端口；用例验证本机移位解压后的登录与重启，不代表第二台机器或其他平台已验收。
+
+旧后端 `b44c82c5` 与新版 `c5868af` 已在本机执行上述四次启动：两份停库快照各有 1,109 个文件，恢复副本、回退前的旧库、重新启用前的新版库均通过逐文件摘要和目录结构比对。日志：`target/trial-kit-c5868af/upgrade-roundtrip-1be223b.log`；同版两次启动对照：`target/trial-kit-c5868af/same-version-1be223b.log`。这是便携后端数据验证，不是桌面安装器更新、降级或卸载验证。
