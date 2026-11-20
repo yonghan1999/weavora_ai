@@ -340,6 +340,7 @@ async fn full_room(mode: &str) {
             socket,
             router,
             expiry,
+            tokio::time::Instant::now() + Duration::from_secs(3),
             receiver,
             NetworkAuthority::new(&http.url).unwrap(),
             request,

@@ -15,7 +15,7 @@ use time::OffsetDateTime;
 use tokio::net::UdpSocket;
 use zhijie_relay::quic::{RelayClient, RelayConfig};
 
-use crate::authority::NetworkAuthority;
+use crate::authority::{AuthorizedNetwork, NetworkAuthority};
 use crate::model::{NetworkPath, NetworkPeer, NetworkRoute, NetworkStart};
 use crate::router::{PacketAction, TunnelRouter};
 use crate::service::NetworkBackend;
@@ -34,6 +34,10 @@ mod full_room_tests;
 #[cfg(test)]
 #[path = "authority_deadline_tests.rs"]
 mod authority_deadline_tests;
+
+#[cfg(test)]
+#[path = "authority_responsiveness_tests.rs"]
+mod authority_responsiveness_tests;
 
 #[derive(Default)]
 pub struct SystemNetworkBackend {
@@ -131,6 +135,7 @@ impl NetworkBackend for SystemNetworkBackend {
                         return;
                     }
                 };
+                let authorized_until = tokio::time::Instant::now() + Duration::from_secs(3);
                 let authorized = match authority.validate(&request).await {
                     Ok(authorized) => authorized,
                     Err(code) => {
@@ -140,6 +145,10 @@ impl NetworkBackend for SystemNetworkBackend {
                 };
                 match create_data_plane(&request).await {
                     Ok((device, socket, mut router, expires)) => {
+                        if tokio::time::Instant::now() >= authorized_until {
+                            let _ = ready.send(Err("CONTROL_PLANE_UNAVAILABLE".into()));
+                            return;
+                        }
                         if let Err(code) = router.update_peers(authorized.peers) {
                             let _ = ready.send(Err(code));
                             return;
@@ -157,6 +166,7 @@ impl NetworkBackend for SystemNetworkBackend {
                                 socket,
                                 router,
                                 expires,
+                                authorized_until,
                                 receiver,
                                 authority,
                                 request,
@@ -431,11 +441,35 @@ impl TunnelDevice for tun::AsyncDevice {
     }
 }
 
+struct AuthorityCheck {
+    result: std::pin::Pin<Box<dyn Future<Output = Result<AuthorizedNetwork, String>> + Send>>,
+    valid_until: tokio::time::Instant,
+}
+
+impl AuthorityCheck {
+    fn new(authority: &NetworkAuthority, request: &NetworkStart, expires: OffsetDateTime) -> Self {
+        let valid_until = tokio::time::Instant::now() + Duration::from_secs(3);
+        let authority = authority.clone();
+        let request = request.clone();
+        Self {
+            result: Box::pin(async move { authority.validate_until(&request, expires).await }),
+            valid_until,
+        }
+    }
+}
+
+struct PendingRenewal {
+    check: AuthorityCheck,
+    request: NetworkStart,
+    reply: mpsc::Sender<Result<(), String>>,
+}
+
 async fn run_data_plane(
     device: impl TunnelDevice,
     socket: UdpSocket,
     mut router: TunnelRouter,
     mut expires: OffsetDateTime,
+    mut authorized_until: tokio::time::Instant,
     mut commands: tokio::sync::mpsc::UnboundedReceiver<Command>,
     authority: NetworkAuthority,
     mut request: NetworkStart,
@@ -447,6 +481,10 @@ async fn run_data_plane(
     let mut udp_buffer = vec![0; 65535];
     let mut timer = tokio::time::interval(Duration::from_millis(100));
     let mut authorization_timer = tokio::time::interval(Duration::from_secs(1));
+    authorization_timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    let mut authorization: Option<AuthorityCheck> = None;
+    let mut peer_reply: Option<mpsc::Sender<Result<(), String>>> = None;
+    let mut renewal: Option<PendingRenewal> = None;
     let mut relay = if !request.allowed_paths.contains(&NetworkPath::Direct) {
         router.set_path(NetworkPath::Relay);
         Some(connect_relay(&relay_config, &request.ticket).await?)
@@ -459,46 +497,106 @@ async fn run_data_plane(
     > = None;
     loop {
         if OffsetDateTime::now_utc() >= expires {
+            if let Some(pending) = renewal.take() {
+                let _ = pending.reply.send(Err("GRANT_EXPIRED".into()));
+            }
+            if let Some(reply) = peer_reply.take() {
+                let _ = reply.send(Err("GRANT_EXPIRED".into()));
+            }
             return Err("GRANT_EXPIRED".into());
+        }
+        if tokio::time::Instant::now() >= authorized_until {
+            if let Some(pending) = renewal.take() {
+                let _ = pending.reply.send(Err("CONTROL_PLANE_UNAVAILABLE".into()));
+            }
+            if let Some(reply) = peer_reply.take() {
+                let _ = reply.send(Err("CONTROL_PLANE_UNAVAILABLE".into()));
+            }
+            return Err("CONTROL_PLANE_UNAVAILABLE".into());
         }
         let actions = tokio::select! {
             command = commands.recv() => match command {
                 Some(Command::Renew(updated, reply)) => {
-                    match authority.validate_until(&updated, expires).await {
-                        Ok(current) => {
-                            let result = router.update_peers(current.peers);
-                            if result.is_ok() {
-                                relay_connect = None;
-                                if updated.allowed_paths.contains(&NetworkPath::Relay) && relay_config.is_ok() {
-                                    let config = relay_config.clone();
-                                    let ticket = updated.ticket.clone();
-                                    relay_connect = Some(Box::pin(async move { connect_relay(&config, &ticket).await }));
-                                }
-                                expires = OffsetDateTime::parse(&updated.expires_at, &time::format_description::well_known::Rfc3339).map_err(|_| "GRANT_EXPIRY_INVALID")?;
-                                request = updated;
-                            }
-                            let _ = reply.send(result);
-                        }
-                        Err(code) => {
-                            let expired = code == "GRANT_EXPIRED";
-                            let _ = reply.send(Err(code));
-                            if expired { return Err("GRANT_EXPIRED".into()); }
-                        }
+                    if renewal.is_some() {
+                        let _ = reply.send(Err("NETWORK_RENEW_FAILED".into()));
+                    } else {
+                        renewal = Some(PendingRenewal {
+                            check: AuthorityCheck::new(&authority, &updated, expires),
+                            request: updated,
+                            reply,
+                        });
                     }
                     continue;
                 }
                 Some(Command::Peers(_peers, reply)) => {
-                    // 本地 IPC 无权覆盖权威 Peer 列表。
-                    match authority.validate_until(&request, expires).await {
-                        Ok(current) => { let _ = reply.send(router.update_peers(current.peers)); }
-                        Err(code) => { let _ = reply.send(Err(code)); break; }
+                    if peer_reply.is_some() {
+                        let _ = reply.send(Err("NETWORK_PEER_UPDATE_FAILED".into()));
+                    } else {
+                        peer_reply = Some(reply);
+                        if authorization.is_none() {
+                            authorization = Some(AuthorityCheck::new(&authority, &request, expires));
+                        }
                     }
                     continue;
                 }
                 Some(Command::Stop) | None => break,
             },
+            result = async {
+                match renewal.as_mut() {
+                    Some(pending) => pending.check.result.as_mut().await,
+                    None => std::future::pending().await,
+                }
+            } => {
+                if OffsetDateTime::now_utc() >= expires || tokio::time::Instant::now() >= authorized_until {
+                    continue;
+                }
+                let pending = renewal.take().unwrap();
+                match result {
+                    Ok(current) => {
+                        let result = router.update_peers(current.peers);
+                        if result.is_ok() {
+                            relay_connect = None;
+                            if pending.request.allowed_paths.contains(&NetworkPath::Relay) && relay_config.is_ok() {
+                                let config = relay_config.clone();
+                                let ticket = pending.request.ticket.clone();
+                                relay_connect = Some(Box::pin(async move { connect_relay(&config, &ticket).await }));
+                            }
+                            expires = OffsetDateTime::parse(&pending.request.expires_at, &time::format_description::well_known::Rfc3339).map_err(|_| "GRANT_EXPIRY_INVALID")?;
+                            request = pending.request;
+                            authorized_until = pending.check.valid_until;
+                            authorization = None;
+                            authorization_timer.reset();
+                            if let Some(reply) = peer_reply.take() { let _ = reply.send(Ok(())); }
+                        }
+                        let _ = pending.reply.send(result);
+                    }
+                    Err(code) => {
+                        let expired = code == "GRANT_EXPIRED";
+                        let _ = pending.reply.send(Err(code));
+                        if expired { return Err("GRANT_EXPIRED".into()); }
+                    }
+                }
+                continue;
+            },
+            result = async {
+                match authorization.as_mut() {
+                    Some(check) => check.result.as_mut().await,
+                    None => std::future::pending().await,
+                }
+            } => {
+                if OffsetDateTime::now_utc() >= expires || tokio::time::Instant::now() >= authorized_until {
+                    continue;
+                }
+                let check = authorization.take().unwrap();
+                let result = result.and_then(|current| router.update_peers(current.peers));
+                if let Some(reply) = peer_reply.take() { let _ = reply.send(result.clone()); }
+                result?;
+                authorized_until = check.valid_until;
+                continue;
+            },
+            _ = tokio::time::sleep_until(authorized_until) => continue,
             _ = timer.tick() => {
-                if OffsetDateTime::now_utc() >= expires { return Err("GRANT_EXPIRED".into()); }
+                if OffsetDateTime::now_utc() >= expires { continue; }
                 let failed = router.direct_failures();
                 if !failed.is_empty() {
                     if !request.allowed_paths.contains(&NetworkPath::Relay) {
@@ -538,9 +636,9 @@ async fn run_data_plane(
                 Vec::new()
             },
             _ = authorization_timer.tick() => {
-                // 控制面不可达或失权立即停止数据泵，不继续使用缓存授权。
-                let current = authority.validate_until(&request, expires).await?;
-                router.update_peers(current.peers)?;
+                if authorization.is_none() {
+                    authorization = Some(AuthorityCheck::new(&authority, &request, expires));
+                }
                 continue;
             },
             received = device.recv(&mut tunnel_buffer) => {
@@ -579,42 +677,49 @@ async fn run_data_plane(
         connected.store(router.connected(), Ordering::Relaxed);
         active_path.store(router.path_code(), Ordering::Relaxed);
         let relay_replacing = relay_connect.is_some();
-        bounded_packet_write(expires, async {
-            for action in actions {
-                if OffsetDateTime::now_utc() >= expires {
-                    return Err("GRANT_EXPIRED".to_string());
-                }
-                match action {
-                    PacketAction::Network(endpoint, packet) => {
-                        socket
-                            .send_to(&packet, endpoint)
-                            .await
-                            .map_err(|_| "NETWORK_SEND_FAILED".to_string())?;
+        tokio::time::timeout_at(
+            authorized_until,
+            bounded_packet_write(expires, async {
+                for action in actions {
+                    if OffsetDateTime::now_utc() >= expires {
+                        return Err("GRANT_EXPIRED".to_string());
                     }
-                    PacketAction::Tunnel(packet) => {
-                        device
-                            .send(&packet)
-                            .await
-                            .map_err(|_| "TUN_WRITE_FAILED".to_string())?;
+                    if tokio::time::Instant::now() >= authorized_until {
+                        return Err("CONTROL_PLANE_UNAVAILABLE".into());
                     }
-                    PacketAction::Relay(target, packet) => {
-                        if let Some(client) = relay.as_ref() {
-                            if let Err(code) = client.send(target, &packet) {
-                                if !relay_replacing {
-                                    router.relay_lost();
-                                    if !router.connected() {
-                                        return Err(code);
+                    match action {
+                        PacketAction::Network(endpoint, packet) => {
+                            socket
+                                .send_to(&packet, endpoint)
+                                .await
+                                .map_err(|_| "NETWORK_SEND_FAILED".to_string())?;
+                        }
+                        PacketAction::Tunnel(packet) => {
+                            device
+                                .send(&packet)
+                                .await
+                                .map_err(|_| "TUN_WRITE_FAILED".to_string())?;
+                        }
+                        PacketAction::Relay(target, packet) => {
+                            if let Some(client) = relay.as_ref() {
+                                if let Err(code) = client.send(target, &packet) {
+                                    if !relay_replacing {
+                                        router.relay_lost();
+                                        if !router.connected() {
+                                            return Err(code);
+                                        }
                                     }
+                                    relay = None;
                                 }
-                                relay = None;
                             }
                         }
                     }
                 }
-            }
-            Ok(())
-        })
-        .await?;
+                Ok(())
+            }),
+        )
+        .await
+        .map_err(|_| "CONTROL_PLANE_UNAVAILABLE".to_string())??;
     }
     Ok(())
 }
@@ -998,6 +1103,7 @@ mod tests {
                 socket_a,
                 make_router(1, peers_a),
                 expiry,
+                tokio::time::Instant::now() + Duration::from_secs(3),
                 commands_a,
                 NetworkAuthority::new(&url).unwrap(),
                 a,
@@ -1013,6 +1119,7 @@ mod tests {
                 socket_b,
                 make_router(2, peers_b),
                 expiry,
+                tokio::time::Instant::now() + Duration::from_secs(3),
                 commands_b,
                 NetworkAuthority::new(&url).unwrap(),
                 b,
@@ -1250,6 +1357,7 @@ mod tests {
                 socket,
                 router,
                 expiry,
+                tokio::time::Instant::now() + Duration::from_secs(3),
                 receiver,
                 NetworkAuthority::new(&url).unwrap(),
                 request,

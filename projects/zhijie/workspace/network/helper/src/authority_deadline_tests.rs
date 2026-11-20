@@ -176,6 +176,7 @@ async fn delayed_poll_and_renewal_stop_at_original_expiry_and_release_tunnel() {
             socket,
             router,
             expiry,
+            tokio::time::Instant::now() + Duration::from_secs(3),
             receiver,
             NetworkAuthority::new(&server.url).unwrap(),
             request,

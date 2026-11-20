@@ -80,6 +80,7 @@ async fn twelve_real_control_plane_data_pumps() {
         let authority = NetworkAuthority::new(&url)
             .unwrap()
             .with_diagnostic_member(index);
+        let authorized_until = tokio::time::Instant::now() + Duration::from_secs(3);
         let current = authority.validate(&request).await.unwrap();
         assert_eq!(current.peers.len(), MEMBERS - 1);
         let address: Ipv4Addr = request.virtual_ipv4.parse().unwrap();
@@ -116,6 +117,7 @@ async fn twelve_real_control_plane_data_pumps() {
             socket,
             router,
             expires,
+            authorized_until,
             receiver,
             authority,
             request,
