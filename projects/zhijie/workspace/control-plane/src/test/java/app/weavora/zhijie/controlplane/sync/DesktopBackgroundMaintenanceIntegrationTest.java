@@ -6,6 +6,7 @@ import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.group.GroupService;
 import app.weavora.zhijie.controlplane.identity.*;
+import app.weavora.zhijie.controlplane.integration.TcpTestLink;
 import app.weavora.zhijie.controlplane.message.MessageService;
 import app.weavora.zhijie.controlplane.room.RoomService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +26,7 @@ import org.springframework.boot.web.servlet.context.ServletWebServerApplicationC
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class DesktopBackgroundMaintenanceIntegrationTest {
+    private enum Outage { NONE, SHORT, REVOKED, LONG }
     private static Path workspace;
     private static Path shellTest;
 
@@ -46,16 +48,31 @@ class DesktopBackgroundMaintenanceIntegrationTest {
     }
 
     @Test void productionBackgroundLoopsRotateReconnectAndClearDisabledAccount() throws Exception {
-        runBackgroundLoops(false);
+        runBackgroundLoops(false, Outage.NONE);
+    }
+
+    @Test void productionBackgroundLoopsRecoverShortOutageWithoutChangingLease() throws Exception {
+        runBackgroundLoops(false, Outage.SHORT);
+    }
+
+    @Test void productionBackgroundLoopsRejectAnActivityRevokedDuringOutage() throws Exception {
+        runBackgroundLoops(false, Outage.REVOKED);
+    }
+
+    @Test void productionBackgroundLoopsReleaseExpiredOfflineActivityWithoutRevivingIt() throws Exception {
+        runBackgroundLoops(false, Outage.LONG);
     }
 
     @Test
     @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_BACKGROUND_LONG", matches = "true")
     void productionBackgroundLoopsSurviveActualCredentialExpiry() throws Exception {
-        runBackgroundLoops(true);
+        runBackgroundLoops(true, Outage.NONE);
     }
 
-    private void runBackgroundLoops(boolean realTime) throws Exception {
+    private void runBackgroundLoops(boolean realTime, Outage outageMode) throws Exception {
+        boolean outage = outageMode != Outage.NONE;
+        boolean revokedOffline = outageMode == Outage.REVOKED;
+        boolean expiredOffline = outageMode == Outage.LONG;
         try (var postgres = EmbeddedPostgres.start(); var context = new SpringApplication(ControlPlaneApplication.class).run(
                 "--server.address=127.0.0.1", "--server.port=0", "--zhijie.scheduling.enabled=true",
                 "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
@@ -79,9 +96,10 @@ class DesktopBackgroundMaintenanceIntegrationTest {
             var log = Files.createTempFile(workspace.resolve("target"), "background-shell-", ".log");
             var process = new ProcessBuilder(shellTest.toString(), "sync::maintenance_probe::production_session_and_sync_loops",
                     "--exact", "--ignored", "--nocapture").directory(workspace.toFile()).redirectError(log.toFile()).start();
-            try (var output = process.getOutputStream(); var input = process.inputReader(StandardCharsets.UTF_8)) {
-                int port = ((ServletWebServerApplicationContext)context).getWebServer().getPort();
-                send(output, json, Map.of("base", "http://127.0.0.1:" + port, "tokens", tokens, "activity", joined, "group", group.id()));
+            int port = ((ServletWebServerApplicationContext)context).getWebServer().getPort();
+            try (var link = new TcpTestLink(port); var output = process.getOutputStream(); var input = process.inputReader(StandardCharsets.UTF_8)) {
+                send(output, json, Map.of("base", "http://127.0.0.1:" + (outage ? link.port() : port), "tokens", tokens,
+                        "activity", joined, "group", group.id()));
                 expect(process, input, "READY", 30);
                 Runnable checkLease = () -> {
                     assertThat(jdbc.queryForObject("SELECT count(*) FROM connection_leases WHERE id=? AND revoked_at IS NULL AND expires_at>now()",
@@ -103,6 +121,63 @@ class DesktopBackgroundMaintenanceIntegrationTest {
                     assertThat(sync.sessionCount(user)).isOne();
                     if (rotated) rotatedMessages++;
                     System.out.println("BACKGROUND_MESSAGE " + ++messages + " ROTATED=" + rotated);
+                    if (outage) {
+                        link.disconnect();
+                        send(output, json, Map.of("offline", true));
+                        expect(process, input, "OFFLINE", 22);
+                        long refusalDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8);
+                        while (link.rejectedConnections() == 0 && System.nanoTime() < refusalDeadline) Thread.sleep(20);
+                        assertThat(link.rejectedConnections()).as("Production reconnect attempted while link is offline").isPositive();
+                        if (revokedOffline) {
+                            assertThat(context.getBean(ActivityCoordinator.class).leave(user, joined.activityId(), joined.deviceId(), joined.leaseId())).isTrue();
+                        }
+                        if (expiredOffline) {
+                            send(output, json, Map.of("expiredOffline", true));
+                            expect(process, input, "EXPIRED", 85);
+                            long releaseDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(75);
+                            while (jdbc.queryForObject("SELECT count(*) FROM account_activity WHERE user_id=?", Integer.class, user) != 0
+                                    && System.nanoTime() < releaseDeadline) Thread.sleep(50);
+                            assertThat(jdbc.queryForObject("SELECT count(*) FROM account_activity WHERE user_id=?", Integer.class, user)).isZero();
+                            assertThat(jdbc.queryForObject("SELECT count(*) FROM ip_allocations WHERE activity_id=? AND user_id=? AND released_at IS NULL",
+                                    Integer.class, joined.activityId(), user)).isZero();
+                        } else Thread.sleep(6000);
+                        var missed = context.getBean(MessageService.class).post(user, group.id(), "offline-background-message");
+                        long restored = System.nanoTime();
+                        link.restore();
+                        send(output, json, Map.of("messageId", missed.id(), "expectRevoked", revokedOffline || expiredOffline));
+                        expect(process, input, "MESSAGE", 15);
+                        send(output, json, Map.of("serviceRestored", true));
+                        expect(process, input, "ONLINE", 17);
+                        if (revokedOffline || expiredOffline) {
+                            send(output, json, Map.of("activityRevoked", true));
+                            expect(process, input, "REVOKED", 17);
+                            assertThat(jdbc.queryForObject("SELECT count(*) FROM connection_leases WHERE id=? AND revoked_at IS NOT NULL",
+                                    Integer.class, joined.leaseId())).isOne();
+                            assertThat(jdbc.queryForObject("SELECT count(*) FROM account_activity WHERE user_id=?", Integer.class, user)).isZero();
+                            assertThat(jdbc.queryForObject("SELECT count(*) FROM ip_allocations WHERE activity_id=? AND user_id=? AND released_at IS NULL",
+                                    Integer.class, joined.activityId(), user)).isZero();
+                            if (expiredOffline) {
+                                assertThat(jdbc.queryForObject("SELECT state FROM activity_members WHERE activity_id=? AND user_id=?",
+                                        String.class, joined.activityId(), user)).isIn("REVOKED", "LEFT");
+                                assertThat(jdbc.queryForObject("SELECT count(*) FROM connection_leases WHERE activity_id=? AND user_id=?",
+                                        Integer.class, joined.activityId(), user)).isOne();
+                            }
+                            long recovery = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - restored);
+                            assertThat(recovery).as("Recovery after reconnecting the test link").isLessThanOrEqualTo(15000);
+                            send(output, json, Map.of("stop", true));
+                            expect(process, input, "STOPPED", 5);
+                            assertThat(process.waitFor(10, TimeUnit.SECONDS)).isTrue();
+                            assertThat(process.exitValue()).as("Background shell diagnostics: %s", log).isZero();
+                            assertThat(Files.readString(log)).doesNotContain(tokens.accessToken(), tokens.refreshToken(), password);
+                            System.out.println("BACKGROUND_OFFLINE_" + outageMode + "_RECOVERY_MS " + recovery);
+                            return;
+                        }
+                        checkLease.run();
+                        long recovery = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - restored);
+                        assertThat(recovery).as("Recovery after reconnecting the test link").isLessThanOrEqualTo(15000);
+                        System.out.println("BACKGROUND_OUTAGE_RECOVERY_MS " + recovery);
+                        break;
+                    }
                     if (!realTime) {
                         if (messages == 2) break;
                         send(output, json, Map.of("expire", true));
@@ -116,12 +191,12 @@ class DesktopBackgroundMaintenanceIntegrationTest {
                         Thread.sleep(15000);
                     }
                 } while (true);
-                assertThat(rotatedMessages).as("Messages received after automatic credential rotation").isPositive();
+                if (!outage) assertThat(rotatedMessages).as("Messages received after automatic credential rotation").isPositive();
                 if (realTime) {
                     assertThat(messages).isGreaterThanOrEqualTo(60);
                     assertThat(Instant.now()).isAfter(tokens.accessExpiresAt().plusSeconds(15));
                 }
-                assertThat(repository.findSessionById(tokens.sessionId()).orElseThrow().generation()).isEqualTo(2L);
+                assertThat(repository.findSessionById(tokens.sessionId()).orElseThrow().generation()).isEqualTo(outage ? 1L : 2L);
                 jdbc.update("UPDATE users SET status='DISABLED' WHERE id=?", user);
                 send(output, json, Map.of("disabled", true));
                 expect(process, input, "CLEARED", 25);

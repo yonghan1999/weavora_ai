@@ -4,7 +4,7 @@ use serde_json::Value;
 use std::io::Write;
 use std::sync::Arc;
 use std::time::Duration;
-use zhijie_core::{ActivityResult, AuthTokens, ClientError, ControlPlaneClient};
+use zhijie_core::{ActivityResult, AuthTokens, ChannelStatus, ClientError, ControlPlaneClient};
 
 fn input() -> Value {
     let mut line = String::new();
@@ -79,6 +79,60 @@ async fn production_session_and_sync_loops() {
             signal("ARMED");
             continue;
         }
+        if command["activityRevoked"].as_bool() == Some(true) {
+            tokio::time::timeout(Duration::from_secs(15), async {
+                while state.core.snapshot().activity.is_some() {
+                    tokio::time::sleep(Duration::from_millis(20)).await;
+                }
+            })
+            .await
+            .expect("Recovered background loops clear revoked activity");
+            let token = state.access_token().expect("Account remains signed in");
+            assert!(state.client.groups(&token).await.is_ok());
+            signal("REVOKED");
+            continue;
+        }
+        if command["offline"].as_bool() == Some(true) {
+            tokio::time::timeout(Duration::from_secs(20), async {
+                while state.core.snapshot().service != ChannelStatus::Retrying {
+                    tokio::time::sleep(Duration::from_millis(20)).await;
+                }
+            })
+            .await
+            .expect("Production maintenance reports unreachable service");
+            assert!(state.core.snapshot().activity.is_some());
+            signal("OFFLINE");
+            continue;
+        }
+        if command["expiredOffline"].as_bool() == Some(true) {
+            tokio::time::timeout(Duration::from_secs(80), async {
+                while state.core.snapshot().activity.is_some() {
+                    tokio::time::sleep(Duration::from_millis(20)).await;
+                }
+            })
+            .await
+            .expect("Production maintenance releases activity after heartbeat deadline");
+            assert!(state.core.snapshot().user_id.is_some());
+            assert!(state.session.lock().unwrap().is_some());
+            assert_eq!(state.core.snapshot().service, ChannelStatus::Retrying);
+            signal("EXPIRED");
+            continue;
+        }
+        if command["serviceRestored"].as_bool() == Some(true) {
+            tokio::time::timeout(Duration::from_secs(15), async {
+                while state.core.snapshot().service != ChannelStatus::Connected {
+                    tokio::time::sleep(Duration::from_millis(20)).await;
+                }
+            })
+            .await
+            .expect("Production maintenance reports restored service");
+            signal("ONLINE");
+            continue;
+        }
+        if command["stop"].as_bool() == Some(true) {
+            signal("STOPPED");
+            break;
+        }
         if command["disabled"].as_bool() == Some(true) {
             tokio::time::timeout(Duration::from_secs(20), async {
                 loop {
@@ -131,9 +185,11 @@ async fn production_session_and_sync_loops() {
         })
         .await
         .expect("Production loop message notification deadline");
-        let active = state.core.snapshot().activity.expect("Activity retained");
-        assert_eq!(active.lease_id, original_lease);
-        assert_eq!(active.virtual_ipv4.as_deref(), Some(original_ip.as_str()));
+        if command["expectRevoked"].as_bool() != Some(true) {
+            let active = state.core.snapshot().activity.expect("Activity retained");
+            assert_eq!(active.lease_id, original_lease);
+            assert_eq!(active.virtual_ipv4.as_deref(), Some(original_ip.as_str()));
+        }
         if command["rotated"].as_bool() == Some(true) {
             let token = state.access_token().unwrap();
             assert!(
