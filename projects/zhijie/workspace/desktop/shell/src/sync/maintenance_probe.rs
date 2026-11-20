@@ -42,6 +42,7 @@ async fn production_session_and_sync_loops() {
     assert!(state
         .core
         .apply_activity_result("background-join", activity));
+    let original_activity = state.core.snapshot().activity.unwrap();
     let (notices, mut received) = tokio::sync::mpsc::unbounded_channel();
     let mut loops = tokio::task::JoinSet::new();
     let maintenance = state.clone();
@@ -132,6 +133,122 @@ async fn production_session_and_sync_loops() {
         if command["stop"].as_bool() == Some(true) {
             signal("STOPPED");
             break;
+        }
+        if let Some(revocation) = command["revocation"].as_str() {
+            let account_invalid = matches!(revocation, "DISABLE" | "LOGOUT");
+            tokio::time::timeout(Duration::from_secs(5), async {
+                loop {
+                    let snapshot = state.core.snapshot();
+                    if snapshot.activity.is_none()
+                        && (!account_invalid
+                            || snapshot.user_id.is_none()
+                                && state.session.lock().unwrap().is_none())
+                    {
+                        break;
+                    }
+                    tokio::time::sleep(Duration::from_millis(10)).await;
+                }
+            })
+            .await
+            .expect("Online revocation clears production local state within five seconds");
+            assert!(!matches!(
+                state.voice.snapshot().state,
+                zhijie_voice::VoiceConnectionState::Connecting
+                    | zhijie_voice::VoiceConnectionState::Connected
+                    | zhijie_voice::VoiceConnectionState::Retrying
+            ));
+            assert_eq!(state.network.snapshot()["status"]["state"], "DISCONNECTED");
+            if account_invalid {
+                assert_eq!(state.core.snapshot().service, ChannelStatus::Disconnected);
+                assert!(matches!(
+                    state.client.groups(&original).await,
+                    Err(ClientError::Api {
+                        status: 401 | 403,
+                        ..
+                    })
+                ));
+            } else {
+                let token = state.access_token().expect("Account remains signed in");
+                let groups = state.client.groups(&token).await.unwrap();
+                let lost_group = matches!(revocation, "LEAVE_GROUP" | "REMOVE_MEMBER" | "DISSOLVE");
+                assert_eq!(
+                    groups
+                        .iter()
+                        .any(|item| item["id"].as_str() == Some(&group)),
+                    !lost_group
+                );
+                if lost_group {
+                    assert!(matches!(
+                        state
+                            .client
+                            .product_request(
+                                Some(&token),
+                                "GET",
+                                &format!("/api/v1/groups/{group}/messages"),
+                                Value::Null,
+                            )
+                            .await,
+                        Err(ClientError::Api {
+                            status: 403 | 404,
+                            ..
+                        })
+                    ));
+                }
+            }
+            assert!(matches!(
+                state.client.heartbeat(&original, &original_activity).await,
+                Err(ClientError::Api {
+                    status: 401 | 403 | 404 | 409,
+                    ..
+                })
+            ));
+            assert!(matches!(
+                state
+                    .client
+                    .network_grant(
+                        &original,
+                        &original_activity.activity_id,
+                        "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+                    )
+                    .await,
+                Err(ClientError::Api {
+                    status: 401 | 403 | 404 | 409,
+                    ..
+                })
+            ));
+            assert!(matches!(
+                state
+                    .client
+                    .voice_grant(&original, &original_activity.activity_id)
+                    .await,
+                Err(ClientError::Api {
+                    status: 401 | 403 | 404 | 409,
+                    ..
+                })
+            ));
+            assert!(matches!(
+                state
+                    .client
+                    .product_request(
+                        Some(&original),
+                        "POST",
+                        &format!(
+                            "/api/v1/activities/{}/resume",
+                            original_activity.activity_id
+                        ),
+                        serde_json::json!({"deviceId": original_activity.device_id}),
+                    )
+                    .await,
+                Err(ClientError::Api {
+                    status: 401 | 403 | 404 | 409,
+                    ..
+                })
+            ));
+            signal("REVOKED_ONLINE");
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            assert!(state.core.snapshot().activity.is_none());
+            signal("STABLE");
+            continue;
         }
         if command["disabled"].as_bool() == Some(true) {
             tokio::time::timeout(Duration::from_secs(20), async {
