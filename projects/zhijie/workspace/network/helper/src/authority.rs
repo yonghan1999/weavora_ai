@@ -5,10 +5,16 @@ use time::OffsetDateTime;
 
 use crate::model::{NetworkPath, NetworkPeer, NetworkStart};
 
+#[cfg(test)]
+#[path = "authority_diagnostics.rs"]
+mod diagnostics;
+
 #[derive(Clone)]
 pub(crate) struct NetworkAuthority {
     http: reqwest::Client,
     url: String,
+    #[cfg(test)]
+    diagnostic_member: Option<usize>,
 }
 
 #[derive(Deserialize)]
@@ -61,18 +67,45 @@ impl NetworkAuthority {
                 "{}/api/v1/network-access/validate",
                 base_url.trim_end_matches('/')
             ),
+            #[cfg(test)]
+            diagnostic_member: None,
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn with_diagnostic_member(mut self, member: usize) -> Self {
+        assert!(member < 12);
+        self.diagnostic_member = Some(member);
+        self
+    }
+
     pub async fn validate(&self, request: &NetworkStart) -> Result<AuthorizedNetwork, String> {
+        #[cfg(test)]
+        let started = std::time::Instant::now();
         let response = self
             .http
             .post(&self.url)
             .json(&serde_json::json!({"ticket": request.ticket}))
             .send()
             .await
-            .map_err(|_| "CONTROL_PLANE_UNAVAILABLE")?;
+            .map_err(|_failure| {
+                #[cfg(test)]
+                if let Some(member) = self.diagnostic_member {
+                    eprintln!(
+                        "{}",
+                        diagnostics::request_failure(member, &_failure, started.elapsed())
+                    );
+                }
+                "CONTROL_PLANE_UNAVAILABLE"
+            })?;
         if !response.status().is_success() {
+            #[cfg(test)]
+            if let Some(member) = self.diagnostic_member {
+                eprintln!(
+                    "{}",
+                    diagnostics::http_failure(member, response.status(), started.elapsed())
+                );
+            }
             return Err(if response.status().is_client_error() {
                 "NETWORK_GRANT_INVALID"
             } else {
@@ -80,10 +113,16 @@ impl NetworkAuthority {
             }
             .into());
         }
-        let current: AuthorizedNetwork = response
-            .json()
-            .await
-            .map_err(|_| "NETWORK_AUTHORITY_RESPONSE_INVALID")?;
+        let current: AuthorizedNetwork = response.json().await.map_err(|_failure| {
+            #[cfg(test)]
+            if let Some(member) = self.diagnostic_member {
+                eprintln!(
+                    "{}",
+                    diagnostics::body_failure(member, &_failure, started.elapsed())
+                );
+            }
+            "NETWORK_AUTHORITY_RESPONSE_INVALID"
+        })?;
         current.verify(request)?;
         Ok(current)
     }
@@ -228,7 +267,7 @@ mod tests {
         let url = format!("http://{}", listener.local_addr().unwrap());
         let body = reply(&request).to_string();
         let worker = std::thread::spawn(move || {
-            for index in 0..3 {
+            for index in 0..5 {
                 let (mut socket, _) = listener.accept().unwrap();
                 socket
                     .set_read_timeout(Some(std::time::Duration::from_secs(3)))
@@ -259,7 +298,9 @@ mod tests {
                 let (status, content) = match index {
                     0 => ("200 OK", body.as_str()),
                     1 => ("403 Forbidden", "{}"),
-                    _ => ("302 Found\r\nLocation: http://127.0.0.1:1", "{}"),
+                    2 => ("302 Found\r\nLocation: http://127.0.0.1:1", "{}"),
+                    3 => ("429 Too Many Requests", "{}"),
+                    _ => ("503 Service Unavailable", "{}"),
                 };
                 write!(socket, "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n{content}", content.len()).unwrap();
             }
@@ -270,6 +311,12 @@ mod tests {
             matches!(authority.validate(&request).await, Err(code) if code == "NETWORK_GRANT_INVALID")
         );
         assert!(authority.validate(&request).await.is_err());
+        assert!(
+            matches!(authority.validate(&request).await, Err(code) if code == "NETWORK_GRANT_INVALID")
+        );
+        assert!(
+            matches!(authority.validate(&request).await, Err(code) if code == "CONTROL_PLANE_UNAVAILABLE")
+        );
         worker.join().unwrap();
         assert!(NetworkAuthority::new("http://example.test").is_err());
         assert!(NetworkAuthority::new("https://user:secret@example.test").is_err());

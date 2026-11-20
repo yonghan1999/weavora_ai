@@ -77,7 +77,9 @@ async fn twelve_real_control_plane_data_pumps() {
                 .unwrap(),
             vec![index as u8 + 1; 32]
         );
-        let authority = NetworkAuthority::new(&url).unwrap();
+        let authority = NetworkAuthority::new(&url)
+            .unwrap()
+            .with_diagnostic_member(index);
         let current = authority.validate(&request).await.unwrap();
         assert_eq!(current.peers.len(), MEMBERS - 1);
         let address: Ipv4Addr = request.virtual_ipv4.parse().unwrap();
