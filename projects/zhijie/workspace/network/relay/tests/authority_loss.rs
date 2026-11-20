@@ -1,12 +1,31 @@
 use std::io::{BufRead, Write};
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use zhijie_relay::control_plane::ControlPlaneValidator;
 use zhijie_relay::management::RelayManagementServer;
+use zhijie_relay::model::RelayGrant;
 use zhijie_relay::quic::{QuicRelayServer, RelayClient};
+use zhijie_relay::server::GrantValidator;
+
+struct ObservedValidator {
+    inner: ControlPlaneValidator,
+    target_ticket: String,
+    last_success: Arc<Mutex<Option<Instant>>>,
+}
+
+impl GrantValidator for ObservedValidator {
+    fn validate(&self, ticket: &str, endpoint: SocketAddr) -> Result<RelayGrant, String> {
+        let started = Instant::now();
+        let result = self.inner.validate(ticket, endpoint);
+        if ticket == self.target_ticket && result.is_ok() {
+            *self.last_success.lock().unwrap() = Some(started);
+        }
+        result
+    }
+}
 
 #[derive(Default)]
 struct Counters {
@@ -19,6 +38,7 @@ struct Counters {
 struct Traffic {
     counters: Vec<Arc<Counters>>,
     closed: Vec<Arc<AtomicBool>>,
+    closed_at: Vec<Arc<Mutex<Option<Instant>>>>,
     workers: Vec<tokio::task::JoinHandle<()>>,
 }
 
@@ -34,6 +54,7 @@ impl Traffic {
             .map(|_| Arc::new(AtomicBool::new(false)))
             .collect();
         let mut workers = Vec::new();
+        let closed_at: Vec<_> = clients.iter().map(|_| Arc::new(Mutex::new(None))).collect();
         for (index, (source, target)) in routes.iter().copied().enumerate() {
             let client = clients[source].clone();
             let target = addresses[target];
@@ -61,6 +82,7 @@ impl Traffic {
                 .map(|(route, (source, _))| (addresses[*source], counters[route].clone()))
                 .collect();
             let closed = closed[index].clone();
+            let ended = closed_at[index].clone();
             workers.push(tokio::spawn(async move {
                 while let Ok((source, payload)) = client.receive().await {
                     assert_eq!(payload, b"authority-loss-traffic");
@@ -70,12 +92,14 @@ impl Traffic {
                         .expect("only authenticated source addresses may arrive");
                     counter.received.fetch_add(1, Ordering::SeqCst);
                 }
+                *ended.lock().unwrap() = Some(Instant::now());
                 closed.store(true, Ordering::SeqCst);
             }));
         }
         Self {
             counters,
             closed,
+            closed_at,
             workers,
         }
     }
@@ -138,6 +162,15 @@ async fn real_http_loss_bounds_quic_forwarding_without_client_stop() {
         .await
         .unwrap()
         .unwrap();
+    let last_success = Arc::new(Mutex::new(None));
+    let validator = ObservedValidator {
+        inner: validator,
+        target_ticket: configuration["peers"][1]["ticket"]
+            .as_str()
+            .unwrap()
+            .to_owned(),
+        last_success: last_success.clone(),
+    };
     let certificate = rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
     let der = certificate.cert.der().to_vec();
     let relay = QuicRelayServer::bind_der(
@@ -184,10 +217,12 @@ async fn real_http_loss_bounds_quic_forwarding_without_client_stop() {
     signal("RELAY_AUTHORITY_READY");
     assert_eq!(input().await, "REVOKED");
     let started = Instant::now();
-    assert!(
-        !traffic.closed[1].load(Ordering::SeqCst),
-        "revoked connection must still be active at confirmation"
-    );
+    if configuration["automaticPush"] != true {
+        assert!(
+            !traffic.closed[1].load(Ordering::SeqCst),
+            "revoked connection must still be active at confirmation"
+        );
+    }
     let initial_attempts = traffic.counters[1].attempted.load(Ordering::SeqCst);
     let initial_accepted = traffic.counters[1].accepted.load(Ordering::SeqCst);
     let initial_received = traffic.received();
@@ -201,7 +236,33 @@ async fn real_http_loss_bounds_quic_forwarding_without_client_stop() {
         })
         .await
         .expect("management push must close QUIC without waiting for the pending HTTP timeout");
-        signal("RELAY_AUTHORITY_PUSH_CLOSED");
+        let closed = traffic.closed_at[1].lock().unwrap().unwrap();
+        let last_authorized = last_success.lock().unwrap().unwrap();
+        let before_deadline = closed.duration_since(last_authorized) < Duration::from_millis(2900);
+        if configuration["automaticPush"] == true {
+            println!(
+                "RELAY_AUTHORITY_AUTOMATIC_CLOSE path={} since_last_authority_ms={}",
+                if before_deadline {
+                    "push"
+                } else {
+                    "deadline_or_push"
+                },
+                closed.duration_since(last_authorized).as_millis()
+            );
+            signal("RELAY_AUTHORITY_AUTOMATIC_CLOSED");
+        } else {
+            assert!(
+                before_deadline,
+                "push must close QUIC before the last real authority result's three-second deadline"
+            );
+            println!(
+                "RELAY_AUTHORITY_PUSH_BEFORE_DEADLINE remaining_ms={}",
+                (last_authorized + Duration::from_secs(3))
+                    .duration_since(closed)
+                    .as_millis()
+            );
+            signal("RELAY_AUTHORITY_PUSH_CLOSED");
+        }
     }
     tokio::time::sleep_until((started + Duration::from_millis(3100)).into()).await;
     assert!(

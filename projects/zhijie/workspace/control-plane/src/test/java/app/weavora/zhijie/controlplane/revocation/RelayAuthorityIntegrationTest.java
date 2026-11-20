@@ -2,7 +2,7 @@ package app.weavora.zhijie.controlplane.revocation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import app.weavora.zhijie.controlplane.activity.AuthenticatedActivities;
+import app.weavora.zhijie.controlplane.activity.NetworkProbeRevocation;
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.activity.ActivityCoordinator;
 import app.weavora.zhijie.controlplane.grant.GrantService;
@@ -67,24 +67,25 @@ class RelayAuthorityIntegrationTest {
     }
 
     @Test void realHttpOutageCannotKeepRevokedSourceOrDestinationAliveAndPushStillWorks() throws Exception {
-        for (String mode : List.of("offline", "push-offline")) run(mode);
+        for (String mode : List.of("offline", "push-offline")) {
+            run(context, validationKey, revocationKey, managementPort, mode, NetworkProbeRevocation.LEAVE, false);
+        }
     }
 
-    private void run(String mode) throws Exception {
-        var users = new ArrayList<String>();
+    static void run(ServletWebServerApplicationContext context, String validationKey, String revocationKey,
+                    int managementPort, String mode, NetworkProbeRevocation action, boolean automaticPush) throws Exception {
+        var tokens = new ArrayList<AuthTokens>();
         for (int index = 0; index < 3; index++) {
-            String user = UUID.randomUUID().toString();
-            context.getBean(IdentityRepository.class).insertUser(new UserAccount(user, user + "@example.test",
-                    AccountStatus.ACTIVE, "unused", Instant.now()));
-            users.add(user);
+            tokens.add(NetworkProbeRevocation.login(context, "device-" + index));
         }
+        var users = tokens.stream().map(AuthTokens::userId).toList();
         var groups = context.getBean(GroupService.class);
         var group = groups.createGroup(users.getFirst(), "真实中继失联隔离", null, "");
         var directory = Files.createTempDirectory(Path.of("target"), "relay-authority-").toAbsolutePath();
         var transcript = new StringBuilder();
         var json = context.getBean(ObjectMapper.class);
         Process process = null;
-        try (var proxy = new ValidationProxy(json)) {
+        try (var proxy = new ValidationProxy(context, json)) {
             for (String user : users.subList(1, 3)) groups.acceptInvitation(user, groups.invite(users.getFirst(), group.id(), user).id());
             var rooms = context.getBean(RoomService.class);
             var room = rooms.createRoom(users.getFirst(), group.id(), "实际 HTTP 黑洞", "", "", null);
@@ -92,14 +93,18 @@ class RelayAuthorityIntegrationTest {
             var coordinator = context.getBean(ActivityCoordinator.class);
             var peers = new ArrayList<Map<String, String>>();
             var leases = new ArrayList<String>();
+            var expiries = new ArrayList<Instant>();
             for (int index = 0; index < 3; index++) {
-                var joined = AuthenticatedActivities.join(context, users.get(index), room.id(), "device-" + index, null, "authority-" + index);
+                var joined = coordinator.join(NetworkProbeRevocation.session(context, tokens.get(index)), room.id(), null, "authority-" + index);
                 leases.add(joined.leaseId());
                 byte[] publicKey = new byte[32]; Arrays.fill(publicKey, (byte)(index + 1));
-                var grant = context.getBean(GrantService.class).network(users.get(index), activity, "device-" + index,
+                var grant = context.getBean(GrantService.class).network(NetworkProbeRevocation.session(context, tokens.get(index)), activity,
                         Base64.getEncoder().encodeToString(publicKey));
                 peers.add(Map.of("ticket", grant.networkTicket(), "ip", grant.virtualIpv4()));
+                expiries.add(grant.expiresAt());
             }
+            var rotated = NetworkProbeRevocation.refresh(context, tokens.get(1));
+            for (var peer : peers) context.getBean(app.weavora.zhijie.controlplane.network.NetworkAccessService.class).validate(peer.get("ticket"));
             process = new ProcessBuilder("cargo", "test", "--locked", "--offline", "-p", "zhijie-relay",
                     "--test", "authority_loss", "real_http_loss_bounds_quic_forwarding_without_client_stop",
                     "--", "--ignored", "--exact", "--nocapture")
@@ -107,29 +112,39 @@ class RelayAuthorityIntegrationTest {
             try (var output = process.outputWriter(StandardCharsets.UTF_8); var input = process.inputReader(StandardCharsets.UTF_8)) {
                 send(output, json.writeValueAsString(Map.of("controlPlaneUrl", proxy.url(), "validationKey", validationKey,
                         "revocationKey", revocationKey, "managementAddress", "127.0.0.1:" + managementPort,
-                        "mode", mode, "peers", peers)));
+                        "mode", mode, "peers", peers, "automaticPush", automaticPush)));
                 expect(input, transcript, "RELAY_AUTHORITY_READY", System.nanoTime() + TimeUnit.SECONDS.toNanos(15));
-                proxy.blockedTicket.set(peers.get(1).get("ticket"));
-                assertThat(proxy.pending.await(3, TimeUnit.SECONDS)).as("Actual HTTP request must be pending: %s", directory).isTrue();
-                assertThat(coordinator.leave(users.get(1), activity, "device-1", leases.get(1))).isTrue();
+                if (!mode.equals("online")) {
+                    proxy.blockedTicket.set(peers.get(1).get("ticket"));
+                    assertThat(proxy.pending.await(3, TimeUnit.SECONDS)).as("Actual HTTP request must be pending: %s", directory).isTrue();
+                }
+                for (var expires : expiries) assertThat(expires).isAfter(Instant.now().plusSeconds(10));
+                action.revoke(context, tokens.get(1), rotated, activity, leases.get(1));
                 long confirmed = System.nanoTime();
                 long deadline = confirmed + TimeUnit.SECONDS.toNanos(5);
                 send(output, "REVOKED");
                 expect(input, transcript, "RELAY_AUTHORITY_REVOKED_OBSERVED", deadline);
                 if (mode.equals("push-offline")) {
-                    context.getBean(SyncOutboxDispatcher.class).dispatchPending();
-                    context.getBean(ExternalRevocationDispatcher.class).dispatchPending(ExternalDeliveryChannel.NETWORK);
+                    if (!automaticPush) {
+                        context.getBean(SyncOutboxDispatcher.class).dispatchPending();
+                        context.getBean(ExternalRevocationDispatcher.class).dispatchPending(ExternalDeliveryChannel.NETWORK);
+                    }
                     var sql = context.getBean(JdbcTemplate.class);
+                    while (automaticPush && sql.queryForObject("SELECT count(*) FROM outbox_events WHERE activity_id=? AND type='network.revoked' AND delivered_at IS NOT NULL",
+                            Integer.class, activity) == 0 && System.nanoTime() < deadline) Thread.sleep(5);
                     assertThat(sql.queryForObject("SELECT count(*) FROM outbox_events WHERE activity_id=? AND type='network.revoked' AND delivered_at IS NOT NULL",
                             Integer.class, activity)).isEqualTo(1);
                     send(output, "PUSH_APPLIED");
-                    expect(input, transcript, "RELAY_AUTHORITY_PUSH_CLOSED", confirmed + TimeUnit.SECONDS.toNanos(1));
-                    transcript.append("REAL_RELAY_PUSH_CLOSED observed_ms=")
+                    expect(input, transcript, automaticPush ? "RELAY_AUTHORITY_AUTOMATIC_CLOSED" : "RELAY_AUTHORITY_PUSH_CLOSED",
+                            automaticPush ? deadline : confirmed + TimeUnit.SECONDS.toNanos(1));
+                    transcript.append(automaticPush ? "REAL_RELAY_AUTOMATIC_CLOSED observed_ms=" : "REAL_RELAY_PUSH_CLOSED observed_ms=")
                             .append(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - confirmed)).append('\n');
                 }
                 expect(input, transcript, "RELAY_AUTHORITY_ISOLATED", deadline);
                 long observedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - confirmed);
                 assertThat(System.nanoTime()).isLessThan(deadline);
+                NetworkProbeRevocation.assertPersisted(context, users.get(1), activity, leases.get(1), confirmed);
+                for (var expires : expiries) assertThat(expires).isAfter(Instant.now());
                 assertThat(proxy.successes(peers.getFirst().get("ticket"))).isGreaterThanOrEqualTo(3);
                 assertThat(proxy.successes(peers.get(2).get("ticket"))).isGreaterThanOrEqualTo(3);
                 proxy.blockedTicket.set(null);
@@ -138,17 +153,20 @@ class RelayAuthorityIntegrationTest {
                 assertThat(proxy.denied.get()).as("Restored real authority must reject the revoked ticket").isPositive();
                 assertThat(process.waitFor(5, TimeUnit.SECONDS)).as("Rust cleanup: %s", directory).isTrue();
                 assertThat(process.exitValue()).as("Rust probe: %s", directory).isZero();
-                transcript.append("REAL_RELAY_AUTHORITY_ISOLATED mode=").append(mode).append(" observed_ms=").append(observedMillis).append('\n');
+                transcript.append("REAL_RELAY_AUTHORITY_ISOLATED mode=").append(mode).append(" action=").append(action)
+                        .append(" automatic_push=").append(automaticPush).append(" observed_ms=").append(observedMillis).append('\n');
                 String logs = Files.readString(directory.resolve("rust.log")) + transcript;
                 assertThat(logs).doesNotContain(validationKey, revocationKey);
                 for (var peer : peers) assertThat(logs).doesNotContain(peer.get("ticket"));
+                for (var token : tokens) assertThat(logs).doesNotContain(token.accessToken(), token.refreshToken());
+                assertThat(logs).doesNotContain(rotated.accessToken(), rotated.refreshToken());
             }
         } finally {
             Files.writeString(directory.resolve("scenario.log"), transcript);
             if (process != null && process.isAlive()) { process.descendants().forEach(ProcessHandle::destroyForcibly); process.destroyForcibly(); }
             groups.dissolveGroup(users.getFirst(), group.id());
         }
-        System.out.println("RELAY_AUTHORITY_EVIDENCE mode=" + mode + " directory=" + directory);
+        System.out.println("RELAY_AUTHORITY_EVIDENCE mode=" + mode + " action=" + action + " directory=" + directory);
     }
 
     private static void send(BufferedWriter output, String line) throws Exception { output.write(line); output.newLine(); output.flush(); }
@@ -174,7 +192,7 @@ class RelayAuthorityIntegrationTest {
         private final ConcurrentHashMap<String, AtomicInteger> successful = new ConcurrentHashMap<>();
         private final AtomicInteger denied = new AtomicInteger();
 
-        ValidationProxy(ObjectMapper json) throws Exception {
+        ValidationProxy(ServletWebServerApplicationContext context, ObjectMapper json) throws Exception {
             server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
             server.setExecutor(workers);
             server.createContext("/internal/relay/v1/validate", exchange -> {
