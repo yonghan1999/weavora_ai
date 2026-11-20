@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { createHash } from "node:crypto";
 import { once } from "node:events";
+import { channel } from "node:diagnostics_channel";
 import { openObservedSocket } from "./load-websocket-handshake.mjs";
 import { LoadBodyTraffic } from "./load-body-traffic.mjs";
 import vm from "node:vm";
@@ -104,6 +105,25 @@ try {
   await new Promise(resolve => server.close(resolve));
 }
 console.log("Concurrent loopback handshake refusals and socket loss are distinguished without disclosing the URL or response headers.");
+
+const ObservedWebSocket = globalThis.WebSocket;
+try {
+  for (const error of [{ code: "UND_ERR_SOCKET" }, { name: "AbortError", code: 20 },
+    { name: "private-error-name", code: 20 }, { code: "private-error-code" }]) {
+    globalThis.WebSocket = class {
+      constructor() {
+        const request = { upgrade: "websocket" };
+        channel("undici:request:create").publish({ request });
+        channel("undici:request:error").publish({ request, error: { ...error, message: "private-error-message" } });
+      }
+    };
+    const { handshake } = openObservedSocket("ws://127.0.0.1/?access_token=private-token");
+    assert.equal(handshake.transportCode, error.code === "UND_ERR_SOCKET" ? "UND_ERR_SOCKET"
+      : error.name === "AbortError" ? "ABORT_ERROR" : "OTHER");
+    assert.doesNotMatch(JSON.stringify(handshake), /private-|access_token|127\.0\.0\.1/);
+  }
+} finally { globalThis.WebSocket = ObservedWebSocket; }
+console.log("AbortError is distinguished from unknown errors without serializing error messages.");
 
 const rotationStart = source.indexOf("function closeSocket(account) {");
 const rotationEnd = source.indexOf("\ntry {", rotationStart);

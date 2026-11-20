@@ -23,7 +23,8 @@ channel("undici:client:sendHeaders").subscribe(({ request, socket }) => {
 });
 channel("undici:request:error").subscribe(({ request, error }) => {
   const attempt = attempts.get(request);
-  if (attempt) attempt.transportCode = transportCodes.has(error?.code) ? error.code : "OTHER";
+  if (attempt) attempt.transportCode = transportCodes.has(error?.code) ? error.code
+    : error?.name === "AbortError" && error?.code === 20 ? "ABORT_ERROR" : "OTHER";
 });
 
 export function openObservedSocket(address) {

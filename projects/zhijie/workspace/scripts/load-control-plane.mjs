@@ -7,6 +7,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { openObservedSocket } from "./load-websocket-handshake.mjs";
 import { LoadBodyTraffic } from "./load-body-traffic.mjs";
 import { classifyLoadResponse } from "./load-http-response.mjs";
+import { LoadHttpTransport } from "./load-http-transport.mjs";
 
 // 临时测试账号凭据仅从匿名 stdin 读取，原始记录不包含 URL、正文或令牌。
 const lines = createInterface({ input: process.stdin });
@@ -29,6 +30,7 @@ let sequence = 0;
 let sockets = 0;
 let stopping = false;
 const bodyTraffic = new LoadBodyTraffic();
+const http = new LoadHttpTransport();
 
 function measureBody(field, bytes) {
   if (started && !stopping) bodyTraffic.add(performance.now() - started, field, bytes);
@@ -47,14 +49,14 @@ async function request(actor, operation, path, body) {
   let bytes = 0;
   let code = "TRANSPORT_FAILED";
   try {
-    const response = await fetch(new URL(path, base), {
+    const response = await http.send(new URL(path, base), {
       method: payload ? "POST" : "GET",
       headers: { Authorization: `Bearer ${config.accounts[actor].accessToken}`, ...(payload ? { "Content-Type": "application/json" } : {}) },
       body: payload,
       signal: AbortSignal.timeout(5000),
     });
     status = response.status;
-    const text = await response.text();
+    const text = response.text;
     bytes = Buffer.byteLength(text);
     measureBody("responseBodyBytes", bytes);
     ({ value, code } = classifyLoadResponse(status, text, operation, body));
@@ -241,6 +243,7 @@ try {
 } finally {
   workloadEnd = performance.now();
   stopping = true;
+  http.close();
   for (const account of config.accounts) account.close?.();
   await delay(300);
   raw.end();
