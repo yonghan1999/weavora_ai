@@ -31,7 +31,8 @@ function Read-Seed {
     $activity = "$url/api/v1/activities/$($joined.activityId)"
     $heartbeat = @{deviceId=$joined.deviceId;leaseId=$joined.leaseId;activityGeneration=$joined.activityGeneration;memberGeneration=$joined.memberGeneration} | ConvertTo-Json
     if (!(Invoke-RestMethod "$activity/heartbeat" -Headers $headers -Method Post -ContentType 'application/json' -Body $heartbeat).data.renewed) { throw "试用活动心跳失败" }
-    if (!(Invoke-RestMethod "$activity/leave" -Headers $headers -Method Post).data.left) { throw "试用活动退出失败" }
+    $leave = @{leaseId=$joined.leaseId} | ConvertTo-Json
+    if (!(Invoke-RestMethod "$activity/leave" -Headers $headers -Method Post -ContentType 'application/json' -Body $leave).data.left) { throw "试用活动退出失败" }
     return [pscustomobject]@{seed="$($groups[0].id):$($rows[0].id):$($rooms[0].id):$($joined.activityId)";lease=$joined.leaseId;generation=$joined.memberGeneration}
 }
 $savedPassword = $env:ZHIJIE_PREVIEW_PASSWORD
