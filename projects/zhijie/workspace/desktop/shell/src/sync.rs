@@ -51,6 +51,9 @@ async fn maintain_connection(state: &AppState, notify: impl Fn(serde_json::Value
         if connection.is_none() {
             match state.client.connect_sync(&token, cursor.unwrap()).await {
                 Ok(socket) => {
+                    if !restore_service(state, &tokens).await {
+                        continue;
+                    }
                     connection = Some(socket);
                     last_ping = Instant::now();
                     last_received = Instant::now();
@@ -113,6 +116,19 @@ async fn maintain_connection(state: &AppState, notify: impl Fn(serde_json::Value
     }
 }
 
+async fn restore_service(state: &AppState, tokens: &zhijie_core::AuthTokens) -> bool {
+    let _operation = state.activity_operations.lock().await;
+    let current = state.session.lock().expect("session lock").clone();
+    if current
+        .as_ref()
+        .is_none_or(|value| value.access_token != tokens.access_token)
+    {
+        return false;
+    }
+    state.core.set_service_available(true);
+    true
+}
+
 async fn apply_event(
     state: &AppState,
     tokens: &zhijie_core::AuthTokens,
@@ -142,6 +158,7 @@ async fn apply_event(
             }
         }
     }
+    state.core.set_service_available(true);
     *cursor = Some(event.sequence);
     true
 }

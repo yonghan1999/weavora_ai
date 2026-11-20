@@ -185,6 +185,13 @@ async fn production_session_and_sync_loops() {
         })
         .await
         .expect("Production loop message notification deadline");
+        if command["expectConnected"].as_bool() == Some(true) {
+            assert_eq!(
+                state.core.snapshot().service,
+                ChannelStatus::Connected,
+                "A live authenticated message cannot leave the service marked unreachable"
+            );
+        }
         if command["expectRevoked"].as_bool() != Some(true) {
             let active = state.core.snapshot().activity.expect("Activity retained");
             assert_eq!(active.lease_id, original_lease);

@@ -144,7 +144,8 @@ class DesktopBackgroundMaintenanceIntegrationTest {
                         var missed = context.getBean(MessageService.class).post(user, group.id(), "offline-background-message");
                         long restored = System.nanoTime();
                         link.restore();
-                        send(output, json, Map.of("messageId", missed.id(), "expectRevoked", revokedOffline || expiredOffline));
+                        send(output, json, Map.of("messageId", missed.id(), "expectRevoked", revokedOffline || expiredOffline,
+                                "expectConnected", true));
                         expect(process, input, "MESSAGE", 15);
                         send(output, json, Map.of("serviceRestored", true));
                         expect(process, input, "ONLINE", 17);

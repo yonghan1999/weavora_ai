@@ -68,6 +68,7 @@ fn only_new_group_messages_send_a_scoped_notice() {
 fn credential_rotation_while_revocation_waits_does_not_acknowledge_the_event() {
     tauri::async_runtime::block_on(async {
         let state = state();
+        state.core.set_service_available(false);
         let old = state.session.lock().unwrap().clone().unwrap();
         let event = event();
         let mut cursor = Some(10);
@@ -91,8 +92,63 @@ fn credential_rotation_while_revocation_waits_does_not_acknowledge_the_event() {
         }
         assert_eq!(cursor, Some(10));
         assert!(state.core.snapshot().activity.is_some());
+        assert_eq!(state.core.snapshot().service, ChannelStatus::Retrying);
         assert!(apply_event(&state, &fresh, &event, &mut cursor).await);
         assert_eq!(cursor, Some(11));
+        assert!(state.core.snapshot().activity.is_none());
+        assert_eq!(state.core.snapshot().service, ChannelStatus::Connected);
+    });
+}
+
+#[test]
+fn successful_connection_waits_for_operations_and_rejects_stale_credentials() {
+    tauri::async_runtime::block_on(async {
+        let state = state();
+        state.core.set_service_available(false);
+        let old = state.session.lock().unwrap().clone().unwrap();
+        let mut fresh = old.clone();
+        fresh.access_token = "fresh-access".into();
+        let operation = state.activity_operations.lock().await;
+        let pending = restore_service(&state, &old);
+        tokio::pin!(pending);
+        assert!(
+            tokio::time::timeout(Duration::from_millis(30), pending.as_mut())
+                .await
+                .is_err()
+        );
+        *state.session.lock().unwrap() = Some(fresh.clone());
+        drop(operation);
+        assert!(!pending.await);
+        assert_eq!(state.core.snapshot().service, ChannelStatus::Retrying);
+        assert!(restore_service(&state, &fresh).await);
+        assert_eq!(state.core.snapshot().service, ChannelStatus::Connected);
+        assert!(state.core.snapshot().activity.is_some());
+    });
+}
+
+#[test]
+fn old_connection_cannot_restore_a_replacement_or_signed_out_session() {
+    tauri::async_runtime::block_on(async {
+        let state = state();
+        let old = state.session.lock().unwrap().clone().unwrap();
+        let mut replacement = old.clone();
+        replacement.session_id = "replacement".into();
+        replacement.user_id = "other-user".into();
+        replacement.access_token = "replacement-access".into();
+        state
+            .core
+            .session_changed(Some(replacement.user_id.clone()));
+        *state.session.lock().unwrap() = Some(replacement.clone());
+        state.core.set_service_available(false);
+        assert!(!restore_service(&state, &old).await);
+        assert_eq!(state.core.snapshot().service, ChannelStatus::Retrying);
+        assert!(restore_service(&state, &replacement).await);
+        assert_eq!(state.core.snapshot().service, ChannelStatus::Connected);
+        *state.session.lock().unwrap() = None;
+        state.core.session_changed(None);
+        assert!(!restore_service(&state, &replacement).await);
+        assert_eq!(state.core.snapshot().service, ChannelStatus::Disconnected);
+        assert!(state.core.snapshot().user_id.is_none());
         assert!(state.core.snapshot().activity.is_none());
     });
 }
