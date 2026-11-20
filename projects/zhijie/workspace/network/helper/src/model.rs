@@ -58,6 +58,9 @@ pub struct NetworkStart {
 #[serde(rename_all = "camelCase")]
 pub struct NetworkPeer {
     pub user_id: String,
+    pub member_generation: u64,
+    pub lease_id: String,
+    pub expires_at: String,
     pub virtual_ipv4: String,
     pub public_key: String,
     pub endpoint: Option<String>,

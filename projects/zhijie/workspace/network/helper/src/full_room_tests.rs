@@ -261,6 +261,9 @@ async fn full_room(mode: &str) {
                 .filter(|remote| *remote != local)
                 .map(|remote| NetworkPeer {
                     user_id: remote.to_string(),
+                    member_generation: requests[remote].member_generation,
+                    lease_id: requests[remote].lease_id.clone(),
+                    expires_at: requests[remote].expires_at.clone(),
                     virtual_ipv4: requests[remote].virtual_ipv4.clone(),
                     public_key: base64::engine::general_purpose::STANDARD.encode(
                         PublicKey::from(&StaticSecret::from([remote as u8 + 1; 32])).to_bytes(),

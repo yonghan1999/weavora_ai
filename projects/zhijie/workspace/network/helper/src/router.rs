@@ -19,6 +19,10 @@ pub(crate) enum PacketAction {
 }
 
 struct Peer {
+    user_id: String,
+    member_generation: u64,
+    lease_id: String,
+    authorized_until: Instant,
     address: Ipv4Addr,
     key: [u8; 32],
     endpoint: Option<SocketAddr>,
@@ -55,10 +59,37 @@ impl TunnelRouter {
             return Err("PEER_LIMIT_EXCEEDED".into());
         }
         let mut addresses = HashSet::new();
+        let mut users = HashSet::new();
         let mut keys = HashSet::new();
         let mut endpoints = HashSet::new();
         let mut validated = Vec::new();
         for peer in peers {
+            if peer.user_id.is_empty()
+                || peer.lease_id.is_empty()
+                || peer.member_generation == 0
+                || !users.insert(peer.user_id.clone())
+            {
+                return Err("PEER_IDENTITY_INVALID".into());
+            }
+            if self.peers.iter().any(|previous| {
+                previous.user_id == peer.user_id
+                    && previous.member_generation > peer.member_generation
+            }) {
+                return Err("PEER_GENERATION_STALE".into());
+            }
+            let observed = Instant::now();
+            let expires = time::OffsetDateTime::parse(
+                &peer.expires_at,
+                &time::format_description::well_known::Rfc3339,
+            )
+            .map_err(|_| "PEER_EXPIRY_INVALID")?;
+            let remaining = expires - time::OffsetDateTime::now_utc();
+            if remaining <= time::Duration::ZERO {
+                continue;
+            }
+            let authorized_until = observed
+                .checked_add(remaining.unsigned_abs())
+                .ok_or("PEER_EXPIRY_INVALID")?;
             let address: Ipv4Addr = peer.virtual_ipv4.parse().map_err(|_| "PEER_IP_INVALID")?;
             if !self.network.contains(&address)
                 || address == self.address
@@ -69,7 +100,7 @@ impl TunnelRouter {
                 return Err("PEER_IP_INVALID".into());
             }
             let key: [u8; 32] = base64::engine::general_purpose::STANDARD
-                .decode(peer.public_key)
+                .decode(&peer.public_key)
                 .map_err(|_| "PEER_PUBLIC_KEY_INVALID")?
                 .try_into()
                 .map_err(|_| "PEER_PUBLIC_KEY_INVALID")?;
@@ -81,6 +112,7 @@ impl TunnelRouter {
             }
             let endpoint = peer
                 .endpoint
+                .as_ref()
                 .map(|value| value.parse::<SocketAddr>())
                 .transpose()
                 .map_err(|_| "PEER_ENDPOINT_INVALID")?;
@@ -93,15 +125,23 @@ impl TunnelRouter {
                     return Err("PEER_ENDPOINT_INVALID".into());
                 }
             }
-            validated.push((address, key, endpoint));
+            validated.push((peer, address, key, endpoint, authorized_until));
         }
         // 先完整校验；错误输入不能删除仍有效的 Peer。
         let mut previous = std::mem::take(&mut self.peers);
-        for (address, key, endpoint) in validated {
+        for (identity, address, key, endpoint, authorized_until) in validated {
             if let Some(index) = previous.iter().position(|peer| {
-                peer.address == address && peer.key == key && peer.endpoint == endpoint
+                peer.address == address
+                    && peer.key == key
+                    && peer.endpoint == endpoint
+                    && peer.user_id == identity.user_id
+                    && peer.member_generation == identity.member_generation
+                    && peer.lease_id == identity.lease_id
+                    && peer.authorized_until > Instant::now()
             }) {
-                self.peers.push(previous.swap_remove(index));
+                let mut peer = previous.swap_remove(index);
+                peer.authorized_until = authorized_until;
+                self.peers.push(peer);
             } else {
                 let tunnel = Tunn::new(
                     self.private_key.clone(),
@@ -113,6 +153,10 @@ impl TunnelRouter {
                 );
                 self.next_index = self.next_index.wrapping_add(1);
                 self.peers.push(Peer {
+                    user_id: identity.user_id,
+                    member_generation: identity.member_generation,
+                    lease_id: identity.lease_id,
+                    authorized_until,
                     address,
                     key,
                     endpoint,
@@ -133,6 +177,7 @@ impl TunnelRouter {
     }
 
     pub fn outbound(&mut self, packet: &[u8]) -> Vec<PacketAction> {
+        self.remove_expired();
         let Some((source, destination)) = ipv4_addresses(packet) else {
             return Vec::new();
         };
@@ -156,6 +201,7 @@ impl TunnelRouter {
     }
 
     pub fn inbound(&mut self, endpoint: SocketAddr, packet: &[u8]) -> Vec<PacketAction> {
+        self.remove_expired();
         let Some(index) = self
             .peers
             .iter()
@@ -167,6 +213,7 @@ impl TunnelRouter {
     }
 
     pub fn inbound_relay(&mut self, source: Ipv4Addr, packet: &[u8]) -> Vec<PacketAction> {
+        self.remove_expired();
         let Some(index) = self.peers.iter().position(|peer| peer.address == source) else {
             return Vec::new();
         };
@@ -181,6 +228,9 @@ impl TunnelRouter {
         let mut input = packet;
         // 解握手后排空 boringtun 缓存；固定上限防止单个数据报独占循环。
         for _ in 0..256 {
+            if peer.authorized_until <= Instant::now() {
+                break;
+            }
             let source = if path == NetworkPath::Direct {
                 peer.endpoint.map(|endpoint| endpoint.ip())
             } else {
@@ -211,7 +261,9 @@ impl TunnelRouter {
                     actions.extend(Self::network_action(path, peer, data.to_vec()))
                 }
                 TunnResult::WriteToTunnelV4(data, _) => {
-                    if ipv4_addresses(data) == Some((peer.address, self.address)) {
+                    if peer.authorized_until > Instant::now()
+                        && ipv4_addresses(data) == Some((peer.address, self.address))
+                    {
                         actions.push(PacketAction::Tunnel(data.to_vec()));
                     }
                 }
@@ -223,6 +275,7 @@ impl TunnelRouter {
     }
 
     pub fn tick(&mut self) -> Vec<PacketAction> {
+        self.remove_expired();
         let mut actions = Vec::new();
         let mut buffer = vec![0; 65535 + 160];
         for peer in &mut self.peers {
@@ -247,8 +300,10 @@ impl TunnelRouter {
 
     pub fn connected(&self) -> bool {
         self.peers.iter().any(|peer| {
-            peer.last_authenticated
-                .is_some_and(|at| at.elapsed() < PEER_IDLE_TIMEOUT)
+            peer.authorized_until > Instant::now()
+                && peer
+                    .last_authenticated
+                    .is_some_and(|at| at.elapsed() < PEER_IDLE_TIMEOUT)
         })
     }
 
@@ -256,7 +311,8 @@ impl TunnelRouter {
         self.peers
             .iter()
             .filter(|peer| {
-                peer.path == NetworkPath::Direct
+                peer.authorized_until > Instant::now()
+                    && peer.path == NetworkPath::Direct
                     && peer.last_authenticated.map_or_else(
                         || peer.started.elapsed() >= DIRECT_HANDSHAKE_TIMEOUT,
                         |at| at.elapsed() >= PEER_IDLE_TIMEOUT,
@@ -269,7 +325,7 @@ impl TunnelRouter {
     pub fn uses_relay(&self) -> bool {
         self.peers
             .iter()
-            .any(|peer| peer.path == NetworkPath::Relay)
+            .any(|peer| peer.authorized_until > Instant::now() && peer.path == NetworkPath::Relay)
             || self.path == NetworkPath::Relay
     }
 
@@ -291,7 +347,7 @@ impl TunnelRouter {
         let direct = self
             .peers
             .iter()
-            .any(|peer| peer.path == NetworkPath::Direct);
+            .any(|peer| peer.authorized_until > Instant::now() && peer.path == NetworkPath::Direct);
         if self.uses_relay() {
             if direct {
                 2
@@ -351,7 +407,15 @@ impl TunnelRouter {
         }
     }
 
+    fn remove_expired(&mut self) {
+        self.peers
+            .retain(|peer| peer.authorized_until > Instant::now());
+    }
+
     fn network_action(path: NetworkPath, peer: &Peer, data: Vec<u8>) -> Vec<PacketAction> {
+        if peer.authorized_until <= Instant::now() {
+            return Vec::new();
+        }
         match path {
             NetworkPath::Direct => peer
                 .endpoint
@@ -388,6 +452,11 @@ mod tests {
     fn peer(ip: &str, key: &StaticSecret, endpoint: SocketAddr) -> NetworkPeer {
         NetworkPeer {
             user_id: ip.into(),
+            member_generation: 1,
+            lease_id: format!("lease-{ip}"),
+            expires_at: (time::OffsetDateTime::now_utc() + time::Duration::seconds(60))
+                .format(&time::format_description::well_known::Rfc3339)
+                .unwrap(),
             virtual_ipv4: ip.into(),
             public_key: base64::engine::general_purpose::STANDARD
                 .encode(PublicKey::from(key).to_bytes()),
@@ -498,6 +567,192 @@ mod tests {
             ])
             .is_err());
         assert_eq!(router.peers.len(), 1);
+    }
+
+    fn authorized_peer(
+        key: &StaticSecret,
+        generation: u64,
+        lease: &str,
+        lifetime: i64,
+    ) -> NetworkPeer {
+        serde_json::from_value(serde_json::json!({
+            "userId": "remote-user", "virtualIpv4": "10.231.0.2",
+            "publicKey": base64::engine::general_purpose::STANDARD.encode(PublicKey::from(key).to_bytes()),
+            "endpoint": "127.0.0.1:12345", "memberGeneration": generation, "leaseId": lease,
+            "expiresAt": (time::OffsetDateTime::now_utc() + time::Duration::milliseconds(lifetime))
+                .format(&time::format_description::well_known::Rfc3339).unwrap()
+        })).unwrap()
+    }
+
+    #[test]
+    fn changed_authorization_identity_resets_existing_wireguard_session() {
+        for change in [
+            (|peer: &mut NetworkPeer| peer.member_generation = 2) as fn(&mut NetworkPeer),
+            |peer: &mut NetworkPeer| peer.lease_id = "lease-2".into(),
+            |peer: &mut NetworkPeer| peer.user_id = "replacement-user".into(),
+        ] {
+            let key = StaticSecret::from([8; 32]);
+            let mut router = TunnelRouter::new(
+                "10.231.0.1".parse().unwrap(),
+                "10.231.0.0/27".parse().unwrap(),
+                StaticSecret::from([7; 32]),
+            );
+            router
+                .update_peers(vec![authorized_peer(&key, 1, "lease-1", 30000)])
+                .unwrap();
+            router.peers[0].last_authenticated = Some(Instant::now());
+            assert!(router.connected());
+            let mut replacement = authorized_peer(&key, 1, "lease-1", 30000);
+            change(&mut replacement);
+            router.update_peers(vec![replacement]).unwrap();
+            assert!(
+                !router.connected(),
+                "same address/key/endpoint must not inherit an older authorization handshake"
+            );
+        }
+    }
+
+    #[test]
+    fn expired_peer_cannot_emit_handshake_or_data_without_another_snapshot() {
+        let key = StaticSecret::from([8; 32]);
+        let mut router = TunnelRouter::new(
+            "10.231.0.1".parse().unwrap(),
+            "10.231.0.0/27".parse().unwrap(),
+            StaticSecret::from([7; 32]),
+        );
+        router
+            .update_peers(vec![authorized_peer(&key, 1, "lease-1", 200)])
+            .unwrap();
+        router.peers[0].last_authenticated = Some(Instant::now());
+        assert!(router.connected());
+        std::thread::sleep(Duration::from_millis(250));
+        assert!(
+            !router.connected(),
+            "remote authorization expiry must override recent traffic"
+        );
+        assert!(router
+            .outbound(&packet([10, 231, 0, 1], [10, 231, 0, 2]))
+            .is_empty());
+        assert!(router.tick().is_empty());
+    }
+
+    #[test]
+    fn identity_validation_is_atomic_and_same_lease_refresh_preserves_state() {
+        let key = StaticSecret::from([8; 32]);
+        let mut router = TunnelRouter::new(
+            "10.231.0.1".parse().unwrap(),
+            "10.231.0.0/27".parse().unwrap(),
+            StaticSecret::from([7; 32]),
+        );
+        router
+            .update_peers(vec![authorized_peer(&key, 2, "lease-2", 30000)])
+            .unwrap();
+        router.peers[0].last_authenticated = Some(Instant::now());
+        let authenticated = router.peers[0].last_authenticated;
+        router
+            .update_peers(vec![authorized_peer(&key, 2, "lease-2", 60000)])
+            .unwrap();
+        assert_eq!(router.peers[0].last_authenticated, authenticated);
+        assert!(router.connected());
+        for change in [
+            (|peer: &mut NetworkPeer| peer.user_id.clear()) as fn(&mut NetworkPeer),
+            |peer: &mut NetworkPeer| peer.member_generation = 0,
+            |peer: &mut NetworkPeer| peer.member_generation = 1,
+            |peer: &mut NetworkPeer| peer.lease_id.clear(),
+            |peer: &mut NetworkPeer| peer.expires_at = "invalid".into(),
+        ] {
+            let mut invalid = authorized_peer(&key, 2, "lease-2", 60000);
+            change(&mut invalid);
+            assert!(router.update_peers(vec![invalid]).is_err());
+            assert_eq!(router.peers[0].last_authenticated, authenticated);
+        }
+        let json = serde_json::to_value(authorized_peer(&key, 2, "lease-2", 60000)).unwrap();
+        for field in ["memberGeneration", "leaseId", "expiresAt"] {
+            let mut legacy = json.clone();
+            legacy.as_object_mut().unwrap().remove(field);
+            assert!(serde_json::from_value::<NetworkPeer>(legacy).is_err());
+        }
+        router
+            .update_peers(vec![authorized_peer(&key, 2, "lease-2", -1)])
+            .unwrap();
+        assert!(router.peers.is_empty());
+    }
+
+    #[test]
+    fn new_lease_or_expired_authority_rejects_real_old_ciphertext_on_both_paths() {
+        for (path, expired) in [
+            (NetworkPath::Direct, false),
+            (NetworkPath::Relay, false),
+            (NetworkPath::Direct, true),
+            (NetworkPath::Relay, true),
+        ] {
+            let key_a = StaticSecret::from([7; 32]);
+            let key_b = StaticSecret::from([8; 32]);
+            let endpoint_a = "127.0.0.1:12344".parse().unwrap();
+            let endpoint_b = "127.0.0.1:12345".parse().unwrap();
+            let network = "10.231.0.0/27".parse().unwrap();
+            let mut source =
+                TunnelRouter::new("10.231.0.1".parse().unwrap(), network, key_a.clone());
+            let mut target =
+                TunnelRouter::new("10.231.0.2".parse().unwrap(), network, key_b.clone());
+            source
+                .update_peers(vec![peer("10.231.0.2", &key_b, endpoint_b)])
+                .unwrap();
+            target
+                .update_peers(vec![peer("10.231.0.1", &key_a, endpoint_a)])
+                .unwrap();
+            source.set_path(path);
+            target.set_path(path);
+            let plain = packet([10, 231, 0, 1], [10, 231, 0, 2]);
+            let mut pending: std::collections::VecDeque<_> = source
+                .outbound(&plain)
+                .into_iter()
+                .map(|action| (true, action))
+                .collect();
+            let mut delivered = Vec::new();
+            for _ in 0..32 {
+                let Some((toward_target, action)) = pending.pop_front() else {
+                    break;
+                };
+                let (router, endpoint, address) = if toward_target {
+                    (&mut target, endpoint_a, source.address)
+                } else {
+                    (&mut source, endpoint_b, target.address)
+                };
+                let actions = match action {
+                    PacketAction::Network(_, bytes) => router.inbound(endpoint, &bytes),
+                    PacketAction::Relay(_, bytes) => router.inbound_relay(address, &bytes),
+                    PacketAction::Tunnel(bytes) => {
+                        delivered.push(bytes);
+                        Vec::new()
+                    }
+                };
+                pending.extend(actions.into_iter().map(|action| (!toward_target, action)));
+            }
+            assert_eq!(delivered, vec![plain.clone()]);
+            let old_frame = match source.outbound(&plain).pop().unwrap() {
+                PacketAction::Network(_, bytes) | PacketAction::Relay(_, bytes) => bytes,
+                _ => panic!("expected encrypted packet"),
+            };
+            assert_eq!(old_frame[..4], [4, 0, 0, 0]);
+            if expired {
+                target.peers[0].authorized_until = Instant::now() - Duration::from_millis(1);
+            } else {
+                let mut replacement = peer("10.231.0.1", &key_a, endpoint_a);
+                replacement.member_generation = 2;
+                replacement.lease_id = "replacement-lease".into();
+                target.update_peers(vec![replacement]).unwrap();
+            }
+            let rejected = if path == NetworkPath::Direct {
+                target.inbound(endpoint_a, &old_frame)
+            } else {
+                target.inbound_relay(source.address, &old_frame)
+            };
+            assert!(rejected.is_empty());
+            if expired {
+                assert!(target.peers.is_empty());
+            }
+        }
     }
 
     struct RelayAuthority(std::sync::Mutex<bool>);

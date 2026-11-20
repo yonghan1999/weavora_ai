@@ -64,8 +64,9 @@ public class NetworkPeerService {
                 if (grant.allowedPaths() == null) continue;
                 requireKey(grant.publicKey());
                 boolean direct = caller.allowedPaths().contains("DIRECT") && current.allowedPaths().contains("DIRECT");
+                var expires = grant.expiresAt().isBefore(current.lease().expiresAt()) ? grant.expiresAt() : current.lease().expiresAt();
                 result.add(new Peer(grant.userId(), current.ipv4(), grant.publicKey(), direct ? item.endpoint() : null,
-                        grant.memberGeneration(), grant.leaseId(), grant.expiresAt()));
+                        grant.memberGeneration(), grant.leaseId(), expires));
             } catch (ApiException exception) {
                 // 失权端点不进入新快照；现有 Peer 由客户端按快照替换并受授权期限约束。
             }

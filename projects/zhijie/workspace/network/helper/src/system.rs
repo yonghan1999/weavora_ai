@@ -871,6 +871,9 @@ mod tests {
             let peer =
                 |request: &NetworkStart, index: u8, endpoint: std::net::SocketAddr| NetworkPeer {
                     user_id: request.ticket.clone(),
+                    member_generation: request.member_generation,
+                    lease_id: request.lease_id.clone(),
+                    expires_at: request.expires_at.clone(),
                     virtual_ipv4: request.virtual_ipv4.clone(),
                     public_key: base64::engine::general_purpose::STANDARD
                         .encode(PublicKey::from(&StaticSecret::from([index; 32])).to_bytes()),
@@ -1115,6 +1118,9 @@ mod tests {
                     .filter(|remote| *remote != local)
                     .map(|remote| NetworkPeer {
                         user_id: requests[remote].ticket.clone(),
+                        member_generation: requests[remote].member_generation,
+                        lease_id: requests[remote].lease_id.clone(),
+                        expires_at: requests[remote].expires_at.clone(),
                         virtual_ipv4: requests[remote].virtual_ipv4.clone(),
                         public_key: base64::engine::general_purpose::STANDARD.encode(
                             PublicKey::from(&StaticSecret::from([remote as u8 + 1; 32])).to_bytes(),

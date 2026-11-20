@@ -95,7 +95,23 @@ class NetworkPeerIntegrationTest {
         assertThat(peers.list(a, activity, ga.networkTicket())).singleElement().satisfies(peer -> {
             assertThat(peer.userId()).isEqualTo(b); assertThat(peer.publicKey()).isEqualTo(key(2));
             assertThat(peer.virtualIpv4()).isEqualTo(gb.virtualIpv4()); assertThat(peer.leaseId()).isEqualTo(joinedB.leaseId());
+            assertThat(peer.memberGeneration()).isEqualTo(joinedB.memberGeneration());
         });
+        var activityRecords = context.getBean(ActivityRepository.class);
+        var originalLease = activityRecords.findLease(joinedB.leaseId()).orElseThrow();
+        var shortExpiry = Instant.now().plusSeconds(20);
+        activityRecords.updateLease(new ConnectionLease(originalLease.id(), originalLease.activityId(), originalLease.userId(), originalLease.deviceId(),
+                originalLease.activityGeneration(), originalLease.memberGeneration(), originalLease.policyRevision(), originalLease.voiceState(),
+                originalLease.networkState(), shortExpiry, null));
+        try {
+            var boundedResponse = http.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            assertThat(boundedResponse.statusCode()).isEqualTo(200);
+            var peer = json.readTree(boundedResponse.body()).path("peers").get(0);
+            assertThat(peer.path("userId").asText()).isEqualTo(b);
+            assertThat(peer.path("leaseId").asText()).isEqualTo(joinedB.leaseId());
+            assertThat(peer.path("memberGeneration").asLong()).isEqualTo(joinedB.memberGeneration());
+            assertThat(java.time.Duration.between(Instant.parse(peer.path("expiresAt").asText()), shortExpiry).abs()).isLessThan(java.time.Duration.ofMillis(1));
+        } finally { activityRecords.updateLease(originalLease); }
         assertThatThrownBy(() -> peers.list(a, activity, gb.networkTicket())).isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> peers.list(c, activity, gc.networkTicket())).isInstanceOf(ApiException.class);
         for (String endpoint : List.of("example.test:41001", "0.0.0.0:4", "224.0.0.1:4", "127.0.0.1:0", "127.0.0.1:65536", "255.255.255.255:4"))
