@@ -49,13 +49,17 @@ function Assert-RoomReopen($Room, $Headers) {
     if ($reopened.id -ne $Room.id -or $reopened.openState -ne 'OPEN' -or $reopened.currentActivityId) { throw '重新开放未持久化或意外创建活动' }
     Write-Host 'PACKAGED_ROOM_REOPEN_OUTSIDE_WITHOUT_START_OK'
 }
-function Assert-DeleteEvent($Socket, $MessageId, $GroupId, $Cursor, $Cancellation) {
+function Assert-DeleteEvent($Socket, $Mode, $MessageId, $GroupId, $Cursor, $Cancellation) {
     $buffer = New-Object byte[] 4096
     while (!$Cancellation.IsCancellationRequested) {
         $frame = [IO.MemoryStream]::new()
         try {
             do {
                 $part = $Socket.ReceiveAsync([ArraySegment[byte]]::new($buffer), $Cancellation).GetAwaiter().GetResult()
+                if ($part.MessageType -eq 'Close') {
+                    $reason = if ($part.CloseStatusDescription -in 'RESYNC_REQUIRED','ACCESS_TOKEN_INVALID') { $part.CloseStatusDescription } else { 'unspecified' }
+                    throw "Loopback sync closed before delivery: mode=$Mode code=$([int]$part.CloseStatus) reason=$reason"
+                }
                 if ($part.MessageType -ne 'Text' -or $frame.Length + $part.Count -gt 65536) { throw 'Invalid sync event' }
                 $frame.Write($buffer, 0, $part.Count)
             } until ($part.EndOfMessage)
@@ -113,7 +117,6 @@ try {
         if ($rooms.Count -ne 1 -or $messages.Count -ne 2 -or !($messages | Where-Object { $_.id -eq $sent.id -and $_.body -eq $marker })) { throw '用户消息、欢迎消息或房间缺失' }
         "$($login.data.userId):$($groups[0].id):$($rooms[0].id):$($messages.id -join ':')"
         if ($attempt -eq 2) {
-            if ($CheckRoomReopen) { Assert-RoomReopen $rooms[0] $headers }
             $sockets = @()
             $deadline = [Threading.CancellationTokenSource]::new(15000)
             try {
@@ -121,7 +124,7 @@ try {
                     $cursor = (Invoke-RestMethod "$url/api/v1/sync/cursor" -Headers $headers).data.cursor
                     foreach ($mode in 'header','legacy') {
                         $socket = [Net.WebSockets.ClientWebSocket]::new()
-                        $sockets += $socket
+                        $sockets += @{mode=$mode;client=$socket}
                         $endpoint = "ws://127.0.0.1:$HttpPort/api/v1/ws?cursor=$cursor"
                         if ($mode -eq 'header') { $socket.Options.SetRequestHeader('Authorization', $headers.Authorization) }
                         else { $endpoint += '&access_token=' + [uri]::EscapeDataString($login.data.accessToken) }
@@ -131,12 +134,13 @@ try {
                 }
                 $removed = (Invoke-RestMethod "$url/api/v1/messages/$($sent.id)" -Headers $headers -Method Delete).data
                 if (!$removed.deleted -or $removed.deleteKind -ne 'AUTHOR' -or $removed.id -ne $sent.id) { throw '恢复后删除本人消息失败' }
-                foreach ($socket in $sockets) { Assert-DeleteEvent $socket $sent.id $groups[0].id $cursor $deadline.Token }
+                foreach ($entry in $sockets) { Assert-DeleteEvent $entry.client $entry.mode $sent.id $groups[0].id $cursor $deadline.Token }
                 if ($CheckSyncAuth) { Write-Host 'PACKAGED_SYNC_HEADER_AND_LEGACY_EVENT_OK' }
             } finally {
-                foreach ($socket in $sockets) { $socket.Dispose() }
+                foreach ($entry in $sockets) { $entry.client.Dispose() }
                 $deadline.Dispose()
             }
+            if ($CheckRoomReopen) { Assert-RoomReopen $rooms[0] $headers }
             if ($previous) {
                 $added = (Invoke-RestMethod $history -Headers $headers -Method Post -ContentType 'application/json' -Body (@{body=$upgradeMarker} | ConvertTo-Json)).data
                 $updated = (Invoke-RestMethod $history -Headers $headers).data
