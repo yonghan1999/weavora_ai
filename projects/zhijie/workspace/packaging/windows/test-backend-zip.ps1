@@ -240,10 +240,7 @@ try {
             $backup = Join-Path $fixture 'snapshot'
             & python -B "$workspace/ops/database/cold-backup.py" snapshot --source "$trial/target/local-preview/postgres" --destination $backup | Out-Host
             if ($LASTEXITCODE) { throw '旧包停库快照失败' }
-            if (Test-Path -LiteralPath "$current/target/local-preview/postgres") { throw '新版测试目录已存在数据库，拒绝覆盖' }
-            $runtime = New-Item -ItemType Directory -Path "$current/target/local-preview" -Force
-            Copy-Item -LiteralPath "$backup/data" -Destination "$($runtime.FullName)/postgres" -Recurse -ErrorAction Stop
-            & python -B "$workspace/ops/database/cold-backup.py" verify --backup $backup --restored-data "$($runtime.FullName)/postgres" | Out-Host
+            & python -B "$workspace/ops/database/cold-backup.py" restore --backup $backup --destination "$current/target/local-preview/postgres" | Out-Host
             if ($LASTEXITCODE) { throw '恢复副本核验失败，拒绝启动' }
             $trial = $current
         } elseif ($previous -and $attempt -eq 2) {

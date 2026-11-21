@@ -2,6 +2,10 @@
 
 当前后端：`target/trial-kit-edb856b/preview-backend.zip`（83,859,580 字节，SHA-256：`717c76caaa6a5dfe9616b4011eb8f274386c1db26bb70abf2c440bbd980c7256`）。与上一包相比，仅 `IdentityService` 及其嵌套类变化；依赖、启动脚本与 V17 数据库迁移保持不变。共 341 个条目。桌面与后端配套试用请使用[整包及验证记录](candidate-build.md)。
 
+**旧版试用库升级和回退（Windows 本机）**：使用 `684e0a9`（V16）和 `edb856b`（V17）的后端离线包，在独立目录按“旧版 → 新版 → 旧版 → 新版”四次启动。演练现在调用试用说明中的 `cold-backup.py restore` 恢复到新目录，不再用 PowerShell 手动复制。原库 1,111 个文件、新库 1,113 个文件分别用停库快照核对；回退时只启动原库，不对升级后的数据库运行旧程序。
+
+四次登录的账号、群和房间标识相同。回到旧版时仍能看到原消息，没有新版写入；再次启动新版时，新消息和旧消息的删除标记都还在。升级后，尚未到期的旧网络票据被拒，显式重入取得了新租约。两种 WebSocket 认证方式均收到预期删除事件。实跑日志：`target/trial-kit-edb856b/v16-upgrade-roundtrip.log`；冷备工具的 10 项回归：`target/trial-kit-edb856b/upgrade-cold-copy-tests.log`。本次验证使用临时账号与数据库，不涉及桌面安装器升级、真实网卡、用户数据或生产环境。
+
 ## bff9649 后端历史记录
 
 历史后端：`target/trial-kit-bff9649/preview-backend.zip`（83,856,519 字节，SHA-256：`92bfa5597f11b684e6e8492eca209e71273d767d0d0bc5a6d6357f20eb75be57`）。与上一后端逐项核对 340 个条目，仅正式运行配置的同步授权检查类不同。未引入依赖或数据库迁移；实际本机整包登录、同版重启和停库冷备恢复记录见[本机试用入口](candidate-build.md)。试用配置不是正式低权限部署；后者的拒绝启动与权限恢复验证见 `docs/engineering/runtime-sync-startup.md`。
