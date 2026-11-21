@@ -16,9 +16,10 @@ class ActivityTest(unittest.TestCase):
                     if actor >= 90 and operation == "heartbeat" and elapsed < 68:
                         continue
                     self.rows.append(dict(actor=actor, operation=operation, code=None, status=200,
-                                          workloadElapsedMs=elapsed * 1000))
+                                          workloadElapsedMs=elapsed * 1000, latencyMs=12.5))
         self.summary = dict(accounts=100, scope="local-control-plane-smoke", requestedSeconds=90, durationSeconds=90,
-                            execution="completed", requests=len(self.rows), rotationsPerAccountMin=0)
+                            execution="completed", requests=len(self.rows), rotationsPerAccountMin=0, failures=0,
+                            operationSuccessRatePercent=100, p95LatencyMs=12.5)
 
     def test_observed_activity_with_planned_presence_pause(self):
         self.assertEqual(audit(self.summary, self.rows, 90)["maxCoreGapSeconds"], 25)
@@ -29,6 +30,33 @@ class ActivityTest(unittest.TestCase):
                 row["actor"] = 24
         with self.assertRaisesRegex(ValueError, "activity gap .*actor=23, operation=message-write"):
             audit(self.summary, self.rows, 90)
+
+    def test_latency_must_be_measured_for_every_operation(self):
+        for invalid in (None, True, -1, float('inf'), float('nan'), '2.5'):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, 'latency'):
+                audit(self.summary, [{**self.rows[0], 'latencyMs': invalid}, *self.rows[1:]], 90)
+        del self.rows[0]['latencyMs']
+        with self.assertRaisesRegex(ValueError, 'latency'):
+            audit(self.summary, self.rows, 90)
+
+    def test_nearest_rank_includes_refresh_and_agrees_with_summary(self):
+        rows = [*self.rows, *[{**self.rows[0], 'actor': actor, 'operation': 'session-refresh', 'latencyMs': 1500,
+                                'workloadElapsedMs': 90000} for actor in range(100)]]
+        summary = {**self.summary, 'requests': len(rows), 'rotationsPerAccountMin': 1}
+        self.assertEqual(len(rows), 2070)
+        for row in rows[:3]:
+            row['latencyMs'] = 1500
+        self.assertEqual(audit(summary, rows, 90)['p95LatencyMs'], 12.5)
+        rows[3]['latencyMs'] = 1500
+        with self.assertRaisesRegex(ValueError, 'p95LatencyMs'):
+            audit(summary, rows, 90)
+        self.assertEqual(audit({**summary, 'p95LatencyMs': 1500}, rows, 90)['p95LatencyMs'], 1500)
+
+    def test_unsubstantiated_summary_metrics_are_rejected(self):
+        for field, value in [('failures', 1), ('failures', False), ('operationSuccessRatePercent', 101),
+                             ('p95LatencyMs', float('nan')), ('p95LatencyMs', 0)]:
+            with self.subTest(field=field, value=value), self.assertRaisesRegex(ValueError, field):
+                audit({**self.summary, field: value}, self.rows, 90)
 
     def test_disappearing_account_is_not_a_pass(self):
         for row in self.rows:
@@ -69,9 +97,9 @@ class ActivityTest(unittest.TestCase):
                 for operation in auditor['CORE']:
                     if actor >= 90 and operation == 'heartbeat' and second < 68:
                         continue
-                    rows.append(dict(actor=actor, operation=operation, code=None, status=200, workloadElapsedMs=second * 1000))
+                    rows.append(dict(actor=actor, operation=operation, code=None, status=200, workloadElapsedMs=second * 1000, latencyMs=12.5))
                 if second in (600, 1500, 2400, 3300):
-                    rows.append(dict(actor=actor, operation='session-refresh', code=None, status=200, workloadElapsedMs=second * 1000))
+                    rows.append(dict(actor=actor, operation='session-refresh', code=None, status=200, workloadElapsedMs=second * 1000, latencyMs=12.5))
         summary = {**self.summary, 'requestedSeconds': 3600, 'durationSeconds': 3600, 'requests': len(rows), 'rotationsPerAccountMin': 4}
         self.assertEqual(audit(summary, rows, 3600)['minimumRefreshes'], 4)
         next(row for row in rows if row['operation'] == 'session-refresh' and row['actor'] == 11)['actor'] = 12

@@ -38,6 +38,10 @@ python "scripts/sample-capacity-resources.py" --pid 1234 --pid 5678 --interface 
 
 在 workspace 执行 `python -B "scripts/audit-control-load.py" "target/<本次运行目录>" --seconds 90`；一小时用例改为 `--seconds 3600`。审计按与负载同源的单调时钟检查每个账号的心跳、消息读取、消息写入和好友在线状态请求，包括开头与结尾的空档；最后十个账号的心跳扣除计划内的前 68 秒离线模拟。一小时用例还要求每账号至少续票四次。旧记录缺少 `requestedSeconds` 或 `workloadElapsedMs` 时不能据此复核，不回填推算时间。
 
+同一审计还逐行要求 `latencyMs` 为有限非负数。仅在每条 HTTP 操作均为 200 且无业务错误时，才核对摘要中的零失败和 100% 成功率；再将全部请求（含续票）的原始延迟升序排列，取第 `ceil(0.95 × 请求数)` 个值，与未舍入的 `p95LatencyMs` 对照。任一指标缺失或不符即拒绝该摘要，不补写原始记录。通过只表示摘要忠实于这些 HTTP 记录，不证明目标机达标。
+
+在本机独立 PostgreSQL 与真实 HTTP/WebSocket 负载上，100 个账号运行 90.043 秒，取得 3,708 条 HTTP 记录，零失败，重算 P95 为 4.729 ms。原始数据和独立审计结果位于 `target/control-load-14339938500446142498`；`target/http-metric-audit-db23968/integration.log` 记录集成测试 1 项通过、零跳过。另对原有 3,806 和 3,809 条记录的两组短测只读重算，P95 分别为 6.274 和 6.994 ms。以上不是目标服务器的一小时容量验收。
+
 本机 90 秒续票用例的记录位于 `target/control-load-11847643715168560359/`。`operations.jsonl` 共 3,809 条，SHA-256 为 `333c972a050cf191083dbb1ee7b4080a275566df9f18054987f9daffee2dc7d0`；`http-activity-audit.json` 显示 100 个账号每人至少续票一次，四类活动的最长空档为 20.065 秒。本审计只证明本机 HTTP 活动，不替代同步通道断言、目标服务器一小时容量、语音或虚拟网络验收。
 
 启用宿主采样时，C0 和百账号夹具都通过临时库的 `data_directory/postmaster.pid` 确定主进程，并与当前 SQL 会话的操作系统父 PID 核对。`--pid` 的 CPU、句柄、RSS 仍只计测试 JVM；可选 `--memory-tree-pid` 在每个采样周期独立枚举指定根及当时可见的后代，只读 RSS。所选 PID 与进程树重叠时失败；子进程在读取期间消失可有限重试，根进程退出或无法完成该样本时不汇总成功。原始 `processes` 和 `memoryTree` 都含 PID、创建时间及 RSS。`combinedMemoryPeakMiB` 取每个周期两组 RSS 之和的最大值，不叠加不同周期的峰值。RSS 可能重复计算共享页，短于采样间隔的子进程可能未被观测；它不是整机或容器的实际内存占用。Node 压测客户端不计入，数据库连接数和堆仍见 `resources.jsonl`。
