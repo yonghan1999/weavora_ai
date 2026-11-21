@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { closeSync, fstatSync, openSync, readSync, realpathSync } from "node:fs";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 
 const metricNames = [
   "cpuPeakPercent",
@@ -46,7 +49,37 @@ export function budgetFailures(result, scenario, budget) {
   return failures;
 }
 
-export function validateResult(result, scenario, budget) {
+function verifyEvidence(entries, requirements, directory) {
+  assert.ok(directory, "A pass requires the evidence directory for this run");
+  const root = realpathSync(directory);
+  const covered = new Set();
+  const hashes = new Map();
+  const buffer = Buffer.allocUnsafe(64 * 1024);
+  for (const entry of entries) {
+    assert.ok(typeof entry?.category === "string" && entry.category.length > 0, "Missing evidence category");
+    assert.ok(typeof entry.path === "string" && entry.path && !isAbsolute(entry.path), "Expected a relative evidence path");
+    assert.match(entry.sha256 ?? "", /^[a-f0-9]{64}$/, "Expected evidence SHA-256");
+    const file = realpathSync(resolve(root, entry.path));
+    const local = relative(root, file);
+    assert.ok(local && local !== ".." && !local.startsWith(`..${sep}`) && !isAbsolute(local), "Evidence outside run directory");
+    if (!hashes.has(file)) {
+      const descriptor = openSync(file, "r");
+      try {
+        const stat = fstatSync(descriptor);
+        assert.ok(stat.isFile() && stat.size > 0, "Expected a non-empty evidence file");
+        const hash = createHash("sha256");
+        let count;
+        while ((count = readSync(descriptor, buffer)) > 0) hash.update(buffer.subarray(0, count));
+        hashes.set(file, hash.digest("hex"));
+      } finally { closeSync(descriptor); }
+    }
+    assert.equal(hashes.get(file), entry.sha256, `Evidence hash mismatch: ${entry.path}`);
+    covered.add(entry.category);
+  }
+  for (const category of requirements) assert.ok(covered.has(category), `Missing evidence category: ${category}`);
+}
+
+export function validateResult(result, scenario, budget, evidenceDirectory) {
   assert.equal(result.schemaVersion, 1);
   assert.equal(result.scenarioId, scenario.id);
   assert.ok(["not_run", "running", "completed", "failed"].includes(result.execution.status));
@@ -61,12 +94,12 @@ export function validateResult(result, scenario, budget) {
   if (result.conclusion.status === "passed") {
     assert.equal(result.execution.status, "completed", "A pass requires a completed real execution");
     assert.ok(result.execution.command?.length > 0, "A pass requires the exact load command");
-    assert.ok(result.evidence.length >= scenario.evidenceRequirements.length, "A pass requires all raw evidence categories");
     for (const name of metricNames) {
       assert.ok(Number.isFinite(result.metrics?.[name]) && result.metrics[name] >= 0, `Missing metric: ${name}`);
     }
     assert.ok(result.metrics.sampleCount > 0, "A pass requires real samples");
     assert.deepEqual(budgetFailures(result, scenario, budget), [], "A pass cannot exceed scenario or resource budgets");
+    verifyEvidence(result.evidence, scenario.evidenceRequirements, evidenceDirectory);
   }
   return result;
 }

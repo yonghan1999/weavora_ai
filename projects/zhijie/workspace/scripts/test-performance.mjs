@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { budgetFailures, scenarioById, validateResult, validateScenario } from "./performance-tool.mjs";
 
 assert.ok(process.argv.includes("--validate-fixtures"), "Use --validate-fixtures to validate performance contracts");
@@ -59,4 +61,26 @@ for (const direction of ["upstream", "downstream"]) {
   assert.throws(() => validateResult(linkBoundary, c1, configuration.resourceBudget), /budgets/);
   linkBoundary.metrics[metric] = 5000;
 }
+mkdirSync("target", {recursive: true});
+const directory = mkdtempSync(join("target", "capacity-evidence-fixture-"));
+try {
+  const verified = structuredClone(linkBoundary);
+  verified.evidence = c1.evidenceRequirements.map(category => {
+    const path = `${category}.log`;
+    const contents = `fixture: ${category}\n`.repeat(6000);
+    writeFileSync(join(directory, path), contents);
+    return {category, path, sha256: createHash("sha256").update(contents).digest("hex")};
+  });
+  const check = evidence => validateResult({...verified, evidence}, c1, configuration.resourceBudget, directory);
+  check(verified.evidence);
+  const first = verified.evidence[0];
+  assert.throws(() => check(c1.evidenceRequirements), /evidence category/);
+  assert.throws(() => check(verified.evidence.map(() => first)), /Missing evidence category/);
+  assert.throws(() => check([{...first, path: ".."}]), /outside run directory/);
+  assert.throws(() => check([{...first, path: "missing.log"}]), {code: "ENOENT"});
+  writeFileSync(join(directory, first.path), "changed");
+  assert.throws(() => check(verified.evidence), /hash mismatch/);
+  writeFileSync(join(directory, first.path), "");
+  assert.throws(() => check(verified.evidence), /non-empty evidence/);
+} finally { rmSync(directory, {recursive: true, force: true}); }
 console.log("C0-C4 parameters, result schemas, long-session budgets and audio evidence requirements are valid; all capacity acceptance remains unverified.");
