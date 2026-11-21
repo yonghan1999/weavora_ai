@@ -1,5 +1,7 @@
 package app.weavora.zhijie.controlplane.persistence;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +12,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Configuration
 @Profile("runtime")
 public class RuntimeMigrationConfiguration {
+    private static final Logger LOG = LoggerFactory.getLogger(RuntimeMigrationConfiguration.class);
+
     @Bean
     FlywayMigrationStrategy validateExistingSchema() {
         return flyway -> {
@@ -30,6 +34,19 @@ public class RuntimeMigrationConfiguration {
                 throw new IllegalStateException("RUNTIME_DATABASE_ROLE_EXCESSIVE");
             }
             flyway.validate();
+            Boolean syncReady = sql.queryForObject("""
+                    SELECT has_table_privilege(current_user, 'public.outbox_events', 'SELECT')
+                        AND has_table_privilege(current_user, 'public.outbox_events', 'INSERT')
+                        AND has_table_privilege(current_user, 'public.outbox_events', 'UPDATE')
+                        AND has_table_privilege(current_user, 'public.sync_event_sequences', 'SELECT')
+                        AND has_table_privilege(current_user, 'public.sync_event_sequences', 'INSERT')
+                        AND has_sequence_privilege(current_user, 'public.outbox_events_sequence_seq', 'USAGE')
+                        AND has_sequence_privilege(current_user, 'public.sync_event_sequences_sequence_seq', 'USAGE')
+                    """, Boolean.class);
+            if (!Boolean.TRUE.equals(syncReady)) {
+                LOG.error("RUNTIME_DATABASE_SYNC_GRANTS_MISSING");
+                throw new IllegalStateException("RUNTIME_DATABASE_SYNC_GRANTS_MISSING");
+            }
         };
     }
 }

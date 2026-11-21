@@ -27,6 +27,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.embedded.tomcat.TomcatWebServer;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.flywaydb.core.Flyway;
 
 class RuntimeDatabasePrivilegesIntegrationTest {
     @Test
@@ -58,6 +59,23 @@ class RuntimeDatabasePrivilegesIntegrationTest {
                     "--spring.datasource.password=", "--zhijie.scheduling.enabled=false"))
                     .hasStackTraceContaining("RUNTIME_DATABASE_ROLE_EXCESSIVE");
             String appUrl = postgres.getJdbcUrl("zhijie_app", "postgres");
+            try (var migrator = DriverManager.getConnection(migratorUrl, "zhijie_migrator", "");
+                 var grants = migrator.createStatement()) {
+                var runtime = Flyway.configure().dataSource(appUrl, "zhijie_app", "").load();
+                var startup = new RuntimeMigrationConfiguration().validateExistingSchema();
+                for (String permission : List.of("SELECT ON outbox_events", "INSERT ON outbox_events", "UPDATE ON outbox_events",
+                        "SELECT ON sync_event_sequences", "INSERT ON sync_event_sequences",
+                        "USAGE ON SEQUENCE outbox_events_sequence_seq", "USAGE ON SEQUENCE sync_event_sequences_sequence_seq")) {
+                    grants.execute("REVOKE " + permission + " FROM zhijie_app");
+                    assertThatThrownBy(() -> startup.migrate(runtime)).as("Runtime missing %s", permission)
+                            .hasMessage("RUNTIME_DATABASE_SYNC_GRANTS_MISSING");
+                    if (permission.equals("USAGE ON SEQUENCE sync_event_sequences_sequence_seq")
+                            && System.getenv("ZHIJIE_TEST_MIGRATION_JAR") != null) {
+                        assertPackagedRuntimeRejectsMissingGrant(appUrl, password);
+                    }
+                    grants.execute("GRANT " + permission + " TO zhijie_app");
+                }
+            }
             try (var context = new SpringApplication(ControlPlaneApplication.class).run(
                     "--server.port=0", "--spring.profiles.active=runtime",
                     "--spring.datasource.url=" + appUrl, "--spring.datasource.username=zhijie_app",
@@ -143,6 +161,27 @@ class RuntimeDatabasePrivilegesIntegrationTest {
             Path path = Path.of(file);
             statement.execute(Files.readString(Files.isRegularFile(path) ? path : Path.of("..").resolve(path)));
         }
+    }
+
+    private void assertPackagedRuntimeRejectsMissingGrant(String url, String password) throws Exception {
+        var command = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-jar", System.getenv("ZHIJIE_TEST_MIGRATION_JAR"), "--spring.profiles.active=runtime",
+                "--server.port=0", "--zhijie.scheduling.enabled=false");
+        command.environment().putAll(Map.of("ZHIJIE_DATABASE_URL", url, "ZHIJIE_DATABASE_USERNAME", "zhijie_app",
+                "ZHIJIE_DATABASE_PASSWORD", password));
+        Path log = Files.createTempFile("runtime-sync-grants-", ".log");
+        try {
+            var child = command.redirectErrorStream(true).redirectOutput(log.toFile()).start();
+            try {
+                assertThat(child.waitFor(45, TimeUnit.SECONDS)).as("runtime must refuse startup").isTrue();
+                assertThat(child.exitValue()).isNotZero();
+                String output = Files.readString(log);
+                assertThat(output.contains(password)).isFalse();
+                assertThat(output).contains("RUNTIME_DATABASE_SYNC_GRANTS_MISSING").doesNotContain("Tomcat started on port");
+            } finally {
+                if (child.isAlive()) child.destroyForcibly().waitFor(10, TimeUnit.SECONDS);
+            }
+        } finally { Files.deleteIfExists(log); }
     }
 
     private void migrate(String url, String password, boolean upToDate) throws Exception {
