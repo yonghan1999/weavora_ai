@@ -1,6 +1,10 @@
 # Windows 本机试用后端（离线包）
 
-当前后端：`target/trial-kit-bff9649/preview-backend.zip`（83,856,519 字节，SHA-256：`92bfa5597f11b684e6e8492eca209e71273d767d0d0bc5a6d6357f20eb75be57`）。与上一后端逐项核对 340 个条目，仅正式运行配置的同步授权检查类不同。未引入依赖或数据库迁移；实际本机整包登录、同版重启和停库冷备恢复记录见[本机试用入口](candidate-build.md)。试用配置不是正式低权限部署；后者的拒绝启动与权限恢复验证见 `docs/engineering/runtime-sync-startup.md`。
+当前后端：`target/trial-kit-edb856b/preview-backend.zip`（83,859,580 字节，SHA-256：`717c76caaa6a5dfe9616b4011eb8f274386c1db26bb70abf2c440bbd980c7256`）。与上一包相比，仅 `IdentityService` 及其嵌套类变化；依赖、启动脚本与 V17 数据库迁移保持不变。共 341 个条目。桌面与后端配套试用请使用[整包及验证记录](candidate-build.md)。
+
+## bff9649 后端历史记录
+
+历史后端：`target/trial-kit-bff9649/preview-backend.zip`（83,856,519 字节，SHA-256：`92bfa5597f11b684e6e8492eca209e71273d767d0d0bc5a6d6357f20eb75be57`）。与上一后端逐项核对 340 个条目，仅正式运行配置的同步授权检查类不同。未引入依赖或数据库迁移；实际本机整包登录、同版重启和停库冷备恢复记录见[本机试用入口](candidate-build.md)。试用配置不是正式低权限部署；后者的拒绝启动与权限恢复验证见 `docs/engineering/runtime-sync-startup.md`。
 
 ## 8471c58 后端历史记录
 

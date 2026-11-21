@@ -2,7 +2,13 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 整包：`target/trial-kit-bff9649/zhijie-windows-x64-trial.zip`（93,088,105 字节，SHA-256：`27003f7884b8a5ba4e2703281df029916ca31140d3bc89a1cec88b14370c62b1`）。核对摘要后解压到 D 盘全新短路径，按包内 `README.md` 启动，不覆盖旧包或既有数据库。相比 `1ccaf96` 的 352 个条目，仅后端 `RuntimeMigrationConfiguration.class` 变化：正式 `runtime` 配置缺少同步数据库授权时拒绝启动。桌面、Helper、依赖和 V17 迁移没有变化。
+当前整包：`target/trial-kit-edb856b/zhijie-windows-x64-trial.zip`（93,089,313 字节，SHA-256：`e080c44fe6a049e7d5a55848414ab58f953882510d18572287ec8e21d6bd884f`）。核对摘要后解压到 D 盘全新短路径，按包内 `README.md` 启动，不覆盖旧目录。此包包含 `edb856b` 的 Bearer 鉴权优化；202 个控制面类逐字节匹配完成百账号一小时复测的类文件。长测在测试环境执行，不是在解压后的试用包上执行；指标与告警见 `docs/engineering/capacity-resource-sampling.md`。
+
+与 `bff9649` 的整包比对：349 个条目内容不变，仅修改 3 个鉴权类并新增 1 个嵌套类。`target/trial-kit-edb856b/lifecycle.log` 记录首次登录写消息、正常重启、停库冷备恢复 1,113 个文件后从独立目录再次登录；三轮均核对消息、房间密码策略、退房、设备接管及会话撤销，停服前后健康检查符合预期。六项打包测试通过，发布配置契约通过；Windows 上未验证 macOS 实际签名。没有安装或启动原生桌面、创建网卡、验证实际通话或部署生产。
+
+### 历史整包 bff9649
+
+历史 Windows x64 整包：`target/trial-kit-bff9649/zhijie-windows-x64-trial.zip`（93,088,105 字节，SHA-256：`27003f7884b8a5ba4e2703281df029916ca31140d3bc89a1cec88b14370c62b1`）。相比 `1ccaf96` 的 352 个条目，仅后端 `RuntimeMigrationConfiguration.class` 变化：正式 `runtime` 配置缺少同步数据库授权时拒绝启动。桌面、Helper、依赖和 V17 迁移没有变化。
 
 `target/trial-kit-bff9649/lifecycle.log` 记录解压后的三次真实启动：首次设密登录与写消息、正常停服再启动、停库冷备恢复到独立副本再登录。三轮均核对原账号、群、房间配置、消息、设备接管及会话撤销；后端只读探测在启动前和停服后拒绝、运行中通过。冷备恢复后的服务也已正常停止。六项打包测试通过，制品逐项比较及 201 个控制面类与已测 JAR 的核对见同目录 `comparison.log`、`package-preflight.log`。这是本机试用，不代表实机音频、TUN、目标服务器容量或正式发布验收。
 
