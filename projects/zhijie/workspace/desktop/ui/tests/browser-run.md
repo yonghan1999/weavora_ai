@@ -1,5 +1,11 @@
 # 桌面页面回归
 
+### 管理员降权时清除已打开的群管理记录（AC-008、AC-028）
+
+在 `desktop/ui` 构建后运行 `node tests/browser.mjs`。模拟手动刷新返回 `CURRENT_GRANT_REQUIRED` 时，页面立即移除旧记录、恢复群页交互并提示原因；若只是 `RATE_LIMITED`，保留当前页供重试。修复前前一项断言失败，修复后 181 项页面检查通过、无脚本异常，另有 13 项单元测试通过。日志在 `target/desktop-audit-50681f2` 的 `before.log`、`fixed.log` 和 `unit.log`。
+
+在业务 `workspace` 设置 `ZHIJIE_TEST_GROUP_BROWSER=true`，运行 `./mvnw.cmd -o -pl control-plane "-Dtest=GroupBrowserIntegrationTest#twoPagesRevokeRemoveAndReinviteThroughTheControlPlane" test`。群主从页面提升另一成员，对方打开管理记录后，群主撤销管理员角色；对方不用手动刷新即可看到记录关闭，仍可留在群聊，重新打开管理面板也没有记录入口。随后原有移除和重新邀请流程继续通过。双页面、两个 Rust 测试客户端、真实控制面和 PostgreSQL 联调 1 项通过，零跳过；见 `target/desktop-audit-50681f2/social-final.log` 和 `target/group-browser-social-6264835907337448943/scenario.log` 中的 `DEMOTION_CLEARED_OPEN_GROUP_AUDIT`。这不是原生桌面安装包或跨机走查，也不代表整项 AC 验收完成。
+
 ### 本机端到端契约入口
 
 在项目 `workspace` 运行 `node scripts/test-e2e.mjs --contract`。入口要求 Maven Wrapper、JDK 25、Rust 桌面构建依赖、Chrome/Chromium/Edge 及本机 PostgreSQL 测试依赖；Windows 的临时目录、Maven 和 Cargo 缓存应事先配置在 D 盘。测试不需要试用密码、外部邮件或真实麦克风。不要并发运行另一套写入同一构建目录的测试。

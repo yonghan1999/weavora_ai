@@ -133,7 +133,7 @@ if(command==='audio_select'){if(p.output)throw 'AUDIO_OUTPUT_SWITCH_FAILED';voic
 if(command==='audio_test_microphone'){await new Promise(r=>setTimeout(r,100));if(globalThis.microphoneTestError)throw globalThis.microphoneTestError;return {frames:300,samples:144000,peak:globalThis.microphoneTestSilent?0:0.5,rms:globalThis.microphoneTestSilent?0:0.1};}
 if(command==='audio_test_output'){await new Promise(r=>setTimeout(r,100));if(globalThis.outputTestError)throw globalThis.outputTestError;return null;}
 if(command==='product_request'){
-if(p.resource==='audit'){if(failAudit)throw 'CURRENT_GRANT_REQUIRED';const index=p.targetId?auditEntries.findIndex(item=>item.id===p.targetId)+1:0;return structuredClone(auditEntries.slice(index,index+50));}
+if(p.resource==='audit'){if(failAudit)throw failAudit;const index=p.targetId?auditEntries.findIndex(item=>item.id===p.targetId)+1:0;return structuredClone(auditEntries.slice(index,index+50));}
 if(p.resource==='invitations'||p.resource==='group-invitations'){if(failInvitations)throw 'SERVICE_UNAVAILABLE';const items=p.resource==='invitations'?invitations:sentInvitations;const cursor=p.resource==='invitations'?p.id:p.targetId;const index=cursor?items.findIndex(item=>item.id===cursor)+1:0;return structuredClone(items.slice(index,index+50));}
 if(p.resource==='invitation-accept'||p.resource==='invitation-revoke'){await new Promise(r=>setTimeout(r,invitationDelay));if(failInvitationDecision)throw 'INVITATION_NOT_AVAILABLE';if(p.resource==='invitation-accept')invitations=invitations.filter(item=>item.id!==p.id);else sentInvitations=sentInvitations.filter(item=>item.id!==p.targetId);return {};}
 if(p.resource==='owner-transfers')return structuredClone(ownerTransfers);
@@ -415,11 +415,15 @@ try {
   await shot("audit-history-1440");
   await click('[data-action="earlier-audit"]');
   await check("管理记录使用独立游标读取更早同时间记录", 'document.querySelectorAll(".audit-entry").length===3 && calls.some(x=>x.p.resource==="audit" && x.p.id==="g1" && x.p.targetId==="audit-page-49") && !!document.querySelector("[data-action=refresh-audit]")');
-  await evaluate('failAudit=true');
+  await evaluate('failAudit="RATE_LIMITED"');
   await click('[data-action="refresh-audit"]');
-  await check("记录读取失权保留列表并显示错误", 'document.querySelectorAll(".audit-entry").length===3 && document.getElementById("dialog-error").textContent.includes("没有执行")');
+  await check("记录暂时无法刷新时保留列表供重试", 'document.querySelectorAll(".audit-entry").length===3 && document.getElementById("dialog-error").textContent.includes("稍后重试")');
+  await evaluate('failAudit="CURRENT_GRANT_REQUIRED"');
+  await click('[data-action="refresh-audit"]');
+  await check("手动刷新被撤权后立即清除记录并解释原因", '!document.querySelector("[role=dialog],.audit-entry") && !document.getElementById("app").inert && document.getElementById("toast").textContent.includes("没有执行")');
   await evaluate('failAudit=false');
-  await click('[data-action="refresh-audit"]');
+  await click('[data-action="manage-group"]');
+  await click('[data-action="audit"]');
   await command("Emulation.setDeviceMetricsOverride", { width: 600, height: 700, deviceScaleFactor: 1, mobile: false });
   await check("管理记录长ID窄窗口可滚动且不溢出", 'document.querySelector(".modal").scrollHeight>document.querySelector(".modal").clientHeight && document.querySelector(".modal").scrollWidth<=document.querySelector(".modal").clientWidth');
   await shot("audit-history-600");
@@ -427,7 +431,7 @@ try {
   await evaluate('auditEntries=[]');
   await click('[data-action="refresh-audit"]');
   await check("管理记录空列表可继续刷新", 'document.querySelector("[role=dialog]").textContent.includes("暂无管理记录") && !!document.querySelector("[data-action=refresh-audit]")');
-  await evaluate('failAudit=true;emitProduct({userId:"u1"})');
+  await evaluate('failAudit="CURRENT_GRANT_REQUIRED";emitProduct({userId:"u1"})');
   await delay(900);
   await check("后台读取失权关闭不可访问的记录列表", '!document.querySelector("[role=dialog]") && !document.getElementById("app").inert');
   await evaluate('failAudit=false');

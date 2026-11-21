@@ -192,8 +192,7 @@ async function refreshOpenDialog() {
     if (applicable()) {
       deferLimitedSync(error);
       // 失权时移除已不可读取的列表；暂时失败保留列表供手动重试。
-      const code = typeof error === "string" ? error : error?.message;
-      if (["CURRENT_GRANT_REQUIRED", "RESOURCE_NOT_AVAILABLE", "GROUP_NOT_AVAILABLE"].includes(code)) closeDialog();
+      if (listAccessLost(error)) closeDialog();
       else document.getElementById("dialog-error").textContent = errorText(error);
     }
   } finally { productRefreshing = false; }
@@ -302,7 +301,10 @@ function capture() {
   const input = document.getElementById("message-input");
   if (input) s.drafts[s.groupId] = input.value;
 }
-async function run(work, { modal = false } = {}) {
+function listAccessLost(error) {
+  return ["CURRENT_GRANT_REQUIRED", "RESOURCE_NOT_AVAILABLE", "GROUP_NOT_AVAILABLE"].includes(error?.message || error);
+}
+async function run(work, { modal = false, refreshingList = false } = {}) {
   if (s.busy) return;
   s.busy = true;
   root.setAttribute("aria-busy", "true");
@@ -318,7 +320,11 @@ async function run(work, { modal = false } = {}) {
   } catch (error) {
     if (current !== epoch) return;
     const text = errorText(error);
-    if (modalRoot.firstChild && modal)
+    if (refreshingList && listAccessLost(error)) {
+      closeDialog();
+      productDirty = true;
+      notify(text);
+    } else if (modalRoot.firstChild && modal)
       document.getElementById("dialog-error").textContent = text;
     else s.error = text;
   } finally {
@@ -669,8 +675,8 @@ async function showMessageHistory(groupId, cursor, applicable = () => true) {
 }
 const actions = {
   "message-history": target => run(() => showMessageHistory(s.groupId, target.dataset.id), { modal: true }),
-  "refresh-audit": target => run(() => showAudit(target.dataset.group), { modal: true }),
-  "earlier-audit": target => run(() => showAudit(target.dataset.group, target.dataset.id), { modal: true }),
+  "refresh-audit": target => run(() => showAudit(target.dataset.group), { modal: true, refreshingList: true }),
+  "earlier-audit": target => run(() => showAudit(target.dataset.group, target.dataset.id), { modal: true, refreshingList: true }),
   "refresh-room-members": () => run(async () => { await refresh(); }),
   "assign-room-owner": () => run(async () => {
     const current = epoch, userId = s.userId, roomId = s.roomId;

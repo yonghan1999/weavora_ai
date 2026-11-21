@@ -644,6 +644,18 @@ async function socialScenario() {
   await owner.action('manage-group'); await owner.action('group-members');
   await owner.action('change-member-role'); await owner.submit();
   await owner.wait('promoted', `document.querySelector('[data-action=change-member-role]')?.dataset.role === 'MEMBER'`);
+  const ownRole = `Array.from(document.querySelectorAll('.right-panel .friend-copy')).find(row=>row.querySelector('strong')?.textContent==='我')?.querySelector('small')?.textContent`;
+  await member.wait('member sees own promotion', `${ownRole}==='管理员'`);
+  await member.action('manage-group'); await member.action('audit');
+  await member.wait('promoted admin can read group audit', `!!document.querySelector('.audit-entry')`);
+  await owner.action('change-member-role'); await owner.submit();
+  await owner.wait('demoted', `document.querySelector('[data-action=change-member-role]')?.dataset.role === 'ADMIN'`);
+  await member.wait('demoted admin loses open audit but keeps group access', `!document.querySelector('[role=dialog],.audit-entry') && ${ownRole}==='成员' && !!document.querySelector('#message-input')`);
+  await member.action('manage-group');
+  assert.equal(await member.evaluate(`!!document.querySelector('[data-action=audit]')`), false);
+  await member.action('dialog-close'); console.log('DEMOTION_CLEARED_OPEN_GROUP_AUDIT');
+  await owner.action('change-member-role'); await owner.submit();
+  await owner.wait('promoted again before removal', `document.querySelector('[data-action=change-member-role]')?.dataset.role === 'MEMBER'`);
   await owner.action('remove-group-member'); await owner.submit();
   await owner.wait('removed', `document.querySelector('#dialog-title')?.textContent==='群组成员' && !document.querySelector('[data-action=remove-group-member]')`);
   await owner.action('dialog-close'); console.log('FORMER_ADMIN_REMOVED');
