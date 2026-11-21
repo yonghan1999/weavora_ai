@@ -2,7 +2,11 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名整包：`target/trial-kit-3998fcb/zhijie-windows-x64-trial.zip`（93,088,944 字节，SHA-256：`ba97960287999b340cfe233114257123e5b58dce4316d25223a2f194e9836031`）。解压到 D 盘全新短路径，按包内 `README.md` 操作；已有数据按说明停库、冷备并恢复到新目录，不要覆盖旧目录。
+当前 Windows x64 未签名整包：`target/trial-compiler-1e00dd2/zhijie-windows-x64-trial.zip`（93,089,065 字节，SHA-256：`0e513ff689b1d0503a9bc0fb93123b34921af1934e3ef54862564eab2494073a`）。解压到 D 盘全新短路径，按包内 `README.md` 操作；不要覆盖旧目录。与上一整包逐项比对，354 项中只有后端启动脚本改变。保留 `JAVA_TOOL_OPTIONS=-XX:-UsePerfData` 时已验证实际登录、重启与冷备恢复；脚本仍拒绝编译错误。日志在新整包同目录的 `comparison.log`、`backend.log`、`lifecycle.log`。
+
+### 历史整包：首次包含 V18
+
+历史整包：`target/trial-kit-3998fcb/zhijie-windows-x64-trial.zip`（93,088,944 字节，SHA-256：`ba97960287999b340cfe233114257123e5b58dce4316d25223a2f194e9836031`）。
 
 后端更新为 V18，桌面和 Helper 与上一包字节相同，保留群聊历史页角色同步修复。新整包共 354 项：351 项未变，更新了运行权限检查类与包内说明，新增一项迁移。`target/trial-kit-3998fcb/kit-compare.log` 记录逐项比对；`lifecycle.log` 记录实际解压包的登录、消息、重启、冷备恢复、设备资格和会话撤销验证。未运行原生桌面或安装器。后端 V17 升级和回退记录见 `preview-backend.md`。
 

@@ -1,6 +1,6 @@
 {
   "desktopManifest": "target/trial-history-role-32016b8/manifest.json",
   "desktopManifestSha256": "7756140647d09c6ba32a2d0276fc1375bbd6a347ee2f4e0385f29c86167a79cd",
-  "backendZip": "target/trial-kit-3998fcb/preview-backend.zip",
-  "backendZipSha256": "e789b6f178d78110f6e396e4e80974eeae24c1b050c3b3487cea17deaf2616e5"
+  "backendZip": "target/trial-compiler-1e00dd2/preview-backend.zip",
+  "backendZipSha256": "cd10640b5edb8d15d89128f23f57548f45999b2d4779e55f6b6d2b8901a72703"
 }
