@@ -2,7 +2,13 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名试用包：`target/history-removal-kit-752ccb8/zhijie-windows-x64-trial.zip`（79,535,221 字节，SHA-256：`d806190d9a77902266020efc33a64264b561b679e0a464cc4f9843d53946f6bd`）。解压到 D 盘全新短目录，按包内 `README.md` 启动，不运行安装器。包含 `752ccb8` 退群修复：群成员确认删除消息时被移出，会自动回大厅，不会提交删除。不要用旧包的桌面程序覆盖新版。
+当前 Windows x64 未签名试用包：`target/room-owner-kit-eb37fda/zhijie-windows-x64-trial.zip`（79,535,587 字节，SHA-256：`c3251d9d7bd56684c46926b03181598221c8f7d93a8c531f8c2e373af4afb496`）。解压到 D 盘全新短目录，按包内 `README.md` 启动。桌面由 `eb37fda` 离线构建：保存房间变更后的刷新阶段不再接受退房点击；同步连接恢复时，客户端重新核对活动租约。后端与上版相同，不覆盖既有数据目录。
+
+同目录 `payload.log` 核对 NSIS 中八个产品文件；`comparison.json` 逐项比对试用 ZIP，364 个条目中只有桌面程序及其清单变化。按[成品页面核对](verify-package.md)从新 ZIP 的桌面程序中解出十个页面资源（`embedded-assets.json`）；用这些资源跑 176 项页面检查，无脚本异常（`embedded-browser.json`）。旧包页面未通过同一刷新断言，见 `target/room-ownership-82014e1/old-final.err`。`lifecycle.log` 验证解压后的登录、消息、重启、冷备恢复、设备接管、会话撤销及健康检查。原生租约复核的同提交开发证据见 `desktop/ui/tests/browser-run.md`；本次未启动原生桌面或安装器，不能把页面测试当作原生多机验收。
+
+### 历史整包：退群时关闭删除确认框
+
+历史 Windows x64 未签名试用包：`target/history-removal-kit-752ccb8/zhijie-windows-x64-trial.zip`（79,535,221 字节，SHA-256：`d806190d9a77902266020efc33a64264b561b679e0a464cc4f9843d53946f6bd`）。包含 `752ccb8` 退群修复：群成员确认删除消息时被移出，会自动回大厅，不会提交删除。
 
 同目录 `comparison.json` 记录 364 个条目中仅 `target/desktop/app/zhijie-shell.exe` 与 `target/desktop/manifest.json` 改变；后端、Helper、驱动和第三方材料逐项相同。`payload.log` 核对 NSIS 的八个产品文件，`embedded-assets.json` 记录从 ZIP 内程序解出的十个页面资源。旧程序的页面在确认框回归断言失败（`prior-browser-error.log`）；以新程序实际嵌入的资源运行同一测试，174 项通过且无脚本异常（`embedded-browser.json`）。`lifecycle.log` 记录整包后端的登录、消息、重启、冷备恢复、设备接管、票据撤销及停服健康检查。未运行原生窗口或安装器，不代表正式发布或跨平台验收。
 

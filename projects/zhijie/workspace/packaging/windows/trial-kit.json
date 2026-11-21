@@ -1,7 +1,7 @@
 {
   "noticeSourcesSha256": "a76f336e2f345dd9a5b7dc77fc5ff77e976f3597cf158657586a286d2708ba3a",
-  "desktopManifest": "target/trial-history-removal-752ccb8/manifest.json",
-  "desktopManifestSha256": "4115133b8e558e513f7ceee0e698019db0d47c303c0437d1b6c74d100f34ada2",
+  "desktopManifest": "target/trial-room-owner-eb37fda/manifest.json",
+  "desktopManifestSha256": "77fcf063781c6f3d78a491c54bbb7d7388e71c6a1f8955c7bf8acd6b4821fcef",
   "backendZip": "target/runtime-deps-0f82702/preview-backend.zip",
   "backendZipSha256": "2d8a810ab410e44e5e3539ce208dda7d776f6f92eb155b35d73000686fd84f13"
 }
