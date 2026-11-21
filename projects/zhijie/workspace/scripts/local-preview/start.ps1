@@ -18,6 +18,11 @@ $tempDirectory = (New-Item -ItemType Directory -Path "$runtime/temp" -Force).Ful
 $originalTemp = $env:TEMP
 $originalTmp = $env:TMP
 $originalComSpec = $env:ComSpec
+function Invoke-PreviewCompiler($Compiler, [string[]]$Arguments, $FailureMessage) {
+    $ErrorActionPreference = 'Continue'
+    & $Compiler @Arguments 2>&1 | ForEach-Object { Write-Output $_.ToString() }
+    if ($LASTEXITCODE -ne 0) { throw $FailureMessage }
+}
 function Request-SeedPassword {
     $secure = Read-Host "初始化试用账号密码（至少 12 位）" -AsSecureString
     $env:ZHIJIE_PREVIEW_PASSWORD = [System.Net.NetworkCredential]::new("", $secure).Password
@@ -28,13 +33,11 @@ try {
     $env:TMP = $tempDirectory
     Push-Location -LiteralPath $workspace
     try {
-        & "$JavaHome/bin/javac.exe" "-J-Djava.io.tmpdir=$tempDirectory" -J-XX:-UsePerfData -encoding UTF-8 -cp $classpath -d $runtime "$PSScriptRoot/LocalPreview.java"
+        Invoke-PreviewCompiler "$JavaHome/bin/javac.exe" @("-J-Djava.io.tmpdir=$tempDirectory", '-J-XX:-UsePerfData', '-encoding', 'UTF-8', '-cp', $classpath, '-d', $runtime, "$PSScriptRoot/LocalPreview.java") '本地启动入口编译失败'
     } finally { Pop-Location }
-    if ($LASTEXITCODE -ne 0) { throw "本地启动入口编译失败" }
     $shimOutput = [System.IO.Path]::GetFullPath("$runtime/clean-cmd.exe")
     $shimSource = [System.IO.Path]::GetFullPath("$PSScriptRoot/CleanCmd.cs")
-    & "C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe" /nologo "/out:$shimOutput" $shimSource
-    if ($LASTEXITCODE -ne 0) { throw "本机命令行兼容入口编译失败" }
+    Invoke-PreviewCompiler "C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe" @('/nologo', "/out:$shimOutput", $shimSource) '本机命令行兼容入口编译失败'
     $env:ComSpec = $shimOutput
     if (!(Test-Path -LiteralPath "$runtime/postgres/PG_VERSION")) {
         if (!$env:ZHIJIE_PREVIEW_PASSWORD) {
