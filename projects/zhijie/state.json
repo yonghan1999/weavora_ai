@@ -3,10 +3,10 @@
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "name": "织界",
-  "stage": "G_INDEPENDENT_TEST",
+  "stage": "H_RELEASE",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-11-21T19:30:03Z",
+  "updated_at": "2026-11-21T19:47:23Z",
   "retry_counts": {
     "E_IMPLEMENTATION": 1,
     "F_SELF_TEST": 3
@@ -2407,6 +2407,39 @@
       "actor": "self-tester",
       "role": "self_tester",
       "reason": "进入独立测试与质量验收",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "G_INDEPENDENT_TEST",
+      "from": "in_progress",
+      "to": "approved",
+      "at": "2026-11-21T19:47:23Z",
+      "actor": "independent-tester",
+      "role": "test_engineer",
+      "reason": "自动质量门禁通过",
+      "evidence": [
+        "tests/evidence/EXEC-20261121T194639Z-0df1fc38.json",
+        "tests/evidence/EXEC-20261121T194639Z-0df1fc38.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "H_RELEASE",
+      "from": "approved",
+      "to": "in_progress",
+      "at": "2026-11-21T19:47:23Z",
+      "actor": "independent-tester",
+      "role": "test_engineer",
+      "reason": "进入发布准备",
       "evidence": [],
       "human_authorization": false
     }

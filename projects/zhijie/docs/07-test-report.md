@@ -1,5 +1,11 @@
 # 独立测试报告：织界
 
+## 2026-11-22 本机候选复验
+
+`TC-LOCAL-REGRESSION` 在 G 阶段由 `test_engineer` 对代码树 `776ad5115025c7729893827c7719b1bbbe51b04c52c1fd58cffeac0b0f6d66f7` 重新执行，前后摘要一致，退出码 0。证据为 `tests/evidence/EXEC-20261121T194639Z-0df1fc38.json`。本轮执行 Maven/PostgreSQL、Cargo、UI 单测、真实后端双页面场景、版本配置、容量工具夹具和兼容性清单校验。REQ-001 至 REQ-028 的用例映射见 `tests/cases.json`。在本机运行的两组桌面端到端测试共 12 项，零失败、零跳过；整包另行复核的操作见交付索引。
+
+开放工作流缺陷为零。跨机、真实听辨、目标容量、外部邮件、三平台安装更新与签名均保留未验证。以下为 2026-11-05 的原基线回归和逐项范围记录。
+
 ## 实际执行记录
 
 2026-11-05，`test_engineer` 在 G 阶段对当前代码树执行 `TC-LOCAL-REGRESSION`，完整运行 Maven、真实 PostgreSQL、Cargo、UI、垂直切片、发布配置、性能和兼容性检查，退出码 0。证据：`tests/evidence/EXEC-20261105T011815Z-f0b369f0.json`。执行前后代码树摘要均为 `b070236aa74142612a11f05ec05279acebd693ae2edad770233808e61582982d`。

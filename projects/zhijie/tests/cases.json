@@ -38,12 +38,13 @@
       "status": "passed",
       "evidence": [
         "tests/evidence/EXEC-20261105T011815Z-f0b369f0.json",
-        "tests/evidence/EXEC-20261105T012243Z-4a785d17.json"
+        "tests/evidence/EXEC-20261105T012243Z-4a785d17.json",
+        "tests/evidence/EXEC-20261121T194639Z-0df1fc38.json"
       ],
-      "last_evidence": "tests/evidence/EXEC-20261105T012243Z-4a785d17.json",
-      "last_evidence_sha256": "68ec47a0671797e9e461b46493bf0ddb99fe787eeda07aa28dac0b2b03c5f004",
-      "last_check_id": "release-full-regression",
-      "last_check_stage": "H_RELEASE"
+      "last_evidence": "tests/evidence/EXEC-20261121T194639Z-0df1fc38.json",
+      "last_evidence_sha256": "97addd690330a1f7907a9c1eab5405214c07425f7b0d73c66d2fe80f610871c8",
+      "last_check_id": "independent-full-regression",
+      "last_check_stage": "G_INDEPENDENT_TEST"
     }
   ]
 }
