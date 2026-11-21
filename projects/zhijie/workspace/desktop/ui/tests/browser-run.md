@@ -16,6 +16,12 @@
 
 `target/history-role-655625e/before.log` 及 `target/group-browser-history-delete-10666207909424737445/scenario.log` 记录修复前升权未反映到历史页。修复后 `target/history-role-655625e/after.log` 记录同一用例通过，`target/group-browser-history-delete-6910613686922879330/scenario.log` 包含角色同步与删除成功标记。此处验证的是本机双页面与真实控制面，不是跨设备原生窗口验收。
 
+### 群成员被移出时关闭群聊历史与删除确认
+
+同一历史消息用例还覆盖两次在线移除。第一次成员停在有原文的历史页，移出后不操作即回大厅，看不到原文、删除按钮或群主新发的消息。成员用同一会话再次接受邀请，可读历史，但没有管理员删除权，也不会恢复前次成员身份的未发送草稿。第二次群主先提升其角色，等对方打开删除确认后再移出；确认框应自动消失，数据库仍须保留未确认删除的消息。
+
+修复前 `target/history-removal-2f44504/confirmation-before.log` 和 `target/group-browser-history-delete-1161869050233885914/scenario.log` 记录删除确认未自行消失。修复后 `target/history-removal-2f44504/confirmation-after.log` 记录历史与社交两个双页面用例通过（无跳过）；`target/group-browser-history-delete-8472106359251783938/scenario.log` 记录两次移除。`ui-unit.log` 与 `ui-browser.log` 在同一专项目录，分别记录 13 项单测和 172 项页面检查。这些是本机源码测试，不证明旧试用包已包含修复。
+
 ### Windows 试用包的页面边框与键盘焦点
 
 登录页通过浏览器实际派发 Tab 按键，检查获得键盘焦点的控件仍有轮廓线，并检查 `html`、`body`、`#app`、`.desktop-app` 没有整页边框或轮廓线。这检查的是页面 CSS，不是 Windows 窗口管理器绘制的外框。

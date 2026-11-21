@@ -352,6 +352,7 @@ async function historyDelete() {
   const control = text => `${entry(text)}?.querySelector('[data-action=delete-message]')`;
   for (const client of [owner, member]) {
     await client.action('open-group');
+    if (client === member) await client.evaluate(`document.querySelector('#message-input').value='退群前未发送的草稿'`);
     await client.action('message-history');
     await client.wait('exactly three older messages loaded', `${entries}.length===3 && ${entry('群主保留')}`);
   }
@@ -377,6 +378,35 @@ async function historyDelete() {
   await remove(member, owner, '成员自删', 1);
   await remove(owner, member, '群主代删', 2);
   console.log('HISTORY_AUTHOR_AND_MODERATOR_DELETIONS_SYNCED');
+  await owner.action('dialog-close');
+  await owner.action('manage-group'); await owner.action('group-members');
+  await member.wait('private history remains open before removal', `!!${entry('群主保留')}`);
+  await owner.action('remove-group-member'); await owner.submit();
+  await owner.wait('removed member absent from roster', `document.querySelector('#dialog-title')?.textContent==='群组成员' && !document.querySelector('[data-action=remove-group-member]')`);
+  const removedView = `document.querySelector('h1')?.textContent==='玩家大厅' && !document.querySelector('[role=dialog], [data-message-history], #message-input, [data-action=delete-message]') && !document.body.textContent.includes('群主保留')`;
+  await member.wait('removal clears open history and chat without interaction', removedView);
+  await owner.action('dialog-close');
+  await owner.evaluate(`document.querySelector('#message-input').value='离群后群主仍可发言';document.querySelector('[data-form=message]').requestSubmit()`);
+  await owner.wait('remaining owner can still chat', `Array.from(document.querySelectorAll('.message-text')).some(node=>node.textContent==='离群后群主仍可发言')`);
+  assert.equal(await member.evaluate(`(${removedView}) && !document.body.textContent.includes('离群后群主仍可发言')`), true);
+  await owner.action('manage-group'); await owner.action('invite-member');
+  await owner.evaluate(`document.querySelector('[role=dialog] [name=email]').value='member@example.test'`);
+  await owner.submit();
+  await member.action('invitation'); await member.action('accept-invitation'); await member.submit();
+  await member.wait('invitation consumed', `document.querySelector('[role=dialog]')?.textContent.includes('暂无待接受邀请')`);
+  await member.action('dialog-close'); await member.click('[data-view=groups]'); await member.action('open-group');
+  await member.wait('old membership draft is not restored on readmission', `document.querySelector('#message-input')?.value===''`);
+  await member.action('message-history');
+  await member.wait('readmitted member can reopen history without moderation rights', `!!${entry('群主保留')} && ${control('群主保留')}===null`);
+  console.log('REMOVAL_CLEARS_OPEN_HISTORY_AND_READMISSION_RESTORES_MEMBER_VIEW');
+  await owner.action('manage-group'); await owner.action('group-members');
+  await owner.action('change-member-role'); await owner.submit();
+  await member.wait('readmitted admin can moderate again', control('群主保留'));
+  await member.evaluate(`${control('群主保留')}.click()`);
+  await member.wait('moderation awaits explicit confirmation', `document.querySelector('#dialog-title')?.textContent==='删除消息'`);
+  await owner.action('remove-group-member'); await owner.submit();
+  await member.wait('removal dismisses pending confirmation without submission', removedView);
+  console.log('REMOVAL_DISMISSES_PENDING_MODERATION');
 }
 
 async function roomChannels() {

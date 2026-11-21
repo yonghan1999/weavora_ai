@@ -126,7 +126,7 @@ async function refreshProduct() {
   if (dirtyMessageGroup !== s.groupId || (s.view !== "group" && s.view !== "room")) dirtyMessageGroup = null;
   if ((!productDirty && !dirtyMessageGroup) || productRefreshing || s.busy || !s.userId || performance.now() < syncRetryAt) return;
   if (modalRoot.firstChild) {
-    if (modalDirty && modalRefresh) await refreshListDialog();
+    if (modalDirty && (modalRefresh || (s.groupId && (s.view === "group" || s.view === "room")))) await refreshOpenDialog();
     return;
   }
   // 仅聊天输入支持恢复光标；其他编辑结束后再刷新。
@@ -159,14 +159,27 @@ async function refreshProduct() {
   } finally { productRefreshing = false; }
 }
 if (bridge) setInterval(refreshProduct, 500);
-async function refreshListDialog() {
-  const list = modalRefresh, current = epoch, userId = s.userId;
-  const applicable = () => list === modalRefresh && current === epoch && userId === s.userId && !s.busy;
+async function refreshOpenDialog() {
+  const list = modalRefresh, current = epoch, userId = s.userId, groupId = s.groupId, opened = modalRoot.firstChild;
+  const applicable = () => list === modalRefresh && opened === modalRoot.firstChild && current === epoch && userId === s.userId && groupId === s.groupId && !s.busy;
   const panel = modalRoot.querySelector(".modal"), scroll = panel?.scrollTop;
   const focused = modalRoot.contains(document.activeElement) ? document.activeElement : null;
   const action = focused?.dataset.action, id = focused?.dataset.id;
   modalDirty = false; productRefreshing = true;
   try {
+    if (!list) {
+      const groups = await bridge.groups();
+      if (!applicable()) { modalDirty = true; return; }
+      if (!groups.some(group => group.id === groupId)) {
+        s.groups = groups;
+        s.rooms = s.rooms.filter(room => room.groupId !== groupId);
+        clearGroupView();
+        closeDialog();
+        render();
+      }
+      resetSyncRetry();
+      return;
+    }
     if (!await list.reload(applicable)) { modalDirty = true; return; }
     if (current === epoch && userId === s.userId) resetSyncRetry();
     if (action) {
@@ -327,6 +340,10 @@ function clearSession() {
     view: "lobby", authMode: "login",
   });
 }
+function clearGroupView() {
+  delete s.drafts[s.groupId];
+  Object.assign(s, { groupId: null, roomId: null, messages: [], groupMembers: [], members: [], view: "lobby" });
+}
 async function refresh(current = epoch, applicable = () => true) {
   const groups = await bridge.groups();
   const rooms = (
@@ -336,7 +353,7 @@ async function refresh(current = epoch, applicable = () => true) {
   if (current !== epoch || !applicable()) return;
   Object.assign(s, { groups, rooms, friends });
   if (s.groupId && !groups.some(group => group.id === s.groupId)) {
-    Object.assign(s, { groupId: null, roomId: null, messages: [], groupMembers: [], members: [], view: "lobby" });
+    clearGroupView();
     return;
   }
   if (s.view === "group" || s.view === "room") await loadContext(current, applicable);
