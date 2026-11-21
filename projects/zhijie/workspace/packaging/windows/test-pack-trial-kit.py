@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import tarfile
 import unittest
+from unittest.mock import patch
 from zipfile import ZipFile
 
 
@@ -52,6 +53,11 @@ class TrialKitTest(unittest.TestCase):
         self.index.write_text(json.dumps({'dependencies': [{'jarSha256': digest, 'jarPath': 'test.jar', 'documents': []}]}))
         self.pin_sources()
 
+        self.desktop_notice = self.root / 'desktop-LICENSE.txt'
+        self.desktop_notice.write_bytes(b'desktop notice')
+        self.enterContext(patch.object(kit, 'DESKTOP_NOTICES', {self.desktop_notice.name:
+            (self.desktop_notice.name, hashlib.sha256(self.desktop_notice.read_bytes()).hexdigest())}))
+
     def pin_sources(self):
         self.sources.write_text(json.dumps(self.notices))
         config = self.root / 'packaging/windows/trial-kit.json'
@@ -67,7 +73,8 @@ class TrialKitTest(unittest.TestCase):
         with ZipFile(self.output) as archive:
             self.assertEqual(set(archive.namelist()), {'README.md', 'ops/database/cold-backup.py', 'scripts/local-preview/trial-desktop.py',
                              'target/desktop/manifest.json', 'target/desktop/app/zhijie-shell.exe', 'backend/lib/test.jar',
-                             'third-party/test-LICENSE.txt', 'third-party/sources.json'})
+                             'third-party/test-LICENSE.txt', 'third-party/sources.json', 'third-party/desktop/desktop-LICENSE.txt'})
+            self.assertEqual(archive.read('third-party/desktop/desktop-LICENSE.txt'), self.desktop_notice.read_bytes())
             self.assertEqual(archive.read('third-party/test-LICENSE.txt'), self.notice.read_bytes())
         other = self.target / 'second.zip'
         kit.pack(self.root, other)
@@ -77,7 +84,7 @@ class TrialKitTest(unittest.TestCase):
         self.assertEqual(self.output.read_bytes(), other.read_bytes())
 
     def test_changed_input_leaves_no_kit(self):
-        for path in (self.manifest, self.backend, self.program, self.notice, self.sources):
+        for path in (self.manifest, self.backend, self.program, self.notice, self.sources, self.desktop_notice):
             original = path.read_bytes()
             with self.subTest(path=path.name):
                 path.write_bytes(original + b'changed')

@@ -1,5 +1,7 @@
 # 织界 · Windows 本机试用
 
+`third-party/desktop/` 含桌面使用的 WebView2 SDK 加载器的许可与 NOTICE、LiveKit/WebRTC 桥接层声明，以及 Helper 使用的 BoringTun 许可。Wintun 的许可仍位于 `target/desktop/app/WINTUN-LICENSE.txt`。这里不附 WebView2 Runtime，也不代表整个预编译 WebRTC 库及其第三方组件均已审核。
+
 后端依赖中，62 个 JAR 内含已索引的许可材料，另 14 个的补充原文在 `third-party/`。打开 `third-party/sources.json`，可按 JAR 文件名查到原文、上游来源和 SHA-256。Windows 内嵌数据库 JAR 的 `nativePayload` 还列出 10 个原生组件对应的 21 个 DLL、文件摘要与许可材料，另有 6 个未确认产品身份的文件。PostgreSQL 数据库本体与 Zonky 打包项目的声明分列。这不等于嵌套组件、扩展和桌面原生依赖均已审核，也不是正式分发批准。
 
 这是未签名的 Windows x64 试用包，不是安装器。需要 WebView2 Runtime、Python 3.12+、JDK 25 和 Windows PowerShell（含系统 .NET Framework 4.x 编译器）。不需要 Git、Maven、Rust 或管理员权限。仅供本机试用，不开放防火墙，也不安装驱动。试用账号不能用于真实服务。

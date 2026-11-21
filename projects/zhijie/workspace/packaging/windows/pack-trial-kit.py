@@ -9,6 +9,21 @@ import tarfile
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 
+DESKTOP_NOTICES = {
+    'WebView2-SDK-1.0.3800.47-LICENSE.txt': ('packaging/windows/trial-notices/WebView2-SDK-1.0.3800.47-LICENSE.txt',
+        '324083bf015092054be9d5851dafa1b79cbfab3331ff983476d502839515d8bb'),
+    'WebView2-SDK-1.0.3800.47-NOTICE.txt': ('packaging/windows/trial-notices/WebView2-SDK-1.0.3800.47-NOTICE.txt',
+        '106423785c5b7eba0a8e61d1837f2132e9c828e20ad530f565d981c1df60dd90'),
+    'webrtc-sys-0.3.52-NOTICE.md': ('vendor/webrtc-sys-0.3.52/NOTICE.md',
+        'd6aea75749fea86fda6bf81453bfb507a005de04d21d8a77ef9625fd19c39cc7'),
+    'LiveKit-bridge-Apache-2.0.txt': ('vendor/LICENSE-APACHE-2.0',
+        'cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30'),
+    'BoringTun-0.7.1-LICENSE.md': ('docs/engineering/cargo-upstream-license-materials/texts/'
+        '6dbef24708bad8c727bd80cca58ba8aa1637cdcb2cc6e9a31ea49235717e9391.txt',
+        '6dbef24708bad8c727bd80cca58ba8aa1637cdcb2cc6e9a31ea49235717e9391'),
+}
+
+
 def checked_bytes(path, digest):
     if path.resolve(strict=True) != path or not path.is_file():
         raise ValueError('候选文件不是普通本地文件')
@@ -119,6 +134,8 @@ def pack(workspace, output):
             try:
                 with ZipFile(stream, 'w') as archive:
                     include_notices(archive, backend, workspace, spec['noticeSourcesSha256'])
+                    for name, (path, digest) in DESKTOP_NOTICES.items():
+                        include(archive, 'third-party/desktop/' + name, checked_bytes(workspace / path, digest))
                     include(archive, 'README.md', (packaging / 'trial-kit-guide.md').read_bytes())
                     include(archive, 'ops/database/cold-backup.py', (workspace / 'ops/database/cold-backup.py').read_bytes())
                     include(archive, 'scripts/local-preview/trial-desktop.py', (workspace / 'scripts/local-preview/trial-desktop.py').read_bytes())

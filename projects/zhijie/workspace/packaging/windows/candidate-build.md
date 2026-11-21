@@ -2,7 +2,17 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名整包：`target/postgres-native-abe2b71/zhijie-windows-x64-trial.zip`（79,464,268 字节，SHA-256：`2cd7967ebef69a23aa71ae53059770de032809438838ebb71f07ec3df881dc87`）。解压到 D 盘全新短目录，按 `README.md` 试用。仅更新说明、材料索引和 12 份许可材料，不改程序、数据库文件或迁移。
+当前 Windows x64 未签名整包：`target/desktop-materials-fd4eeec/zhijie-windows-x64-trial.zip`（79,476,944 字节，SHA-256：`b965b616853f1c6068b297f591e0ba0f220822170c3cae9729fa317b49322647`）。相较上一包仅更新 README，在 `third-party/desktop/` 增加五份材料。桌面、Helper、Wintun、后端及所有其他既有文件未变，不需要为体验功能更换旧包。
+
+- **WebView2 SDK 加载器**：锁定的 `webview2-com-sys 0.39.1` crate（SHA-256 `b3a07132775117d6065853d9d1178157b8c90e228de47129d6bce2c7edebedfb`）的 x64 静态库、DLL 和导入库均与 [Microsoft.Web.WebView2 1.0.3800.47](https://www.nuget.org/packages/Microsoft.Web.WebView2/1.0.3800.47) 的对应文件字节相同（NuGet 包 SHA-256 `56c9f26bdd07916a2d1949fb58a5c7e434dfa1173577dca879206050c4e718db`）。MSVC 绑定声明链接 `WebView2LoaderStatic.lib`，库 SHA-256 `89c6b872783b8f6c3cedbff618adb42082d455c615453ae10cfc753f1e8f25d8`。其 `loader_impl.obj` 的一段 80 字节代码与当前 shell 的 `.text` 字节相同（文件偏移 29435286，片段 SHA-256 `893feeb95d7cecdd3a08a57be43024e6923a8baac05764c1cafa4a37cb5f03bc`），这是链接配置之外的制品旁证，不是完整链接图。SDK NOTICE 字节不变，LICENSE 仅补末尾换行。不要把静态加载器与需另行安装的 WebView2 Runtime 混为一谈。
+- **WebRTC 桥接**：当前 shell 中可见 `libwebrtc` 标记；包中保留本项目固定的 Apache 2.0 正文及 `webrtc-sys 0.3.52` NOTICE，与已核对归档中的 NOTICE 字节一致。它包含补丁、桥接和构建工具声明，不替代完整 WebRTC 预编译库及其第三方编解码器的材料。
+- **Helper**：可执行文件中可见 `boringtun` 标记，项目锁定 BoringTun 0.7.1，包中附[精确上游提交的 Cloudflare 许可](https://github.com/cloudflare/boringtun/blob/051c9d47dc9c5cb36e461b7d36dcd673820dc98b/LICENSE.md)。沿用仓库内已收集的正文，不把 Helper 所有依赖都归入此许可。Wintun 声明仍与驱动同目录。
+
+同目录 `comparison.json` 记录整包差异及 SDK 文件摘要，`lifecycle.log` 记录实际整包后端回归。上述检查没有启动原生桌面、安装程序或授予正式发布批准。
+
+### 历史整包：内嵌数据库原生组件
+
+历史整包：`target/postgres-native-abe2b71/zhijie-windows-x64-trial.zip`（79,464,268 字节，SHA-256：`2cd7967ebef69a23aa71ae53059770de032809438838ebb71f07ec3df881dc87`）。仅更新说明、材料索引和 12 份许可材料，不改程序、数据库文件或迁移。
 
 在实际试用包的 Windows PostgreSQL JAR 内只读遍历 `postgres-windows-x86_64.txz`，找到 121 个 EXE/DLL、60 个扩展控制文件（不表示 60 个扩展已启用）。同目录 `inventory.json` 记录路径、字节、SHA-256 及可读的 PE 版本资源。94 个文件自报 PostgreSQL，21 个文件的产品/版本资源可关联到 ICU、OpenSSL、curl、libiconv、gettext、LZ4、libxml2、Zstandard、wxWidgets 和 zlib。版本字段不是构建来源的独立证明。包内 `third-party/sources.json` 绑定这 21 个 DLL 的字节与补充材料，另保留 6 个没有产品名称的原生文件摘要；打包时校验嵌套归档及所列成员，不解压执行 DLL。
 
