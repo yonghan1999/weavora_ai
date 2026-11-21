@@ -125,12 +125,24 @@ class GroupBrowserIntegrationTest {
             var original = rooms.startActivity(owner, rooms.createRoom(owner, group.id(), "原房间", "", "", null).id());
             var target = rooms.startActivity(owner, rooms.createRoom(owner, group.id(), "密码房", "", "", "room-" + password).id());
             var repository = context.getBean(ActivityRepository.class);
+            var coordinator = context.getBean(ActivityCoordinator.class);
+            var identity = context.getBean(IdentityService.class);
+            for (int seat = 0; seat < 11; seat++) {
+                String user = UUID.randomUUID().toString(), email = "seat-" + seat + "@example.test";
+                identities.insertUser(new UserAccount(user, email, AccountStatus.ACTIVE, hash, Instant.now()));
+                groups.acceptInvitation(user, groups.invite(owner, group.id(), user).id());
+                var tokens = identity.login(email, password, "seat-" + seat);
+                coordinator.join(identity.authenticateSession("Bearer " + tokens.accessToken()), target.roomId(), "room-" + password, UUID.randomUUID().toString());
+            }
             runBrowser(context, password, "protected-switch", () -> {
+                assertThat(repository.countOccupied(target.id())).isEqualTo(12);
                 assertThat(repository.findAccountActivity(member).orElseThrow().activityId()).isEqualTo(original.id());
                 assertThat(repository.findLatestLease(target.id(), member)).isEmpty();
                 var lease = repository.findLatestLease(original.id(), member).orElseThrow();
-                context.getBean(ActivityCoordinator.class).heartbeat(member, original.id(), lease.deviceId(), lease.id(), lease.activityGeneration(), lease.memberGeneration());
+                coordinator.heartbeat(member, original.id(), lease.deviceId(), lease.id(), lease.activityGeneration(), lease.memberGeneration());
             });
+            assertThat(repository.countOccupied(target.id())).isEqualTo(12);
+            assertThat(repository.findLatestLease(target.id(), owner).orElseThrow().revokedAt()).isNotNull();
             assertThat(repository.findAccountActivity(member).orElseThrow().activityId()).isEqualTo(target.id());
             assertThat(repository.findLatestLease(original.id(), member).orElseThrow().revokedAt()).isNotNull();
             assertThat(repository.findLatestLease(target.id(), member).orElseThrow().revokedAt()).isNull();

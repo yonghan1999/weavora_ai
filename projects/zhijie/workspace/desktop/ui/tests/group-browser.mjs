@@ -286,13 +286,17 @@ async function protectedRoomSwitch() {
   await member.wait('ordinary member must enter a password', `${input}?.required && ${input}.validity.valueMissing`);
   await member.evaluate(`${input}.value='wrong'`); await member.submit();
   await member.wait('wrong password explained in dialog', `document.querySelector('#dialog-error')?.textContent==='房间密码不正确。'`);
+  await member.evaluate(`${input}.value=${JSON.stringify('room-' + password)}`); await member.submit();
+  await member.wait('full room explained in the same dialog', `document.querySelector('#dialog-error')?.textContent==='房间已满，请稍后再试。' && !!${input}`);
   assert.equal(await member.evaluate(`document.querySelector('.voice-now strong')?.textContent`), '原房间');
   const retained = await activity();
   assert.equal(retained.activityId, original.activityId);
   assert.equal(retained.leaseId, original.leaseId);
   writeFileSync(join(process.argv[2], 'ready'), '', { flag: 'wx' });
   await until('original heartbeat accepted before retry', () => existsSync(join(process.argv[2], 'checked')));
-  await member.evaluate(`${input}.value=${JSON.stringify('room-' + password)}`); await member.submit();
+  await owner.action('leave'); await owner.submit();
+  await owner.wait('owner released one seat', `!document.querySelector('.voice-now')`);
+  await member.submit();
   await member.wait('retry entered protected room', `!document.querySelector('[role=dialog]') && document.querySelector('.room-heading h1')?.textContent==='密码房'`);
   const switched = await activity();
   assert.notEqual(switched.activityId, original.activityId);

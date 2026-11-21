@@ -118,7 +118,7 @@ calls.push({command,p});
 if(command==='session_login'){await new Promise(r=>setTimeout(r,80));if(failLogin)throw 'SERVICE_UNAVAILABLE';return snapshot();}
 if(command==='session_logout')return {userId:null,activity:null,service:'DISCONNECTED',lastErrorCode:'LOGOUT_CLEANUP_PENDING'};
 if(command==='group_list'){if(globalThis.holdGroupList)await new Promise(resolve=>globalThis.releaseGroupList=resolve);return [...(globalThis.groupRemoved?[]:[group]),...(globalThis.extraGroups??[])];}if(command==='room_list')return p.groupId===group.id?[room]:[];
-if(command==='activity_join'){if(globalThis.changedRoomPassword && p.password!=='updated')throw 'ROOM_PASSWORD_INVALID';activity={activityId:'a1',leaseId:'lease-room',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
+if(command==='activity_join'){if(globalThis.joinDenial)throw globalThis.joinDenial;if(globalThis.changedRoomPassword && p.password!=='updated')throw 'ROOM_PASSWORD_INVALID';activity={activityId:'a1',leaseId:'lease-room',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
 if(command==='activity_leave'){activity=null;return snapshot();}
 if(command==='voice_connect'){if(globalThis.holdVoice)await new Promise(done=>globalThis.resumeVoice=done);voice.state='FAILED';voice.failureCode='VOICE_CAPACITY_LIMITED';throw 'VOICE_CAPACITY_LIMITED';}
 if(command==='voice_snapshot'){if(globalThis.failVoiceRead)throw 'SERVICE_UNAVAILABLE';return structuredClone(voice);}
@@ -638,6 +638,12 @@ try {
   await evaluate('globalThis.holdVoice=true;globalThis.changedRoomPassword=true');
   await click('[data-action="join-room"]');
   await check('无密码房不显示多余输入框', '!document.querySelector("[data-form=dialog] [name=password]")');
+  for (const [code, message] of [['CAPACITY_FULL', '房间已满，请稍后再试。'], ['ROOM_PAUSED', '房间已暂停加入，请等管理者重新开放。']]) {
+    await evaluate(`globalThis.joinDenial=${JSON.stringify(code)}`);
+    await click('[data-form=dialog] .primary');
+    await check(`入房被拒时说明原因 ${code}，不启动通道`, `document.querySelector('#dialog-error')?.textContent===${JSON.stringify(message)} && !activity && !calls.some(call=>['voice_connect','network_connect'].includes(call.command))`);
+  }
+  await evaluate('globalThis.joinDenial=null');
   await click('[data-form=dialog] .primary');
   await check('确认期间房间改为需密码时原窗可重试', 'document.querySelector("[data-form=dialog] [name=password]")?.required && document.querySelector("#dialog-error")?.textContent==="请输入房间密码。" && !activity');
   await fill('[data-form=dialog] [name=password]', 'updated');
