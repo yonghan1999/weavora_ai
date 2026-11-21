@@ -7,16 +7,6 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 
-TRIAL_NOTICES = {
-    'HikariCP-6.3.3-LICENSE.txt': ('lib/HikariCP-6.3.3.jar',
-        '709f378c05756280939ce50fc1b1f1a53bb8e1899dc1b249f21f12703640b48b',
-        '73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68'),
-    'postgresql-17.5-COPYRIGHT.txt': ('lib/embedded-postgres-binaries-windows-amd64-17.5.0.jar',
-        '06ced3b3267c569ffb3f85544aac0075926dd81bf78bd5247abb1aa9fe994d6b',
-        'e3822c4797fadcab31a3fc73f75c28ac20c73d72b565da91e9974cf9398ef4d2'),
-}
-
-
 def checked_bytes(path, digest):
     if path.resolve(strict=True) != path or not path.is_file():
         raise ValueError('候选文件不是普通本地文件')
@@ -31,6 +21,43 @@ def include(archive, name, data):
     entry.create_system = 3
     entry.external_attr = 0o100644 << 16
     archive.writestr(entry, data, compress_type=ZIP_DEFLATED, compresslevel=5)
+
+
+def include_notices(archive, backend, workspace, source_digest):
+    directory = workspace / 'packaging/windows/trial-notices'
+    data = checked_bytes(directory / 'sources.json', source_digest)
+    sources = json.loads(data)
+    binary_index = workspace / 'docs/engineering/maven-binary-license-originals/manifest.json'
+    indexed = {row['jarSha256']: row for row in json.loads(binary_index.read_bytes())['dependencies']}
+    required = set()
+    seen = set()
+    for item in backend.infolist():
+        if not item.filename.lower().endswith('.jar'):
+            continue
+        name = Path(item.filename).name
+        if item.filename != 'lib/' + name or name.casefold() in seen:
+            raise ValueError(f'依赖路径重复或不符：{name}')
+        seen.add(name.casefold())
+        with backend.open(item) as member:
+            digest = hashlib.file_digest(member, 'sha256').hexdigest()
+        row = indexed.get(digest)
+        if not row or Path(row['jarPath']).name != name:
+            raise ValueError(f'实际 JAR 与许可索引不符：{name}')
+        if not row['documents']:
+            required.add(name)
+            entry = sources['jars'].get(name)
+            if not entry or entry['sha256'] != digest or not entry['materials']:
+                raise ValueError(f'缺少与依赖对应的补充材料：{name}')
+    if required != sources['jars'].keys():
+        raise ValueError('补充材料与实际随包依赖集合不符')
+    referenced = {material['file'] for entry in sources['jars'].values() for material in entry['materials']}
+    if referenced != sources['documents'].keys():
+        raise ValueError('补充原文与来源索引不符')
+    for name, digest in sources['documents'].items():
+        if Path(name).name != name or not name.endswith('.txt'):
+            raise ValueError('补充原文路径不符')
+        include(archive, 'third-party/' + name, checked_bytes(directory / name, digest))
+    include(archive, 'third-party/sources.json', data)
 
 
 def pack(workspace, output):
@@ -52,13 +79,7 @@ def pack(workspace, output):
         with ZipFile(source) as backend, output.open('xb') as stream:
             try:
                 with ZipFile(stream, 'w') as archive:
-                    for notice, (jar, jar_digest, notice_digest) in TRIAL_NOTICES.items():
-                        if backend.namelist().count(jar) != 1:
-                            raise ValueError(f'许可材料对应的依赖不唯一或不存在：{jar}')
-                        with backend.open(jar) as member:
-                            if hashlib.file_digest(member, 'sha256').hexdigest() != jar_digest:
-                                raise ValueError(f'许可材料对应的依赖摘要不符：{jar}')
-                        include(archive, 'third-party/' + notice, checked_bytes(packaging / 'trial-notices' / notice, notice_digest))
+                    include_notices(archive, backend, workspace, spec['noticeSourcesSha256'])
                     include(archive, 'README.md', (packaging / 'trial-kit-guide.md').read_bytes())
                     include(archive, 'ops/database/cold-backup.py', (workspace / 'ops/database/cold-backup.py').read_bytes())
                     include(archive, 'scripts/local-preview/trial-desktop.py', (workspace / 'scripts/local-preview/trial-desktop.py').read_bytes())

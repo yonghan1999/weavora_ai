@@ -2,7 +2,15 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名整包：`target/runtime-deps-0f82702/zhijie-windows-x64-trial.zip`（79,370,107 字节，SHA-256：`cb58c11e5987c060dee2954e85f770acedd74e2b53dc5948a4594096e5717679`）。解压到 D 盘全新短目录，按 `README.md` 操作。相较上一包减少 13,723,886 字节：移除 28 个仅由测试框架引入的 JAR，只改启动 classpath，未改桌面、后端类、迁移、保留的依赖和许可原文。
+当前 Windows x64 未签名整包：`target/notice-sources-884e40f/zhijie-windows-x64-trial.zip`（79,411,840 字节，SHA-256：`d5956c1ff38b938ecb2767a555f095dfba439682d3a11ee056398080d45332e0`）。解压到 D 盘全新短目录，按 `README.md` 试用。与上一版对比，桌面、后端、76 个 JAR 以及数据库迁移字节完全一致；只更新了 README 并新增 17 项第三方材料或索引。
+
+对实际整包逐项复核：62 个 JAR 内有 120 个已索引许可或声明条目；余下 14 个通过 `third-party/sources.json` 绑定版本、JAR 摘要和 18 份去重原文。包括 Logback 的两种许可选项、MyBatis NOTICE、PostgreSQL 数据库本体与 Zonky 打包项目的不同声明。精确来源随包可查，正文可离线读取。缺少 JAR 记录、补充材料或摘要不符会中止打包。整包同目录 `comparison.json` 是字节比对记录，`lifecycle.log` 是本地后端回归记录。
+
+这是顶层 Maven 依赖的**材料覆盖**，不是逐项许可审核、完整 SBOM、第三方分发批准或跨平台验收。仍须核查嵌套二进制和桌面原生组件。
+
+### 历史整包：仅附带试用运行依赖
+
+历史整包：`target/runtime-deps-0f82702/zhijie-windows-x64-trial.zip`（79,370,107 字节，SHA-256：`cb58c11e5987c060dee2954e85f770acedd74e2b53dc5948a4594096e5717679`）。相较上一包减少 13,723,886 字节：移除 28 个仅由测试框架引入的 JAR，只改启动 classpath，未改桌面、后端类、迁移、保留的依赖和许可原文。
 
 Maven 离线解析得到 69 个常规运行依赖与 7 个 Windows 本机数据库专用组件（Zonky、Windows 数据库载荷、XZ 和四个 Commons 库）。默认构建不启用试用 profile；两组运行依赖均已独立解析。76 个随包 JAR 均与索引 SHA-256 相符；62 个已有包内许可原文，另两项有上游补充材料（PostgreSQL 材料仅覆盖数据库本体），其余 12 项仍缺原文。此结果不是正式发布批准。
 

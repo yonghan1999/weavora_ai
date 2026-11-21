@@ -1,6 +1,6 @@
 # 织界 · Windows 本机试用
 
-包内 `third-party/` 附有 HikariCP 6.3.3 的 `LICENSE` 和内嵌 PostgreSQL 17.5 数据库本体的 `COPYRIGHT`。它们不是完整的第三方声明，不覆盖 PostgreSQL 随附的其他库，也不表示已批准正式分发。
+后端依赖中，62 个 JAR 内含已索引的许可材料，另 14 个的补充原文在 `third-party/`。打开 `third-party/sources.json`，可按 JAR 文件名查到原文、上游来源和 SHA-256。PostgreSQL 数据库本体与 Zonky 打包项目的声明分列；这份材料不代表已审核其中的 DLL、扩展或桌面原生依赖，也不是正式分发批准。
 
 这是未签名的 Windows x64 试用包，不是安装器。需要 WebView2 Runtime、Python 3.12+、JDK 25 和 Windows PowerShell（含系统 .NET Framework 4.x 编译器）。不需要 Git、Maven、Rust 或管理员权限。仅供本机试用，不开放防火墙，也不安装驱动。试用账号不能用于真实服务。
 

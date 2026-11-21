@@ -1,4 +1,5 @@
 {
+  "noticeSourcesSha256": "e73c40d6bbbcede4c680d600ba0eddcadd654af918de99d1501cf237ad0f4b7e",
   "desktopManifest": "target/trial-history-role-32016b8/manifest.json",
   "desktopManifestSha256": "7756140647d09c6ba32a2d0276fc1375bbd6a347ee2f4e0385f29c86167a79cd",
   "backendZip": "target/runtime-deps-0f82702/preview-backend.zip",

@@ -9,7 +9,8 @@ desktop/shell/Entitlements.plist text eol=lf
 packaging/windows/installer-hooks.nsh text eol=lf
 packaging/windows/build-candidate.ps1 text eol=lf
 packaging/windows/verify-package.py text eol=lf
-packaging/windows/trial-notices/*.txt -text
+packaging/windows/trial-notices/*.txt -text -whitespace
+packaging/windows/trial-notices/sources.json text eol=lf
 packaging/windows/prepare-wintun.py text eol=lf
 scripts/local-preview/start-helper.ps1 text eol=crlf
 scripts/local-preview/HelperInstallPolicy.psm1 text eol=crlf

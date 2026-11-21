@@ -1,0 +1,198 @@
+{
+  "documents": {
+    "Apache-2.0-common.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "HikariCP-6.3.3-LICENSE.txt": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
+    "flyway-LICENSE.md.txt": "d297225511d7dfbb44165c7cd0657b645a0e65971bb2460f61e03fbdebfef318",
+    "flyway-LICENSE.txt": "73332bc915a16b4ca4bb913d4a55b66e865c6ef0d5feb289063248556fab48b8",
+    "hibernate-copyright.txt": "16e9248fca7cc4fdfa22603d919cc30278f9b851ea6380dbd7d8c9b73c411b82",
+    "jakarta-NOTICE.md.txt": "43bb7eb743c48765f9f12635faa0c4ca2fde72b7740c1b85cf2c49d9dbaaee4f",
+    "jakarta-copyright.txt": "3305389ff5d7f6cc7e9af04be67d3085b0a9b92cc3faeaefa00336128cf8f85c",
+    "lag-LICENSE.txt": "50b43424ea5a8855c49f89e4d3a00fd55fb572ecd0c872f4215f63f654983c6c",
+    "logback-logback-classic-LICENSE.txt": "94a99c6ee7e8b5ba3ef66a1d234c22a55c149e93584040d66a7f6694d552e7ea",
+    "mybatis-LICENSE.txt": "9818ec66553209eebf329d4bf4bc6c992e1ac340bd3314c25ee478b8ce2a7bac",
+    "mybatis-NOTICE.txt": "305d0c943c6d7bd5ebda181a54d33b0285fd04caedf0cf1264aa7428342216b0",
+    "postgresql-17.5-COPYRIGHT.txt": "e3822c4797fadcab31a3fc73f75c28ac20c73d72b565da91e9974cf9398ef4d2",
+    "publisher-EPL-1.0.txt": "f3d8dc494be2e7ea9cd31ac2fb902e35dce7ff8181b9b30d05861b47c339cb25",
+    "publisher-LGPL-2.1.txt": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
+    "snake-LICENSE.txt": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+    "xz-COPYING.txt": "1e77ef26cee5216d6531e49cbf2f6111a0270dc7b322fc65477063c5aff88766",
+    "xz-LICENSES-0BSD.txt": "0b01625d853911cd0e2e088dcfb743261034a091bb379246cb25a14cc4c74bf1",
+    "zbin-LICENSE.txt": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+  },
+  "jars": {
+    "HikariCP-6.3.3.jar": {
+      "sha256": "709f378c05756280939ce50fc1b1f1a53bb8e1899dc1b249f21f12703640b48b",
+      "materials": [
+        {
+          "file": "HikariCP-6.3.3-LICENSE.txt",
+          "source": "https://raw.githubusercontent.com/brettwooldridge/HikariCP/refs/tags/HikariCP-6.3.3/LICENSE"
+        }
+      ]
+    },
+    "LatencyUtils-2.0.3.jar": {
+      "sha256": "a32a9ffa06b2f4e01c5360f8f9df7bc5d9454a5d373cd8f361347fa5a57165ec",
+      "materials": [
+        {
+          "file": "lag-LICENSE.txt",
+          "source": "https://raw.githubusercontent.com/LatencyUtils/LatencyUtils/refs/tags/LatencyUtils-2.0.3/LICENSE"
+        }
+      ]
+    },
+    "embedded-postgres-2.2.2.jar": {
+      "sha256": "9b1722ccfbfb441b7b1440edd35c1a229b173d82ab25d6111dd8642b48ba66fa",
+      "materials": [
+        {
+          "file": "Apache-2.0-common.txt",
+          "source": "https://raw.githubusercontent.com/zonkyio/embedded-postgres/refs/tags/v2.2.2/LICENSE.txt"
+        }
+      ]
+    },
+    "embedded-postgres-binaries-windows-amd64-17.5.0.jar": {
+      "sha256": "06ced3b3267c569ffb3f85544aac0075926dd81bf78bd5247abb1aa9fe994d6b",
+      "materials": [
+        {
+          "file": "postgresql-17.5-COPYRIGHT.txt",
+          "source": "https://raw.githubusercontent.com/postgres/postgres/refs/tags/REL_17_5/COPYRIGHT"
+        },
+        {
+          "file": "zbin-LICENSE.txt",
+          "source": "https://raw.githubusercontent.com/zonkyio/embedded-postgres-binaries/refs/tags/v17.5.0/LICENSE"
+        }
+      ]
+    },
+    "flyway-database-postgresql-11.7.2.jar": {
+      "sha256": "1d586e14ea772c75613df2c27ddc20f5c065e8a32283815338611af82e48f9a2",
+      "materials": [
+        {
+          "file": "flyway-LICENSE.txt",
+          "source": "https://raw.githubusercontent.com/flyway/flyway/refs/tags/flyway-11.7.2/LICENSE.txt"
+        },
+        {
+          "file": "flyway-LICENSE.md.txt",
+          "source": "https://raw.githubusercontent.com/flyway/flyway/refs/tags/flyway-11.7.2/LICENSE.md"
+        }
+      ]
+    },
+    "hibernate-validator-8.0.3.Final.jar": {
+      "sha256": "2ad24670fd08e21d3f43d3105d5326bd5ef6b01e819c5cd103823866b954517e",
+      "materials": [
+        {
+          "file": "hibernate-copyright.txt",
+          "source": "https://raw.githubusercontent.com/hibernate/hibernate-validator/refs/tags/8.0.3.Final/copyright.txt"
+        },
+        {
+          "file": "Apache-2.0-common.txt",
+          "source": "https://raw.githubusercontent.com/hibernate/hibernate-validator/refs/tags/8.0.3.Final/license.txt"
+        }
+      ]
+    },
+    "jakarta.validation-api-3.0.2.jar": {
+      "sha256": "291c25e6910cc6a7ebd96d4c6baebf6d7c37676c5482c2d96146e901b62c1fc9",
+      "materials": [
+        {
+          "file": "jakarta-copyright.txt",
+          "source": "https://raw.githubusercontent.com/jakartaee/validation/refs/tags/3.0.2/copyright.txt"
+        },
+        {
+          "file": "Apache-2.0-common.txt",
+          "source": "https://raw.githubusercontent.com/jakartaee/validation/refs/tags/3.0.2/license.txt"
+        },
+        {
+          "file": "jakarta-NOTICE.md.txt",
+          "source": "https://raw.githubusercontent.com/jakartaee/validation/refs/tags/3.0.2/NOTICE.md"
+        }
+      ]
+    },
+    "jboss-logging-3.6.1.Final.jar": {
+      "sha256": "5e08a4b092dc85b337f0910a740571d8720cfa565fabd880a8caf94a657ca416",
+      "materials": [
+        {
+          "file": "Apache-2.0-common.txt",
+          "source": "https://raw.githubusercontent.com/jboss-logging/jboss-logging/refs/tags/3.6.1.Final/LICENSE.txt"
+        }
+      ]
+    },
+    "logback-classic-1.5.18.jar": {
+      "sha256": "3e1533d0321f8815eef46750aee0111b41554f9a4644c3c4d2d404744b09f60f",
+      "materials": [
+        {
+          "file": "logback-logback-classic-LICENSE.txt",
+          "source": "https://raw.githubusercontent.com/qos-ch/logback/refs/tags/v_1.5.18/logback-classic/LICENSE.txt"
+        },
+        {
+          "file": "publisher-EPL-1.0.txt",
+          "source": "https://raw.githubusercontent.com/spdx/license-list-data/v3.26.0/text/EPL-1.0.txt"
+        },
+        {
+          "file": "publisher-LGPL-2.1.txt",
+          "source": "https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt"
+        }
+      ]
+    },
+    "logback-core-1.5.18.jar": {
+      "sha256": "85139e7b57b464f8e5e36326dd81317648bed199ccc4f98cd42585f8d7571027",
+      "materials": [
+        {
+          "file": "logback-logback-classic-LICENSE.txt",
+          "source": "https://raw.githubusercontent.com/qos-ch/logback/refs/tags/v_1.5.18/logback-core/LICENSE.txt"
+        },
+        {
+          "file": "publisher-EPL-1.0.txt",
+          "source": "https://raw.githubusercontent.com/spdx/license-list-data/v3.26.0/text/EPL-1.0.txt"
+        },
+        {
+          "file": "publisher-LGPL-2.1.txt",
+          "source": "https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt"
+        }
+      ]
+    },
+    "mybatis-spring-boot-autoconfigure-3.0.5.jar": {
+      "sha256": "2ea914d95ab0b9a8f7aaf59088d927855394c65f20ad1bc80c4d4fbd51b077a9",
+      "materials": [
+        {
+          "file": "mybatis-LICENSE.txt",
+          "source": "https://raw.githubusercontent.com/mybatis/spring-boot-starter/refs/tags/mybatis-spring-boot-3.0.5/LICENSE"
+        },
+        {
+          "file": "mybatis-NOTICE.txt",
+          "source": "https://raw.githubusercontent.com/mybatis/spring-boot-starter/refs/tags/mybatis-spring-boot-3.0.5/NOTICE"
+        }
+      ]
+    },
+    "mybatis-spring-boot-starter-3.0.5.jar": {
+      "sha256": "25e8f0a047a7c2140ded81ae92f3d31dcf84f220a99976ec5e59923e3d8e5183",
+      "materials": [
+        {
+          "file": "mybatis-LICENSE.txt",
+          "source": "https://raw.githubusercontent.com/mybatis/spring-boot-starter/refs/tags/mybatis-spring-boot-3.0.5/LICENSE"
+        },
+        {
+          "file": "mybatis-NOTICE.txt",
+          "source": "https://raw.githubusercontent.com/mybatis/spring-boot-starter/refs/tags/mybatis-spring-boot-3.0.5/NOTICE"
+        }
+      ]
+    },
+    "snakeyaml-2.4.jar": {
+      "sha256": "ef779af5d29a9dde8cc70ce0341f5c6f7735e23edff9685ceaa9d35359b7bb7f",
+      "materials": [
+        {
+          "file": "snake-LICENSE.txt",
+          "source": "https://api.bitbucket.org/2.0/repositories/snakeyaml/snakeyaml/src/558c81a4893726c3c03f5c433fed69e79001899e/LICENSE.txt"
+        }
+      ]
+    },
+    "xz-1.11.jar": {
+      "sha256": "0a4077f6aeae2865532a564807af8d30c26acc6f63b7928d93bd7ab1f2190449",
+      "materials": [
+        {
+          "file": "xz-COPYING.txt",
+          "source": "https://raw.githubusercontent.com/tukaani-project/xz-java/refs/tags/v1.11/COPYING"
+        },
+        {
+          "file": "xz-LICENSES-0BSD.txt",
+          "source": "https://raw.githubusercontent.com/tukaani-project/xz-java/refs/tags/v1.11/LICENSES/0BSD.txt"
+        }
+      ]
+    }
+  }
+}

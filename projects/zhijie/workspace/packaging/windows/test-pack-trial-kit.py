@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
 from zipfile import ZipFile
 
 
@@ -42,9 +41,21 @@ class TrialKitTest(unittest.TestCase):
         self.notice = self.root / 'packaging/windows/trial-notices/test-LICENSE.txt'
         self.notice.parent.mkdir()
         self.notice.write_bytes(b'upstream notice\n')
-        self.notices = {self.notice.name: ('lib/test.jar', hashlib.sha256(b'library').hexdigest(),
-                                          hashlib.sha256(self.notice.read_bytes()).hexdigest())}
-        self.enterContext(patch.object(kit, 'TRIAL_NOTICES', self.notices))
+        digest = hashlib.sha256(b'library').hexdigest()
+        self.sources = self.notice.parent / 'sources.json'
+        self.notices = {'documents': {self.notice.name: hashlib.sha256(self.notice.read_bytes()).hexdigest()},
+                        'jars': {'test.jar': {'sha256': digest, 'materials': [{'file': self.notice.name, 'source': 'https://example.org/LICENSE'}]}}}
+        self.index = self.root / 'docs/engineering/maven-binary-license-originals/manifest.json'
+        self.index.parent.mkdir(parents=True)
+        self.index.write_text(json.dumps({'dependencies': [{'jarSha256': digest, 'jarPath': 'test.jar', 'documents': []}]}))
+        self.pin_sources()
+
+    def pin_sources(self):
+        self.sources.write_text(json.dumps(self.notices))
+        config = self.root / 'packaging/windows/trial-kit.json'
+        spec = json.loads(config.read_bytes())
+        spec['noticeSourcesSha256'] = hashlib.sha256(self.sources.read_bytes()).hexdigest()
+        config.write_text(json.dumps(spec))
 
     def test_reproducible_allowlist_excludes_local_data(self):
         (self.program.parent / 'unexpected.dll').write_bytes(b'unrelated')
@@ -54,7 +65,7 @@ class TrialKitTest(unittest.TestCase):
         with ZipFile(self.output) as archive:
             self.assertEqual(set(archive.namelist()), {'README.md', 'ops/database/cold-backup.py', 'scripts/local-preview/trial-desktop.py',
                              'target/desktop/manifest.json', 'target/desktop/app/zhijie-shell.exe', 'backend/lib/test.jar',
-                             'third-party/test-LICENSE.txt'})
+                             'third-party/test-LICENSE.txt', 'third-party/sources.json'})
             self.assertEqual(archive.read('third-party/test-LICENSE.txt'), self.notice.read_bytes())
         other = self.target / 'second.zip'
         kit.pack(self.root, other)
@@ -64,7 +75,7 @@ class TrialKitTest(unittest.TestCase):
         self.assertEqual(self.output.read_bytes(), other.read_bytes())
 
     def test_changed_input_leaves_no_kit(self):
-        for path in (self.manifest, self.backend, self.program, self.notice):
+        for path in (self.manifest, self.backend, self.program, self.notice, self.sources):
             original = path.read_bytes()
             with self.subTest(path=path.name):
                 path.write_bytes(original + b'changed')
@@ -74,11 +85,27 @@ class TrialKitTest(unittest.TestCase):
             path.write_bytes(original)
 
     def test_notice_rejects_wrong_dependency(self):
-        for jar, digest in [('lib/missing.jar', hashlib.sha256(b'library').hexdigest()), ('lib/test.jar', '0' * 64)]:
-            self.notices[self.notice.name] = (jar, digest, hashlib.sha256(self.notice.read_bytes()).hexdigest())
-            with self.subTest(jar=jar), self.assertRaises(ValueError):
+        entry = self.notices['jars']['test.jar']
+        for jars in [{}, {'missing.jar': entry}, {'test.jar': dict(entry, sha256='0' * 64)},
+                     {'test.jar': dict(entry, materials=[])}, {'test.jar': entry, 'extra.jar': entry}]:
+            self.notices['jars'] = jars
+            self.pin_sources()
+            with self.subTest(jars=jars), self.assertRaises(ValueError):
                 kit.pack(self.root, self.output)
             self.assertFalse(self.output.exists())
+
+    def test_unknown_binary_and_unbound_document_fail_closed(self):
+        self.notices['documents']['orphan.txt'] = self.notices['documents'][self.notice.name]
+        self.pin_sources()
+        with self.assertRaises(ValueError):
+            kit.pack(self.root, self.output)
+        self.assertFalse(self.output.exists())
+        del self.notices['documents']['orphan.txt']
+        self.pin_sources()
+        self.index.write_text(json.dumps({'dependencies': []}))
+        with self.assertRaises(ValueError):
+            kit.pack(self.root, self.output)
+        self.assertFalse(self.output.exists())
 
 
 if __name__ == '__main__':
