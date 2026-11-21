@@ -213,6 +213,19 @@ try {
     'Math.abs(document.querySelector(".window-controls").getBoundingClientRect().right-innerWidth)<1',
   );
   await shot("login-1440");
+  await command("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+  await command("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+  await check("Tab 保留控件焦点环", `(() => {
+    const control = document.activeElement;
+    const style = getComputedStyle(control);
+    return control.matches('button:focus-visible,input:focus-visible,a:focus-visible') &&
+      style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0;
+  })()`);
+  await check("键盘焦点不会给整个页面画边", `['html','body','#app','.desktop-app'].every(selector => {
+    const style = getComputedStyle(document.querySelector(selector));
+    return ['Top','Right','Bottom','Left'].every(side => parseFloat(style['border'+side+'Width']) === 0) &&
+      (style.outlineStyle === 'none' || parseFloat(style.outlineWidth) === 0);
+  })`);
   await click('[data-window="minimize"]');
   await click('[data-window="maximize"]');
   await check(
