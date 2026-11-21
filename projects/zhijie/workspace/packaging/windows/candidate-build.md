@@ -2,7 +2,13 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 整包：`target/history-role-kit-32016b8/zhijie-windows-x64-trial.zip`（93,088,073 字节，SHA-256：`fd367af21c3d50309f54e0304ddb7e1baf04e19d2133ee12996bb0c7c2844ac2`）。解压到 D 盘全新短路径，按包内 `README.md` 操作，不要覆盖已有试用数据。此未签名包包含 `32016b8` 的群聊历史页修复：成员无需关闭历史页，管理删除按钮随升权和降权更新。该行为的双端验证见 `desktop/ui/tests/browser-run.md`。
+当前 Windows x64 未签名整包：`target/trial-kit-3998fcb/zhijie-windows-x64-trial.zip`（93,088,944 字节，SHA-256：`ba97960287999b340cfe233114257123e5b58dce4316d25223a2f194e9836031`）。解压到 D 盘全新短路径，按包内 `README.md` 操作；已有数据按说明停库、冷备并恢复到新目录，不要覆盖旧目录。
+
+后端更新为 V18，桌面和 Helper 与上一包字节相同，保留群聊历史页角色同步修复。新整包共 354 项：351 项未变，更新了运行权限检查类与包内说明，新增一项迁移。`target/trial-kit-3998fcb/kit-compare.log` 记录逐项比对；`lifecycle.log` 记录实际解压包的登录、消息、重启、冷备恢复、设备资格和会话撤销验证。未运行原生桌面或安装器。后端 V17 升级和回退记录见 `preview-backend.md`。
+
+### 历史整包：群聊历史页角色同步
+
+历史 Windows x64 整包：`target/history-role-kit-32016b8/zhijie-windows-x64-trial.zip`（93,088,073 字节，SHA-256：`fd367af21c3d50309f54e0304ddb7e1baf04e19d2133ee12996bb0c7c2844ac2`）。此未签名包包含 `32016b8` 的群聊历史页修复：成员无需关闭历史页，管理删除按钮随升权和降权更新。该行为的双端验证见 `desktop/ui/tests/browser-run.md`。
 
 以 Git 已提交的构建输入离线生成程序，复用已核对的 Helper、驱动与后端。与上一整包逐条比对，353 项中只有桌面程序及清单改变（`zip-compare.log`）。从新 ZIP 的程序实际提取 10 个嵌入资源，其中 `app.js` 与修复版本字节一致（`embedded-assets.log`）；用这些资源跑浏览器回归，172 项通过、无脚本错误（`embedded-browser.json`）。`payload.log` 核对了 NSIS 内八个产品文件；`lifecycle.log` 记录在独立解压目录验证登录、消息、服务重启、离线恢复、设备接管、会话撤销和健康检查。以上日志均位于新整包所在目录；未运行安装器或原生桌面，不代表签名、真实语音或跨机网卡验收。
 

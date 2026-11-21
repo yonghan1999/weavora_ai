@@ -1,6 +1,12 @@
 # Windows 本机试用后端（离线包）
 
-当前后端：`target/trial-kit-edb856b/preview-backend.zip`（83,859,580 字节，SHA-256：`717c76caaa6a5dfe9616b4011eb8f274386c1db26bb70abf2c440bbd980c7256`）。与上一包相比，仅 `IdentityService` 及其嵌套类变化；依赖、启动脚本与 V17 数据库迁移保持不变。共 341 个条目。桌面与后端配套试用请使用[整包及验证记录](candidate-build.md)。
+当前后端：`target/trial-kit-3998fcb/preview-backend.zip`（83,860,827 字节，SHA-256：`e789b6f178d78110f6e396e4e80974eeae24c1b050c3b3487cea17deaf2616e5`）。包内 233 个应用类和资源与通过 V18 集成回归的可执行 JAR 字节相同。与上一后端包比对，仅新增 V18 群主审核同步迁移、修改 runtime 审计权限启动检查；试用依赖和启动程序不变。完整桌面套件见 `candidate-build.md`。
+
+`target/trial-kit-3998fcb/roundtrip.log`：在独立测试目录用离线包按 V17 → V18 → V17 → V18 顺序启动。账号、群、房间标识一致，旧库回退时不含新版写入，恢复运行新库后仍有新版消息和删除标记。两种同步认证、房间重开与日志隐私检查通过。首次演练因 PowerShell 将 `javac` 的环境提示当成错误而提前结束，见 `v17-v18-roundtrip.log`；清除该测试环境选项后通过。此处未升级用户数据库或操作生产服务。
+
+## edb856b 后端历史记录
+
+历史后端：`target/trial-kit-edb856b/preview-backend.zip`（83,859,580 字节，SHA-256：`717c76caaa6a5dfe9616b4011eb8f274386c1db26bb70abf2c440bbd980c7256`）。与上一包相比，仅 `IdentityService` 及其嵌套类变化；依赖、启动脚本与 V17 数据库迁移保持不变。共 341 个条目。
 
 **旧版试用库升级和回退（Windows 本机）**：使用 `684e0a9`（V16）和 `edb856b`（V17）的后端离线包，在独立目录按“旧版 → 新版 → 旧版 → 新版”四次启动。演练现在调用试用说明中的 `cold-backup.py restore` 恢复到新目录，不再用 PowerShell 手动复制。原库 1,111 个文件、新库 1,113 个文件分别用停库快照核对；回退时只启动原库，不对升级后的数据库运行旧程序。
 
