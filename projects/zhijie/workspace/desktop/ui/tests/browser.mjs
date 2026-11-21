@@ -674,8 +674,11 @@ try {
   await check("从别的群返回房间时加载房间所属群，不混用草稿", '!!document.querySelector(".room-stage") && document.querySelector("#message-input").value!=="只属于另一群的草稿" && calls.slice(beforeGroupReturn).some(x=>x.p.resource==="messages" && x.p.id==="g1") && !calls.slice(beforeGroupReturn).some(x=>x.p.resource==="messages" && x.p.id==="g2")');
   await click('[data-view="groups"]'); await click('[data-action="open-group"][data-id="g2"]');
   await check("另一群的未发送草稿仍留在原群", 'document.querySelector("#message-input").value==="只属于另一群的草稿"');
+  await evaluate('globalThis.beforeOtherGroupLoss=calls.length;extraGroups=[];emitProduct({userId:"u1"})');
+  await delay(1200);
+  await check("浏览的群失效后仍可返回另一个群的原房间", 'document.querySelector(".current-session [data-action=open-room]")?.dataset.id==="r1" && document.querySelector(".voice-now strong")?.textContent===room.name && !document.querySelector("#message-input")');
   await click('.voice-dock [data-action="open-room"]');
-  await evaluate('globalThis.extraGroups=[]');
+  await check("返回保留房间不重新入房或启动通道", '!!document.querySelector(".room-stage") && !calls.slice(beforeOtherGroupLoss).some(call=>["activity_join","voice_connect","network_connect"].includes(call.command))');
   await click('[data-tab="network"]');
   await check(
     "未接入网络不伪造队友地址",

@@ -1,5 +1,11 @@
 # 桌面页面回归
 
+### 浏览的群解散时保留另一群的当前房间
+
+在工作区设置 `ZHIJIE_TEST_GROUP_BROWSER=true`，运行 `./mvnw.cmd -o -pl control-plane "-Dtest=GroupBrowserIntegrationTest#dissolvingViewedGroupKeepsOtherGroupsActiveRoom" test`。成员先加入甲群房间，随后浏览乙群的聊天页或群管理弹窗；另一客户端的群主通过页面解散乙群。成员无需手动刷新，乙群内容消失，大厅和底部栏仍显示甲群房间，可返回且原活动和租约不变。服务端独立验证乙群已解散、甲群占用仍为 1、原租约还能续租。仅保留仍在可见房间列表且活动 ID 匹配的返回目标，不恢复已解散群的权限。
+
+2026-11-21，两条路径修复前都在返回目标断言失败，见 `target/room-ownership-82014e1/other-group-6c84e47-before-1.log`。修复后与历史消息、房主管理、解散服务端回归共 5 项通过，无跳过（同目录 `other-group-6c84e47-fixed-1.log`）。`target/other-group-6c84e47/ui.json` 含 180 项页面检查，无脚本异常，其中验证返回动作没有重新入房或启动通道。这不是对真实媒体、跨机或现有试用 ZIP 的验证。
+
 ### 满房切换与原窗重试
 
 在工作区设置 `ZHIJIE_TEST_GROUP_BROWSER=true`，运行 `./mvnw.cmd -o -pl control-plane "-Dtest=GroupBrowserIntegrationTest#memberRetriesProtectedRoomWithoutLosingOriginalLease" test`。测试使用独立 PostgreSQL、实际控制面、两个页面和 Rust 客户端。11 个夹具成员先入目标房，群主在页面加入占满第 12 席；原房成员输错密码后改正，看到满房原因，仍持原活动和租约且能续租。群主从页面退房后，成员在同一弹窗重试成功，服务端原租约撤销、目标房恢复 12 人。

@@ -351,7 +351,8 @@ function clearSession() {
 }
 function clearGroupView() {
   delete s.drafts[s.groupId];
-  Object.assign(s, { groupId: null, roomId: null, messages: [], groupMembers: [], members: [], view: "lobby" });
+  const currentRoom = s.activity && s.rooms.find(room => room.id === s.roomId && room.currentActivityId === s.activity.activityId);
+  Object.assign(s, { groupId: null, roomId: currentRoom?.id ?? null, messages: [], groupMembers: [], members: [], view: "lobby" });
 }
 async function refresh(current = epoch, applicable = () => true) {
   const groups = await bridge.groups();

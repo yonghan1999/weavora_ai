@@ -242,6 +242,7 @@ try {
   else if (scenario === 'room-ownership') await roomOwnership();
   else if (scenario === 'protected-switch') await protectedRoomSwitch();
   else if (scenario === 'device-takeover') await deviceTakeover();
+  else if (['dissolved-chat', 'dissolved-dialog'].includes(scenario)) await dissolvedGroupWhileInOtherRoom();
   else {
     assert.ok(['profile-write', 'profile-read'].includes(scenario));
     await groupProfile(await page('owner@example.test'), scenario);
@@ -257,6 +258,36 @@ try {
   if (browser.exitCode === null && browser.signalCode === null) browser.kill();
   await browserClosed;
   await rm(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 });
+}
+
+async function dissolvedGroupWhileInOtherRoom() {
+  const member = await page('member@example.test'), owner = await page('owner@example.test');
+  const activity = () => member.evaluate(`globalThis.__TAURI__.core.invoke('state_snapshot').then(state=>state.activity)`);
+  await member.click('[data-view=lobby]'); await member.action('join-room'); await member.submit();
+  await member.wait('in unaffected room', `document.querySelector('.room-heading h1')?.textContent==='保留房间'`);
+  const original = await activity();
+  assert.ok(original.activityId && original.leaseId);
+  await member.click('[data-view=groups]');
+  const card = `Array.from(document.querySelectorAll('.group-card')).find(card=>card.querySelector('h3')?.textContent==='待解散群')`;
+  await member.wait('second group visible', card);
+  await member.evaluate(`(${card}).click()`);
+  await member.wait('second group chat opened', `!!document.querySelector('#message-input')`);
+  if (scenario === 'dissolved-dialog') {
+    await member.action('manage-group');
+    await member.wait('remote group details open', `document.querySelector('.modal-note strong')?.textContent==='待解散群'`);
+  }
+  await owner.action('open-group'); await owner.action('manage-group'); await owner.action('dissolve-group');
+  await owner.evaluate(`document.querySelector('.modal [name=name]').value='待解散群'`); await owner.submit();
+  await member.wait('dissolved group view cleared without refresh', `!document.querySelector('[role=dialog]') && !document.querySelector('#message-input') && !!document.querySelector('.current-session')`);
+  await member.wait('unrelated room keeps its return target', `document.querySelector('.current-session h2')?.textContent==='保留房间' && document.querySelector('.voice-now strong')?.textContent==='保留房间'`);
+  await member.click('.current-session [data-action=open-room]');
+  await member.wait('can return to the original room', `document.querySelector('.room-heading h1')?.textContent==='保留房间'`);
+  const retained = await activity();
+  assert.equal(retained.activityId, original.activityId);
+  assert.equal(retained.leaseId, original.leaseId);
+  await member.click('[data-view=groups]');
+  await member.wait('only the other group remains', `document.querySelectorAll('.group-card').length===1 && document.querySelector('.group-card h3')?.textContent==='保留群'`);
+  console.log(`DISSOLVED_GROUP_CLEARED_ORIGINAL_ROOM_AND_LEASE_RETAINED ${scenario}`);
 }
 
 async function protectedRoomSwitch() {

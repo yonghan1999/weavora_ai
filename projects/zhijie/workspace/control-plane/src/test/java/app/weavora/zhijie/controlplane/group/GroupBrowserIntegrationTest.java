@@ -16,6 +16,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -79,6 +81,35 @@ class GroupBrowserIntegrationTest {
         } finally {
             browser.descendants().forEach(ProcessHandle::destroyForcibly);
             browser.destroyForcibly();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"dissolved-chat", "dissolved-dialog"})
+    @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
+    void dissolvingViewedGroupKeepsOtherGroupsActiveRoom(String scenario) throws Exception {
+        prepareClients();
+        try (var postgres = EmbeddedPostgres.start(); var context = start(postgres)) {
+            var identities = context.getBean(IdentityRepository.class);
+            String password = UUID.randomUUID().toString();
+            String hash = context.getBean(CredentialProtector.class).hashPassword(password);
+            String owner = UUID.randomUUID().toString(), member = UUID.randomUUID().toString();
+            identities.insertUser(new UserAccount(owner, "owner@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            identities.insertUser(new UserAccount(member, "member@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            var groups = context.getBean(GroupService.class);
+            var retained = groups.createGroup(member, "保留群", null, "");
+            var dissolved = groups.createGroup(owner, "待解散群", null, "");
+            groups.acceptInvitation(member, groups.invite(owner, dissolved.id(), member).id());
+            var rooms = context.getBean(app.weavora.zhijie.controlplane.room.RoomService.class);
+            var activity = rooms.startActivity(member, rooms.createRoom(member, retained.id(), "保留房间", "", "", null).id());
+            runBrowser(context, password, scenario);
+            assertThat(context.getBean(GroupRepository.class).findGroup(dissolved.id()).orElseThrow().status()).isEqualTo(GroupStatus.DISSOLVED);
+            var repository = context.getBean(ActivityRepository.class);
+            assertThat(repository.findAccountActivity(member).orElseThrow().activityId()).isEqualTo(activity.id());
+            assertThat(repository.countOccupied(activity.id())).isOne();
+            var lease = repository.findLatestLease(activity.id(), member).orElseThrow();
+            assertThat(lease.revokedAt()).isNull();
+            context.getBean(ActivityCoordinator.class).heartbeat(member, activity.id(), lease.deviceId(), lease.id(), lease.activityGeneration(), lease.memberGeneration());
         }
     }
 
