@@ -2,7 +2,13 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名试用包：`target/extension-origins-62e4fa0/zhijie-windows-x64-trial.zip`（79,544,544 字节，SHA-256：`900ca6cff6d65bba76e5f13733ab7d0ca5942bddb1df0a9f996a5e1b688e7701`）。解压到 D 盘全新短目录，按包内 `README.md` 启动。上一版使用者无需迁移；桌面、后端及驱动未变。
+当前 Windows x64 未签名试用包：`target/preview-stop-verified-5d3a651/zhijie-windows-x64-trial.zip`（79,544,833 字节，SHA-256：`d88795eedde8787dd3a49d7f933a02bc183cb58f3cdd72205dc235fbc408dd52`）。解压到 D 盘全新短目录，按包内 `README.md` 启动。不要覆盖已用过的目录。
+
+这版只改了包内 `backend/scripts/local-preview/stop.ps1` 和 `README.md`；其余 367 个条目字节不变。停止脚本遇到残留的 `postmaster.pid` 或观察到 Java 异常退出时返回失败，不删锁、不强杀。真实试用库三次启停、只读健康检查、原账号和消息跨重启保留，以及离线备份恢复后登录均已验证；日志在新包同目录的 `lifecycle.log`。没有安装软件、启动桌面、试音或改变支持矩阵。
+
+### 历史整包：PostgreSQL 扩展声明
+
+前一版：`target/extension-origins-62e4fa0/zhijie-windows-x64-trial.zip`（79,544,544 字节，SHA-256：`900ca6cff6d65bba76e5f13733ab7d0ca5942bddb1df0a9f996a5e1b688e7701`）。
 
 `comparison.json` 记录 369 个条目：相对上一版仅更新说明书与来源索引，增加 4 份原文。逐一比对嵌套数据库载荷中 27 个第三方 DLL、14 个组件和关联声明的 SHA-256，没有未归属的条目。后三个 DLL 的精确源码版本仍未确认；这不是可复现构建或正式分发批准。发行脚本、项目声明及证据边界见 `postgres-origin.md`。
 

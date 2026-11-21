@@ -37,7 +37,7 @@
 
 如果希望保留旧包里的账号、群、房间和消息，先不要启动新包。仅适用于相同 PostgreSQL 主版本的 Windows 试用后端；不迁移桌面缓存。备份含账号与消息数据，只放在本人可访问的 D 盘目录，不上传。预留备份和新数据目录两份副本的空间。
 
-1. 退出旧桌面，运行**旧包**的 `backend/scripts/local-preview/stop.ps1`，确认已正常停库，迁移期间不要重启。不要手动删除 `postmaster.pid`。
+1. 退出旧桌面，运行**旧包**的 `backend/scripts/local-preview/stop.ps1`。即使脚本提示已停止，若 `backend/target/local-preview/postgres/postmaster.pid` 仍存在，不能确认数据库正常退出：先检查该试用库的进程和日志，不要备份、迁移或手动删除锁文件。确认正常停库后，迁移期间不要重启。
 2. 在**新包解压根目录**打开 PowerShell，把 `$old` 改为旧包的解压路径，`$backup` 改为尚不存在的备份目录：
 
    ```powershell
