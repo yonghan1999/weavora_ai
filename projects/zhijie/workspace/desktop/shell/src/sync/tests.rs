@@ -127,6 +127,48 @@ fn successful_connection_waits_for_operations_and_rejects_stale_credentials() {
 }
 
 #[test]
+fn reconnect_rechecks_the_current_lease_before_reporting_service_restored() {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+
+    tauri::async_runtime::block_on(async {
+        for (status, retained) in [(200, true), (409, false), (503, true)] {
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let mut state = state();
+            state.client =
+                ControlPlaneClient::new(format!("http://{}", listener.local_addr().unwrap()))
+                    .unwrap();
+            let tokens = state.session.lock().unwrap().clone().unwrap();
+            let server = async {
+                let (socket, _) = listener.accept().await.unwrap();
+                let mut socket = BufReader::new(socket);
+                let mut request = String::new();
+                socket.read_line(&mut request).await.unwrap();
+                assert_eq!(
+                    request,
+                    "POST /api/v1/activities/activity/heartbeat HTTP/1.1\r\n"
+                );
+                let body = r#"{"data":{}}"#;
+                let reply = format!("HTTP/1.1 {status} Test\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}", body.len());
+                socket.get_mut().write_all(reply.as_bytes()).await.unwrap();
+                socket.get_mut().shutdown().await.unwrap();
+            };
+            let (restored, ()) = tokio::time::timeout(Duration::from_secs(5), async {
+                tokio::join!(restore_service(&state, &tokens), server)
+            })
+            .await
+            .unwrap();
+            assert!(restored);
+            assert_eq!(
+                state.core.snapshot().activity.is_some(),
+                retained,
+                "HTTP {status}"
+            );
+            assert_eq!(state.core.snapshot().user_id.as_deref(), Some("user"));
+        }
+    });
+}
+
+#[test]
 fn old_connection_cannot_restore_a_replacement_or_signed_out_session() {
     tauri::async_runtime::block_on(async {
         let state = state();

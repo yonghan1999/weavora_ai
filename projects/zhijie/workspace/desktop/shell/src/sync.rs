@@ -125,6 +125,7 @@ async fn restore_service(state: &AppState, tokens: &zhijie_core::AuthTokens) -> 
     {
         return false;
     }
+    recheck_activity(state, tokens).await;
     state.core.set_service_available(true);
     true
 }
@@ -190,6 +191,10 @@ pub(crate) async fn recover(state: &AppState, tokens: &zhijie_core::AuthTokens, 
         }
         return;
     }
+    recheck_activity(state, tokens).await;
+}
+
+async fn recheck_activity(state: &AppState, tokens: &zhijie_core::AuthTokens) {
     if let Some(activity) = state.core.snapshot().activity {
         if matches!(
             state
