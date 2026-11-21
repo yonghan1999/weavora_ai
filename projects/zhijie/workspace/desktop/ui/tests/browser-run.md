@@ -1,5 +1,13 @@
 # 桌面页面回归
 
+### 本机端到端契约入口
+
+在项目 `workspace` 运行 `node scripts/test-e2e.mjs --contract`。入口要求 Maven Wrapper、JDK 25、Rust 桌面构建依赖、Chrome/Chromium/Edge 及本机 PostgreSQL 测试依赖；Windows 的临时目录、Maven 和 Cargo 缓存应事先配置在 D 盘。测试不需要试用密码、外部邮件或真实麦克风。不要并发运行另一套写入同一构建目录的测试。
+
+此命令运行 `VerticalSliceIntegrationTest` 的 Rust/HTTP 垂直切片，以及 `GroupBrowserIntegrationTest` 的双客户端操作、同步、租约和治理用例。入口显式启用浏览器套件，从**本次 Maven 进程**的输出核对两套类均有实际执行且零失败、零错误、零跳过；不会接受旧的 Surefire 报告或仅有 `BUILD SUCCESS` 的输出。结果判读回归可独立执行 `node --test scripts/test-e2e-suites.mjs`。从工作流执行长测时，外层 `--timeout` 须给足整个运行器的 900 秒及收尾时间，例如 1200 秒；工作流的默认 120 秒只适合短测。
+
+2026-11-21 在 D 盘离线环境执行上述契约命令，父进程显式设置 `ZHIJIE_TEST_GROUP_BROWSER=false`，入口仍实际运行两个套件：桌面 10 项、垂直切片 2 项，零失败、零错误、零跳过，Maven 总耗时 5 分 45 秒。日志为 `target/desktop-contract-21c51d3/contract.log`；`verifier.log` 记录 3 项结果判读回归。这是本机控制面和页面的回归，不是两个原生窗口、真实媒体、TUN 或跨机验收。不得仅因命令成功就认定这些范围通过。
+
 ### 浏览的群解散时保留另一群的当前房间
 
 在工作区设置 `ZHIJIE_TEST_GROUP_BROWSER=true`，运行 `./mvnw.cmd -o -pl control-plane "-Dtest=GroupBrowserIntegrationTest#dissolvingViewedGroupKeepsOtherGroupsActiveRoom" test`。成员先加入甲群房间，随后浏览乙群的聊天页或群管理弹窗；另一客户端的群主通过页面解散乙群。成员无需手动刷新，乙群内容消失，大厅和底部栏仍显示甲群房间，可返回且原活动和租约不变。服务端独立验证乙群已解散、甲群占用仍为 1、原租约还能续租。仅保留仍在可见房间列表且活动 ID 匹配的返回目标，不恢复已解散群的权限。
