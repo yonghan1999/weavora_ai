@@ -14,6 +14,19 @@ Rust 继续实际并发运行生产 `session_loop` 与 `sync::maintain_connectio
 
 ## 开发记录
 
+### 凭据刷新后的同步续连
+
+在业务工作区使用 Node.js 24 和包含 `sync::browser_probe::product_page_client` 的 Shell 测试程序运行：
+
+```powershell
+node "scripts/test-native-rotated-reconnect.mjs" "$client" http-503
+node "scripts/test-native-rotated-reconnect.mjs" "$client" disconnect
+```
+
+`$client` 是本机编译的 Shell 测试程序绝对路径。两种场景都由回环服务先发送事件 11 并以凭据失效为由关闭旧连接，再分别对新凭据的首次握手返回 503 或直接断开。生产 Rust 同步循环须只登录一次、读取一次基线、刷新一次；四次握手的游标依次为 10、11、11、12。夹具检查凭据仅随 Bearer 请求头传输，并逐条核对事件 11、12 对应的群消息通知。该专项不启动桌面窗口，不替代真实服务端、跨机弱网、语音或虚拟网卡验收。
+
+### 控制连接中断
+
 日志及离线入口位于 Git 忽略的 `target/desktop-link-recovery-114b139/`。新增临时文件、缓存及输出均在 D 盘，复用既有离线 Maven/Cargo，不安装新工具；只修改当前进程环境。
 
 首次 `smoke.log` 的短断链及离线撤销两项通过。增加长失联后 `all-outages.log` 保留一次测试断言失败：本地已清空，服务端正在 GRACE，但夹具错误要求 lease.expires_at 已过去；生产进入 GRACE 时会将同一字段更新到宽限期末。未把该失败归为产品缺陷，也未修改产品期限。修正为等待生产宽限期结束并检查真实租约撤销、活动指针和 IP 释放，保留原十五秒恢复限制。
