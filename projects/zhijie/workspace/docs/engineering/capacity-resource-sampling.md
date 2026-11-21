@@ -55,6 +55,16 @@ python "scripts/sample-capacity-resources.py" --pid 1234 --pid 5678 --interface 
 - `python "scripts/test-capacity-resource-sampler.py"` 七项通过，覆盖实际间隔与方向、PID/计数器变化、只读实采、禁止覆盖、异常部分结果及停止信号/超时。原同步诊断、容量契约、运行器错误传播检查通过；试用健康 UP，未改变产品制品或试用数据。
 ## 从干净源码复跑
 
+### `edb856b` 百账号一小时复测
+
+`target/hour-auth-edb856b/hour.log` 记录指定集成测试 1 项通过、零跳过；原始报告位于同目录 `source/target/control-load-13071661655118780413/`。100 个账号持续 3,600.032 秒，完成 149,727 次 HTTP 请求，零失败，p95 为 5.128 ms；服务端访问日志对应 149,727 个 200 和 510 个 WebSocket 握手 101。客户端收到 1,803,040 次同步事件，零同步错误，10/10 次指定断线消息补发成功。独立重跑逐账号审计，所有账号至少续票 4 次，核心操作最大空档 20.21 秒。`operations.jsonl` SHA-256：`32a46a628cdef9639f50bce3264518701456f00e1a9d1c0a2d0924f81af567ba`。
+
+服务端仍有 1 条 `operation=send cause=NONE socket_open=true` 告警。最近一次成功续票响应在告警后 4 ms，但日志不能把二者归于同一连接。客户端零错误不能证明告警无影响，本轮通过也不能解释上一轮 27 次失败的根因。
+
+宿主采样覆盖 3,608.18 秒、3,530 个样本，JVM 与数据库进程树在同一采样时刻的合计 RSS 峰值为 1,152.52 MiB。应用层接收正文平均 1.762 Mbit/s；3,600 个完整秒中 44 秒超过 5 Mbit/s，峰值 7.815 Mbit/s。回环接口没有可用的流量计数，宿主未限制为目标服务器规格，也没有媒体或游戏负载；本轮只通过本机控制面长测，不授予 AC-038/039 通过。
+
+### 既有短测复跑方法
+
 从 `workspace` 运行 `node "scripts/test-load-sync-diagnostics.mjs"` 可单独检查同步错误分类、游标和重连诊断。百账号命令需同时具备 Java 测试入口、`scripts/load-control-plane.mjs` 和 `scripts/load-websocket-handshake.mjs`；测试创建自己的输出目录和 PostgreSQL，不应依赖其他试用环境预先生成 `target/`。
 
 本轮在 D 盘单独导出 Git 中的控制面源码、构建文件和已跟踪脚本，只补入本次提交的四个测试源文件。复用本地离线 Maven 依赖，未复制编译产物。按上文 workspace 命令从零编译 149 个生产源文件和 49 个测试源文件；选定用例 1 项通过、无跳过。100 个并发同步连接，90.05 秒内完成 3,710 个 HTTP 请求，p95 为 19.91 ms，HTTP 和同步均零失败；10 次重连均收到指定离线消息，观测到离线及恢复。证据：`target/load-source-run.log`、`target/load-source-41b10a4/target/control-load-46357500962409498/summary.json`。采样持续 97.80 秒，但回环接口计数未变化，不据此报告带宽。此结果不是一小时、目标服务器或双通道满载验收。
