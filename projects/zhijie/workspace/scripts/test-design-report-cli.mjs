@@ -8,6 +8,38 @@ import { fileURLToPath } from "node:url";
 
 const generator = fileURLToPath(new URL("./generate-compatibility-report.mjs", import.meta.url));
 
+test("unstaged edits and deletions cannot pass an index-based design check", context => {
+  const cwd = mkdtempSync(join(tmpdir(), "design-index-"));
+  context.after(() => rmSync(cwd, { recursive: true, force: true }));
+  const run = (...args) => spawnSync(process.execPath, [generator, ...args], { cwd, encoding: "utf8" });
+  assert.equal(spawnSync("git", ["init", "-q"], { cwd }).status, 0);
+  mkdirSync(join(cwd, "design/ui"), { recursive: true });
+  mkdirSync(join(cwd, "release"));
+  const asset = join(cwd, "design/ui/index.html");
+  const baseline = join(cwd, "release/design-asset-baseline.json");
+  const report = join(cwd, "release/design-asset-diff.json");
+  writeFileSync(join(cwd, ".gitattributes"), "*.html text eol=lf\n");
+  writeFileSync(asset, "approved\n");
+  assert.equal(spawnSync("git", ["add", "--", ".gitattributes", "design"], { cwd }).status, 0);
+  assert.equal(run("--update-baseline").status, 0);
+  const originalBaseline = readFileSync(baseline);
+  const originalReport = readFileSync(report);
+  writeFileSync(asset, "approved\r\n");
+  writeFileSync(join(cwd, "design/ui/ignored-shot.png"), "not tracked");
+  assert.equal(run("--check").status, 0);
+  writeFileSync(asset, "changed locally\n");
+  for (const remove of [false, true]) {
+    if (remove) rmSync(asset);
+    for (const args of [["--check"], [], ["--update-baseline"]]) {
+      const result = run(...args);
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /design\/ui\/index\.html/);
+      assert.deepEqual(readFileSync(baseline), originalBaseline);
+      assert.deepEqual(readFileSync(report), originalReport);
+    }
+  }
+});
+
 test("design report checks and invalid invocations never write the baseline or report", context => {
   const cwd = mkdtempSync(join(tmpdir(), "design-report-"));
   context.after(() => rmSync(cwd, { recursive: true, force: true }));

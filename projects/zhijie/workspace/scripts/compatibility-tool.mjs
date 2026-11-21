@@ -9,7 +9,13 @@ export function sha256(path) {
 }
 
 export function trackedDesignAssets(root) {
-  const listed = spawnSync("git", ["ls-files", "-z", "--", "design/prototype", "design/ui"], {
+  const paths = ["design/prototype", "design/ui"];
+  const unstaged = spawnSync("git", ["diff", "--name-only", "-z", "--relative", "--no-ext-diff", "--no-textconv", "--", ...paths], {
+    cwd: root, encoding: "utf8", shell: false,
+  });
+  assert.equal(unstaged.status, 0, unstaged.stderr);
+  assert.equal(unstaged.stdout, "", `Tracked design files differ from the index: ${unstaged.stdout.split("\0").filter(Boolean).join(", ")}`);
+  const listed = spawnSync("git", ["ls-files", "-z", "--", ...paths], {
     cwd: root,
     encoding: "utf8",
     shell: false,
