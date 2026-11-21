@@ -7,7 +7,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { openObservedSocket } from "./load-websocket-handshake.mjs";
 import { LoadBodyTraffic } from "./load-body-traffic.mjs";
 import { classifyLoadResponse } from "./load-http-response.mjs";
-import { LoadHttpTransport } from "./load-http-transport.mjs";
+import { classifyTransportFailure, LoadHttpTransport } from "./load-http-transport.mjs";
 
 // 临时测试账号凭据仅从匿名 stdin 读取，原始记录不包含 URL、正文或令牌。
 const lines = createInterface({ input: process.stdin });
@@ -60,7 +60,7 @@ async function request(actor, operation, path, body) {
     bytes = Buffer.byteLength(text);
     measureBody("responseBodyBytes", bytes);
     ({ value, code } = classifyLoadResponse(status, text, operation, body));
-  } catch { /* 原始网络异常可能含查询令牌，不写入记录。 */ }
+  } catch (error) { code = classifyTransportFailure(error); }
   const finished = performance.now();
   const latencyMs = finished - requestStarted;
   totals.requests++;

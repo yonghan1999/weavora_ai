@@ -5,7 +5,7 @@ import { Agent, request } from "node:http";
 import { randomBytes } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { openObservedSocket } from "./load-websocket-handshake.mjs";
-import { LoadHttpTransport } from "./load-http-transport.mjs";
+import { classifyTransportFailure, LoadHttpTransport } from "./load-http-transport.mjs";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
@@ -62,7 +62,7 @@ try {
   const start = source.indexOf("async function request(actor, operation, path, body) {");
   const end = source.indexOf("\nasync function connect(actor) {", start);
   assert.ok(start >= 0 && end > start);
-  const context = vm.createContext({ http, fetch, URL, Buffer, AbortSignal, performance, started: performance.now(),
+  const context = vm.createContext({ http, classifyTransportFailure, fetch, URL, Buffer, AbortSignal, performance, started: performance.now(),
     base: new URL(`http://127.0.0.1:${config.port}`), config: { accounts: [config] },
     measureBody() {}, classifyLoadResponse: (status, text) => ({ value: JSON.parse(text), code: status === 200 ? null : "FAILED" }),
     totals: { requests: 0, failures: 0, requestBodyBytes: 0, responseBodyBytes: 0 }, latencies: [], record: async () => {},

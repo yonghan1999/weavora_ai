@@ -1,5 +1,11 @@
 import { Agent, request } from "node:http";
 
+export function classifyTransportFailure(error) {
+  if (error?.code === "ABORT_ERR" && error.cause?.name === "TimeoutError") return "HTTP_DEADLINE_EXCEEDED";
+  if (error?.code === "ECONNRESET") return "HTTP_CONNECTION_RESET";
+  return "TRANSPORT_FAILED";
+}
+
 export class LoadHttpTransport {
   #agent = new Agent({ keepAlive: true });
 

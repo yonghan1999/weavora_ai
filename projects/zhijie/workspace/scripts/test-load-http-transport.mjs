@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { createHash } from "node:crypto";
 import { once } from "node:events";
-import { LoadHttpTransport } from "./load-http-transport.mjs";
+import { classifyTransportFailure, LoadHttpTransport } from "./load-http-transport.mjs";
 import { openObservedSocket } from "./load-websocket-handshake.mjs";
 
 const server = createServer((request, response) => {
@@ -41,8 +41,11 @@ try {
   const closed = once(socket, "close");
   socket.close();
   await closed;
-  await assert.rejects(send("/slow", undefined, AbortSignal.timeout(50)), { name: "AbortError" });
-  await assert.rejects(send("/aborted"));
+  await assert.rejects(send("/slow", undefined, AbortSignal.timeout(50)), error => classifyTransportFailure(error) === "HTTP_DEADLINE_EXCEEDED");
+  await assert.rejects(send("/aborted"), error => classifyTransportFailure(error) === "HTTP_CONNECTION_RESET");
+  const cancelled = AbortSignal.abort(new Error("private cancellation reason"));
+  await assert.rejects(send("/slow", undefined, cancelled), error => classifyTransportFailure(error) === "TRANSPORT_FAILED");
+  assert.equal(classifyTransportFailure({ code: "PRIVATE_TEST_MARKER", message: "sensitive URL" }), "TRANSPORT_FAILED");
 } finally {
   http.close();
   server.closeAllConnections();

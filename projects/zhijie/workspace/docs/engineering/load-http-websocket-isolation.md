@@ -20,6 +20,14 @@
 
 ## 验证记录与边界
 
+### 一小时实跑中发现的 HTTP 诊断缺口
+
+从 `d54f025` 导出的测试源码在 `target/hour-audit-d54f025/source/target/control-load-15831610034985500261/` 写入一小时负载记录。以下仅描述该次运行前 255 秒：10,491 个请求中，20 个在约第 112～116 秒记为 `TRANSPORT_FAILED`；另有 7 个消息读取在约第 195 秒收到 HTTP 429、`RATE_LIMITED`。前一组附近有连续十个 JVM 样本为数据库活动连接 10、空闲 0。这是时间相关性，不足以认定慢 SQL、连接池配置或客户端超时是根因；后一组有明确服务端响应，不能与前者合并归因。本轮不调整生产限流、连接池或五秒请求期限。
+
+后续版本仅在原始记录中区分已证实的本机 HTTP 请求期限触发（`HTTP_DEADLINE_EXCEEDED`）和连接重置（`HTTP_CONNECTION_RESET`）。未知异常及普通主动取消仍为 `TRANSPORT_FAILED`，不写入异常原文；三者均算失败。`node "scripts/test-load-http-transport.mjs"` 覆盖真实回环请求和脱敏边界。另直接执行负载器的 `request()`，得到上述两类传输错误及 `429/RATE_LIMITED`，三次均计为失败，记录见 `target/hour-audit-d54f025/http-failure-diagnostics.log`。旧记录没有原始异常，不能回填新分类；此项修复的是可观测性，不是容量问题。
+
+### 此前的连接池隔离回归
+
 开发证据位于 D 盘 `target/sync-delivery-diagnostics-cc4cc7d/`；未修改工作流受控元数据，不代替正式 F/G/H/I。
 
 - `shared-pool-before.log`：原共享池函数在真实服务下失败；`keepalive-isolated.log` 隔离后通过。最终综合回归再次运行该测试。
