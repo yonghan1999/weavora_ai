@@ -70,6 +70,15 @@ def parser() -> argparse.ArgumentParser:
     for argument in TASK_TEXT_FIELDS:
         command.add_argument(f"--{argument}")
 
+    command = sub.add_parser("repair-task-text", help="预览损坏字段的更正；写入须由人类确认预览摘要")
+    command.add_argument("project_id")
+    command.add_argument("task_id")
+    command.add_argument("--text-file", type=Path, required=True, help="仅含该任务损坏字段的 UTF-8 JSON 对象")
+    command.add_argument("--reason", required=True, help="更正依据或来源")
+    command.add_argument("--apply-digest", help="应用已审阅的预览摘要，否则仅预览")
+    command.add_argument("--actor")
+    command.add_argument("--human-confirm")
+
     command = sub.add_parser("task-run", help="真实执行开发/修复任务命令")
     command.add_argument("project_id")
     command.add_argument("task_id")
@@ -150,6 +159,13 @@ def dispatch(args: argparse.Namespace) -> Any:
         return engine.retry(args.project_id, args.actor, args.role, args.reason)
     if args.command == "cancel":
         return engine.cancel(args.project_id, args.actor, args.role, args.reason)
+    if args.command == "repair-task-text":
+        try:
+            replacement = json.loads(args.text_file.read_text(encoding="utf-8-sig"))
+        except (OSError, UnicodeError, ValueError) as error:
+            raise WorkflowError("无法读取 UTF-8 任务说明 JSON 文件。") from error
+        return engine.repair_task_text(args.project_id, args.task_id, replacement, args.reason,
+                                       args.apply_digest, args.actor, args.human_confirm)
     if args.command == "add-task":
         text = {field: getattr(args, field) for field in TASK_TEXT_FIELDS}
         if args.text_file is not None:

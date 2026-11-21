@@ -79,6 +79,14 @@ python zhijie.py add-task my-app --task-id TASK-001 --requirements REQ-001 --tes
 
 `status <项目标识>` 在发现任务说明为空、含替换字符或主要由连续问号组成时，返回 `task_text_warnings`，列出任务和字段，不会改写任务和审计。`task-run` 不会为这类任务启动命令、消耗重试次数或生成证据；其他无依赖的正常任务仍可执行。检查任务清单的阶段门禁也会报告损坏字段，即使任务已标记完成。已有损坏记录须从可信原文核对，不能从问号反推验收条件。
 
+更正时，为单个任务准备一个 UTF-8 JSON 对象，仅填写 `task_text_warnings` 列出的损坏字段。没有可信原文时，替代文字须由负责人逐项审阅，不能当作历史原文。先运行不写项目记录的预览：
+
+```bash
+python zhijie.py repair-task-text my-app TASK-001 --text-file "更正说明.json" --reason "核对依据"
+```
+
+核对输出的原任务、替代文字及 `result_status`。**仅人类本人**可在同一命令末尾追加 `--apply-digest <review_digest> --actor <姓名> --human-confirm I_CONFIRM_HUMAN_DECISION`。预览后若任务、阶段、依据或文字变化，须重新审阅。这个确认仅更正文字，不批准阶段、不调整需求或测试命令；不接受用于改写可读字段。
+
 E 阶段真实执行命令并保存证据：
 
 ```bash

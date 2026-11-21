@@ -668,6 +668,80 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(status["state"]["stage"], "D_PLANNING")
         self.assertEqual(status["task_text_warnings"][0]["path"], "tasks/tasks.json")
 
+    def test_repair_task_text_requires_review_and_fresh_execution(self):
+        from unittest.mock import patch
+        from workflow.cli import dispatch, parser
+
+        base = self.engine.project_dir(self.project_id)
+        path = base / "tasks/tasks.json"
+        state = self.engine.load(self.project_id)
+        state["stage"] = "D_PLANNING"
+        self.engine.save(self.project_id, state)
+        task = self.engine.add_task(self.project_id, {
+            "id": "TASK-001", "title": "验证", "requirement_ids": ["REQ-001"], "depends_on": [],
+            "input": "解释器", "output": "版本", "acceptance": "输出版本", "test": "python --version", "rollback": "无需回退",
+        })
+        state["stage"] = "E_IMPLEMENTATION"
+        self.engine.save(self.project_id, state)
+        old = self.engine.run_task(self.project_id, task["id"], "developer", "developer", task["test"])
+        data = json.loads(path.read_bytes())
+        data["tasks"][0]["acceptance"] = "??????"
+        atomic_json(path, data)
+        watched = [path, base / "audit.jsonl", base / "state.json", base / old["path"]]
+        before = [item.read_bytes() for item in watched]
+        source = self.root / "replacement.json"
+        text = {"acceptance": "输出解释器版本号"}
+        source.write_text(json.dumps(text, ensure_ascii=False), encoding="utf-8-sig")
+        args = ["--root", str(self.root), "repair-task-text", self.project_id, task["id"],
+                "--text-file", str(source), "--reason", "隔离测试夹具"]
+        preview = dispatch(parser().parse_args(args))
+        self.assertFalse(preview["applied"])
+        self.assertEqual(preview["previous_task"], data["tasks"][0])
+        self.assertEqual(preview["replacement"], text)
+        apply = ["--apply-digest", preview["review_digest"], "--actor", "测试人员", "--human-confirm", HUMAN_CONFIRMATION]
+        for extra in (["--actor", "测试人员"], apply[:-2], [*apply, "--actor", "AI"],
+                      [*apply, "--reason", "其他依据"], [*apply, "--apply-digest", "旧摘要"]):
+            with self.subTest(extra=extra), self.assertRaises(WorkflowError):
+                dispatch(parser().parse_args(args + extra))
+        for invalid in ({}, {**text, "test": "different"}, {"acceptance": "??????"}, {**text, "title": "另一个任务"}, {"acceptance": "另一份有效文字"}):
+            source.write_text(json.dumps(invalid), encoding="utf-8")
+            with self.subTest(invalid=invalid), self.assertRaises(WorkflowError):
+                dispatch(parser().parse_args(args + apply))
+        self.assertEqual([item.read_bytes() for item in watched], before)
+        source.write_text(json.dumps(text), encoding="utf-8")
+        for stage, status, active in [("F_SELF_TEST", "in_progress", None), ("E_IMPLEMENTATION", "paused", None),
+                                      ("E_IMPLEMENTATION", "in_progress", task["id"])]:
+            self.engine.save(self.project_id, {**state, "stage": stage, "status": status, "active_task_id": active})
+            with self.assertRaises(WorkflowError):
+                dispatch(parser().parse_args(args + apply))
+        atomic_json(base / "state.json", json.loads(before[2]))
+        atomic_json(path, {"tasks": [*data["tasks"], {"id": "TASK-002", "depends_on": [task["id"]], "status": "completed"}]})
+        with self.assertRaisesRegex(WorkflowError, "依赖"):
+            dispatch(parser().parse_args(args + apply))
+        atomic_json(path, data)
+        with patch.object(self.engine, "audit", side_effect=OSError("审计不可写")), self.assertRaises(OSError):
+            self.engine.repair_task_text(self.project_id, task["id"], text, "隔离测试夹具", preview["review_digest"], "测试人员", HUMAN_CONFIRMATION)
+        self.assertEqual([item.read_bytes() for item in watched], before)
+        self.assertTrue(dispatch(parser().parse_args(args + apply))["applied"])
+        with self.assertRaises(WorkflowError):
+            dispatch(parser().parse_args(args + apply))
+        updated = json.loads(path.read_bytes())["tasks"][0]
+        expected = {**data["tasks"][0], **text, "status": "pending"}
+        for field in ("last_evidence", "last_evidence_sha256"):
+            expected.pop(field)
+        self.assertEqual(updated, expected)
+        self.assertEqual([item.read_bytes() for item in watched[2:]], before[2:])
+        self.assertTrue(watched[1].read_bytes().startswith(before[1]))
+        event = json.loads(watched[1].read_bytes().splitlines()[-1])
+        self.assertEqual(event["event"], "task_text_repaired")
+        self.assertEqual(event["previous_task"], data["tasks"][0])
+        self.assertEqual(event["review_digest"], preview["review_digest"])
+        fresh = self.engine.run_task(self.project_id, task["id"], "developer", "developer", task["test"])
+        self.assertNotEqual(fresh["path"], old["path"])
+        completed = json.loads(path.read_bytes())["tasks"][0]
+        self.assertEqual((completed["status"], completed["attempts"], completed["evidence"]),
+                         ("completed", 2, [old["path"], fresh["path"]]))
+
     def test_legacy_unreadable_task_cannot_run_or_pass_task_gates(self):
         from unittest.mock import patch
 

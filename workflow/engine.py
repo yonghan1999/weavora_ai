@@ -864,6 +864,48 @@ class Engine:
             self.audit(project_id, {"event": "task_created", "at": utc_now(), "task": task})
             return task
 
+    def repair_task_text(self, project_id: str, task_id: str, replacement: dict[str, str], reason: str,
+                         apply_digest: str | None = None, actor: str | None = None, confirmation: str | None = None) -> dict[str, Any]:
+        if not reason.strip():
+            raise WorkflowError("任务文字更正必须提供依据。")
+        if apply_digest is not None:
+            if confirmation != HUMAN_CONFIRMATION or not actor or actor.strip().lower() in {"", "ai", "agent", "assistant", "system", "bot"}:
+                raise WorkflowError("任务文字更正只能由具体的人类确认并应用。")
+        elif actor is not None or confirmation is not None:
+            raise WorkflowError("确认更正需要 --apply-digest；预览不要提供身份或确认值。")
+        base = self.project_dir(project_id)
+        guard = self.lock(project_id) if apply_digest is not None else file_lock(self.root / "var/locks" / f"{project_id}.lock")
+        with guard:
+            if apply_digest is None and self.transaction_path(project_id).exists():
+                raise WorkflowError("有待恢复事务；请先通过 status 恢复后再预览。")
+            state = self.load(project_id)
+            if state["stage"] not in {"D_PLANNING", "E_IMPLEMENTATION"} or state["status"] != "in_progress" or state.get("active_task_id"):
+                raise WorkflowError("仅无活动任务且执行中的 D/E 阶段允许更正任务文字。")
+            path = base / "tasks/tasks.json"
+            data = read_json(path)
+            matches = [task for task in data["tasks"] if task.get("id") == task_id]
+            if len(matches) != 1 or matches[0].get("status") not in {"pending", "completed"}:
+                raise WorkflowError("须指定唯一的待执行或已完成任务。")
+            task = matches[0]
+            fields = unreadable_task_fields(task)
+            if not fields or not isinstance(replacement, dict) or set(replacement) != set(fields) or unreadable_task_fields({**task, **replacement}):
+                raise WorkflowError("更正文件须且仅须提供全部损坏字段的可读文字，不能修改其他内容。")
+            if task["status"] == "completed" and any(task_id in other.get("depends_on", []) and other.get("status") == "completed" for other in data["tasks"]):
+                raise WorkflowError("已有完成任务依赖此任务，须先评审依赖及重新取证范围。")
+            review = {"project_id": project_id, "task_id": task_id, "stage": state["stage"], "reason": reason.strip(),
+                      "previous_task": dict(task), "replacement": replacement, "result_status": "pending"}
+            digest = hashlib.sha256(json.dumps(review, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+            if apply_digest is None:
+                return {**review, "review_digest": digest, "applied": False}
+            if digest != apply_digest:
+                raise WorkflowError("预览摘要不匹配，请重新核对当前任务、更正文字和依据。")
+            task.update(replacement, status="pending")
+            task.pop("last_evidence", None)
+            task.pop("last_evidence_sha256", None)
+            atomic_json(path, data)
+            self.audit(project_id, {**review, "event": "task_text_repaired", "at": utc_now(), "actor": actor.strip(), "review_digest": digest})
+            return {"task_id": task_id, "status": "pending", "review_digest": digest, "applied": True}
+
     def _enter_failure(self, project_id: str, state: dict[str, Any], actor: str, role: str, reason: str, evidence: list[str]) -> None:
         count = state.setdefault("retry_counts", {}).get(state["stage"], 0)
         target = "awaiting_retry" if count < state.get("max_retries", 3) else "blocked"
