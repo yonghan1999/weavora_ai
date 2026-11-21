@@ -1,0 +1,13 @@
+# The workflow verifies the original checkout bytes in approvals and execution records.
+docs/02-requirements.md text eol=lf
+docs/02a-prototype.md text eol=lf
+docs/02b-ui.md text eol=lf
+docs/03-architecture.md text eol=crlf
+workspace/design/prototype/index.html text eol=crlf
+workspace/design/ui/index.html text eol=crlf
+docs/07-test-report.md text eol=lf
+docs/08-release.md text eol=lf
+release.json text eol=lf
+tests/cases.json text eol=lf
+tests/defects.json text eol=lf
+tests/evidence/*.json text eol=lf

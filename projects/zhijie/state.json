@@ -3,13 +3,11 @@
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "name": "织界",
-  "stage": "I_ACCEPTANCE",
+  "stage": "E_IMPLEMENTATION",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-11-05T05:22:44Z",
-  "retry_counts": {
-    "E_IMPLEMENTATION": 0
-  },
+  "updated_at": "2026-11-21T18:06:39Z",
+  "retry_counts": {},
   "max_retries": 3,
   "approvals": [
     {
@@ -2149,6 +2147,56 @@
       "reason": "进入最终验收与归档",
       "evidence": [],
       "human_authorization": false
+    },
+    {
+      "event": "development_reopened",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "from_stage": "I_ACCEPTANCE",
+      "from_status": "in_progress",
+      "stage": "D_PLANNING",
+      "to_status": "in_progress",
+      "at": "2026-11-21T18:05:23Z",
+      "actor": "codex",
+      "role": "workflow_operator",
+      "reason": "验收门禁确认 H 回归证据已过期，发布准备后桌面、控制面与容量工具均有变更；需按已批准范围验证当前产品及真实设备交付缺口，重新完成 E/F/G/H/I。",
+      "invalidated_approval_ids": [
+        "APR-B-2d95f3450d2e",
+        "APR-B1-0a966826ab18",
+        "APR-B2-de9ff485a1ed",
+        "APR-H-632ee4199bfd"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "D_PLANNING",
+      "from": "in_progress",
+      "to": "approved",
+      "at": "2026-11-21T18:06:38Z",
+      "actor": "codex",
+      "role": "planner",
+      "reason": "自动质量门禁通过",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "E_IMPLEMENTATION",
+      "from": "approved",
+      "to": "in_progress",
+      "at": "2026-11-21T18:06:39Z",
+      "actor": "codex",
+      "role": "planner",
+      "reason": "进入编码实现",
+      "evidence": [],
+      "human_authorization": false
     }
   ],
   "resume_status": null,
@@ -2171,6 +2219,7 @@
   "invalidated_approval_ids": [
     "APR-B-2d95f3450d2e",
     "APR-B1-0a966826ab18",
-    "APR-B2-de9ff485a1ed"
+    "APR-B2-de9ff485a1ed",
+    "APR-H-632ee4199bfd"
   ]
 }

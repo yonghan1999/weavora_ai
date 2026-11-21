@@ -448,6 +448,27 @@
       ],
       "last_evidence": "tests/evidence/EXEC-20261105T011021Z-e82b41e4.json",
       "last_evidence_sha256": "85fd81d204e97e14ebfc9057ff9902b13d2fe6bbf7c17fbec6eb2402172710e9"
+    },
+    {
+      "id": "TASK-018",
+      "title": "验收返工：复核桌面构建与容量审计",
+      "input": "当前桌面资源、UI 测试及逐操作容量审计代码",
+      "output": "当前工作区的 UI 构建、桌面单测和容量审计任务执行证据",
+      "acceptance": "构建成功，桌面单测与原始操作记录审计均退出为零；实际容量及设备互通另按 M5 实测",
+      "rollback": "修复失败步骤后重跑，保留历史证据，撤回当前候选交付",
+      "requirement_ids": [
+        "REQ-023",
+        "REQ-025"
+      ],
+      "depends_on": [
+        "TASK-009",
+        "TASK-016"
+      ],
+      "test": "npm --prefix desktop/ui run build && npm --prefix desktop/ui test && python -B scripts/test-control-load-activity.py",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
     }
   ]
 }

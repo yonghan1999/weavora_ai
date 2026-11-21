@@ -34,6 +34,9 @@
 | TASK-015 | 观测、秘密扫描、限流背压和受控降级 | `./mvnw -q -pl control-plane -am test && cargo test --workspace && npm --prefix desktop/ui test` |
 | TASK-016 | 容量、音质、弱网和长会话验证工具 | `node scripts/test-performance.mjs --validate-fixtures` |
 | TASK-017 | 跨平台验证入口、证据索引和资产差异报告 | `node scripts/test-compatibility.mjs --validate-matrix` |
+| TASK-018 | 验收返工。复核当前桌面 UI 构建与单测，重新执行 HTTP 容量指标审计回归 | `npm --prefix desktop/ui run build && npm --prefix desktop/ui test && python -B scripts/test-control-load-activity.py` |
+
+TASK-018 依赖 TASK-009 和 TASK-016，对应 REQ-023、REQ-025。构建、桌面单测和原始操作记录审计分别留证。后续 F/G/H 对返工后的代码树重新执行完整回归。M5 保留目标服务器 C0～C4、真实设备语音及游戏互通、三平台安装与更新等原定实测要求，按对应 AC 收集环境、版本、操作结果和原始证据后再提交验收。
 
 每个任务的输入、输出、验收标准、依赖和单独回退策略以 `tasks/tasks.json` 为准。E 阶段只能执行表中完全一致的登记命令，并保存 `tests/evidence/` 真实证据。
 
