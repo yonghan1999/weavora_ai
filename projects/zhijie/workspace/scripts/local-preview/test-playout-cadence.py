@@ -18,6 +18,8 @@ import urllib.error
 import urllib.request
 import uuid
 
+from cadence_rtp import summarize_rtp
+
 
 class ResourceSampler:
     def __init__(self, processes):
@@ -155,6 +157,7 @@ def main():
     parser.add_argument("--mode", choices=("synthetic", "platform", "both"), default="synthetic")
     parser.add_argument("--signal", choices=("silence", "tone"), default="silence")
     parser.add_argument("--windows", type=int, choices=range(1, 8), default=1)
+    parser.add_argument("--rtp-stats", action="store_true")
     args = parser.parse_args()
     if args.signal == "tone" and args.mode != "synthetic":
         parser.error("controlled tones require synthetic mode; never send tones to host output")
@@ -237,6 +240,7 @@ rtc:
                 env["ZHIJIE_CADENCE_MODE"] = mode
                 env["ZHIJIE_CADENCE_SIGNAL"] = args.signal
                 env["ZHIJIE_CADENCE_WINDOWS"] = str(args.windows)
+                env["ZHIJIE_CADENCE_RTP"] = "true" if args.rtp_stats else "false"
                 env["ZHIJIE_TEST_VOICE_URL"] = "ws://127.0.0.1:17880"
                 room = "silent-" + uuid.uuid4().hex
                 for index in range(12):
@@ -268,7 +272,10 @@ rtc:
                             json.dumps(resources, indent=2) + "\n", encoding="utf-8")
                 summary = {"mode": mode, "signal": args.signal, "windows": args.windows, "exitCode": process.returncode}
                 if not process.returncode:
-                    summary.update(summarize(log.read_text(encoding="utf-8", errors="replace"), mode, args.signal, args.windows))
+                    content = log.read_text(encoding="utf-8", errors="replace")
+                    summary.update(summarize(content, mode, args.signal, args.windows))
+                    if args.rtp_stats:
+                        summary["rtp"] = summarize_rtp(content, mode, args.windows)
                 results.append(summary)
                 print(json.dumps(summary), flush=True)
                 if process.returncode:

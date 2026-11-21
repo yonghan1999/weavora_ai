@@ -10,6 +10,9 @@ use livekit::webrtc::{
 };
 use tokio_stream::StreamExt;
 
+#[path = "support/rtp_cadence.rs"]
+mod rtp_cadence;
+
 // 只测播放节拍：全零音频，不开启麦克风，不把回调成功作为可听音质验收。
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "explicit local SFU diagnostic; platform mode uses silent host output"]
@@ -25,6 +28,7 @@ async fn silent_full_room_playout_cadence() {
         .parse()
         .expect("observation window count");
     assert!((1..=7).contains(&windows));
+    let rtp_enabled = std::env::var("ZHIJIE_CADENCE_RTP").as_deref() == Ok("true");
     let audio = if mode == "platform" {
         let audio = PlatformAudio::new().expect("initialize platform audio");
         // PlatformAudio 默认允许 ADM 录音；发布原生源前显式禁用，避免 SDK 自动启动采集。
@@ -44,6 +48,7 @@ async fn silent_full_room_playout_cadence() {
     let mut rooms = Vec::new();
     let mut events = Vec::new();
     let mut local_tracks = Vec::new();
+    let mut rtp_tracks = Vec::new();
     let mut producers = tokio::task::JoinSet::new();
     for index in 0..12 {
         let token = std::env::var(format!("ZHIJIE_TEST_VOICE_TOKEN_{index}"))
@@ -58,6 +63,13 @@ async fn silent_full_room_playout_cadence() {
             RtcAudioSource::Native(source.clone()),
         );
         local_tracks.push(track.rtc_track());
+        if rtp_enabled {
+            rtp_tracks.push((
+                index,
+                format!("cadence-{index}:1"),
+                rtp_cadence::ObservedTrack::Outbound(track.clone()),
+            ));
+        }
         room.local_participant()
             .publish_track(
                 LocalTrack::Audio(track),
@@ -106,6 +118,7 @@ async fn silent_full_room_playout_cadence() {
                     streams.push((
                         participant.identity().to_string(),
                         NativeAudioStream::new(track.rtc_track(), 48000, 1),
+                        track,
                     ));
                 }
             }
@@ -126,7 +139,14 @@ async fn silent_full_room_playout_cadence() {
     let mut all_streams = Vec::new();
     for (receiver, streams, events) in ready {
         retained_events.push(events);
-        for (speaker, stream) in streams {
+        for (speaker, stream, track) in streams {
+            if rtp_enabled {
+                rtp_tracks.push((
+                    receiver,
+                    speaker.clone(),
+                    rtp_cadence::ObservedTrack::Inbound(track),
+                ));
+            }
             all_streams.push(("PLAYOUT_CADENCE", receiver, speaker, stream));
         }
     }
@@ -138,16 +158,34 @@ async fn silent_full_room_playout_cadence() {
             NativeAudioStream::new(track, 48000, 1),
         ));
     }
-    let start = tokio::time::Instant::now();
+    let mut start = tokio::time::Instant::now();
+    if rtp_enabled {
+        start += Duration::from_millis(500);
+    }
     let observation_ms = windows * 15000;
     let deadline = start + Duration::from_secs((windows * 15) as u64);
-    let unix_ms = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("wall clock after epoch")
-        .as_millis();
+    let unix_ms = (SystemTime::now()
+        + start.saturating_duration_since(tokio::time::Instant::now()))
+    .duration_since(UNIX_EPOCH)
+    .expect("wall clock after epoch")
+    .as_millis();
     println!("CADENCE_STARTED mode={mode} unix_ms={unix_ms} observation_ms={observation_ms}");
+    let mut rtp_observers = tokio::task::JoinSet::new();
+    for (receiver, speaker, track) in rtp_tracks {
+        rtp_observers.spawn(rtp_cadence::observe(
+            mode.clone(),
+            receiver,
+            speaker,
+            track,
+            start,
+            windows,
+        ));
+    }
     for (kind, receiver, speaker, mut stream) in all_streams {
         consumers.spawn(async move {
+            if rtp_enabled {
+                tokio::time::sleep_until(start).await;
+            }
             let initial = stream.stats();
             let measured_from = tokio::time::Instant::now();
             let mut frames = 0;
@@ -238,6 +276,9 @@ async fn silent_full_room_playout_cadence() {
     let mut observations = Vec::new();
     while let Some(result) = consumers.join_next().await {
         observations.push(result.expect("consume remote PCM"));
+    }
+    while let Some(result) = rtp_observers.join_next().await {
+        result.expect("RTP diagnostic observer completed");
     }
     producers.abort_all();
     while producers.join_next().await.is_some() {}
