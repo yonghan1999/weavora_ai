@@ -135,7 +135,7 @@ def check_device_leave(api, password, token, room, check_grants):
             raise ValueError('当前设备退房或重复退房结果不符')
 
 
-def verify(package, digest, java_home, check_restore=False, check_leave=False, check_grants=False, check_session=False):
+def verify(package, digest, java_home, check_restore=False, check_leave=False, check_grants=False, check_session=False, check_health=False):
     workspace = Path(__file__).resolve().parents[2]
     target = workspace / 'target'
     if os.name != 'nt' or target.drive.upper() == os.environ.get('SystemDrive', 'C:').upper() or target.resolve(strict=True) != target:
@@ -188,12 +188,23 @@ def verify(package, digest, java_home, check_restore=False, check_leave=False, c
                 subprocess.run([*tool, 'restore', '--backup', archive_path, '--destination', kit / database_path],
                                cwd=kit, env=env, check=True, timeout=120)
             scripts = kit / 'backend/scripts/local-preview'
+            def check_packaged_backend(expected_ready):
+                result = subprocess.run([sys.executable, '-B', 'scripts/local-preview/trial-desktop.py', 'target/desktop',
+                                         '--http-port', str(http_port), '--check-backend'], cwd=kit, env=env, timeout=15)
+                if result.returncode != (0 if expected_ready else 1):
+                    raise ValueError('包内健康检查与后端生命周期不符')
+                if any((kit / 'target/desktop' / name).exists() for name in ('temp', 'webview')):
+                    raise ValueError('只读检查创建了桌面运行目录')
+            if check_health:
+                check_packaged_backend(False)
             try:
                 startup = {**env, 'ZHIJIE_PREVIEW_PASSWORD': password} if first else env.copy()
                 if not first:
                     startup.pop('ZHIJIE_PREVIEW_PASSWORD', None)
                 subprocess.run([*command, scripts / 'start.ps1', '-JavaHome', java_home, '-HttpPort', str(http_port),
                                 '-DatabasePort', str(database_port)], cwd=kit, env=startup, check=True, timeout=120)
+                if check_health:
+                    check_packaged_backend(True)
                 login = api('auth/login', method='POST', body={'email': 'trial@example.test', 'password': password, 'deviceId': 'relocation'})
                 token = login['accessToken']
                 group, = api('groups', token=token)
@@ -217,6 +228,8 @@ def verify(package, digest, java_home, check_restore=False, check_leave=False, c
                     check_session_revocation(api, password, room)
             finally:
                 subprocess.run([*command, scripts / 'stop.ps1'], cwd=kit, env=env, check=True, timeout=45)
+            if check_health:
+                check_packaged_backend(False)
     print('RELOCATED_TRIAL_KIT_PASSWORD_POLICY_LOGIN_MESSAGE_RESTART_OK')
     if check_restore:
         print('TRIAL_KIT_OFFLINE_BACKUP_RESTORE_LOGIN_OK')
@@ -224,6 +237,8 @@ def verify(package, digest, java_home, check_restore=False, check_leave=False, c
         print('TRIAL_KIT_DEVICE_BOUND_LEAVE_OK')
     if check_grants:
         print('TRIAL_KIT_DEVICE_BOUND_GRANTS_OK')
+    if check_health:
+        print('TRIAL_KIT_READ_ONLY_HEALTH_LIFECYCLE_OK')
 
 
 if __name__ == '__main__':
@@ -235,5 +250,6 @@ if __name__ == '__main__':
     parser.add_argument('--check-leave', action='store_true', help='每次启动后验证设备接管和按租约退房；只用于支持该协议的包')
     parser.add_argument('--check-grants', action='store_true', help='同时验证接管前的设备不能取得语音或网络票据')
     parser.add_argument('--check-session', action='store_true', help='验证具体登录的注销、同设备接管及刷新重放撤销；需要 V17 后端')
+    parser.add_argument('--check-health', action='store_true', help='验证包内只读检查在启动前、运行中与停服后的状态')
     args = parser.parse_args()
-    verify(args.package, args.sha256, args.java_home, args.check_restore, args.check_leave, args.check_grants, args.check_session)
+    verify(args.package, args.sha256, args.java_home, args.check_restore, args.check_leave, args.check_grants, args.check_session, args.check_health)

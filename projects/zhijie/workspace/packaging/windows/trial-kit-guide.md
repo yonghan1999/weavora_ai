@@ -10,12 +10,14 @@
    & "./backend/scripts/local-preview/start.ps1" -JavaHome "D:/Program Files/jdk-25" -HttpPort 18829 -DatabasePort 15439
    ```
 
-2. 第二个窗口先核对桌面文件。核对通过后执行第二条命令启动，使用 `trial@example.test` 和刚设置的密码登录。
+2. 第二个窗口先核对桌面文件，并检查所选本机端口的后端是否报告 `UP`。这个检查不登录、不启动程序，也不能证明该端口一定属于本包；请使用第一步启动时显示的端口。核对通过后执行第二条命令启动，使用 `trial@example.test` 和刚设置的密码登录。
 
    ```powershell
-   python -B "scripts/local-preview/trial-desktop.py" "target/desktop" --http-port 18829 --check-only
+   python -B "scripts/local-preview/trial-desktop.py" "target/desktop" --http-port 18829 --check-backend
    python -B "scripts/local-preview/trial-desktop.py" "target/desktop" --http-port 18829
    ```
+
+   后端尚未启动时，可改用 `--check-only` 单独校验桌面文件。若健康检查失败，先核对两个窗口的端口与第一步的就绪提示，不要因此重置数据库或停止其他进程。
 
 3. 在「本地试用群」发送一条消息。退出桌面后，从解压目录正常停止后端。下次从同一目录启动，使用原密码即可查看保留的消息。
 

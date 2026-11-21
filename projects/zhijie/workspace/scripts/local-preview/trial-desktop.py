@@ -1,6 +1,7 @@
 """从非系统盘的已准备候选目录启动单机试用桌面，不安装或启动后端。"""
 import argparse
 import hashlib
+from http.client import HTTPConnection, HTTPException
 import json
 import os
 from pathlib import Path
@@ -45,16 +46,41 @@ def client_environment(parent, profile, temporary, port):
     return environment
 
 
+def check_backend(port):
+    connection = HTTPConnection('127.0.0.1', port, timeout=3)
+    try:
+        connection.request('GET', '/actuator/health', headers={'Accept': 'application/json'})
+        response = connection.getresponse()
+        if response.status != 200:
+            raise ValueError(f'健康端点返回 HTTP {response.status}')
+        body = response.read(8193)
+        if len(body) > 8192:
+            raise ValueError('健康响应超出预期大小')
+        result = json.loads(body)
+        if not isinstance(result, dict) or result.get('status') != 'UP':
+            raise ValueError('健康状态不是 UP')
+    except (OSError, HTTPException, ValueError) as error:
+        raise ValueError(f'本机端口 {port} 未通过后端健康检查，请确认后端已启动，且 --http-port 与 -HttpPort 相同。') from error
+    finally:
+        connection.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('candidate', type=Path, help='含 manifest.json 和 app 子目录的本机候选目录')
     parser.add_argument('--http-port', type=int, default=8080)
-    parser.add_argument('--check-only', action='store_true', help='只读核对 app 文件清单、SHA-256 和目录，不启动程序')
+    checks = parser.add_mutually_exclusive_group()
+    checks.add_argument('--check-only', action='store_true', help='只读核对 app 文件清单、SHA-256 和目录，不启动程序')
+    checks.add_argument('--check-backend', action='store_true', help='同时检查本机后端是否就绪，不登录或启动桌面')
     args = parser.parse_args()
     if os.name != 'nt' or not 1 <= args.http_port <= 65535:
         parser.error('仅支持 Windows 本机，HTTP 端口须在 1 至 65535。')
     try:
         executable, profile = inspect_candidate(Path(__file__).resolve().parents[2] / 'target', args.candidate)
+        if args.check_backend:
+            check_backend(args.http_port)
+            print(f'桌面文件摘要匹配；本机端口 {args.http_port} 的后端健康状态为 UP。未登录，未启动桌面。')
+            return 0
         if args.check_only:
             print(f'app 文件清单及全部摘要匹配；WebView2 试用目录：{profile}；未启动。')
             return 0

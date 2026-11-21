@@ -2,7 +2,13 @@
 
 ## 当前本机试用（不安装）
 
-最新整包：`target/trial-kit-8471c58/zhijie-windows-x64-trial.zip`（93,087,117 字节，SHA-256：`5f1892ca7b8eca6f62ffbf8c11349afa2ed8b1b5c57618cfe1e1f21bd6e69cdb`）。后端从已推送 `8471c58` 干净归档构建，包含活动绑定具体登录与失效清退修复，数据库升级为 V17。注销、刷新重放及密码重置不再仅使账号凭据失效，旧活动权威资格同样拒绝；同设备另一登录必须显式加入，不继承旧活动，旧注销不能误伤接管后的新租约。源码证据和范围见 `docs/engineering/activity-auth-session-revocation.md`。
+当前下载制品：`target/trial-kit-1ccaf96/zhijie-windows-x64-trial.zip`（93,087,811 字节，SHA-256：`7cc6b9efae4a54033472c9987063cc1324cdb90bbf918fa2a53d541d98e94cb6`）。从全新解压目录按包内 `README.md` 启动后端，再运行 `python -B "scripts/local-preview/trial-desktop.py" "target/desktop" --http-port 18829 --check-backend`；端口须与启动时一致。它直接读取回环健康端点，不发送凭据、不走代理或重定向，不创建 WebView 目录。`--check-only` 仍仅离线检查桌面文件。健康检查不识别进程身份，不替代登录或媒体验收。
+
+逐项比较前后两个 ZIP 的 352 个条目，只有包内说明和桌面启动脚本变化。打包及启动器 12 项测试通过；`target/trial-kit-1ccaf96/lifecycle.log` 记录该整包首次启动、停止与重启的两轮完整检查，包括密码登录、消息保留、设备接管、注销与刷新重放后的资格拒绝以及启动前/运行中/停服后的只读检查。仅启动隔离的试用后端和数据库，未运行原生桌面、安装器、Helper 或组合测试。
+
+### 上版制品及共用后端
+
+上版整包：`target/trial-kit-8471c58/zhijie-windows-x64-trial.zip`（93,087,117 字节，SHA-256：`5f1892ca7b8eca6f62ffbf8c11349afa2ed8b1b5c57618cfe1e1f21bd6e69cdb`）。后端从已推送 `8471c58` 干净归档构建，包含活动绑定具体登录与失效清退修复，数据库升级为 V17。注销、刷新重放及密码重置不再仅使账号凭据失效，旧活动权威资格同样拒绝；同设备另一登录必须显式加入，不继承旧活动，旧注销不能误伤接管后的新租约。源码证据和范围见 `docs/engineering/activity-auth-session-revocation.md`。
 
 桌面和 Helper 继续使用 `cc65e0d` 便携清单与八个产品文件；差异仅测试专用 Rust 探针，不影响 release 产品，无需重复构建安装器。清单 SHA-256 为 `aa5d17c9d94b4745c8c1c0104989550e7c981f380333fdbe0868b15b9394a5ee`。新后端为 `target/trial-kit-8471c58/preview-backend.zip`（83,855,552 字节，SHA-256：`7dc40ac0b68e3ca32cab0f7373ce11f56266997178fec0e0a3b2bb15d9c3246d`）。340 个后端条目相较 V16 只新增三个会话清退类和 V17，变更九个相关顶层类、三个相关内部类和活动 mapper；352 个整包条目仅上述后端内容及包内升级说明变化。其余依赖、桌面和 Helper 字节一致，逐条核对见 `target/trial-kit-8471c58/comparison.log`。
 

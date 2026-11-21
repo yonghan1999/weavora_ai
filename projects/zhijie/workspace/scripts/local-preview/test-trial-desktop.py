@@ -1,4 +1,5 @@
 import hashlib
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import importlib.util
 import json
 import os
@@ -6,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 
 
@@ -51,6 +53,40 @@ class DesktopTrialTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             trial.inspect_candidate(self.root / 'app', self.root)
         self.assertNotEqual(self.run_trial('--check-only', '--http-port', '0').returncode, 0)
+
+    def test_backend_check_only_accepts_healthy_loopback_without_redirects_or_credentials(self):
+        requests = []
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(handler):
+                requests.append((handler.path, handler.headers.get('Authorization'), handler.headers.get('Cookie')))
+                handler.send_response(status)
+                if status == 302:
+                    handler.send_header('Location', '/another-service')
+                handler.end_headers()
+                handler.wfile.write(body)
+
+            def log_message(handler, *args):
+                pass
+
+        with HTTPServer(('127.0.0.1', 0), Handler) as server:
+            worker = threading.Thread(target=server.serve_forever, daemon=True)
+            worker.start()
+            try:
+                for status, body, expected in [(200, b'{"status":"UP"}', 0), (503, b'{"status":"UP"}', 1),
+                                               (200, b'{"status":"DOWN"}', 1), (200, b'not json', 1),
+                                               (200, b' ' * 8192 + b'{"status":"UP"}', 1), (302, b'', 1)]:
+                    with self.subTest(status=status, body=body[:20]):
+                        requests.clear()
+                        result = self.run_trial('--check-backend', '--http-port', str(server.server_port),
+                                                HTTP_PROXY='http://127.0.0.1:1', NO_PROXY='')
+                        self.assertEqual(result.returncode, expected, result.stderr)
+                        self.assertEqual(requests, [('/actuator/health', None, None)])
+            finally:
+                server.shutdown()
+                worker.join(timeout=3)
+        self.assertFalse((self.root / 'webview').exists())
+        self.assertFalse((self.root / 'temp').exists())
 
     def test_check_covers_companions_and_exact_app_contents(self):
         self.helper.write_bytes(b'changed')
