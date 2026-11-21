@@ -3,8 +3,8 @@
   "resourceBudget": {
     "cpuCores": 2,
     "memoryMiB": 2048,
-    "upstreamKbitPerSecond": 5120,
-    "downstreamKbitPerSecond": 5120
+    "upstreamKbitPerSecond": 5000,
+    "downstreamKbitPerSecond": 5000
   },
   "scenarios": [
     {

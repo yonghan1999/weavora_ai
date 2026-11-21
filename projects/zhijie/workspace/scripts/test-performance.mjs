@@ -8,8 +8,8 @@ assert.equal(configuration.schemaVersion, 1);
 assert.deepEqual(configuration.resourceBudget, {
   cpuCores: 2,
   memoryMiB: 2048,
-  upstreamKbitPerSecond: 5120,
-  downstreamKbitPerSecond: 5120,
+  upstreamKbitPerSecond: 5000,
+  downstreamKbitPerSecond: 5000,
 });
 assert.deepEqual(configuration.scenarios.map(item => item.id), ["C0", "C1", "C2", "C3", "C4"]);
 configuration.scenarios.forEach(validateScenario);
@@ -47,4 +47,16 @@ shortRun.metrics = {
 shortRun.evidence = c1.evidenceRequirements;
 assert.throws(() => validateResult(shortRun, c1, configuration.resourceBudget), /budgets/);
 assert.deepEqual(budgetFailures(shortRun, c1, configuration.resourceBudget), ["duration"]);
+const linkBoundary = structuredClone(shortRun);
+linkBoundary.execution.durationSeconds = c1.durationSeconds;
+linkBoundary.metrics.upstreamPeakKbitPerSecond = 5000;
+linkBoundary.metrics.downstreamPeakKbitPerSecond = 5000;
+assert.deepEqual(budgetFailures(linkBoundary, c1, configuration.resourceBudget), []);
+for (const direction of ["upstream", "downstream"]) {
+  const metric = `${direction}PeakKbitPerSecond`;
+  linkBoundary.metrics[metric] = 5000.001;
+  assert.deepEqual(budgetFailures(linkBoundary, c1, configuration.resourceBudget), [direction]);
+  assert.throws(() => validateResult(linkBoundary, c1, configuration.resourceBudget), /budgets/);
+  linkBoundary.metrics[metric] = 5000;
+}
 console.log("C0-C4 parameters, result schemas, long-session budgets and audio evidence requirements are valid; all capacity acceptance remains unverified.");
