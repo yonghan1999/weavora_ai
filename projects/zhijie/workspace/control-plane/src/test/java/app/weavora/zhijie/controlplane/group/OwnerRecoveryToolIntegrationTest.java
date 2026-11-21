@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.*;
 
 import app.weavora.zhijie.controlplane.ControlPlaneApplication;
 import app.weavora.zhijie.controlplane.identity.*;
+import app.weavora.zhijie.controlplane.sync.OutboxRepository;
+import app.weavora.zhijie.controlplane.sync.SyncService;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,6 +43,8 @@ class OwnerRecoveryToolIntegrationTest {
                     "--spring.datasource.password=", "--zhijie.scheduling.enabled=false")) {
                 var groups = context.getBean(GroupService.class);
                 var sql = context.getBean(JdbcTemplate.class);
+                var outbox = context.getBean(OutboxRepository.class);
+                var sync = context.getBean(SyncService.class);
                 var users = context.getBean(IdentityRepository.class);
                 String owner = user(users), target = user(users), other = user(users);
                 var group = groups.createGroup(owner, "人工恢复", null, "");
@@ -72,7 +76,12 @@ class OwnerRecoveryToolIntegrationTest {
                 try (var support = DriverManager.getConnection(supportUrl, "zhijie_support", "")) {
                     for (String decision : List.of("DISPUTED", "INSUFFICIENT_EVIDENCE", "REJECT")) {
                         String rejected = groups.requestRecovery(target, group.id(), "support-ticket-reject").id();
+                        long beforeDecision = outbox.latestSequence();
                         OwnerRecoveryTool.review(support, review(rejected, owner, target, decision), true);
+                        assertThat(sync.history(target, beforeDecision)).singleElement().satisfies(event -> {
+                            assertThat(event.type()).isEqualTo("group.changed");
+                            assertThat(event.payload()).isEqualTo("{}");
+                        });
                         assertThat(groups.getGroup(owner, group.id()).ownerUserId()).isEqualTo(owner);
                         assertThat(sql.queryForObject("SELECT status FROM owner_recovery_requests WHERE id=?", String.class, rejected)).isEqualTo("REJECTED");
                     }
@@ -82,7 +91,9 @@ class OwnerRecoveryToolIntegrationTest {
                     assertThatThrownBy(() -> OwnerRecoveryTool.review(support,
                             new OwnerRecoveryTool.Review(id, owner, target, "support-agent", "ticket-decision", "RECOVER", true, false, true), true))
                             .hasMessage("HUMAN_EVIDENCE_CONFIRMATIONS_REQUIRED");
+                    long cursor = outbox.latestSequence();
                     OwnerRecoveryTool.review(support, review, false);
+                    assertThat(outbox.latestSequence()).isEqualTo(cursor);
                     assertThat(groups.getGroup(owner, group.id()).ownerUserId()).isEqualTo(owner);
                     assertThat(sql.queryForObject("SELECT status FROM owner_recovery_requests WHERE id=?", String.class, id)).isEqualTo("PENDING");
                     // 审计插入失败必须回滚已经执行的群主与角色更新。
@@ -90,6 +101,7 @@ class OwnerRecoveryToolIntegrationTest {
                         migrator.createStatement().execute("REVOKE INSERT ON audit_logs FROM zhijie_support");
                     }
                     assertThatThrownBy(() -> OwnerRecoveryTool.review(support, review, true)).isInstanceOf(java.sql.SQLException.class);
+                    assertThat(outbox.latestSequence()).isEqualTo(cursor);
                     assertThat(groups.getGroup(owner, group.id()).ownerUserId()).isEqualTo(owner);
                     assertThat(sql.queryForObject("SELECT status FROM owner_recovery_requests WHERE id=?", String.class, id)).isEqualTo("PENDING");
                     try (var migrator = DriverManager.getConnection(migratorUrl, "zhijie_migrator", "")) {
@@ -99,8 +111,23 @@ class OwnerRecoveryToolIntegrationTest {
                     sql.update("UPDATE users SET status='DISABLED' WHERE id=?", owner);
                     OwnerRecoveryTool.review(support, review, true);
                     assertOwner(sql, group.id(), target);
+                    assertThat(sync.history(target, cursor)).singleElement().satisfies(event -> {
+                        assertThat(event.type()).isEqualTo("group.changed");
+                        assertThat(event.groupId()).isEqualTo(group.id());
+                        assertThat(event.payload()).isEqualTo("{}");
+                    });
+                    assertThat(sync.history(other, cursor)).isEqualTo(sync.history(target, cursor));
+                    assertThat(sync.history(user(users), cursor)).isEmpty();
                     assertThat(sql.queryForObject("SELECT status FROM owner_transfers WHERE id=?", String.class, pendingTransfer.id())).isEqualTo("CANCELLED");
                     assertThatThrownBy(() -> OwnerRecoveryTool.review(support, review, true)).hasMessage("RECOVERY_ALREADY_DECIDED");
+                    assertThat(sync.history(target, cursor)).hasSize(1);
+                    try (var access = support.createStatement(); var result = access.executeQuery(
+                            "SELECT has_table_privilege(current_user, 'outbox_events', 'INSERT'), "
+                            + "has_function_privilege(current_user, 'public.notify_owner_review_group_change()', 'EXECUTE')")) {
+                        assertThat(result.next()).isTrue();
+                        assertThat(result.getBoolean(1)).isFalse();
+                        assertThat(result.getBoolean(2)).isFalse();
+                    }
                     assertThat(sql.queryForObject("SELECT count(*) FROM audit_logs WHERE target_id=? AND action='OWNER_RECOVERY_REVIEW'", Integer.class, id)).isEqualTo(1);
                     for (String denied : List.of("SELECT password_hash FROM users", "UPDATE users SET status='ACTIVE'",
                             "SELECT * FROM auth_sessions", "DELETE FROM audit_logs", "UPDATE audit_logs SET result='forged'")) {

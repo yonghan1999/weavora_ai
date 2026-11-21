@@ -120,6 +120,40 @@ class ProductSyncIntegrationTest {
         }
     }
 
+    @Test void connectedMemberReceivesCommittedOwnerRecovery() throws Exception {
+        try (var postgres = EmbeddedPostgres.start(); var context = new SpringApplication(ControlPlaneApplication.class).run(
+                "--server.address=127.0.0.1", "--server.port=0", "--zhijie.scheduling.enabled=false",
+                "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
+                "--spring.datasource.username=postgres", "--spring.datasource.password=")) {
+            var identities = context.getBean(IdentityRepository.class);
+            var groups = context.getBean(GroupService.class);
+            String owner = user(identities), member = user(identities);
+            var group = groups.createGroup(owner, "恢复通知测试", null, "");
+            groups.acceptInvitation(member, groups.invite(owner, group.id(), member).id());
+            var recovery = groups.requestRecovery(member, group.id(), "test-case");
+            long cursor = context.getBean(OutboxRepository.class).latestSequence();
+            var credentials = context.getBean(CredentialProtector.class);
+            String sessionId = UUID.randomUUID().toString(), secret = credentials.randomSecret();
+            identities.insertSession(new AuthSession(sessionId, member, "recovery-test", "unused", credentials.hashToken(secret),
+                    Instant.now().plusSeconds(900), Instant.now().plusSeconds(900), null, 1L));
+            int port = ((ServletWebServerApplicationContext)context).getWebServer().getPort();
+            var listener = new Collector(context.getBean(ObjectMapper.class));
+            var socket = HttpClient.newHttpClient().newWebSocketBuilder().header("Authorization", "Bearer " + sessionId + "." + secret)
+                    .buildAsync(URI.create("ws://127.0.0.1:" + port + "/api/v1/ws?cursor=" + cursor), listener).get(5, TimeUnit.SECONDS);
+            try (var reviewConnection = postgres.getPostgresDatabase().getConnection()) {
+                OwnerRecoveryTool.review(reviewConnection, new OwnerRecoveryTool.Review(recovery.id(), owner, member,
+                        "fixture-reviewer", "fixture-decision", "RECOVER", true, true, true), true);
+                context.getBean(app.weavora.zhijie.controlplane.revocation.RevocationDispatcher.class).dispatchPending();
+                listener.awaitCount(1);
+                var notice = listener.events.getFirst();
+                assertThat(notice.path("type").asText()).isEqualTo("group.changed");
+                assertThat(notice.path("groupId").asText()).isEqualTo(group.id());
+                assertThat(notice.path("payload").asText()).isEqualTo("{}");
+                assertThat(groups.getGroup(member, group.id()).ownerUserId()).isEqualTo(member);
+            } finally { socket.abort(); }
+        }
+    }
+
     private String user(IdentityRepository identities) {
         String id = UUID.randomUUID().toString();
         identities.insertUser(new UserAccount(id, id + "@example.test", AccountStatus.ACTIVE, "unused", Instant.now()));
