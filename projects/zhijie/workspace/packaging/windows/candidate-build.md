@@ -2,7 +2,15 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名试用包：`target/room-owner-kit-eb37fda/zhijie-windows-x64-trial.zip`（79,535,587 字节，SHA-256：`c3251d9d7bd56684c46926b03181598221c8f7d93a8c531f8c2e373af4afb496`）。解压到 D 盘全新短目录，按包内 `README.md` 启动。桌面由 `eb37fda` 离线构建：保存房间变更后的刷新阶段不再接受退房点击；同步连接恢复时，客户端重新核对活动租约。后端与上版相同，不覆盖既有数据目录。
+当前 Windows x64 未签名试用包：`target/full-room-kit-6d0288a/zhijie-windows-x64-trial.zip`（79,535,442 字节，SHA-256：`7c4a7e92ecab83aa46974058c5a48ce798d66f38fb47e36340bf475c1ae007b0`）。解压到 D 盘全新短目录，按包内 `README.md` 启动，不覆盖旧包或既有数据。本次桌面由 `6d0288a` 离线构建：确认入房时目标房间已满或暂停加入，弹窗会说明原因，仍可重试。
+
+同目录 `comparison.json` 记录新旧包 364 个条目仅桌面程序及清单有变化，原后端与 Helper 未变。`embedded-assets.json` 逐项核对了从新包桌面程序提取的 10 个页面资源；`embedded-browser.json` 的 178 项页面检查全部通过、无脚本错误，旧包对照在 `before.err` 的满房提示断言失败。成品页面使用受控接口响应；真实满房切换及原租约验证见 `desktop/ui/tests/browser-run.md`。
+
+整包回归 `packaging/windows/test-trial-kit-relocation.py` 的 `--check-paused` 在首次启动、原目录重启、冷备恢复副本三次启动中调用真实包内后端。每次均验证暂停期间连群主新加入也返回 `409 ROOM_PAUSED`，房外重新开放后可加入原活动并按租约退出。结果与设备接管、会话撤销及健康检查同记于 `lifecycle.log`。没有启动原生桌面、安装器或真实音频、虚拟网卡。
+
+### 历史整包：房主管理与退房
+
+Windows x64 未签名试用包：`target/room-owner-kit-eb37fda/zhijie-windows-x64-trial.zip`（79,535,587 字节，SHA-256：`c3251d9d7bd56684c46926b03181598221c8f7d93a8c531f8c2e373af4afb496`）。桌面由 `eb37fda` 离线构建：保存房间变更后的刷新阶段不再接受退房点击；同步连接恢复时，客户端重新核对活动租约。
 
 同目录 `payload.log` 核对 NSIS 中八个产品文件；`comparison.json` 逐项比对试用 ZIP，364 个条目中只有桌面程序及其清单变化。按[成品页面核对](verify-package.md)从新 ZIP 的桌面程序中解出十个页面资源（`embedded-assets.json`）；用这些资源跑 176 项页面检查，无脚本异常（`embedded-browser.json`）。旧包页面未通过同一刷新断言，见 `target/room-ownership-82014e1/old-final.err`。`lifecycle.log` 验证解压后的登录、消息、重启、冷备恢复、设备接管、会话撤销及健康检查。原生租约复核的同提交开发证据见 `desktop/ui/tests/browser-run.md`；本次未启动原生桌面或安装器，不能把页面测试当作原生多机验收。
 
