@@ -10,6 +10,8 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 
 DESKTOP_NOTICES = {
+    'FFmpeg-ad41607-CREDITS.chromium.txt': ('packaging/windows/trial-notices/FFmpeg-ad41607-CREDITS.chromium.txt',
+        'd0b1c5ab584d3be029fed1df3221367550e1d7de8ed201a5785d6c375f4c658f'),
     'WebRTC-win-x64-a545de4-LICENSE.txt': ('packaging/windows/trial-notices/WebRTC-win-x64-a545de4-LICENSE.txt',
         'f26ccdf9dc9ca9f6dce44a170346239eb9192526e91b865a6b40ff7170b2e8af'),
     'WebView2-SDK-1.0.3800.47-LICENSE.txt': ('packaging/windows/trial-notices/WebView2-SDK-1.0.3800.47-LICENSE.txt',

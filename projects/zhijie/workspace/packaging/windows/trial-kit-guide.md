@@ -1,5 +1,7 @@
 # 织界 · Windows 本机试用
 
+桌面内的 FFmpeg 另附其 Chromium 源码版本指定的 `third-party/desktop/FFmpeg-ad41607-CREDITS.chromium.txt`，与 WebRTC 总声明同时保留。它提供署名和许可文本，不是正式发行授权。
+
 `third-party/desktop/` 含桌面使用的 WebView2 SDK 加载器的许可与 NOTICE、LiveKit/WebRTC 桥接层声明，以及 Helper 使用的 BoringTun 许可。其中 `WebRTC-win-x64-a545de4-LICENSE.txt` 是 Windows x64 预编译 WebRTC 发行包自己的 26 节声明，包含编解码器材料，区别于桥接层 NOTICE。Wintun 的许可仍位于 `target/desktop/app/WINTUN-LICENSE.txt`。这里不附 WebView2 Runtime。随附材料不表示已审定编解码器专利、源码提供或正式分发条件。
 
 后端依赖中，62 个 JAR 内含已索引的许可材料，另 14 个的补充原文在 `third-party/`。打开 `third-party/sources.json`，可按 JAR 文件名查到原文、上游来源和 SHA-256。Windows 内嵌数据库 JAR 的 `nativePayload` 还列出 10 个原生组件对应的 21 个 DLL、文件摘要与许可材料，另有 6 个未确认产品身份的文件。PostgreSQL 数据库本体与 Zonky 打包项目的声明分列。这不等于嵌套组件、扩展和桌面原生依赖均已审核，也不是正式分发批准。

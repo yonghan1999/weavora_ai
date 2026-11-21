@@ -2,7 +2,11 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名整包：`target/webrtc-origin-81487ad/zhijie-windows-x64-trial.zip`（79,521,354 字节，SHA-256：`ca0b8530d81aa271aa63cb8abb94a44bdf27969b24936c2b74b3b684ca395cb4`）。相较上一版只更新 README，新增 `third-party/desktop/WebRTC-win-x64-a545de4-LICENSE.txt`。整包其他文件（包括桌面、Helper 和后端）逐项字节相同。
+当前 Windows x64 未签名整包：`target/ffmpeg-review-8ac0e84/zhijie-windows-x64-trial.zip`（79,534,635 字节，SHA-256：`78df6b26990c620dcba082aa528bc657e4f8fd0f52e1614ee2aa28d9c7f67a90`）。相较上一版只更新 README、补入 Chromium FFmpeg 的 `CREDITS.chromium`；编解码行为及程序字节不变。构建开关、与源码及可执行文件的对应证据和剩余审查项见[Windows FFmpeg 材料核对](ffmpeg-build-review.md)。该核对不改变阶段或发布批准。
+
+### 历史整包：预编译 WebRTC 总声明
+
+历史整包：`target/webrtc-origin-81487ad/zhijie-windows-x64-trial.zip`（79,521,354 字节，SHA-256：`ca0b8530d81aa271aa63cb8abb94a44bdf27969b24936c2b74b3b684ca395cb4`）。相较上一版只更新 README，新增 `third-party/desktop/WebRTC-win-x64-a545de4-LICENSE.txt`。整包其他文件（包括桌面、Helper 和后端）逐项字节相同。
 
 **原生库的材料来源。** Windows release 的 `webrtc-sys` 链接搜索路径指向工作区 `target/sdk/lib`；实际 `webrtc.lib` 为 89,350,204 字节，SHA-256 `3e5959b5320579814706848a0641224db22f03a374493e90cbd235948977f930`。其同目录 SDK 的 `LICENSE.md` 有 26 节，196,641 字节，SHA-256 `118329b312ed24efd1ae1a7b16c1ce51f7890d30ddc7e7075a04a9cd30c096c2`。已从 [LiveKit 对应 release](https://github.com/livekit/rust-sdks/releases/tag/webrtc-a545de4) 的 `webrtc-win-x64-release.zip` 下载响应中读到完整的 LICENSE、args.gn 和两个 ninja 文件，解压后都与本机 SDK 对应文件完全相同。总声明保留全文，只将 CRLF 规范为 LF；随包文本 SHA-256 `f26ccdf9dc9ca9f6dce44a170346239eb9192526e91b865a6b40ff7170b2e8af`。这不同于上一版仅提供的桥接和构建工具 NOTICE。
 
