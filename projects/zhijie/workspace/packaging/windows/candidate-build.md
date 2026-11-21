@@ -2,7 +2,13 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名试用包：`target/native-materials-78c5cf4/zhijie-windows-x64-trial.zip`（79,536,751 字节，SHA-256：`ff10cab06690851547fd833b27cf19e189643edc98f3110c9b878a7960897e6f`）。解压到 D 盘全新短目录，按包内 `README.md` 启动。已在使用上一版的用户无需迁移：桌面、后端及所有驱动字节相同。
+当前 Windows x64 未签名试用包：`target/extension-origins-62e4fa0/zhijie-windows-x64-trial.zip`（79,544,544 字节，SHA-256：`900ca6cff6d65bba76e5f13733ab7d0ca5942bddb1df0a9f996a5e1b688e7701`）。解压到 D 盘全新短目录，按包内 `README.md` 启动。上一版使用者无需迁移；桌面、后端及驱动未变。
+
+`comparison.json` 记录 369 个条目：相对上一版仅更新说明书与来源索引，增加 4 份原文。逐一比对嵌套数据库载荷中 27 个第三方 DLL、14 个组件和关联声明的 SHA-256，没有未归属的条目。后三个 DLL 的精确源码版本仍未确认；这不是可复现构建或正式分发批准。发行脚本、项目声明及证据边界见 `postgres-origin.md`。
+
+### 历史整包：ICU 工具及 libxslt 声明
+
+Windows x64 未签名试用包：`target/native-materials-78c5cf4/zhijie-windows-x64-trial.zip`（79,536,751 字节，SHA-256：`ff10cab06690851547fd833b27cf19e189643edc98f3110c9b878a7960897e6f`）。解压到 D 盘全新短目录，按包内 `README.md` 启动。
 
 `comparison.json` 记录旧包 364 个条目仅说明书、来源索引有改动，新包多一份 libxslt 原文。数据库嵌套载荷内的 24 个 DLL 已逐一重算摘要，比对了其引用的声明文件；仍有 3 个文件未配齐材料，不能作为正式分发批准。依据见 `postgres-origin.md`。`lifecycle.log` 记录新包在独立目录首次启动、原目录重启和冷备恢复后的登录、消息与健康检查；未启动原生桌面或安装器。
 
