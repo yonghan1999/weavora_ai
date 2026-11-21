@@ -6,15 +6,9 @@ import { validateEvidenceIndex, validateMatrix } from "./compatibility-tool.mjs"
 
 assert.ok(process.argv.includes("--validate-matrix"), "Use --validate-matrix to validate compatibility contracts");
 const root = process.cwd();
-const matrix = validateMatrix(JSON.parse(readFileSync("release/support-matrix.json", "utf8")), root);
-for (const platform of matrix.platforms) {
-  assert.equal(platform.installUpdateUninstall, "unverified");
-  assert.equal(platform.realVoiceAndTun, "unverified");
-  assert.deepEqual(platform.testedGames, []);
-}
-const invalid = structuredClone(matrix);
-invalid.platforms[0].installUpdateUninstall = "verified";
-assert.throws(() => validateMatrix(invalid, root), /Missing platform evidence/);
+validateMatrix(JSON.parse(readFileSync("release/support-matrix.json", "utf8")), root);
+const matrixTests = spawnSync(process.execPath, ["--test", "scripts/test-support-matrix.mjs"], {cwd: root, encoding: "utf8"});
+assert.equal(matrixTests.status, 0, matrixTests.error?.message ?? `${matrixTests.stdout}${matrixTests.stderr}`);
 
 const inventory = JSON.parse(readFileSync("docs/engineering/dependency-inventory.json", "utf8"));
 assert.ok(inventory.dependencies.length > 0);
@@ -43,4 +37,4 @@ const release = spawnSync(process.execPath, ["scripts/generate-release-manifest.
   encoding: "utf8",
 });
 assert.equal(release.status, 0, release.stderr);
-console.log("Compatibility runner inputs, evidence index, dependency review gaps and design hashes are consistent; platform, game, signing, audio and capacity acceptance remain unverified.");
+console.log("Compatibility inputs, evidence index and design hashes checked; this run does not perform real-platform or game acceptance.");

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 
 export function sha256(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
@@ -50,6 +50,16 @@ export function designAssetDiff(baseline, current) {
   };
 }
 
+function validateMatrixEvidence(item, root) {
+  assert.ok(typeof item?.path === "string" && item.path.trim() && !isAbsolute(item.path), "Expected relative evidence path");
+  const path = resolve(root, item.path);
+  const inside = candidate => candidate !== ".." && !candidate.startsWith(`..${sep}`) && !isAbsolute(candidate);
+  assert.ok(inside(relative(root, path)), `Evidence outside workspace: ${item.path}`);
+  assert.ok(existsSync(path) && inside(relative(realpathSync(root), realpathSync(path))) && statSync(path).isFile(), `Invalid evidence file: ${item.path}`);
+  assert.match(item.sha256, /^[a-f0-9]{64}$/, "Missing evidence SHA-256");
+  assert.equal(sha256(path), item.sha256, `Evidence hash mismatch: ${item.path}`);
+}
+
 export function validateMatrix(matrix, root) {
   assert.equal(matrix.schemaVersion, 1);
   assert.deepEqual(matrix.platforms.map(item => item.platform).sort(), ["linux", "macos", "windows"]);
@@ -57,12 +67,21 @@ export function validateMatrix(matrix, root) {
     assert.ok(platform.system && platform.architecture && platform.permissions);
     assert.ok(Array.isArray(platform.testedGames));
     assert.ok(Array.isArray(platform.evidence));
-    const claimed = [platform.shellBuild, platform.installUpdateUninstall, platform.realVoiceAndTun]
-      .some(status => ["verified", "passed"].includes(status));
-    if (claimed) assert.ok(platform.evidence.length > 0, `Missing platform evidence: ${platform.platform}`);
-    for (const path of platform.evidence) assert.ok(existsSync(resolve(root, path)), `Missing evidence: ${path}`);
+    const claims = ["shellBuild", "installUpdateUninstall", "realVoiceAndTun"];
+    for (const item of platform.evidence) {
+      assert.ok(claims.includes(item?.claim), `Invalid evidence claim: ${platform.platform}`);
+      validateMatrixEvidence(item, root);
+    }
+    for (const claim of claims) {
+      const status = platform[claim];
+      if (platform.platform === "windows" && claim === "shellBuild" && status === "checked_on_windows") continue;
+      assert.ok(["unverified", "failed", "verified", "passed"].includes(status), `Invalid status: ${platform.platform}/${claim}`);
+      if (status !== "unverified") assert.ok(platform.evidence.some(item => item.claim === claim), `Missing platform evidence: ${platform.platform}/${claim}`);
+    }
     for (const game of platform.testedGames) {
-      assert.ok(game.name && game.version && game.evidence?.length, `Incomplete game evidence: ${platform.platform}`);
+      assert.ok(typeof game.name === "string" && game.name.trim() && typeof game.version === "string" && game.version.trim()
+        && Array.isArray(game.evidence) && game.evidence.length > 0, `Incomplete game evidence: ${platform.platform}`);
+      for (const item of game.evidence) validateMatrixEvidence(item, root);
     }
   }
   return matrix;

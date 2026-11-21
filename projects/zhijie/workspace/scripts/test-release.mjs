@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { validateMatrix } from "./compatibility-tool.mjs";
 
 assert.ok(process.argv.includes("--contract"), "Use --contract to validate release configuration");
 const tauri = JSON.parse(readFileSync("desktop/shell/tauri.conf.json", "utf8"));
@@ -58,17 +59,10 @@ assert.equal(policy.uninstall.removePhysicalLanRoutes, false);
 assert.equal(policy.uninstall.deleteServerData, false);
 assert.equal(policy.productionSigningAuthorized, false);
 
-const matrix = JSON.parse(readFileSync("release/support-matrix.json", "utf8"));
-assert.deepEqual(matrix.platforms.map(item => item.platform).sort(), ["linux", "macos", "windows"]);
-for (const platform of matrix.platforms) {
-  assert.ok(Array.isArray(platform.evidence));
-  if (platform.installUpdateUninstall === "verified" || platform.realVoiceAndTun === "verified") {
-    assert.ok(platform.evidence.length > 0, `Missing evidence for ${platform.platform}`);
-  }
-}
+validateMatrix(JSON.parse(readFileSync("release/support-matrix.json", "utf8")), process.cwd());
 
 const generated = spawnSync(process.execPath, ["scripts/generate-release-manifest.mjs", "--check"], {
   encoding: "utf8",
 });
 assert.equal(generated.status, 0, generated.stderr);
-console.log("Release configuration, support matrix, and artifact hashes are consistent; installers remain unverified.");
+console.log("Release configuration, support matrix, and artifact hashes are consistent; this check does not exercise installers.");
