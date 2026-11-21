@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { brotliCompressSync } from 'node:zlib';
+
+test('extract only matching executable bytes and never overwrite prior evidence', context => {
+  const root = mkdtempSync(join(tmpdir(), 'trial-embedded-'));
+  context.after(() => rmSync(root, { recursive: true, force: true }));
+  const dist = join(root, 'input'), cache = join(root, 'cache'), binary = join(root, 'shell');
+  mkdirSync(dist); mkdirSync(cache);
+  const html = Buffer.from('<html></html>'), script = Buffer.from('window.loaded = true;');
+  writeFileSync(join(dist, 'index.html'), '<!doctype html><html/>');
+  writeFileSync(join(dist, 'app.js'), script);
+  const packedHtml = brotliCompressSync(html), packedScript = brotliCompressSync(script);
+  writeFileSync(join(cache, 'compiled.html'), packedHtml);
+  writeFileSync(join(cache, 'compiled.js'), packedScript);
+  const header = Buffer.from('test-prefix');
+  writeFileSync(binary, Buffer.concat([header, packedHtml, packedScript]));
+  const verify = output => spawnSync(process.execPath, [fileURLToPath(new URL('./verify-embedded-ui.mjs', import.meta.url)),
+    binary, dist, cache, createHash('sha256').update(html).digest('hex'), output], { encoding: 'utf8' });
+  const output = join(root, 'out');
+  const matched = verify(output);
+  assert.equal(matched.status, 0, matched.stderr);
+  const offsets = Object.fromEntries(JSON.parse(matched.stdout).map(record => [record.name, record.offset]));
+  assert.deepEqual(offsets, { 'index.html': header.length, 'app.js': header.length + packedHtml.length });
+  assert.deepEqual(readFileSync(join(output, 'index.html')), html);
+  assert.deepEqual(readFileSync(join(output, 'app.js')), script);
+  assert.notEqual(verify(output).status, 0);
+  writeFileSync(binary, Buffer.concat([header, packedHtml]));
+  const missing = join(root, 'missing');
+  const rejected = verify(missing);
+  assert.notEqual(rejected.status, 0);
+  assert.match(rejected.stderr, /程序内未找到匹配资源：app\.js/);
+  assert.equal(existsSync(missing), false);
+});

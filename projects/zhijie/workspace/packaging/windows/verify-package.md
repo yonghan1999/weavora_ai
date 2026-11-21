@@ -1,5 +1,19 @@
 # Windows 候选包只读核对
 
+## 从桌面程序核对嵌入页面
+
+`verify-embedded-ui.mjs` 不运行桌面程序。它用本次 Tauri 构建的 Brotli 缓存定位程序内字节，再解压程序中对应的片段，逐个比对 `dist` 的资源摘要。`index.html` 在嵌入时会被 Tauri 改写，故需单独提供**已审阅的嵌入 HTML 摘要**，不能直接使用未经转换的源 HTML 摘要。HTML 或 Tauri 转换流程变化时须重新审阅，不要从待验证程序临时取一个摘要来让检查通过。
+
+在 D 盘保留同一提交的 `dist`、同次构建的 `tauri-codegen-assets`，以及从最终 ZIP 读出的 `zhijie-shell.exe`。将提取结果写入一个不存在的 `dist` 目录（父目录须已存在），再从它的父目录运行工作区的 `desktop/ui/tests/browser.mjs`，页面测试才会使用成品资源而非开发目录。参数顺序如下：
+
+```powershell
+node "packaging/windows/verify-embedded-ui.mjs" "$shellFromZip" "$buildDist" "$assetCache" "$reviewedHtmlSha256" "$reviewDir/dist"
+```
+
+成功时标准输出为文件名、程序内偏移与解压后 SHA-256 的 JSON。错版或资源缺失时不创建输出目录，已有目录不覆盖。此项验证不等于原生窗口、Rust 重连行为或安装升级已在成品上实测。
+
+## 核对 NSIS 产品文件
+
 需要与便携桌面配套的离线后端时，见 [Windows 本机试用后端](preview-backend.md)。
 
 从项目的 `workspace` 运行。检查对象为本机生成的 NSIS 安装包，不需要管理员权限，不运行安装器、桌面、Helper 或驱动。先保留与**同一次构建**对应的二进制和脚本；之后重编译再比对可能得到不同结果。
