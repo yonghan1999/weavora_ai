@@ -22,7 +22,7 @@ class BackendPackageTest(unittest.TestCase):
         self.repository = self.root / 'repo'
         self.output = self.root / 'bundle.zip'
         self.build = self.root / 'control-plane/target'
-        self.classpath = self.build / 'local-preview-classpath.txt'
+        self.classpath = self.build / 'windows-preview-runtime.txt'
 
         def create(path):
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -44,6 +44,7 @@ class BackendPackageTest(unittest.TestCase):
         backend.pack(self.root, self.repository, self.output)
 
     def test_relative_classpath_and_allowlisted_payload_only(self):
+        (self.build / 'local-preview-classpath.txt').write_text('stale-development-test-classpath')
         self.pack()
         with ZipFile(self.output) as archive:
             self.assertEqual(archive.read('control-plane/target/local-preview-classpath.txt'), b'lib/one.jar')

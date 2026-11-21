@@ -45,7 +45,7 @@ def pack(workspace, repository, output):
         if source.read_bytes() != packed.read_bytes():
             raise ValueError(f'编译后资源与源码不同：{source.name}')
     dependencies = []
-    for entry in (build / 'local-preview-classpath.txt').read_text(encoding='utf-8-sig').strip().split(';'):
+    for entry in (build / 'windows-preview-runtime.txt').read_text(encoding='utf-8-sig').strip().split(';'):
         jar = Path(entry)
         if jar.suffix.lower() != '.jar' or not jar.is_absolute():
             raise ValueError('依赖清单必须由 Maven 仓库内的绝对 JAR 路径组成')

@@ -10,6 +10,9 @@
     </parent>
     <artifactId>control-plane</artifactId>
     <name>zhijie-control-plane</name>
+    <properties>
+        <embedded-postgres.scope>test</embedded-postgres.scope>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -67,15 +70,23 @@
             <groupId>io.zonky.test</groupId>
             <artifactId>embedded-postgres</artifactId>
             <version>2.2.2</version>
-            <scope>test</scope>
+            <scope>${embedded-postgres.scope}</scope>
         </dependency>
         <dependency>
             <groupId>io.zonky.test.postgres</groupId>
             <artifactId>embedded-postgres-binaries-windows-amd64</artifactId>
             <version>17.5.0</version>
-            <scope>test</scope>
+            <scope>${embedded-postgres.scope}</scope>
         </dependency>
     </dependencies>
+    <profiles>
+        <profile>
+            <id>windows-local-preview</id>
+            <properties>
+                <embedded-postgres.scope>runtime</embedded-postgres.scope>
+            </properties>
+        </profile>
+    </profiles>
     <build>
         <plugins>
             <plugin>
