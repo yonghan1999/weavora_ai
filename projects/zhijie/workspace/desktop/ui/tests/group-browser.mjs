@@ -356,6 +356,16 @@ async function historyDelete() {
     await client.wait('exactly three older messages loaded', `${entries}.length===3 && ${entry('群主保留')}`);
   }
   assert.equal(await member.evaluate(`${control('群主保留')}===null`), true);
+  await owner.action('dialog-close');
+  await owner.action('manage-group'); await owner.action('group-members');
+  for (const nextRole of ['ADMIN', 'MEMBER']) {
+    await owner.wait('owner can change the expected role', `document.querySelector('[data-action=change-member-role]')?.dataset.role===${JSON.stringify(nextRole)}`);
+    await owner.action('change-member-role'); await owner.submit();
+    await owner.wait('role change saved', `document.querySelector('#dialog-title')?.textContent==='群组成员'`);
+    await member.wait(`open history reflects ${nextRole} without navigation`, `!!${entry('群主保留')} && (!!${control('群主保留')})===${nextRole === 'ADMIN'} && !!${control('成员自删')}`);
+  }
+  console.log('OPEN_HISTORY_MODERATION_FOLLOWS_ROLE');
+  await owner.action('dialog-close'); await owner.action('message-history');
   async function remove(client, peer, body, count) {
     await client.wait('permitted historical delete available', control(body));
     await client.evaluate(`${control(body)}.click()`);

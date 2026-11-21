@@ -622,14 +622,18 @@ async function showMessageHistory(groupId, cursor, applicable = () => true) {
   const current = epoch, userId = s.userId;
   if (!groupId || !cursor) return;
   const previous = modalRoot.firstChild;
-  let rows;
-  try { rows = await request("messages", groupId, null, cursor); }
+  let rows, groupMembers;
+  try {
+    [rows, groupMembers] = await Promise.all([
+      request("messages", groupId, null, cursor), request("group-members", groupId),
+    ]);
+  }
   catch (error) {
     if (epoch === current && previous === modalRoot.firstChild && applicable() && ["RESOURCE_NOT_AVAILABLE", "CURRENT_GRANT_REQUIRED"].includes(error?.message || error)) closeDialog();
     throw error;
   }
   if (epoch !== current || groupId !== s.groupId || userId !== s.userId || previous !== modalRoot.firstChild || !applicable()) return false;
-  const deleteControl = messageDeleteControl(s);
+  const deleteControl = messageDeleteControl({ userId, groupMembers });
   const entries = rows.slice().reverse().map(message => `<article class="message-content"><div class="message-meta"><strong>${e(message.authorId === userId ? "我" : message.authorId)}</strong><time>${e(new Date(message.createdAt).toLocaleString("zh-CN"))}</time>${deleteControl(message)}</div><div class="message-text">${e(message.deleted ? "此消息已被删除" : message.body)}</div></article>`).join("");
   const older = rows.length === 50 ? button("更早的消息", "message-history", "ghost", `data-id="${e(rows.at(-1).id)}"`) : "";
   dialog("群聊历史", "按发送时间排列；关闭后返回实时群聊。", `<div data-message-history>${entries || empty("没有更早的消息", "你已经看完了这个群的历史消息。")}</div>${older}${button("返回最新消息", "dialog-close", "ghost")}`, null);

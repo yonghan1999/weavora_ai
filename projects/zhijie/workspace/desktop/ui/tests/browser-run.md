@@ -10,6 +10,12 @@
 
 实跑日志 `target/group-profile-live-9991829/integration.log`：2 项通过，零失败或跳过。成员端检查见 `target/group-browser-social-2183235030775891767/scenario.log`。覆盖实际页面、Rust 测试客户端、WebSocket、控制面与 PostgreSQL，不等于两个原生窗口的跨设备验收。
 
+### 已打开的历史页随群角色变化
+
+在与双端群资料相同的环境下启用 `ZHIJIE_TEST_GROUP_BROWSER=true`，运行 `./mvnw.cmd -o -pl control-plane "-Dtest=GroupBrowserIntegrationTest#twoPagesDeleteHistoricalMessagesAsAuthorAndModerator" test`。成员保持群聊历史页打开，群主先提升、再撤销其管理员角色。测试要求成员无需操作，对他人消息的删除按钮随之出现、消失，而自己的未删消息始终保留删除入口；随后验证实际删除、两端占位、数据库记录和事件。按钮变化不代替服务端授权。
+
+`target/history-role-655625e/before.log` 及 `target/group-browser-history-delete-10666207909424737445/scenario.log` 记录修复前升权未反映到历史页。修复后 `target/history-role-655625e/after.log` 记录同一用例通过，`target/group-browser-history-delete-6910613686922879330/scenario.log` 包含角色同步与删除成功标记。此处验证的是本机双页面与真实控制面，不是跨设备原生窗口验收。
+
 ### Windows 试用包的页面边框与键盘焦点
 
 登录页通过浏览器实际派发 Tab 按键，检查获得键盘焦点的控件仍有轮廓线，并检查 `html`、`body`、`#app`、`.desktop-app` 没有整页边框或轮廓线。这检查的是页面 CSS，不是 Windows 窗口管理器绘制的外框。
