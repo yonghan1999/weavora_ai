@@ -1,8 +1,13 @@
 import importlib.util
+import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch
+
+from cadence_clients import combined_log, participant_env, run_clients
 
 
 spec = importlib.util.spec_from_file_location(
@@ -31,6 +36,45 @@ def observations(windows=1):
 
 
 class CadenceSummaryTest(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "win32", "Windows diagnostic launcher")
+    def test_partial_launch_reaps_already_started_client(self):
+        children = []
+        spawn = subprocess.Popen
+
+        def fail_second(*args, **kwargs):
+            if children:
+                raise OSError("second client not launched")
+            children.append(spawn(*args, **kwargs))
+            return children[0]
+
+        with tempfile.TemporaryDirectory() as directory, patch("cadence_clients.subprocess.Popen", side_effect=fail_second):
+            root = Path(directory)
+            env = {**os.environ, "ZHIJIE_TEST_VOICE_TOKEN_0": "local", "ZHIJIE_TEST_VOICE_TOKEN_1": "local"}
+            with self.assertRaisesRegex(OSError, "second client"):
+                run_clients([sys.executable, "-B", "-c", "import time; time.sleep(30)"], root, root, None, env, None, 1)
+            self.assertIsNotNone(children[0].poll())
+            self.assertTrue(children[0].stdin.closed)
+
+    def test_split_process_receives_only_its_token(self):
+        env = {f"ZHIJIE_TEST_VOICE_TOKEN_{index}": str(index) for index in range(12)}
+        env["zhijie_test_voice_token_stale"] = "stale"
+        for index in range(12):
+            self.assertEqual(participant_env(env, index), {f"ZHIJIE_TEST_VOICE_TOKEN_{index}": str(index),
+                                                           "ZHIJIE_CADENCE_PARTICIPANT": str(index)})
+
+    def test_split_process_requires_one_matching_boundary_per_process(self):
+        header = "CADENCE_STARTED mode=synthetic unix_ms=10000 observation_ms=15000"
+        with tempfile.TemporaryDirectory() as root:
+            paths = [Path(root) / str(index) for index in range(12)]
+            for index, path in enumerate(paths):
+                path.write_text(f"{header}\nvalue {index}\n", encoding="utf-8")
+            lines = combined_log(paths, 10000, 1).splitlines()
+            self.assertEqual(lines, [header] + [f"value {index}" for index in range(12)])
+            for invalid in ("", header + "\n" + header, header.replace("10000", "10001")):
+                paths[-1].write_text(invalid, encoding="utf-8")
+                with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                    combined_log(paths, 10000, 1)
+
     def test_complete_seven_window_observation(self):
         result = cadence.summarize("\n".join(observations(7)), "synthetic", "tone", 7)
         self.assertEqual(result["source"]["count"], 12)

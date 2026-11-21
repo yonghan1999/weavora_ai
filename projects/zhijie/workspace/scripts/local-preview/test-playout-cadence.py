@@ -19,6 +19,7 @@ import urllib.request
 import uuid
 
 from cadence_rtp import summarize_rtp
+from cadence_clients import run_clients
 
 
 class ResourceSampler:
@@ -150,6 +151,28 @@ def summarize(log, mode, signal="silence", windows=1):
     return result
 
 
+def run_shared(command, workspace, env, server, log, windows):
+    resources = []
+    with log.open("wb") as output, subprocess.Popen(
+            command, cwd=workspace, env=env, stdout=output, stderr=subprocess.STDOUT,
+            creationflags=subprocess.CREATE_NO_WINDOW) as process:
+        try:
+            sampler = ResourceSampler({"client": process, "sfu": server})
+            expires = time.monotonic() + windows * 15 + 50
+            resources.append(sampler.sample())
+            while process.poll() is None:
+                if time.monotonic() >= expires:
+                    raise TimeoutError("cadence diagnostic exceeded observation and setup deadline")
+                time.sleep(0.5)
+                resources.append(sampler.sample())
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait(timeout=5)
+            log.with_name(log.stem + "-resources.json").write_text(json.dumps(resources, indent=2) + "\n", encoding="utf-8")
+        return process.returncode
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--media-address", required=True, type=ipaddress.IPv4Address)
@@ -158,7 +181,10 @@ def main():
     parser.add_argument("--signal", choices=("silence", "tone"), default="silence")
     parser.add_argument("--windows", type=int, choices=range(1, 8), default=1)
     parser.add_argument("--rtp-stats", action="store_true")
+    parser.add_argument("--isolated-clients", action="store_true", help="one SDK process per synthetic participant")
     args = parser.parse_args()
+    if args.isolated_clients and args.mode != "synthetic":
+        parser.error("isolated clients require synthetic mode")
     if args.signal == "tone" and args.mode != "synthetic":
         parser.error("controlled tones require synthetic mode; never send tones to host output")
     media_address = str(args.media_address)
@@ -237,6 +263,7 @@ rtc:
             modes = ["synthetic", "platform"] if args.mode == "both" else [args.mode]
             for mode in modes:
                 env = os.environ.copy()
+                env.pop("ZHIJIE_CADENCE_PARTICIPANT", None)
                 env["ZHIJIE_CADENCE_MODE"] = mode
                 env["ZHIJIE_CADENCE_SIGNAL"] = args.signal
                 env["ZHIJIE_CADENCE_WINDOWS"] = str(args.windows)
@@ -247,38 +274,23 @@ rtc:
                     env[f"ZHIJIE_TEST_VOICE_TOKEN_{index}"] = token(room, f"cadence-{index}:1")
                     credentials.append(env[f"ZHIJIE_TEST_VOICE_TOKEN_{index}"])
                 log = runtime / (mode + ".log")
-                process = None
-                resources = []
-                with log.open("wb") as output:
-                    try:
-                        process = subprocess.Popen([
-                            executable, "--ignored", "--exact",
-                            "silent_full_room_playout_cadence", "--nocapture",
-                        ], cwd=workspace, env=env, stdout=output, stderr=subprocess.STDOUT,
-                            creationflags=subprocess.CREATE_NO_WINDOW)
-                        sampler = ResourceSampler({"client": process, "sfu": server})
-                        expires = time.monotonic() + args.windows * 15 + 50
-                        resources.append(sampler.sample())
-                        while process.poll() is None:
-                            if time.monotonic() >= expires:
-                                raise TimeoutError("cadence diagnostic exceeded observation and setup deadline")
-                            time.sleep(0.5)
-                            resources.append(sampler.sample())
-                    finally:
-                        if process is not None and process.poll() is None:
-                            process.kill()
-                            process.wait(timeout=5)
-                        (runtime / (mode + "-resources.json")).write_text(
-                            json.dumps(resources, indent=2) + "\n", encoding="utf-8")
-                summary = {"mode": mode, "signal": args.signal, "windows": args.windows, "exitCode": process.returncode}
-                if not process.returncode:
+                command = [executable, "--ignored", "--exact", "silent_full_room_playout_cadence", "--nocapture"]
+                if args.isolated_clients:
+                    content = run_clients(command, workspace, runtime, server, env, ResourceSampler, args.windows)
+                    log.write_text(content, encoding="utf-8")
+                    code = 0
+                else:
+                    code = run_shared(command, workspace, env, server, log, args.windows)
+                summary = {"mode": mode, "signal": args.signal, "windows": args.windows, "exitCode": code,
+                           "sdkProcesses": 12 if args.isolated_clients else 1}
+                if not code:
                     content = log.read_text(encoding="utf-8", errors="replace")
                     summary.update(summarize(content, mode, args.signal, args.windows))
                     if args.rtp_stats:
                         summary["rtp"] = summarize_rtp(content, mode, args.windows)
                 results.append(summary)
                 print(json.dumps(summary), flush=True)
-                if process.returncode:
+                if code:
                     break
         finally:
             if server is not None and server.poll() is None:

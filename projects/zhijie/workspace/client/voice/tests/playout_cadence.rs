@@ -29,6 +29,16 @@ async fn silent_full_room_playout_cadence() {
         .expect("observation window count");
     assert!((1..=7).contains(&windows));
     let rtp_enabled = std::env::var("ZHIJIE_CADENCE_RTP").as_deref() == Ok("true");
+    let participant = std::env::var("ZHIJIE_CADENCE_PARTICIPANT")
+        .ok()
+        .map(|value| value.parse::<usize>().expect("participant index"));
+    let participants = match participant {
+        Some(index) => {
+            assert!(index < 12 && mode == "synthetic");
+            index..index + 1
+        }
+        None => 0..12,
+    };
     let audio = if mode == "platform" {
         let audio = PlatformAudio::new().expect("initialize platform audio");
         // PlatformAudio 默认允许 ADM 录音；发布原生源前显式禁用，避免 SDK 自动启动采集。
@@ -50,7 +60,7 @@ async fn silent_full_room_playout_cadence() {
     let mut local_tracks = Vec::new();
     let mut rtp_tracks = Vec::new();
     let mut producers = tokio::task::JoinSet::new();
-    for index in 0..12 {
+    for index in participants.clone() {
         let token = std::env::var(format!("ZHIJIE_TEST_VOICE_TOKEN_{index}"))
             .expect("isolated diagnostic token");
         let (room, receiver) = Room::connect(&url, &token, RoomOptions::default())
@@ -105,7 +115,7 @@ async fn silent_full_room_playout_cadence() {
     }
     // 各房间并发收齐订阅，再统一观察；保留事件接收器直到结束。
     let mut subscriptions = tokio::task::JoinSet::new();
-    for (receiver, mut events) in events.into_iter().enumerate() {
+    for (receiver, mut events) in participants.clone().zip(events) {
         subscriptions.spawn(async move {
             let mut streams = Vec::new();
             while streams.len() < 11 {
@@ -150,7 +160,7 @@ async fn silent_full_room_playout_cadence() {
             all_streams.push(("PLAYOUT_CADENCE", receiver, speaker, stream));
         }
     }
-    for (index, track) in local_tracks.into_iter().enumerate() {
+    for (index, track) in participants.clone().zip(local_tracks) {
         all_streams.push((
             "SOURCE_CADENCE",
             index,
@@ -158,17 +168,28 @@ async fn silent_full_room_playout_cadence() {
             NativeAudioStream::new(track, 48000, 1),
         ));
     }
-    let mut start = tokio::time::Instant::now();
-    if rtp_enabled {
-        start += Duration::from_millis(500);
-    }
     let observation_ms = windows * 15000;
+    let (start, unix_ms) = if let Some(index) = participant {
+        println!("CADENCE_READY participant={index}");
+        let mut command = String::new();
+        std::io::stdin().read_line(&mut command).unwrap();
+        let target: u64 = command.trim().parse().expect("shared start time");
+        let remaining = (UNIX_EPOCH + Duration::from_millis(target))
+            .duration_since(SystemTime::now())
+            .expect("start deadline already passed");
+        assert!(remaining <= Duration::from_secs(5));
+        (tokio::time::Instant::now() + remaining, u128::from(target))
+    } else {
+        let delay = Duration::from_millis(if rtp_enabled { 500 } else { 0 });
+        (
+            tokio::time::Instant::now() + delay,
+            (SystemTime::now() + delay)
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis(),
+        )
+    };
     let deadline = start + Duration::from_secs((windows * 15) as u64);
-    let unix_ms = (SystemTime::now()
-        + start.saturating_duration_since(tokio::time::Instant::now()))
-    .duration_since(UNIX_EPOCH)
-    .expect("wall clock after epoch")
-    .as_millis();
     println!("CADENCE_STARTED mode={mode} unix_ms={unix_ms} observation_ms={observation_ms}");
     let mut rtp_observers = tokio::task::JoinSet::new();
     for (receiver, speaker, track) in rtp_tracks {
@@ -183,7 +204,7 @@ async fn silent_full_room_playout_cadence() {
     }
     for (kind, receiver, speaker, mut stream) in all_streams {
         consumers.spawn(async move {
-            if rtp_enabled {
+            if rtp_enabled || participant.is_some() {
                 tokio::time::sleep_until(start).await;
             }
             let initial = stream.stats();
@@ -280,6 +301,12 @@ async fn silent_full_room_playout_cadence() {
     while let Some(result) = rtp_observers.join_next().await {
         result.expect("RTP diagnostic observer completed");
     }
+    if let Some(index) = participant {
+        println!("CADENCE_MEASURED participant={index}");
+        let mut command = String::new();
+        std::io::stdin().read_line(&mut command).unwrap();
+        assert_eq!(command.trim(), "close");
+    }
     producers.abort_all();
     while producers.join_next().await.is_some() {}
     for room in rooms {
@@ -287,7 +314,7 @@ async fn silent_full_room_playout_cadence() {
     }
     drop(retained_events);
     drop(audio);
-    assert_eq!(observations.len(), 144);
+    assert_eq!(observations.len(), participants.len() * 12);
     for (
         kind,
         receiver,
