@@ -2,7 +2,13 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名试用包：`target/full-room-kit-6d0288a/zhijie-windows-x64-trial.zip`（79,535,442 字节，SHA-256：`7c4a7e92ecab83aa46974058c5a48ce798d66f38fb47e36340bf475c1ae007b0`）。解压到 D 盘全新短目录，按包内 `README.md` 启动，不覆盖旧包或既有数据。本次桌面由 `6d0288a` 离线构建：确认入房时目标房间已满或暂停加入，弹窗会说明原因，仍可重试。
+当前 Windows x64 未签名试用包：`target/cross-group-kit-7f95699/zhijie-windows-x64-trial.zip`（79,535,489 字节，SHA-256：`69de4dc0fecb8cc356a847cdfb7a3798e0399346588c8c218a243109f859514b`）。解压到 D 盘全新短目录，按包内 `README.md` 启动，不覆盖旧数据。桌面由 `7f95699` 离线构建：在甲群房间浏览乙群时，即使乙群被解散，仍可返回甲群原房间。
+
+`comparison.json` 核对了 364 个条目，只有桌面程序及其清单变化；`embedded-assets.json` 核对从 ZIP 中的程序解出的 10 个页面资源，`embedded-browser.json` 记录 180 项页面检查通过、无脚本异常。按[成品页面核对](verify-package.md)用旧包和新包页面连接同版本控制面及独立数据库，从聊天页和管理弹窗分别验证：旧包均丢失入口，新包均能返回、保留原租约并续租。对照日志在 `target/room-ownership-82014e1/kit-group-7f95699-old-1.log`、`kit-group-7f95699-extracted-1.log`。整包 `lifecycle.log` 另行记录原目录重启、恢复至新目录后的登录和消息、设备接管、会话清理、暂停入房和健康检查。测试未启动原生桌面、安装器、真实音频或 TUN。
+
+### 历史整包：满房与暂停入房提示
+
+Windows x64 未签名试用包：`target/full-room-kit-6d0288a/zhijie-windows-x64-trial.zip`（79,535,442 字节，SHA-256：`7c4a7e92ecab83aa46974058c5a48ce798d66f38fb47e36340bf475c1ae007b0`）。桌面由 `6d0288a` 离线构建：确认入房时目标房间已满或暂停加入，弹窗会说明原因，仍可重试。
 
 同目录 `comparison.json` 记录新旧包 364 个条目仅桌面程序及清单有变化，原后端与 Helper 未变。`embedded-assets.json` 逐项核对了从新包桌面程序提取的 10 个页面资源；`embedded-browser.json` 的 178 项页面检查全部通过、无脚本错误，旧包对照在 `before.err` 的满房提示断言失败。成品页面使用受控接口响应；真实满房切换及原租约验证见 `desktop/ui/tests/browser-run.md`。
 
