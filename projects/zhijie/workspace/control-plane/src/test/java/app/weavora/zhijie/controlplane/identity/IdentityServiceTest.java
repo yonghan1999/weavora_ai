@@ -30,6 +30,28 @@ class IdentityServiceTest {
     }
 
     @Test
+    void eachBearerAuthenticationReadsTheCurrentAccountExactlyOnce() {
+        service.register(EMAIL, PASSWORD);
+        service.verifyEmail(EMAIL, emailDispatch.codes.get(ChallengePurpose.VERIFY_EMAIL));
+        var tokens = service.login(EMAIL, PASSWORD, "device");
+        String bearer = "Bearer " + tokens.accessToken();
+        int initialReads = repository.accountReads;
+        var user = service.authenticate(bearer);
+        assertThat(user.id()).isEqualTo(tokens.userId());
+        assertThat(repository.accountReads - initialReads).isEqualTo(1);
+        assertThat(service.authenticateSession(bearer).id()).isEqualTo(tokens.sessionId());
+        assertThat(repository.accountReads - initialReads).isEqualTo(2);
+
+        repository.updateUser(new UserAccount(user.id(), user.emailNormalized(), AccountStatus.DISABLED,
+                user.passwordHash(), user.createdAt()));
+        assertThatThrownBy(() -> service.authenticate(bearer)).isInstanceOf(ApiException.class)
+                .extracting("code").isEqualTo("CURRENT_GRANT_REQUIRED");
+        assertThatThrownBy(() -> service.authenticateSession(bearer)).isInstanceOf(ApiException.class)
+                .extracting("code").isEqualTo("CURRENT_GRANT_REQUIRED");
+        assertThat(repository.accountReads - initialReads).isEqualTo(4);
+    }
+
+    @Test
     void registrationVerificationLoginRefreshAndLogoutUseRotatingSecrets() {
         service.register(EMAIL, PASSWORD);
 
@@ -185,6 +207,7 @@ class IdentityServiceTest {
     }
 
     private static class InMemoryIdentityRepository implements IdentityRepository {
+        private int accountReads;
         private final Map<String, UserAccount> users = new HashMap<>();
         private final Map<String, EmailChallenge> challenges = new HashMap<>();
         private final Map<String, AuthSession> sessions = new HashMap<>();
@@ -196,6 +219,7 @@ class IdentityServiceTest {
 
         @Override
         public Optional<UserAccount> findUserById(String userId) {
+            accountReads++;
             return Optional.ofNullable(users.get(userId));
         }
 

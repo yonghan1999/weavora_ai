@@ -147,10 +147,16 @@ public class IdentityService {
     }
 
     public UserAccount authenticate(String authorization) {
-        return requireActive(authenticateSession(authorization).userId());
+        return authenticateBearer(authorization).user();
     }
 
     public AuthSession authenticateSession(String authorization) {
+        return authenticateBearer(authorization).session();
+    }
+
+    private record AuthenticatedBearer(AuthSession session, UserAccount user) {}
+
+    private AuthenticatedBearer authenticateBearer(String authorization) {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             throw invalidAccessToken();
         }
@@ -161,8 +167,7 @@ public class IdentityService {
                 || !credentials.hashToken(parts.secret()).equals(session.accessTokenHash())) {
             throw invalidAccessToken();
         }
-        requireActive(session.userId());
-        return session;
+        return new AuthenticatedBearer(session, requireActive(session.userId()));
     }
 
     public void requireSession(String sessionId, long generation, String userId) {

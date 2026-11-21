@@ -28,6 +28,10 @@ python "scripts/sample-capacity-resources.py" --pid 1234 --pid 5678 --interface 
 
 ### 逐账号复核 HTTP 活动
 
+**一小时失败基线（`d54f025`）：** `target/hour-audit-d54f025/source/target/control-load-15831610034985500261/` 的 `summary.json` 记录 3,600.036 秒、149,677 次 HTTP、27 次失败、p95 9.255 ms。20 次无响应的传输失败和 7 次 HTTP 429，根因不能合并；虽然每账号至少续票四次、十次指定消息补发成功，但本机零错误门槛失败。`operations.jsonl` SHA-256：`e1b01d6b6f12d2f21753f1b7b206ac1dc8e130b616d5d58f8e310ded0861bf68`。逐秒核对 `body-traffic.jsonl` 三列之和与汇总一致；以客户端收到的 HTTP 响应正文与同步正文相加，全程均值 1.761 Mbit/s，前 3,600 个完整秒中有 156 秒超过 5 Mbit/s，峰值 7.219 Mbit/s。这是正文在客户端被计入的时刻，不是物理链路发送速率或限速下的实测。
+
+**鉴权查询回归：** 消息读写等 HTTP 入口在一次 Bearer 鉴权内曾重复读取同一账号，专门的回归测试先复现实际 2 次、预期 1 次。改为返回本次已校验的会话和账号，不跨请求缓存；下一请求仍重新检查账号是否禁用。`target/auth-read-27d2e15/before.log` 和 `regression.log` 分别记录复现与修复后的 22 项测试（无跳过）。其中 `target/control-load-6180951133290078989/summary.json` 记录本机百账号 90.026 秒续票，3,806 次 HTTP、HTTP/同步均零失败，p95 6.274 ms；每账号至少一次续票、十次补发成功。这证明消除了冗余查询，不证明它导致旧一小时失败或目标服务器已达标。
+
 在 workspace 执行 `python -B "scripts/audit-control-load.py" "target/<本次运行目录>" --seconds 90`；一小时用例改为 `--seconds 3600`。审计按与负载同源的单调时钟检查每个账号的心跳、消息读取、消息写入和好友在线状态请求，包括开头与结尾的空档；最后十个账号的心跳扣除计划内的前 68 秒离线模拟。一小时用例还要求每账号至少续票四次。旧记录缺少 `requestedSeconds` 或 `workloadElapsedMs` 时不能据此复核，不回填推算时间。
 
 本机 90 秒续票用例的记录位于 `target/control-load-11847643715168560359/`。`operations.jsonl` 共 3,809 条，SHA-256 为 `333c972a050cf191083dbb1ee7b4080a275566df9f18054987f9daffee2dc7d0`；`http-activity-audit.json` 显示 100 个账号每人至少续票一次，四类活动的最长空档为 20.065 秒。本审计只证明本机 HTTP 活动，不替代同步通道断言、目标服务器一小时容量、语音或虚拟网络验收。
