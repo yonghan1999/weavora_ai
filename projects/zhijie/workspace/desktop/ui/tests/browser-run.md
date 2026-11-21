@@ -4,6 +4,14 @@
 
 页面回归使用独立的浏览器配置目录和本地 HTTP 服务；其中的桌面桥接是测试夹具。群组集成用例另需真实控制面、PostgreSQL 和测试用 Rust 客户端。两者都不能代替 Tauri 原生窗口、系统授权、真实音频或安装升级的目标平台验收。
 
+### 房主退房与退群的区别
+
+启用 `ZHIJIE_TEST_GROUP_BROWSER=true` 后运行 `GroupBrowserIntegrationTest#assignedRoomOwnerKeepsRoomOnLeaveButGroupOwnerTakesOverOnRemoval`。两个页面分别登录群主和普通成员；群主指定新房主，新房主能改房间资料但不能再次指定房主。退房再加入不改变房主。被群主移出群后，核对成员列表回执、该客户端原生活动快照为空、大厅不再显示房间或通话栏，再核对群主接管的是原房间与原活动。最后从服务端核对房间介绍、所有者和指定房主审计记录。
+
+旧版偶发的两种超时须区分：`target/room-ownership-82014e1/observed-2.log` 在保存后无法打开退房确认框；`confirmed-2.log` 中房主用例已看到成员列表更新，却仍等不到本机活动快照清空。前者由受控页面测试固定在保存成功、后续读取尚未结束的窗口；后者由 Rust 回环测试分别返回成功、租约冲突和临时故障，核对重连时的租约处置。修复后 `renewed-1.log` 至 `renewed-3.log` 分别用新数据库跑房主与双通道两项回归，均无失败、错误和跳过。场景日志中的 `elapsed_ms` 是同一浏览器测试进程的观察时间，不是服务端事务时间，也不是跨机撤销 SLA。
+
+同目录 `full-suite-1.log` 记录完整双客户端集成套件 8 项通过，无跳过；`rust-shell-all.log` 为 42 项通过、3 项需外部夹具的探针默认忽略。`ui-final.json` 记录 176 项页面检查通过。上述结果来自本机源码构建，不是现有 Windows ZIP 或真实音频/TUN 的验收结果。
+
 ### 群资料的双端同步与重启持久化
 
 在 `workspace` 启用 `ZHIJIE_TEST_GROUP_BROWSER=true`，运行 `./mvnw.cmd -o -pl control-plane "-Dtest=GroupBrowserIntegrationTest#twoPagesRevokeRemoveAndReinviteThroughTheControlPlane+groupProfileSurvivesServiceRestartAndFreshBrowser" test`。前者在群主转让并转回后从群主页面修改名称与简介，要求仍打开群聊的普通成员无需刷新或操作就看到两个新值，并独立查询数据库核对。后者在同一临时数据库上重启控制面，用新页面重新登录，核对名称、简介和头像。两项使用独立夹具，不把它们描述为同一条长会话。

@@ -93,8 +93,7 @@ async function page(email, clientPort = port) {
   const wait = (label, expression) => until(`${email}: ${label}`, () => evaluate(expression));
   const select = css => `document.querySelector(${JSON.stringify(css)})`;
   async function click(css) {
-    await wait(css, `${select(css)} && !${select(css)}.disabled`);
-    await evaluate(`${select(css)}.click()`);
+    await wait(css, `(()=>{const button=${select(css)};if(!button || button.disabled || button.closest('[inert], [aria-busy=true]'))return false;button.click();return true})()`);
   }
   const action = name => click(`[data-action="${name}"]`);
   const submit = () => click('[data-form=dialog] .modal-actions .primary');
@@ -240,6 +239,7 @@ try {
   else if (scenario === 'session-revoked') await sessionRevoked();
   else if (scenario === 'history-delete') await historyDelete();
   else if (scenario === 'room-channels') await roomChannels();
+  else if (scenario === 'room-ownership') await roomOwnership();
   else if (scenario === 'protected-switch') await protectedRoomSwitch();
   else if (scenario === 'device-takeover') await deviceTakeover();
   else {
@@ -407,6 +407,50 @@ async function historyDelete() {
   await owner.action('remove-group-member'); await owner.submit();
   await member.wait('removal dismisses pending confirmation without submission', removedView);
   console.log('REMOVAL_DISMISSES_PENDING_MODERATION');
+}
+
+async function roomOwnership() {
+  const owner = await page('owner@example.test'), member = await page('member@example.test');
+  const ready = `!document.querySelector('#app[aria-busy=true]') && document.querySelector('[data-view=groups]')?.disabled===false`;
+  const ownRoomBadge = `Array.from(document.querySelectorAll('.room-side .friend-copy')).some(row=>row.querySelector('strong')?.textContent==='我' && row.querySelector('small')?.textContent.includes('房主'))`;
+  async function join(client) {
+    await client.click('[data-view=lobby]'); await client.action('join-room'); await client.submit();
+    await client.wait('entered the seeded activity', `${ready} && document.querySelector('.room-heading h1')?.textContent==='房主接管验证房'`);
+    await client.click('[data-tab=members]');
+  }
+  await join(owner); await join(member);
+  const start = performance.now();
+  const mark = label => console.log(`ROOM_OWNER_${label} elapsed_ms=${Math.round(performance.now()-start)}`);
+  const memberId = await member.evaluate(`globalThis.__TAURI__.core.invoke('state_snapshot').then(state=>state.userId)`);
+  assert.ok(memberId);
+  await owner.wait('group owner initially owns room', ownRoomBadge);
+  await owner.action('manage-room'); await owner.action('assign-room-owner');
+  await owner.wait('current member is available for assignment', `Array.from(document.querySelectorAll('[name=targetUserId] option')).some(option=>option.value===${JSON.stringify(memberId)})`);
+  await owner.evaluate(`document.querySelector('[name=targetUserId]').value=${JSON.stringify(memberId)}`); await owner.submit();
+  await member.wait('member sees assigned ownership without navigation', ownRoomBadge);
+  await member.action('manage-room');
+  await member.wait('room owner can edit but not reassign ownership', `!!document.querySelector('[name=description]') && !document.querySelector('[data-action=assign-room-owner]')`);
+  await member.evaluate(`document.querySelector('[name=description]').value='新房主已保存'`); await member.submit();
+  await member.wait('room settings save finished', `${ready} && !document.querySelector('[role=dialog]')`);
+  mark('SETTINGS_CLOSED');
+  await member.action('leave'); await member.submit();
+  await member.wait('room owner left activity', `${ready} && !!document.querySelector('.room-card') && !document.querySelector('.room-stage')`);
+  await join(member); await member.wait('voluntary room leave did not transfer ownership', ownRoomBadge);
+  await owner.click('[data-view=groups]'); await owner.action('open-group');
+  await owner.wait('group context ready for management', `${ready} && document.querySelectorAll('.right-panel .friend-copy').length===2`);
+  await owner.action('manage-group'); await owner.action('group-members'); await owner.action('remove-group-member'); await owner.submit();
+  await owner.wait('removal committed to the roster', `document.querySelector('#dialog-title')?.textContent==='群组成员' && !document.querySelector('[data-action=remove-group-member]')`);
+  mark('ROSTER_UPDATED');
+  await member.wait('removed room owner returns to lobby', `document.querySelector('h1')?.textContent==='玩家大厅'`);
+  await member.wait('native client releases removed member activity', `globalThis.__TAURI__.core.invoke('state_snapshot').then(state=>state.activity===null)`);
+  mark('NATIVE_RELEASED');
+  await member.wait('room session is cleared', `!document.querySelector('.room-stage, .voice-dock')`);
+  await member.wait('removed group no longer advertises its room', `!document.querySelector('.room-card')`);
+  mark('VIEW_CLEARED');
+  await owner.action('dialog-close'); await owner.click('.group-room-item [data-action=open-room]');
+  await owner.wait('room context ready after takeover', `${ready} && !!document.querySelector('.room-stage')`);
+  await owner.click('[data-tab=members]'); await owner.wait('group owner took over same room', ownRoomBadge);
+  console.log('ROOM_OWNER_ASSIGN_EDIT_LEAVE_REJOIN_AND_GROUP_TAKEOVER');
 }
 
 async function roomChannels() {

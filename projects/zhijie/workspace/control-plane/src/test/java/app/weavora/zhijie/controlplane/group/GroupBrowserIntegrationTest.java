@@ -159,6 +159,33 @@ class GroupBrowserIntegrationTest {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
+    void assignedRoomOwnerKeepsRoomOnLeaveButGroupOwnerTakesOverOnRemoval() throws Exception {
+        prepareClients();
+        try (var postgres = EmbeddedPostgres.start(); var context = start(postgres)) {
+            var identities = context.getBean(IdentityRepository.class);
+            String password = UUID.randomUUID().toString();
+            String hash = context.getBean(CredentialProtector.class).hashPassword(password);
+            String owner = UUID.randomUUID().toString(), member = UUID.randomUUID().toString();
+            identities.insertUser(new UserAccount(owner, "owner@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            identities.insertUser(new UserAccount(member, "member@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            var groups = context.getBean(GroupService.class);
+            var group = groups.createGroup(owner, "房主接管验证群", null, "");
+            groups.acceptInvitation(member, groups.invite(owner, group.id(), member).id());
+            var rooms = context.getBean(app.weavora.zhijie.controlplane.room.RoomService.class);
+            var room = rooms.createRoom(owner, group.id(), "房主接管验证房", "", "", null);
+            var activity = rooms.startActivity(owner, room.id());
+            runBrowser(context, password, "room-ownership");
+            var saved = rooms.getRoom(owner, room.id());
+            assertThat(saved.ownerUserId()).isEqualTo(owner);
+            assertThat(saved.currentActivityId()).isEqualTo(activity.id());
+            assertThat(saved.description()).isEqualTo("新房主已保存");
+            var sql = context.getBean(JdbcTemplate.class);
+            assertThat(sql.queryForObject("SELECT count(*) FROM audit_logs WHERE group_id=? AND target_id=? AND actor_id=? AND action='ROOM_OWNER_ASSIGN'", Integer.class, group.id(), room.id(), owner)).isOne();
+        }
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
     void roomMembershipSurvivesChannelFailuresAndKickInvalidatesOnlyTheOldLease() throws Exception {
         prepareClients();
         try (var postgres = EmbeddedPostgres.start(); var context = start(postgres)) {
