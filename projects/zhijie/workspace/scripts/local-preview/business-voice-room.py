@@ -18,7 +18,16 @@ def validate(paths, speakers, start_ms, windows):
         if starts != [f"BUSINESS_STARTED participant={receiver} unix_ms={start_ms}"]:
             raise ValueError("client used an unexpected measurement boundary")
         seen = set()
+        tails = set()
         for line in lines:
+            if line.startswith("PCM_AFTER_NETWORK "):
+                match = re.fullmatch(r"PCM_AFTER_NETWORK receiver=(\d+) speaker=(\S+) frames=(\d+) last_ms=(\d+)", line)
+                if (windows != 7 or not match or int(match[1]) != receiver or match[2] in tails
+                        or int(match[3]) < 800 or int(match[4]) < 10000):
+                    raise ValueError("invalid post-network PCM evidence")
+                tails.add(match[2])
+                output.append(line)
+                continue
             if not line.startswith("PCM_DIRECTION "):
                 continue
             match = re.fullmatch(r"PCM_DIRECTION receiver=(\d+) speaker=(\S+) frequency_hz=(\d+) non_silent_frames=(\[[\d, ]+\])", line)
@@ -31,6 +40,8 @@ def validate(paths, speakers, start_ms, windows):
             output.append(line)
         if seen != set(speakers) - {speakers[receiver]}:
             raise ValueError("missing or unexpected business audio peer")
+        if windows == 7 and tails != seen:
+            raise ValueError("missing or unexpected post-network PCM direction")
     return output
 
 
@@ -47,6 +58,8 @@ def main(directory):
     for name in ["ZHIJIE_TEST_VOICE_URL", *(f"ZHIJIE_TEST_{prefix}_{index}" for prefix in ("SPEAKER", "VOICE_TOKEN") for index in range(12))]:
         env[name] = os.environ[name]
     env["ZHIJIE_TEST_COMBINED_CHANNELS"] = str(combined).lower()
+    if combined:
+        env["ZHIJIE_TEST_NETWORK_STOPPED"] = os.environ["ZHIJIE_TEST_NETWORK_STOPPED"]
     ready = Path(os.environ["ZHIJIE_TEST_FULL_ROOM_READY"]) if combined else None
     paths, start = coordinate_clients([executable, "--ignored", "--exact", "full_room_all_to_all_audio", "--nocapture"],
                                       workspace, directory, env, windows, on_start=ready.touch if ready else None)

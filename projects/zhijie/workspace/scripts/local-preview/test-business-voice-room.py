@@ -24,6 +24,21 @@ class BusinessAudioEvidenceTest(unittest.TestCase):
     def test_exact_business_mesh(self):
         self.assertEqual(len(room.validate(self.paths, self.speakers, 4321, 5)), 132)
 
+    def test_combined_requires_post_stop_audio_on_every_direction(self):
+        for receiver, path in enumerate(self.paths):
+            text = path.read_text(encoding="utf-8").replace(str([1200] * 5), str([1200] * 7))
+            for identity in set(self.speakers) - {self.speakers[receiver]}:
+                text += f"\nPCM_AFTER_NETWORK receiver={receiver} speaker={identity} frames=800 last_ms=10000"
+            path.write_text(text, encoding="utf-8")
+        self.assertEqual(len(room.validate(self.paths, self.speakers, 4321, 7)), 264)
+        path = self.paths[0]
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for replacement in ([], [lines[-1], lines[-1]], [lines[-1].replace("=800", "=799")],
+                            [lines[-1].replace("=10000", "=9999")], [lines[-1].replace("receiver=0", "receiver=1")]):
+            path.write_text("\n".join(lines[:-1] + replacement), encoding="utf-8")
+            with self.subTest(replacement=replacement), self.assertRaises(ValueError):
+                room.validate(self.paths, self.speakers, 4321, 7)
+
     def test_reject_wrong_identity_window_or_boundary(self):
         path = self.paths[-1]
         lines = path.read_text(encoding="utf-8").splitlines()

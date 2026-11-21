@@ -253,9 +253,11 @@ class VoiceSignalingIntegrationTest {
                         "livekit_media", "full_room_all_to_all_audio", "--", "--ignored", "--exact", "--nocapture");
         builder.environment().put("ZHIJIE_TEST_VOICE_URL", entry.replace("http://", "ws://"));
         Path voiceReady = directory.resolve("full-room-ready");
+        Path networkStopped = directory.resolve("network-stopped");
         if (combined()) {
             builder.environment().put("ZHIJIE_TEST_COMBINED_CHANNELS", "true");
             builder.environment().put("ZHIJIE_TEST_FULL_ROOM_READY", voiceReady.toString());
+            builder.environment().put("ZHIJIE_TEST_NETWORK_STOPPED", networkStopped.toString());
         }
         var originalTokens = new java.util.ArrayList<String>();
         for (int index = 0; index < 12; index++) {
@@ -268,7 +270,6 @@ class VoiceSignalingIntegrationTest {
         Path output = directory.resolve("rust-full-room-media.log");
         var process = builder.redirectErrorStream(true).redirectOutput(output.toFile()).start();
         var networkWorker = java.util.concurrent.Executors.newSingleThreadExecutor();
-        var networkStopped = new java.util.concurrent.atomic.AtomicLong();
         java.util.concurrent.Future<?> network = null;
         if (combined()) {
             network = networkWorker.submit(() -> {
@@ -277,7 +278,7 @@ class VoiceSignalingIntegrationTest {
                             app.weavora.zhijie.controlplane.network.NetworkPolicyMode.RELAY_ONLY, users, joins,
                             joins.getFirst().activityId(), voiceReady);
                     assertThat(process.isAlive()).as("Voice stays active after network stops").isTrue();
-                    networkStopped.set(System.nanoTime());
+                    Files.createFile(networkStopped);
                 } catch (Exception error) { throw new IllegalStateException(error); }
             });
         }
@@ -305,8 +306,8 @@ class VoiceSignalingIntegrationTest {
                     : "FULL_ROOM_OK participants=12 directions=132 observation_seconds=75 windows=5");
             if (network != null) {
                 network.get(15, TimeUnit.SECONDS);
-                assertThat(System.nanoTime() - networkStopped.get()).as("PCM continues at least ten seconds after network revocation")
-                        .isGreaterThan(TimeUnit.SECONDS.toNanos(10));
+                assertThat(evidence.lines().filter(line -> line.startsWith("PCM_AFTER_NETWORK ")).distinct().count())
+                        .as("Ten seconds of non-silent PCM per direction after the network stopped").isEqualTo(132);
                 assertThat(coordinator.listMembers(owner, joins.getFirst().activityId())).hasSize(12);
                 System.out.println("COMBINED_CHANNELS_OK members=12 same_activity_lease=true voice_directions=132 network_policy_revoked_voice_continued=true");
             }

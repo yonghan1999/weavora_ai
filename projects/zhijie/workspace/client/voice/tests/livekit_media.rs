@@ -10,6 +10,8 @@ use livekit::webrtc::{
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
 
+#[path = "support/after_network.rs"]
+mod after_network;
 #[path = "support/session_revocation.rs"]
 mod session_revocation;
 
@@ -374,11 +376,18 @@ async fn full_room_all_to_all_audio() {
     assert_eq!(frequencies.len(), 12, "twelve distinct media identities");
     let barrier = std::sync::Arc::new(tokio::sync::Barrier::new(participants.len() * 11 + 1));
     let (clock, observation) = tokio::sync::watch::channel(None);
+    let stopped = (windows == 7).then(after_network::StopSignal::default);
+    let watcher = stopped.as_ref().map(|signal| {
+        let path =
+            std::env::var_os("ZHIJIE_TEST_NETWORK_STOPPED").expect("network completion marker");
+        tokio::spawn(after_network::watch_stop(path.into(), signal.clone()))
+    });
     let mut monitors = tokio::task::JoinSet::new();
     for ((index, mut events), room) in participants.clone().zip(receivers).zip(&rooms) {
         let barrier = barrier.clone();
         let mut observation = observation.clone();
         let mut expected = frequencies.clone();
+        let stopped = stopped.clone();
         assert!(expected
             .remove(&room.local_participant().identity().to_string())
             .is_some());
@@ -402,6 +411,7 @@ async fn full_room_all_to_all_audio() {
                             barrier.clone(),
                             observation.clone(),
                             windows,
+                            stopped.clone(),
                         ));
                     }
                     RoomEvent::Disconnected { .. } => panic!("full-room client disconnected"),
@@ -476,6 +486,9 @@ async fn full_room_all_to_all_audio() {
     observation_result
         .expect("full-room observation deadline")
         .expect("every participant decodes all eleven other speakers");
+    if let Some(watcher) = watcher {
+        watcher.await.expect("network stop observed");
+    }
     if participant.is_none() {
         println!(
             "FULL_ROOM_OK participants=12 directions=132 observation_seconds={} windows={windows}",
@@ -540,6 +553,7 @@ async fn measure_full_room_track(
     barrier: std::sync::Arc<tokio::sync::Barrier>,
     mut observation: tokio::sync::watch::Receiver<Option<tokio::time::Instant>>,
     windows: usize,
+    stopped: Option<after_network::StopSignal>,
 ) {
     let mut stream = NativeAudioStream::new(track.rtc_track(), 48000, 1);
     barrier.wait().await;
@@ -556,6 +570,7 @@ async fn measure_full_room_track(
     let mut crossings = vec![0usize; windows];
     let mut samples = vec![0usize; windows];
     let mut previous = 0i16;
+    let mut tail = after_network::Tail::default();
     let deadline = start + Duration::from_secs(windows as u64 * 15);
     while let Ok(frame) = tokio::time::timeout_at(deadline, stream.next()).await {
         let frame = frame.expect("full-room audio stream remains open");
@@ -573,6 +588,9 @@ async fn measure_full_room_track(
             continue;
         }
         frames[window] += 1;
+        if let Some(signal) = &stopped {
+            tail.record(now, signal);
+        }
         samples[window] += frame.data.len();
         for &sample in frame.data.iter() {
             if previous <= 0 && sample > 0 {
@@ -588,6 +606,14 @@ async fn measure_full_room_track(
         let measured = crossings[window] as f32 * 48000.0 / samples[window] as f32;
         assert!((measured - frequency).abs() < 15.0,
             "receiver {receiver}, speaker {identity}, window {window}: expected {frequency}Hz, got {measured}Hz");
+    }
+    if stopped.is_some() {
+        let (frames, last_ms) = tail.evidence().unwrap_or_else(|| {
+            panic!(
+                "missing ten seconds of post-network PCM: receiver={receiver} speaker={identity}"
+            )
+        });
+        println!("PCM_AFTER_NETWORK receiver={receiver} speaker={identity} frames={frames} last_ms={last_ms}");
     }
     println!("PCM_DIRECTION receiver={receiver} speaker={identity} frequency_hz={frequency} non_silent_frames={frames:?}");
 }
