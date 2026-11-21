@@ -479,6 +479,21 @@ async fn session_loop(state: &AppState) {
     }
 }
 
+fn desktop_context() -> tauri::Context<tauri::Wry> {
+    let mut context = tauri::generate_context!();
+    if cfg!(target_os = "windows") {
+        let main = context
+            .config_mut()
+            .app
+            .windows
+            .iter_mut()
+            .find(|window| window.label == "main")
+            .expect("main window missing");
+        main.shadow = false;
+    }
+    context
+}
+
 fn main() {
     let base = match std::env::var("ZHIJIE_CONTROL_PLANE_URL") {
         Ok(value) => value,
@@ -493,21 +508,13 @@ fn main() {
     });
     tauri::Builder::default()
         .setup(|app| {
-            #[cfg(target_os = "windows")]
-            {
-                // Windows 无装饰窗口的原生阴影会附带强调色细边；关闭它，保留框架的拖动与缩放。
-                let window = app
-                    .get_webview_window("main")
-                    .ok_or("main window missing")?;
-                window.set_shadow(false)?;
-            }
             tauri::async_runtime::spawn(maintain_session(app.handle().clone()));
             tauri::async_runtime::spawn(sync::maintain(app.handle().clone()));
             Ok(())
         })
         .manage(AppState::new(client))
         .invoke_handler(product_commands())
-        .run(tauri::generate_context!())
+        .run(desktop_context())
         .expect("failed to run 织界");
 }
 
@@ -540,6 +547,21 @@ fn product_commands<R: tauri::Runtime>(
 #[cfg(test)]
 mod tests {
     use super::product_route;
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_main_starts_undecorated_without_shadow_and_remains_resizable() {
+        let context = super::desktop_context();
+        let main = context
+            .config()
+            .app
+            .windows
+            .iter()
+            .find(|window| window.label == "main")
+            .unwrap();
+        assert!(main.create && main.visible && main.resizable);
+        assert!(!main.decorations && !main.shadow);
+    }
 
     #[test]
     fn group_message_history_uses_only_valid_group_and_cursor_ids() {

@@ -2,7 +2,13 @@
 
 ## 当前本机试用（不安装）
 
-当前整包：`target/trial-kit-edb856b/zhijie-windows-x64-trial.zip`（93,089,313 字节，SHA-256：`e080c44fe6a049e7d5a55848414ab58f953882510d18572287ec8e21d6bd884f`）。核对摘要后解压到 D 盘全新短路径，按包内 `README.md` 启动，不覆盖旧目录。此包包含 `edb856b` 的 Bearer 鉴权优化；202 个控制面类逐字节匹配完成百账号一小时复测的类文件。长测在测试环境执行，不是在解压后的试用包上执行；指标与告警见 `docs/engineering/capacity-resource-sampling.md`。
+当前 Windows x64 整包：`target/window-shadow-startup-25fdb8d/zhijie-windows-x64-trial.zip`（93,088,465 字节，SHA-256：`3859cb814023058cfd5d5bdf4faebddb66bf1369ba7e65002debdcec3cf718fc`）。解压到 D 盘全新短路径，按包内 `README.md` 操作，不覆盖旧目录。Windows 主窗口现在从创建时即禁用原生阴影；旧程序是在窗口创建后才关闭，不能排除刚显示时出现强调色细边。此项仅修正启动顺序，不移除键盘焦点提示，不修改系统主题；原生窗口蓝边、拖动和边缘缩放仍待目视与操作确认。
+
+新旧整包的 353 个条目中，仅 `zhijie-shell.exe` 与桌面清单内容改变；后端仍为 `edb856b`。同目录 `shell-test.log` 记录 Windows release 模式 Shell 回归 41 项通过、3 项需外部夹具的测试未运行，包含创建前无阴影、无装饰、可见和可缩放的配置检查。`payload.log` 记录未运行安装器的八项文件验证；`lifecycle.log` 记录整包后端登录、重启、冷备恢复、设备接管及会话撤销。未启动产品桌面或授予正式验收。
+
+### 历史整包 edb856b
+
+历史整包：`target/trial-kit-edb856b/zhijie-windows-x64-trial.zip`（93,089,313 字节，SHA-256：`e080c44fe6a049e7d5a55848414ab58f953882510d18572287ec8e21d6bd884f`）。此包包含 `edb856b` 的 Bearer 鉴权优化；202 个控制面类逐字节匹配完成百账号一小时复测的类文件。长测在测试环境执行，不是在解压后的试用包上执行；指标与告警见 `docs/engineering/capacity-resource-sampling.md`。
 
 与 `bff9649` 的整包比对：349 个条目内容不变，仅修改 3 个鉴权类并新增 1 个嵌套类。`target/trial-kit-edb856b/lifecycle.log` 记录首次登录写消息、正常重启、停库冷备恢复 1,113 个文件后从独立目录再次登录；三轮均核对消息、房间密码策略、退房、设备接管及会话撤销，停服前后健康检查符合预期。六项打包测试通过，发布配置契约通过；Windows 上未验证 macOS 实际签名。没有安装或启动原生桌面、创建网卡、验证实际通话或部署生产。
 
