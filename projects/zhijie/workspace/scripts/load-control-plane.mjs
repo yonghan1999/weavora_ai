@@ -41,7 +41,7 @@ async function record(entry) {
 }
 
 async function request(actor, operation, path, body) {
-  const started = performance.now();
+  const requestStarted = performance.now();
   const payload = body === undefined ? undefined : JSON.stringify(body);
   measureBody("requestBodyBytes", Buffer.byteLength(payload ?? ""));
   let status = 0;
@@ -61,13 +61,15 @@ async function request(actor, operation, path, body) {
     measureBody("responseBodyBytes", bytes);
     ({ value, code } = classifyLoadResponse(status, text, operation, body));
   } catch { /* 原始网络异常可能含查询令牌，不写入记录。 */ }
-  const latencyMs = performance.now() - started;
+  const finished = performance.now();
+  const latencyMs = finished - requestStarted;
   totals.requests++;
   if (code) totals.failures++;
   totals.responseBodyBytes += bytes;
   totals.requestBodyBytes += Buffer.byteLength(payload ?? "");
   latencies.push(latencyMs);
-  await record({ at: new Date().toISOString(), actor, operation, status, code, latencyMs, responseBodyBytes: bytes });
+  await record({ at: new Date().toISOString(), workloadElapsedMs: finished - started,
+    actor, operation, status, code, latencyMs, responseBodyBytes: bytes });
   return value;
 }
 
@@ -251,7 +253,7 @@ try {
   latencies.sort((a, b) => a - b);
   const traffic = bodyTraffic.rows(started ? workloadEnd - started : 0);
   writeFileSync(resolve(output, "body-traffic.jsonl"), traffic.map(sample => JSON.stringify(sample) + "\n").join(""), { flag: "wx" });
-  const summary = { schemaVersion: 1, scope: "local-control-plane-smoke", accounts: 100, reconnectRounds,
+  const summary = { schemaVersion: 1, scope: "local-control-plane-smoke", accounts: 100, reconnectRounds, requestedSeconds: config.durationSeconds,
     durationSeconds: started ? (workloadEnd - started) / 1000 : 0, ...totals,
     syncBodyBytesDuringWorkload: traffic.reduce((total, sample) => total + sample.syncBodyBytes, 0),
     operationSuccessRatePercent: totals.requests ? 100 * (totals.requests - totals.failures) / totals.requests : 0,

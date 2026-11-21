@@ -154,6 +154,19 @@ class ControlPlaneLoadIntegrationTest {
                     assertThat(summary.path("durationSeconds").asDouble()).isGreaterThanOrEqualTo(durationSeconds);
                     int minimumRotations = durationSeconds == 3600 ? 4 : initialAccessSeconds == 100 ? 1 : 0;
                     assertThat(summary.path("rotationsPerAccountMin").intValue()).isGreaterThanOrEqualTo(minimumRotations);
+                    var auditLog = directory.resolve("http-activity-audit.json");
+                    var audit = new ProcessBuilder(System.getenv().getOrDefault("ZHIJIE_TEST_PYTHON", "python"), "-B",
+                            "scripts/audit-control-load.py", directory.toString(), "--seconds", Integer.toString(durationSeconds))
+                            .directory(workspace.toFile()).redirectOutput(auditLog.toFile())
+                            .redirectError(directory.resolve("http-activity-audit.stderr.log").toFile()).start();
+                    try {
+                        assertThat(audit.waitFor(45, TimeUnit.SECONDS)).as("HTTP activity audit deadline").isTrue();
+                        assertThat(audit.exitValue()).as("Per-account activity audit: %s", directory).isZero();
+                    } finally {
+                        if (audit.isAlive()) audit.destroyForcibly().waitFor(5, TimeUnit.SECONDS);
+                    }
+                    assertThat(json.readTree(auditLog.toFile()).required("httpOperations").asLong())
+                            .isEqualTo(summary.required("requests").asLong());
                     for (var account : accounts) {
                         var persisted = identities.findSessionById(account.get("sessionId")).orElseThrow();
                         assertThat(persisted.generation()).isGreaterThanOrEqualTo(1L + minimumRotations);
