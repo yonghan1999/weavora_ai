@@ -2,6 +2,14 @@
 
 本文记录 `a92851c` 时的修复前行为与历史证据。认证注销仍保留活动资格的缺口已由后续具体登录会话绑定修复，当前实现、V17 升级影响及新证据见 `activity-auth-session-revocation.md`；不要将本文历史边界当作当前行为。
 
+## 后续回归：重新受邀不能恢复旧通道资格
+
+`IssuedGrantRevocationIntegrationTest.reinvitationDoesNotRestoreOldGrantsOrLetLateCleanupRemoveTheNewLease` 使用两个真实 HTTP 登录会话、临时 PostgreSQL 及生产控制面。先由群主移除活动成员，再邀请同一账号回群；该成员全程使用原会话和设备。接受邀请只恢复群成员身份：尝试恢复原活动返回 `409 GENERATION_STALE`，尚未到期的旧网络票在网络及 Relay 权威入口被拒，旧语音 token 在信令入口被拒，群主的 Peer 列表为空。
+
+显式重进同一房间后取得新的成员代次和租约，重新签发两个通道凭据并登记端点。用旧租约退房返回 `left=false`，旧心跳返回 `409 GENERATION_STALE`，携旧票重登记端点返回 `403`。重放后旧票仍被拒，群主和成员的新资格仍有效；群主观察到的唯一 Peer 是新租约和新成员代次。此用例不证明已建立的媒体或 TUN 数据流已停，也没有运行原生桌面。
+
+本机离线执行 `-Dtest=IssuedGrantRevocationIntegrationTest,GroupGovernanceIntegrationTest`，22 项通过、无跳过。日志：`target/reinvite-grants-e5c7ccc/governance-regression.log`。首轮 `focused.log` 在 `initdb` 阶段受本机 cmd AutoRun 干扰，未执行功能断言；仅对测试进程使用项目已有 `CleanCmd` 后重跑，不改注册表。本次不修改生产代码或试用包。
+
 ## 真实验证范围
 
 `IssuedGrantRevocationIntegrationTest` 创建临时 PostgreSQL、生产 Spring HTTP 服务和真实调度器；账号、群、邀请、房间、加入、刷新、签票及可用的治理操作均通过实际 HTTP。语音使用生产签名器和信令鉴权入口，不建立媒体；外部语音管理目标是本测试独占的回环 HTTP 503 服务，Relay 管理投递未启用，撤销待投递告警及 Outbox 保留，不能误连本机已有媒体服务。

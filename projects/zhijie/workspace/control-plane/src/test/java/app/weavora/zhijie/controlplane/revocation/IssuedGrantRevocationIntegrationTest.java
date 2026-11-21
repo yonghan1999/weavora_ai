@@ -170,6 +170,49 @@ class IssuedGrantRevocationIntegrationTest {
     }
 
     @Test
+    void reinvitationDoesNotRestoreOldGrantsOrLetLateCleanupRemoveTheNewLease() throws Exception {
+        var scene = scene();
+        var old = scene.subject();
+        var owner = scene.observer();
+        var tokens = old.tokens();
+        var activityPath = "/api/v1/activities/" + scene.activity();
+        var groupPath = "/api/v1/groups/" + scene.group();
+        assertGrants(old, true);
+        data("DELETE", groupPath + "/members/" + tokens.userId(), owner.tokens(), Map.of(), JsonNode.class);
+        assertGrants(old, false);
+        assertPeers(owner, null);
+
+        var invitation = data("POST", groupPath + "/invitations", owner.tokens(), Map.of("inviteeId", tokens.userId()), JsonNode.class);
+        data("POST", "/api/v1/invitations/" + invitation.path("id").asText() + "/accept", tokens, Map.of(), JsonNode.class);
+        var resume = request("POST", activityPath + "/resume", tokens, Map.of("deviceId", old.joined().deviceId()));
+        assertThat(resume.statusCode()).isEqualTo(409);
+        assertThat(json.readTree(resume.body()).path("error").path("code").asText()).isEqualTo("GENERATION_STALE");
+        assertGrants(old, false);
+        assertPeers(owner, null);
+
+        var renewed = participant(tokens, join(tokens, scene.room()), 3);
+        assertThat(renewed.joined().activityId()).isEqualTo(scene.activity());
+        assertThat(renewed.joined().memberGeneration()).isGreaterThan(old.joined().memberGeneration());
+        assertThat(renewed.joined().leaseId()).isNotEqualTo(old.joined().leaseId());
+        var lateLeave = data("POST", activityPath + "/leave", tokens, Map.of("leaseId", old.joined().leaseId()), JsonNode.class);
+        assertThat(lateLeave.path("left")).isEqualTo(json.getNodeFactory().booleanNode(false));
+        var lateHeartbeat = request("POST", activityPath + "/heartbeat", tokens, Map.of("deviceId", old.joined().deviceId(),
+                "leaseId", old.joined().leaseId(), "activityGeneration", old.joined().activityGeneration(),
+                "memberGeneration", old.joined().memberGeneration()));
+        assertThat(lateHeartbeat.statusCode()).isEqualTo(409);
+        assertThat(json.readTree(lateHeartbeat.body()).path("error").path("code").asText()).isEqualTo("GENERATION_STALE");
+        var lateRegistration = request("POST", activityPath + "/network-peers/register", tokens,
+                Map.of("ticket", old.network().networkTicket(), "endpoint", "127.0.0.1:42002"));
+        assertThat(lateRegistration.statusCode()).isEqualTo(403);
+        assertGrants(old, false);
+        assertGrants(renewed, true);
+        assertGrants(owner, true);
+        var peer = assertPeers(owner, tokens.userId()).get(0);
+        assertThat(peer.path("leaseId").asText()).isEqualTo(renewed.joined().leaseId());
+        assertThat(peer.path("memberGeneration").asLong()).isEqualTo(renewed.joined().memberGeneration());
+    }
+
+    @Test
     void logoutRevokesBoundActivityGrantsWithoutClientLeaveAndPreservesAnotherLogin() throws Exception {
         var scene = scene();
         var subject = scene.subject();
@@ -411,12 +454,13 @@ class IssuedGrantRevocationIntegrationTest {
         }
     }
 
-    private void assertPeers(Participant observer, String member) throws Exception {
+    private JsonNode assertPeers(Participant observer, String member) throws Exception {
         var response = request("POST", "/api/v1/network-access/validate", null, Map.of("ticket", observer.network().networkTicket()));
         assertThat(response.statusCode()).isEqualTo(200);
         var peers = json.readTree(response.body()).path("peers");
         assertThat(peers.size()).isEqualTo(member == null ? 0 : 1);
         if (member != null) assertThat(peers.get(0).path("userId").asText()).isEqualTo(member);
+        return peers;
     }
 
     private <Result> Result data(String method, String path, AuthTokens tokens, Object body, Class<Result> type) throws Exception {
