@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261121T180755Z-65a33aa8",
+  "project_id": "zhijie",
+  "started_at": "2026-11-21T18:07:52Z",
+  "finished_at": "2026-11-21T18:07:55Z",
+  "actor": "codex",
+  "role": "developer",
+  "command": "npm --prefix desktop/ui run build && npm --prefix desktop/ui test && python -B scripts/test-control-load-activity.py",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "\n> @zhijie/desktop-ui@0.1.0 build\n> node scripts/build.mjs\n\nDesktop UI built into dist/.\n\n> @zhijie/desktop-ui@0.1.0 test\n> node --test tests/*.test.js\n\nTAP version 13\n# Subtest: bridge sends real versioned desktop commands without a mock fallback\nok 1 - bridge sends real versioned desktop commands without a mock fallback\n  ---\n  duration_ms: 1.4448\n  ...\n# Subtest: production store publishes authoritative snapshots\nok 2 - production store publishes authoritative snapshots\n  ---\n  duration_ms: 0.2501\n  ...\n# Subtest: product notifications expose only the native event payload\nok 3 - product notifications expose only the native event payload\n  ---\n  duration_ms: 0.7257\n  ...\n# Subtest: platform defaults select only an available browser for that OS\nok 4 - platform defaults select only an available browser for that OS\n  ---\n  duration_ms: 0.5612\n  ...\n# Subtest: an explicit browser must be usable and never silently falls back\nok 5 - an explicit browser must be usable and never silently falls back\n  ---\n  duration_ms: 0.5119\n  ...\n# Subtest: desktop adapter exposes the versioned command protocol\nok 6 - desktop adapter exposes the versioned command protocol\n  ---\n  duration_ms: 0.5281\n  ...\n# Subtest: only current group managers outside the paused room see its reopen action\nok 7 - only current group managers outside the paused room see its reopen action\n  ---\n  duration_ms: 1.0147\n  ...\n# Subtest: only a manager of the idle room can start an activity, without joining it\nok 8 - only a manager of the idle room can start an activity, without joining it\n  ---\n  duration_ms: 0.8841\n  ...\n# Subtest: network panel explains only the current activity's unresolved fault\nok 9 - network panel explains only the current activity's unresolved fault\n  ---\n  duration_ms: 0.5358\n  ...\n# Subtest: group chat shows delete controls for the author and current group moderators only\nok 10 - group chat shows delete controls for the author and current group moderators only\n  ---\n  duration_ms: 0.8389\n  ...\n# Subtest: leaving the file picker empty preserves the previous avatar\nok 11 - leaving the file picker empty preserves the previous avatar\n  ---\n  duration_ms: 0.9446\n  ...\n# Subtest: invalid and oversized files cannot be saved as avatars\nok 12 - invalid and oversized files cannot be saved as avatars\n  ---\n  duration_ms: 1.4417\n  ...\n# Subtest: group cards never load external URLs or interpolate untrusted markup as images\nok 13 - group cards never load external URLs or interpolate untrusted markup as images\n  ---\n  duration_ms: 0.8481\n  ...\n1..13\n# tests 13\n# suites 0\n# pass 13\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 80.2894\n",
+  "stdout_truncated": false,
+  "stderr": "...........\r\n----------------------------------------------------------------------\r\nRan 11 tests in 0.137s\r\n\r\nOK\r\n",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "714a83cd4b00318704fca136ad505d7c7b57074b584da09373612b7cf16af5bc",
+  "tree_digest_after": "714a83cd4b00318704fca136ad505d7c7b57074b584da09373612b7cf16af5bc",
+  "task_id": "TASK-018"
+}

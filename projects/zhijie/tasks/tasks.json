@@ -465,10 +465,15 @@
         "TASK-016"
       ],
       "test": "npm --prefix desktop/ui run build && npm --prefix desktop/ui test && python -B scripts/test-control-load-activity.py",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 2,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261121T180712Z-50c60917.json",
+        "tests/evidence/EXEC-20261121T180755Z-65a33aa8.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261121T180755Z-65a33aa8.json",
+      "last_evidence_sha256": "29b8d2314e9bf608acfaeaad8cc150f3c650b468d1e9a0d9d3ee327731a9e346"
     }
   ]
 }

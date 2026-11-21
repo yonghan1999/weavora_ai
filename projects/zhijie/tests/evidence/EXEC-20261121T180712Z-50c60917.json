@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261121T180712Z-50c60917",
+  "project_id": "zhijie",
+  "started_at": "2026-11-21T18:07:08Z",
+  "finished_at": "2026-11-21T18:07:12Z",
+  "actor": "codex",
+  "role": "developer",
+  "command": "npm --prefix desktop/ui run build && npm --prefix desktop/ui test && python -B scripts/test-control-load-activity.py",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 127,
+  "timed_out": false,
+  "stdout": "",
+  "stdout_truncated": false,
+  "stderr": "/bin/bash: E:/Program Files/nodejs/npm: No such file or directory\n",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "714a83cd4b00318704fca136ad505d7c7b57074b584da09373612b7cf16af5bc",
+  "tree_digest_after": "714a83cd4b00318704fca136ad505d7c7b57074b584da09373612b7cf16af5bc",
+  "task_id": "TASK-018"
+}
