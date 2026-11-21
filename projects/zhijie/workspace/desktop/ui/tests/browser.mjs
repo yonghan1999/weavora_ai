@@ -117,7 +117,7 @@ globalThis.__TAURI__={window:{getCurrentWindow:()=>({minimize:async()=>windowCal
 calls.push({command,p});
 if(command==='session_login'){await new Promise(r=>setTimeout(r,80));if(failLogin)throw 'SERVICE_UNAVAILABLE';return snapshot();}
 if(command==='session_logout')return {userId:null,activity:null,service:'DISCONNECTED',lastErrorCode:'LOGOUT_CLEANUP_PENDING'};
-if(command==='group_list')return [...(globalThis.groupRemoved?[]:[group]),...(globalThis.extraGroups??[])];if(command==='room_list')return p.groupId===group.id?[room]:[];
+if(command==='group_list'){if(globalThis.holdGroupList)await new Promise(resolve=>globalThis.releaseGroupList=resolve);return [...(globalThis.groupRemoved?[]:[group]),...(globalThis.extraGroups??[])];}if(command==='room_list')return p.groupId===group.id?[room]:[];
 if(command==='activity_join'){if(globalThis.changedRoomPassword && p.password!=='updated')throw 'ROOM_PASSWORD_INVALID';activity={activityId:'a1',leaseId:'lease-room',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
 if(command==='activity_leave'){activity=null;return snapshot();}
 if(command==='voice_connect'){if(globalThis.holdVoice)await new Promise(done=>globalThis.resumeVoice=done);voice.state='FAILED';voice.failureCode='VOICE_CAPACITY_LIMITED';throw 'VOICE_CAPACITY_LIMITED';}
@@ -738,8 +738,12 @@ try {
   await evaluate('failRoomGovernance=true;document.querySelector("[data-form=dialog]").requestSubmit()');
   await delay(200);
   await check("指定房主失权保留选择", 'document.querySelector("[name=targetUserId]").value==="u2" && document.getElementById("dialog-error").textContent.includes("没有执行") && room.ownerUserId==="u1"');
-  await evaluate('failRoomGovernance=false;document.querySelector("[data-form=dialog]").requestSubmit()');
+  await evaluate('failRoomGovernance=false;globalThis.holdGroupList=true;document.querySelector("[data-form=dialog]").requestSubmit()');
   await delay(200);
+  await check('房间变更已提交但仍在刷新时不能误点退房', `typeof releaseGroupList==='function' && !document.querySelector('[role=dialog]') && document.getElementById('app').inert && document.getElementById('app').getAttribute('aria-busy')==='true'`);
+  await evaluate('holdGroupList=false;releaseGroupList()');
+  await delay(200);
+  await check('刷新完成后退房按钮恢复交互', `!document.getElementById('app').inert && !document.querySelector('#app[aria-busy=true]') && !document.querySelector('[data-action=leave]').disabled`);
   await check("指定房主成功后刷新显示", 'room.ownerUserId==="u2" && calls.some(x=>x.p.resource==="room-owner" && x.p.id==="r1" && x.p.body.targetUserId==="u2") && document.querySelector(".room-side").textContent.includes("房主")');
   await shot("room-governance-1440");
   await command("Emulation.setDeviceMetricsOverride", { width: 600, height: 900, deviceScaleFactor: 1, mobile: false });

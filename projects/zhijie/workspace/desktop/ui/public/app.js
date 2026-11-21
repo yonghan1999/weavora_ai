@@ -275,13 +275,16 @@ function notify(message) {
     document.getElementById("toast").textContent = "";
   }, 4000);
 }
+function restoreDialogFocus() {
+  if (returnFocus?.isConnected) returnFocus.focus();
+  else root.querySelector(`[data-view="${s.view}"]`)?.focus();
+}
 function closeDialog() {
   modalRefresh = null;
   modalRoot.replaceChildren();
-  root.inert = false;
+  root.inert = s.busy;
   dialogSubmit = null;
-  if (returnFocus?.isConnected) returnFocus.focus();
-  else root.querySelector(`[data-view="${s.view}"]`)?.focus();
+  if (!root.inert) restoreDialogFocus();
 }
 function dialog(title, description, body, submit, label = "确认") {
   modalRefresh = null;
@@ -301,6 +304,7 @@ function capture() {
 async function run(work, { modal = false } = {}) {
   if (s.busy) return;
   s.busy = true;
+  root.setAttribute("aria-busy", "true");
   s.error = "";
   const current = epoch;
   if (modal)
@@ -318,11 +322,15 @@ async function run(work, { modal = false } = {}) {
     else s.error = text;
   } finally {
     s.busy = false;
+    root.removeAttribute("aria-busy");
+    const restoreFocus = root.inert && !modalRoot.firstChild;
+    root.inert = !!modalRoot.firstChild;
     if (modalRoot.firstChild)
       modalRoot
         .querySelectorAll("button,input,select,textarea")
         .forEach((x) => (x.disabled = false));
     render();
+    if (restoreFocus) restoreDialogFocus();
   }
 }
 const request = (resource, id = null, body = null, targetId = null) =>
