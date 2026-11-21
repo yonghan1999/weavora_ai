@@ -8,6 +8,10 @@
 
 新包同目录的 `payload.json` 记录安装包中八个产品文件的核对结果；`embedded-assets.json` 记录从 ZIP 的桌面程序提取的十项页面资源。旧版在手动刷新失权断言失败（`before.log`）；新版成品页面 181 项通过、无脚本异常（`embedded-browser.json`）。同一组成品页面连接两个 Rust 测试客户端、真实后端和独立 PostgreSQL，验证降权时关闭记录、仍可群聊及重新邀请（`embedded-social.log`，1 项通过、零跳过）。`lifecycle.log` 记录整包三次启停、登录和消息跨重启保留，以及冷备恢复后登录。上述测试没有运行安装器或原生桌面窗口，不证明跨机通话或虚拟网卡通过。
 
+**Windows 原生窗口补测（同一 ZIP，未运行安装器）：** 本机普通用户从 D 盘一次性解压目录启动配套后端和桌面；健康端点返回 `UP`。桌面可执行文件 SHA-256 为 `137872bd0714d4e16a28e63d48807ab5708f43765eaeb46279d27e56eb6d56f5`。Windows 报告了标题为“织界”的主窗口、非零窗口句柄和响应状态；其 WebView2 子进程使用该次解压目录的独立配置。发送正常关闭请求后桌面退出码为 0，随后正常停库，一次性目录已清除。观察记录：`target/native-window-4ae93e0/window.json`、`target/native-window-4ae93e0/lifecycle.log`。
+
+此项只证明包内原生进程创建窗口、加载 WebView2 并能正常退出。窗口自动化连接不可用，未验证页面实际绘制、蓝边外观、原生登录或双窗口交互；未启动 Helper、修改防火墙或试音。
+
 ### 历史整包：试用数据库停库检查
 
 前一版：`target/preview-stop-verified-5d3a651/zhijie-windows-x64-trial.zip`（79,544,833 字节，SHA-256：`d88795eedde8787dd3a49d7f933a02bc183cb58f3cdd72205dc235fbc408dd52`）。
