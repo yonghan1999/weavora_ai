@@ -2,7 +2,15 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名整包：`target/trial-license-fab4f23/zhijie-windows-x64-trial.zip`（93,093,993 字节，SHA-256：`d222a373c56c23e722041309783725a3fd0684037293831366a303127c256ffb`）。解压到 D 盘全新短目录，按 `README.md` 试用。相较上一包，353 个既有条目字节不变，只更新 README，新增两份可离线查看的原文；桌面、后端、数据库和所有 JAR 字节不变。
+当前 Windows x64 未签名整包：`target/runtime-deps-0f82702/zhijie-windows-x64-trial.zip`（79,370,107 字节，SHA-256：`cb58c11e5987c060dee2954e85f770acedd74e2b53dc5948a4594096e5717679`）。解压到 D 盘全新短目录，按 `README.md` 操作。相较上一包减少 13,723,886 字节：移除 28 个仅由测试框架引入的 JAR，只改启动 classpath，未改桌面、后端类、迁移、保留的依赖和许可原文。
+
+Maven 离线解析得到 69 个常规运行依赖与 7 个 Windows 本机数据库专用组件（Zonky、Windows 数据库载荷、XZ 和四个 Commons 库）。默认构建不启用试用 profile；两组运行依赖均已独立解析。76 个随包 JAR 均与索引 SHA-256 相符；62 个已有包内许可原文，另两项有上游补充材料（PostgreSQL 材料仅覆盖数据库本体），其余 12 项仍缺原文。此结果不是正式发布批准。
+
+同目录 `distribution.json` 列出保留和移除的文件，`lifecycle.log` 记录实际整包登录、消息、重启、冷备恢复及会话撤销，`backend.log` 记录独立后端同步、房间重开及日志隐私回归。均使用 D 盘隔离目录，没有安装或启动原生桌面。
+
+### 历史整包：首次附带数据库与连接池许可原文
+
+历史整包：`target/trial-license-fab4f23/zhijie-windows-x64-trial.zip`（93,093,993 字节，SHA-256：`d222a373c56c23e722041309783725a3fd0684037293831366a303127c256ffb`）。相较上一包，353 个既有条目字节不变，只更新 README，新增两份可离线查看的原文；桌面、后端、数据库和所有 JAR 字节不变。
 
 已把整包内的 104 个 JAR 与启动 classpath 一一对应，并逐包比对 Maven 二进制材料清单的 SHA-256：64 个 compile、5 个 runtime、35 个 test。test 范围并不意味着未分发。81 个有已索引的 JAR 内原文，每份均与实际包内字节匹配；其余 23 个在现有二进制和源码 JAR 材料目录中均无独立原文。清单另有 3 个不随 Windows 包分发的异平台数据库 JAR。逐项结果在整包同目录 `maven-distribution.json`。
 

@@ -1,6 +1,10 @@
 # Windows 本机试用后端（离线包）
 
-当前后端：`target/trial-compiler-1e00dd2/preview-backend.zip`（83,861,080 字节，SHA-256：`cd10640b5edb8d15d89128f23f57548f45999b2d4779e55f6b6d2b8901a72703`）。Windows PowerShell 在调用方同时重定向日志时，原脚本可能将 `javac` 写到标准错误的普通提示误判为失败。新脚本按编译器退出码决定是否继续，保留诊断；无需为 `Picked up JAVA_TOOL_OPTIONS` 清除用户设置。在 D 盘运行 `scripts/local-preview/test-preview-compiler.ps1 -JavaHome <JDK目录>` 可验证正常提示与真实编译失败两条路径。对实际新包的启动回归见同目录 `backend.log`。
+当前后端：`target/runtime-deps-0f82702/preview-backend.zip`（68,092,932 字节，SHA-256：`2d8a810ab410e44e5e3539ce208dda7d776f6f92eb155b35d73000686fd84f13`）。用试用 profile 的 runtime 依赖替代全测试依赖，保留 76 个 JAR。应用类、资源、脚本和保留的 JAR 均与上一包逐字节相同。对新包已验证登录、重启、双订阅同步、重开房间及日志隐私；见同目录 `backend.log`。
+
+## 编译器启动修复历史记录
+
+历史后端：`target/trial-compiler-1e00dd2/preview-backend.zip`（83,861,080 字节，SHA-256：`cd10640b5edb8d15d89128f23f57548f45999b2d4779e55f6b6d2b8901a72703`）。Windows PowerShell 在调用方同时重定向日志时，原脚本可能将 `javac` 写到标准错误的普通提示误判为失败。新脚本按编译器退出码决定是否继续，保留诊断；无需为 `Picked up JAVA_TOOL_OPTIONS` 清除用户设置。在 D 盘运行 `scripts/local-preview/test-preview-compiler.ps1 -JavaHome <JDK目录>` 可验证正常提示与真实编译失败两条路径。对该包的启动回归见同目录 `backend.log`。
 
 ## 3998fcb 后端历史记录
 
@@ -146,9 +150,11 @@ python -B "ops/database/cold-backup.py" restore --backup "<备份目录>" --dest
 
 **回退后再次使用新版**：停止旧包；若回退期间产生了需要保留的旧版写入，先为旧库另做停库快照。用新版停库时的备份核对新版数据目录，确认 `COLD_RESTORE_COPY_OK` 后，从新版原目录启动。两份数据库不会自动合并：回退期间在旧库新增的内容不会出现在新版，新版独有的消息和删除标记则应保留。
 
-**复建与验证。** 对可信的干净 Windows 源码先执行本地试用说明中的 `test-compile` 和 `dependency:build-classpath`。然后从工具所在工作区运行：
+**复建与验证。** 在 D 盘可信的干净源码工作区，使用 JDK 25 和已配置在 D 盘的 Maven 仓库运行以下命令。`windows-local-preview` 只用于本机试用：它将嵌入式数据库加入运行依赖，不将单元测试框架带入包中。正常构建不启用此 profile。打包器不读取开发用的全测试类路径；包内仍写入启动脚本识别的相对路径清单。
 
 ```powershell
+./mvnw.cmd -pl control-plane -Pwindows-local-preview compile dependency:build-classpath "-DincludeScope=runtime" "-Dmdep.regenerateFile=true" "-Dmdep.outputFile=target/windows-preview-runtime.txt"
+if ($LASTEXITCODE) { throw "试用运行依赖解析失败，停止打包。" }
 python -B "packaging/windows/pack-preview-backend.py" --workspace "<已构建的 workspace>" --repository "<对应的 Maven 仓库>" --output "<D 盘已有目录>/preview-backend.zip"
 & "./packaging/windows/test-backend-zip.ps1" -Package "<D 盘已有目录>/preview-backend.zip" -JavaHome "D:/Program Files/jdk-25"
 ```
