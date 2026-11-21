@@ -89,8 +89,17 @@ fn production_client_accepts_actual_sibling_helper_and_helper_exits_with_client(
     });
     for name in ["identity-client.exe", "zhijie-helper.exe"] {
         let path = directory.join(name);
-        if path.exists() {
-            std::fs::remove_file(path).unwrap();
+        // Windows can briefly retain an image mapping after the child has exited.
+        let deadline = Instant::now() + Duration::from_secs(3);
+        loop {
+            match std::fs::remove_file(&path) {
+                Ok(()) => break,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => break,
+                Err(error) if error.raw_os_error() == Some(32) && Instant::now() < deadline => {
+                    std::thread::sleep(Duration::from_millis(20));
+                }
+                Err(error) => panic!("could not remove {}: {error}", path.display()),
+            }
         }
     }
     std::fs::remove_dir(&directory).unwrap();

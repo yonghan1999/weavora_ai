@@ -1,5 +1,13 @@
 # 开发自测报告：织界
 
+## 2026-11-22 返工后自测
+
+Windows x64，JDK 25、Rust 1.95、Node 22.13.1。正式检查 `full-self-test` 退出码 0，执行前后代码树同为 `776ad5115025c7729893827c7719b1bbbe51b04c52c1fd58cffeac0b0f6d66f7`，证据为 `tests/evidence/EXEC-20261121T192909Z-0f957759.json`。stdout 达到工作流采集上限；用 Surefire 汇总、专项日志和成品记录补充核对。独立执行 Cargo 测试时 166 项通过、19 项忽略；桌面 UI 13 项通过。强制启用的真实后端桌面用例共 12 项，全部执行。撤销与限流专项 23 项通过。Windows 上的发布配置检查跳过需要 dpkg-deb 和 macOS 工具的宿主专属检查。
+
+首次运行遇到 Windows 命令行 AutoRun 干扰数据库探测，后续用项目自带 CleanCmd 运行 PostgreSQL。修复了测试登录间隔、历史分页夹具和 Helper 退出后的短时文件占用；本机 D 盘临时目录承载候选构建夹具。历史失败证据保留。试用包操作和实机验证缺口见验收报告与交付索引。
+
+以下是 2026-11-05 原基线记录。
+
 ## 构建或运行检查
 
 2026-11-05 在 Windows 工作区以 OpenJDK 25、Maven Wrapper、固定 Rust 工具链和 Node 24 执行完整自测。Maven 控制面及依赖模块、Cargo 全 workspace、桌面 UI、双通道垂直切片均实际运行，退出码 0。证据：`tests/evidence/EXEC-20261105T011337Z-ae6fc342.json`。

@@ -1,4 +1,6 @@
 # Preserve the exact checkout bytes hashed by the release contract.
+mvnw text eol=lf
+release/design-asset-diff.json text eol=lf
 desktop/shell/tauri.conf.json text eol=lf
 desktop/shell/tauri.windows.conf.json text eol=lf
 desktop/shell/tauri.macos.conf.json text eol=lf

@@ -1,6 +1,13 @@
 $ErrorActionPreference = "Stop"
 $workspace = (Resolve-Path -LiteralPath "$PSScriptRoot/../..").Path
-$root = [IO.Path]::GetFullPath("$workspace/target/candidate-environment-$([guid]::NewGuid().ToString('N'))")
+$fixtureParent = "$workspace/target"
+if ([IO.Path]::GetPathRoot($workspace) -ne 'D:\') {
+    $fixtureParent = [IO.Path]::GetTempPath()
+    if ([IO.Path]::GetPathRoot($fixtureParent) -ne 'D:\') {
+        throw "请将当前进程 TEMP 指向 D 盘项目临时目录后运行候选构建测试。"
+    }
+}
+$root = Join-Path $fixtureParent "candidate-environment-$([guid]::NewGuid().ToString('N'))"
 $variables = @("TEMP", "TMP", "TMPDIR", "CARGO_HOME", "CARGO_TARGET_DIR", "RUSTUP_AUTO_INSTALL", "npm_config_cache", "PYTHONDONTWRITEBYTECODE")
 $original = @{}
 foreach ($name in $variables) { $original[$name] = [Environment]::GetEnvironmentVariable($name, "Process") }

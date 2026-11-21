@@ -403,6 +403,8 @@ class IssuedGrantRevocationIntegrationTest {
     }
 
     private AuthTokens login(String user, String password, String device) throws Exception {
+        // All scenarios share the loopback login bucket, which refills one token every 200 ms.
+        TimeUnit.MILLISECONDS.sleep(210);
         return data("POST", "/api/v1/auth/login", null,
                 Map.of("email", user + "@example.test", "password", password, "deviceId", device), AuthTokens.class);
     }

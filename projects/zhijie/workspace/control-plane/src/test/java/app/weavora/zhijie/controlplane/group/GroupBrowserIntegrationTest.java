@@ -315,8 +315,11 @@ class GroupBrowserIntegrationTest {
             var own = messages.post(member, groupId, "成员自删");
             var moderated = messages.post(member, groupId, "群主代删");
             for (int index = 0; index < 50; index++) messages.post(owner, groupId, "近期消息 " + index);
-            runBrowser(context, password, "history-delete");
+            // Keep all three history fixtures behind the 50-row cursor even on a coarse clock.
             var sql = context.getBean(JdbcTemplate.class);
+            assertThat(sql.update("UPDATE messages SET created_at=created_at - interval '1 day' WHERE id IN (?,?,?)",
+                    untouched.id(), own.id(), moderated.id())).isEqualTo(3);
+            runBrowser(context, password, "history-delete");
             assertThat(sql.queryForObject("SELECT deleted_by FROM messages WHERE id=? AND delete_kind='AUTHOR'", String.class, own.id())).isEqualTo(member);
             assertThat(sql.queryForObject("SELECT deleted_by FROM messages WHERE id=? AND delete_kind='MODERATOR'", String.class, moderated.id())).isEqualTo(owner);
             assertThat(sql.queryForObject("SELECT count(*) FROM messages WHERE id=? AND deleted_at IS NULL", Integer.class, untouched.id())).isOne();
