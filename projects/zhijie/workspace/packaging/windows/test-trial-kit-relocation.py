@@ -27,6 +27,27 @@ def expect_api_error(api, path, status, code, **arguments):
         raise ValueError(f'失效资格意外通过：{path}')
 
 
+def check_paused_join(api, token, room):
+    endpoint = f'rooms/{room["id"]}'
+    activity = room['currentActivityId']
+    def join_body():
+        return {'roomId': room['id'], 'deviceId': 'relocation', 'operationId': secrets.token_hex(16)}
+
+    paused = api(endpoint + '/pause', token=token, method='POST')
+    if paused['openState'] != 'PAUSED' or paused['currentActivityId'] != activity or not activity:
+        raise ValueError('暂停房间没有保留原活动')
+    expect_api_error(api, 'room-joins', 409, 'ROOM_PAUSED', token=token, method='POST', body=join_body())
+    reopened = api(endpoint + '/open', token=token, method='POST')
+    if reopened['openState'] != 'OPEN' or reopened['currentActivityId'] != activity:
+        raise ValueError('重新开放后活动不符')
+    lease = api('room-joins', token=token, method='POST', body=join_body())
+    if lease['activityId'] != activity or not lease['leaseId']:
+        raise ValueError('重新开放后未加入原活动')
+    if api(f'activities/{activity}/leave', token=token, method='POST', body={'leaseId': lease['leaseId']})['left'] is not True:
+        raise ValueError('重新开放后未正常退出')
+    print('TRIAL_KIT_PAUSED_JOIN_REFUSED_REOPENED_RETRY_OK')
+
+
 def check_session_revocation(api, password, room):
     device = 'packaged-session'
     activity = f'activities/{room["currentActivityId"]}'
@@ -135,7 +156,7 @@ def check_device_leave(api, password, token, room, check_grants):
             raise ValueError('当前设备退房或重复退房结果不符')
 
 
-def verify(package, digest, java_home, check_restore=False, check_leave=False, check_grants=False, check_session=False, check_health=False):
+def verify(package, digest, java_home, check_restore=False, check_leave=False, check_grants=False, check_session=False, check_health=False, check_paused=False):
     workspace = Path(__file__).resolve().parents[2]
     target = workspace / 'target'
     if os.name != 'nt' or target.drive.upper() == os.environ.get('SystemDrive', 'C:').upper() or target.resolve(strict=True) != target:
@@ -210,6 +231,8 @@ def verify(package, digest, java_home, check_restore=False, check_leave=False, c
                 group, = api('groups', token=token)
                 room, = api(f'groups/{group["id"]}/rooms', token=token)
                 history = f'groups/{group["id"]}/messages'
+                if check_paused:
+                    check_paused_join(api, token, room)
                 if first:
                     original_user, original_group = login['userId'], group['id']
                     original_room = room['id']
@@ -251,5 +274,6 @@ if __name__ == '__main__':
     parser.add_argument('--check-grants', action='store_true', help='同时验证接管前的设备不能取得语音或网络票据')
     parser.add_argument('--check-session', action='store_true', help='验证具体登录的注销、同设备接管及刷新重放撤销；需要 V17 后端')
     parser.add_argument('--check-health', action='store_true', help='验证包内只读检查在启动前、运行中与停服后的状态')
+    parser.add_argument('--check-paused', action='store_true', help='验证暂停期间拒绝群主新加入，房外重新开放后可加入原活动')
     args = parser.parse_args()
-    verify(args.package, args.sha256, args.java_home, args.check_restore, args.check_leave, args.check_grants, args.check_session, args.check_health)
+    verify(args.package, args.sha256, args.java_home, args.check_restore, args.check_leave, args.check_grants, args.check_session, args.check_health, args.check_paused)
