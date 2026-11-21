@@ -11,6 +11,18 @@
     "logback-logback-classic-LICENSE.txt": "94a99c6ee7e8b5ba3ef66a1d234c22a55c149e93584040d66a7f6694d552e7ea",
     "mybatis-LICENSE.txt": "9818ec66553209eebf329d4bf4bc6c992e1ac340bd3314c25ee478b8ce2a7bac",
     "mybatis-NOTICE.txt": "305d0c943c6d7bd5ebda181a54d33b0285fd04caedf0cf1264aa7428342216b0",
+    "native-GPL-2.0.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
+    "native-ICU.txt": "25e21013a7bc2fad735e28c5278a120e4c7f1c327c8c8b9b4df1751748cddbb2",
+    "native-LZ4.txt": "8b58c446121a109ccf32edc094bba3010a3d85e4ee3702950db55e4d3e87736c",
+    "native-OpenSSL.txt": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
+    "native-Zstandard-BSD.txt": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8",
+    "native-curl.txt": "e18f1989333b70044b2adfb7dc2f905d0119dbdcac3bc9f4bc9d540e3a29de5b",
+    "native-gettext.txt": "3fe5361f24b7c49ba12911c08f5a33f9cb18871d95d9fb881f5b8a4793e04288",
+    "native-libiconv-COPYING.LIB.txt": "56bdea73b6145ef6ac5259b3da390b981d840c24cb03b8e1cbc678de7ecfa18d",
+    "native-libxml2.txt": "c99aae1afe013e50b8b3701e089222b351258043c3025b64053a233fd25b4be7",
+    "native-wxWidgets-LGPL.txt": "b7993225104d90ddd8024fd838faf300bea5e83d91203eab98e29512acebd69c",
+    "native-wxWidgets.txt": "e8453be21aea2b7cc9a39d5b0475190bbfa0a60605b4178377590b94d9c43eae",
+    "native-zlib.txt": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243",
     "postgresql-17.5-COPYRIGHT.txt": "e3822c4797fadcab31a3fc73f75c28ac20c73d72b565da91e9974cf9398ef4d2",
     "publisher-EPL-1.0.txt": "f3d8dc494be2e7ea9cd31ac2fb902e35dce7ff8181b9b30d05861b47c339cb25",
     "publisher-LGPL-2.1.txt": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
@@ -57,8 +69,202 @@
         {
           "file": "zbin-LICENSE.txt",
           "source": "https://raw.githubusercontent.com/zonkyio/embedded-postgres-binaries/refs/tags/v17.5.0/LICENSE"
+        },
+        {
+          "file": "native-OpenSSL.txt",
+          "source": "https://raw.githubusercontent.com/openssl/openssl/refs/tags/openssl-3.0.16/LICENSE.txt"
+        },
+        {
+          "file": "native-curl.txt",
+          "source": "https://raw.githubusercontent.com/curl/curl/refs/tags/curl-8_13_0/COPYING"
+        },
+        {
+          "file": "native-LZ4.txt",
+          "source": "https://raw.githubusercontent.com/lz4/lz4/refs/tags/v1.10.0/lib/LICENSE"
+        },
+        {
+          "file": "native-ICU.txt",
+          "source": "https://raw.githubusercontent.com/unicode-org/icu/refs/tags/release-67-1/icu4c/LICENSE"
+        },
+        {
+          "file": "native-libxml2.txt",
+          "source": "https://raw.githubusercontent.com/GNOME/libxml2/refs/tags/v2.13.8/Copyright"
+        },
+        {
+          "file": "native-Zstandard-BSD.txt",
+          "source": "https://raw.githubusercontent.com/facebook/zstd/refs/tags/v1.5.7/LICENSE"
+        },
+        {
+          "file": "native-GPL-2.0.txt",
+          "source": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt"
+        },
+        {
+          "file": "native-wxWidgets.txt",
+          "source": "https://raw.githubusercontent.com/wxWidgets/wxWidgets/refs/tags/v3.2.8/docs/licence.txt"
+        },
+        {
+          "file": "native-wxWidgets-LGPL.txt",
+          "source": "https://raw.githubusercontent.com/wxWidgets/wxWidgets/refs/tags/v3.2.8/docs/lgpl.txt"
+        },
+        {
+          "file": "native-zlib.txt",
+          "source": "https://raw.githubusercontent.com/madler/zlib/refs/tags/v1.3.1/LICENSE"
+        },
+        {
+          "file": "native-libiconv-COPYING.LIB.txt",
+          "source": "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz#libiconv-1.15/COPYING.LIB"
+        },
+        {
+          "file": "native-gettext.txt",
+          "source": "https://raw.githubusercontent.com/autotools-mirror/gettext/refs/tags/v0.19.8/gettext-runtime/intl/COPYING.LIB"
         }
-      ]
+      ],
+      "nativePayload": {
+        "archive": "postgres-windows-x86_64.txz",
+        "sha256": "a7f4baf26bffb8dbb0d07758c1c44ee8a518bedbe01c6017b68c60595c2233ab",
+        "components": [
+          {
+            "product": "The OpenSSL Toolkit",
+            "version": "3.0.16",
+            "members": {
+              "bin/libcrypto-3-x64.dll": "46a8846bd395dfeeac857c26f789c0005591da4cf93661ded490ff60a2270dea",
+              "bin/libssl-3-x64.dll": "ca09015d28cd0a965b8184bc0f79c84ce334b5c0c191d03cb0d2112e34eb6417"
+            },
+            "documents": [
+              "native-OpenSSL.txt"
+            ]
+          },
+          {
+            "product": "The curl library",
+            "version": "8.13.0",
+            "members": {
+              "bin/libcurl.dll": "8010df3966b136395959f938b34f3ac125e09c61971b06e7d55fc4835d11590f"
+            },
+            "documents": [
+              "native-curl.txt"
+            ]
+          },
+          {
+            "product": "LZ4",
+            "version": "1.10.0",
+            "members": {
+              "bin/liblz4.dll": "096af775241b3bd4b1c3d79c83b103bb8f02da54ec4cd76c5d49eef61a68ad01"
+            },
+            "documents": [
+              "native-LZ4.txt"
+            ]
+          },
+          {
+            "product": "International Components for Unicode",
+            "version": "67, 1, 0, 0",
+            "members": {
+              "bin/icudt67.dll": "5ff9c8026344e886f280ddfa235a1e16e1bcd396e90f9ed600b6f71d9d881ae8",
+              "bin/icuin67.dll": "23d5914acf071f566df19aaf404373e5c73c9910c370e728976f6202c04cf6c3",
+              "bin/icuio67.dll": "1ca5221753f930de19041d546ce0f24102455621c71033d4d5cb8151762c9694",
+              "bin/icuuc67.dll": "2fb4007a1f1089a0807cc1abde5443f5c3b0865ecfd80344b6ad165f1fe53ade"
+            },
+            "documents": [
+              "native-ICU.txt"
+            ]
+          },
+          {
+            "product": "libxml2",
+            "version": "2.13.8",
+            "members": {
+              "bin/libxml2.dll": "725f5bded8902787c6114009f37c40d09b193df74ab29ab772fcb1ff490707f3"
+            },
+            "documents": [
+              "native-libxml2.txt"
+            ]
+          },
+          {
+            "product": "Zstandard",
+            "version": "1.5.7",
+            "members": {
+              "bin/libzstd.dll": "a05aa4e11837e203b9d30089300d73ce05f3ed248dbe6172c630b2bce34016bf"
+            },
+            "documents": [
+              "native-Zstandard-BSD.txt",
+              "native-GPL-2.0.txt"
+            ],
+            "projectAlternativeLicenseSource": "https://raw.githubusercontent.com/facebook/zstd/refs/tags/v1.5.7/COPYING"
+          },
+          {
+            "product": "wxWidgets",
+            "version": "3.2.8",
+            "members": {
+              "bin/wxbase328u_net_vc_x64_custom.dll": "6c520a537f4ab8e18da8bb77947e022daf07997be84febdf0b462da6e3b1246f",
+              "bin/wxbase328u_vc_x64_custom.dll": "6428f560778dab4734e99682537dc817d3bf5744da823efa6504c3e068ee82c5",
+              "bin/wxbase328u_xml_vc_x64_custom.dll": "dc43a3150f9c792c01ef9a2f4fe136415445b7874c0ac04c66fcc1a8aac65d7d",
+              "bin/wxmsw328u_adv_vc_x64_custom.dll": "456303cf108a4f0821405a449f5e594df562f2a97411aecd611db006fd88a544",
+              "bin/wxmsw328u_aui_vc_x64_custom.dll": "896e334b6e50d4a43652fdbe6ebea6429e9061cce0775013265e665fa3acd7d7",
+              "bin/wxmsw328u_core_vc_x64_custom.dll": "0545358c18e5e8f1ca01d0c5b6ea6e2b6ac2a21adb034c3d94813c1ca3ea2a27",
+              "bin/wxmsw328u_html_vc_x64_custom.dll": "5796a8f505a8910d84cf130e08c18c36acd6056ea3d1f219609cb0904b523663",
+              "bin/wxmsw328u_xrc_vc_x64_custom.dll": "f818ee44304624de0f18448873e3eae7572fb250bfd0a883b11a0f8e90b7015f"
+            },
+            "documents": [
+              "native-wxWidgets.txt",
+              "native-wxWidgets-LGPL.txt"
+            ]
+          },
+          {
+            "product": "zlib",
+            "version": "1.3.1",
+            "members": {
+              "bin/zlib1.dll": "8af75452efadd51320a71cc1db155f5cbc6bbc860d4473940ebc6de5ac662e68"
+            },
+            "documents": [
+              "native-zlib.txt"
+            ]
+          },
+          {
+            "product": "libiconv: character set conversion library",
+            "version": "1.15",
+            "members": {
+              "bin/libiconv-2.dll": "3ee9786ab3eb8dfd791bdbd17c7e791dbe025734befcded0ee4170e1089f79df"
+            },
+            "documents": [
+              "native-libiconv-COPYING.LIB.txt"
+            ]
+          },
+          {
+            "product": "libintl: accessing NLS message catalogs",
+            "version": "0.19.8",
+            "members": {
+              "bin/libintl-9.dll": "1125ac8dc0c4f5c3ed4712e0d8ad29474099fcb55bb0e563a352ce9d03ef1d78"
+            },
+            "documents": [
+              "native-gettext.txt"
+            ]
+          }
+        ],
+        "unidentified": [
+          {
+            "file": "lib/plugin_debugger.dll",
+            "sha256": "6c7a5674197d864964b008a1c94b9b08801661adadf37a485d1a1dc5d51638e1"
+          },
+          {
+            "file": "lib/system_stats.dll",
+            "sha256": "549d0913f7c2be19a5d7c2d811785bb24a56f6c4bc473172efb7c92f37752dca"
+          },
+          {
+            "file": "bin/icutu67.dll",
+            "sha256": "371c4784b5510b8e80a6b5896567b17bc70e231ea47ee8f614a7ebd3d510960f"
+          },
+          {
+            "file": "bin/libwinpthread-1.dll",
+            "sha256": "ffe2d56375bb4e8bdee9037df6befc5016ddd8871d0d85027314dd5792f8fdc9"
+          },
+          {
+            "file": "bin/libxslt.dll",
+            "sha256": "a073cb5ce97936ad57bed825378552c3c10ab15f34e7164094d5282283e3228c"
+          },
+          {
+            "file": "bin/testplug.dll",
+            "sha256": "d1b10395868a004f6ae4700159ba89992a65147efaca63218cd5fb084b32303a"
+          }
+        ]
+      }
     },
     "flyway-database-postgresql-11.7.2.jar": {
       "sha256": "1d586e14ea772c75613df2c27ddc20f5c065e8a32283815338611af82e48f9a2",

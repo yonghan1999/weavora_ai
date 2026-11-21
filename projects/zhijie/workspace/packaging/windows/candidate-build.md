@@ -2,7 +2,15 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名整包：`target/notice-sources-884e40f/zhijie-windows-x64-trial.zip`（79,411,840 字节，SHA-256：`d5956c1ff38b938ecb2767a555f095dfba439682d3a11ee056398080d45332e0`）。解压到 D 盘全新短目录，按 `README.md` 试用。与上一版对比，桌面、后端、76 个 JAR 以及数据库迁移字节完全一致；只更新了 README 并新增 17 项第三方材料或索引。
+当前 Windows x64 未签名整包：`target/postgres-native-abe2b71/zhijie-windows-x64-trial.zip`（79,464,268 字节，SHA-256：`2cd7967ebef69a23aa71ae53059770de032809438838ebb71f07ec3df881dc87`）。解压到 D 盘全新短目录，按 `README.md` 试用。仅更新说明、材料索引和 12 份许可材料，不改程序、数据库文件或迁移。
+
+在实际试用包的 Windows PostgreSQL JAR 内只读遍历 `postgres-windows-x86_64.txz`，找到 121 个 EXE/DLL、60 个扩展控制文件（不表示 60 个扩展已启用）。同目录 `inventory.json` 记录路径、字节、SHA-256 及可读的 PE 版本资源。94 个文件自报 PostgreSQL，21 个文件的产品/版本资源可关联到 ICU、OpenSSL、curl、libiconv、gettext、LZ4、libxml2、Zstandard、wxWidgets 和 zlib。版本字段不是构建来源的独立证明。包内 `third-party/sources.json` 绑定这 21 个 DLL 的字节与补充材料，另保留 6 个没有产品名称的原生文件摘要；打包时校验嵌套归档及所列成员，不解压执行 DLL。
+
+不按名称补认 `icutu67.dll`、`libwinpthread-1.dll`、`libxslt.dll`、`testplug.dll`、`plugin_debugger.dll` 或 `system_stats.dll` 的确切来源。PostgreSQL 自报归属也不能代替扩展、内置第三方代码及源码提供义务的核查。桌面原生依赖、法律审核和正式批准不在本次结论内。
+
+### 历史整包：顶层 Maven 许可材料
+
+历史整包：`target/notice-sources-884e40f/zhijie-windows-x64-trial.zip`（79,411,840 字节，SHA-256：`d5956c1ff38b938ecb2767a555f095dfba439682d3a11ee056398080d45332e0`）。与上一版对比，桌面、后端、76 个 JAR 以及数据库迁移字节完全一致；只更新了 README 并新增 17 项第三方材料或索引。
 
 对实际整包逐项复核：62 个 JAR 内有 120 个已索引许可或声明条目；余下 14 个通过 `third-party/sources.json` 绑定版本、JAR 摘要和 18 份去重原文。包括 Logback 的两种许可选项、MyBatis NOTICE、PostgreSQL 数据库本体与 Zonky 打包项目的不同声明。精确来源随包可查，正文可离线读取。缺少 JAR 记录、补充材料或摘要不符会中止打包。整包同目录 `comparison.json` 是字节比对记录，`lifecycle.log` 是本地后端回归记录。
 

@@ -1,9 +1,11 @@
 import hashlib
+import io
 import importlib.util
 import json
 import os
 from pathlib import Path
 import tempfile
+import tarfile
 import unittest
 from zipfile import ZipFile
 
@@ -106,6 +108,42 @@ class TrialKitTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             kit.pack(self.root, self.output)
         self.assertFalse(self.output.exists())
+
+
+class NativePayloadTest(unittest.TestCase):
+    def sample(self, member_names):
+        content = io.BytesIO()
+        with tarfile.open(fileobj=content, mode='w:xz') as archive:
+            for name in member_names:
+                member = tarfile.TarInfo(name)
+                member.size = 3
+                archive.addfile(member, io.BytesIO(b'dll'))
+        jar = io.BytesIO()
+        with ZipFile(jar, 'w') as wrapper:
+            wrapper.writestr('data.txz', content.getvalue())
+        payload = {'archive': 'data.txz', 'sha256': hashlib.sha256(content.getvalue()).hexdigest(), 'unidentified': [],
+                   'components': [{'documents': ['COPYING.txt'], 'members': {'bin/native.dll': hashlib.sha256(b'dll').hexdigest()}}]}
+        return jar, payload
+
+    def test_matches_nested_member_without_extraction(self):
+        jar, payload = self.sample(['bin/native.dll'])
+        kit.verify_native_payload(jar, payload, [{'file': 'COPYING.txt'}])
+
+    def test_rejects_missing_duplicate_or_changed_nested_member(self):
+        for names, digest in [([], None), (['bin/native.dll'] * 2, None), (['bin/native.dll'], '0' * 64)]:
+            jar, payload = self.sample(names)
+            if digest:
+                payload['components'][0]['members']['bin/native.dll'] = digest
+            with self.subTest(names=names, digest=digest), self.assertRaises(ValueError):
+                kit.verify_native_payload(jar, payload, [{'file': 'COPYING.txt'}])
+
+    def test_requires_materials_and_disjoint_identification(self):
+        jar, payload = self.sample(['bin/native.dll'])
+        with self.assertRaises(ValueError):
+            kit.verify_native_payload(jar, payload, [])
+        payload['unidentified'].append({'file': 'bin/native.dll', 'sha256': '0' * 64})
+        with self.assertRaises(ValueError):
+            kit.verify_native_payload(jar, payload, [{'file': 'COPYING.txt'}])
 
 
 if __name__ == '__main__':

@@ -1,9 +1,11 @@
 """从已核对的两个候选制品制作可移位的本机试用包，不读取试用数据库或浏览器配置。"""
 import argparse
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
+import tarfile
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 
@@ -21,6 +23,40 @@ def include(archive, name, data):
     entry.create_system = 3
     entry.external_attr = 0o100644 << 16
     archive.writestr(entry, data, compress_type=ZIP_DEFLATED, compresslevel=5)
+
+
+def verify_native_payload(jar, payload, materials):
+    expected = {}
+    available = {material['file'] for material in materials}
+    for component in payload['components']:
+        if not component['documents'] or not set(component['documents']) <= available or not component['members']:
+            raise ValueError('原生组件材料缺失')
+        if expected.keys() & component['members'].keys():
+            raise ValueError('原生组件文件重复归属')
+        expected.update(component['members'])
+    for item in payload['unidentified']:
+        if item['file'] in expected:
+            raise ValueError('原生文件状态冲突')
+        expected[item['file']] = item['sha256']
+    with ZipFile(jar) as wrapper:
+        if wrapper.namelist().count(payload['archive']) != 1:
+            raise ValueError('数据库原生归档缺失或重复')
+        content = wrapper.read(payload['archive'])
+    if hashlib.sha256(content).hexdigest() != payload['sha256']:
+        raise ValueError('数据库原生归档摘要不符')
+    seen = set()
+    with tarfile.open(fileobj=io.BytesIO(content), mode='r|xz') as archive:
+        for member in archive:
+            if member.name not in expected:
+                continue
+            if member.name in seen or not member.isfile():
+                raise ValueError('数据库原生归档条目不是唯一普通文件')
+            with archive.extractfile(member) as source:
+                if hashlib.file_digest(source, 'sha256').hexdigest() != expected[member.name]:
+                    raise ValueError('数据库原生文件摘要不符')
+            seen.add(member.name)
+    if seen != expected.keys():
+        raise ValueError('数据库原生文件缺失')
 
 
 def include_notices(archive, backend, workspace, source_digest):
@@ -48,6 +84,9 @@ def include_notices(archive, backend, workspace, source_digest):
             entry = sources['jars'].get(name)
             if not entry or entry['sha256'] != digest or not entry['materials']:
                 raise ValueError(f'缺少与依赖对应的补充材料：{name}')
+            if 'nativePayload' in entry:
+                with backend.open(item) as jar:
+                    verify_native_payload(jar, entry['nativePayload'], entry['materials'])
     if required != sources['jars'].keys():
         raise ValueError('补充材料与实际随包依赖集合不符')
     referenced = {material['file'] for entry in sources['jars'].values() for material in entry['materials']}
