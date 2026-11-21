@@ -2,7 +2,20 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名整包：`target/trial-compiler-1e00dd2/zhijie-windows-x64-trial.zip`（93,089,065 字节，SHA-256：`0e513ff689b1d0503a9bc0fb93123b34921af1934e3ef54862564eab2494073a`）。解压到 D 盘全新短路径，按包内 `README.md` 操作；不要覆盖旧目录。与上一整包逐项比对，354 项中只有后端启动脚本改变。保留 `JAVA_TOOL_OPTIONS=-XX:-UsePerfData` 时已验证实际登录、重启与冷备恢复；脚本仍拒绝编译错误。日志在新整包同目录的 `comparison.log`、`backend.log`、`lifecycle.log`。
+当前 Windows x64 未签名整包：`target/trial-license-fab4f23/zhijie-windows-x64-trial.zip`（93,093,993 字节，SHA-256：`d222a373c56c23e722041309783725a3fd0684037293831366a303127c256ffb`）。解压到 D 盘全新短目录，按 `README.md` 试用。相较上一包，353 个既有条目字节不变，只更新 README，新增两份可离线查看的原文；桌面、后端、数据库和所有 JAR 字节不变。
+
+已把整包内的 104 个 JAR 与启动 classpath 一一对应，并逐包比对 Maven 二进制材料清单的 SHA-256：64 个 compile、5 个 runtime、35 个 test。test 范围并不意味着未分发。81 个有已索引的 JAR 内原文，每份均与实际包内字节匹配；其余 23 个在现有二进制和源码 JAR 材料目录中均无独立原文。清单另有 3 个不随 Windows 包分发的异平台数据库 JAR。逐项结果在整包同目录 `maven-distribution.json`。
+
+此次为其中两项补充了上游材料，未经正式许可审核：
+
+- HikariCP：[`HikariCP-6.3.3/LICENSE`](https://raw.githubusercontent.com/brettwooldridge/HikariCP/refs/tags/HikariCP-6.3.3/LICENSE)，原文按字节放在 `third-party/HikariCP-6.3.3-LICENSE.txt`。
+- Windows 内嵌数据库：已从载荷 `bin/postgres.exe` 确认 PostgreSQL 17.5；[`REL_17_5/COPYRIGHT`](https://raw.githubusercontent.com/postgres/postgres/refs/tags/REL_17_5/COPYRIGHT) 放在 `third-party/postgresql-17.5-COPYRIGHT.txt`。仅对应数据库本体，不覆盖整个 Zonky JAR、其中的 DLL 或扩展。
+
+打包器按 JAR 和原文的双重摘要绑定上述来源。余下 21 项尚无此次补充材料；现有材料仍需审阅，包括嵌套组件、桌面和原生依赖。此盘点不是完整第三方声明或发布许可。
+
+### 历史整包：编译器启动修复
+
+历史整包：`target/trial-compiler-1e00dd2/zhijie-windows-x64-trial.zip`（93,089,065 字节，SHA-256：`0e513ff689b1d0503a9bc0fb93123b34921af1934e3ef54862564eab2494073a`）。与上一整包逐项比对，354 项中只有后端启动脚本改变。保留 `JAVA_TOOL_OPTIONS=-XX:-UsePerfData` 时已验证实际登录、重启与冷备恢复；脚本仍拒绝编译错误。日志在该整包同目录的 `comparison.log`、`backend.log`、`lifecycle.log`。
 
 ### 历史整包：首次包含 V18
 

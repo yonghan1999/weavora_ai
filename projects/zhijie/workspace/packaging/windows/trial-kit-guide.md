@@ -1,5 +1,7 @@
 # 织界 · Windows 本机试用
 
+包内 `third-party/` 附有 HikariCP 6.3.3 的 `LICENSE` 和内嵌 PostgreSQL 17.5 数据库本体的 `COPYRIGHT`。它们不是完整的第三方声明，不覆盖 PostgreSQL 随附的其他库，也不表示已批准正式分发。
+
 这是未签名的 Windows x64 试用包，不是安装器。需要 WebView2 Runtime、Python 3.12+、JDK 25 和 Windows PowerShell（含系统 .NET Framework 4.x 编译器）。不需要 Git、Maven、Rust 或管理员权限。仅供本机试用，不开放防火墙，也不安装驱动。试用账号不能用于真实服务。
 
 先核对压缩包 SHA-256 与提供者给出的值，只使用可信来源。将整个包解压到 `D:/zhijie-trial` 这类**全新、短路径、可写目录**（路径不要含分号），不要嵌套在多层项目目录或与旧版合并；嵌入 PostgreSQL 在过深路径下可能无法启动。本版桌面在退房时会向后端提交本次入房的租约；升级或回退都要成套使用同一包内的桌面与后端，否则旧桌面可能无法正常退房。分别从解压目录打开两个普通 PowerShell 窗口。

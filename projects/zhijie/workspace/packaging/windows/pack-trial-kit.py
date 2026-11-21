@@ -7,6 +7,16 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 
+TRIAL_NOTICES = {
+    'HikariCP-6.3.3-LICENSE.txt': ('lib/HikariCP-6.3.3.jar',
+        '709f378c05756280939ce50fc1b1f1a53bb8e1899dc1b249f21f12703640b48b',
+        '73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68'),
+    'postgresql-17.5-COPYRIGHT.txt': ('lib/embedded-postgres-binaries-windows-amd64-17.5.0.jar',
+        '06ced3b3267c569ffb3f85544aac0075926dd81bf78bd5247abb1aa9fe994d6b',
+        'e3822c4797fadcab31a3fc73f75c28ac20c73d72b565da91e9974cf9398ef4d2'),
+}
+
+
 def checked_bytes(path, digest):
     if path.resolve(strict=True) != path or not path.is_file():
         raise ValueError('候选文件不是普通本地文件')
@@ -42,6 +52,13 @@ def pack(workspace, output):
         with ZipFile(source) as backend, output.open('xb') as stream:
             try:
                 with ZipFile(stream, 'w') as archive:
+                    for notice, (jar, jar_digest, notice_digest) in TRIAL_NOTICES.items():
+                        if backend.namelist().count(jar) != 1:
+                            raise ValueError(f'许可材料对应的依赖不唯一或不存在：{jar}')
+                        with backend.open(jar) as member:
+                            if hashlib.file_digest(member, 'sha256').hexdigest() != jar_digest:
+                                raise ValueError(f'许可材料对应的依赖摘要不符：{jar}')
+                        include(archive, 'third-party/' + notice, checked_bytes(packaging / 'trial-notices' / notice, notice_digest))
                     include(archive, 'README.md', (packaging / 'trial-kit-guide.md').read_bytes())
                     include(archive, 'ops/database/cold-backup.py', (workspace / 'ops/database/cold-backup.py').read_bytes())
                     include(archive, 'scripts/local-preview/trial-desktop.py', (workspace / 'scripts/local-preview/trial-desktop.py').read_bytes())

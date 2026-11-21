@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 from zipfile import ZipFile
 
 
@@ -38,6 +39,12 @@ class TrialKitTest(unittest.TestCase):
             'desktopManifest': 'target/desktop/manifest.json', 'desktopManifestSha256': hashlib.sha256(self.manifest.read_bytes()).hexdigest(),
             'backendZip': 'target/backend.zip', 'backendZipSha256': hashlib.sha256(self.backend.read_bytes()).hexdigest()}))
         self.output = self.target / 'kit.zip'
+        self.notice = self.root / 'packaging/windows/trial-notices/test-LICENSE.txt'
+        self.notice.parent.mkdir()
+        self.notice.write_bytes(b'upstream notice\n')
+        self.notices = {self.notice.name: ('lib/test.jar', hashlib.sha256(b'library').hexdigest(),
+                                          hashlib.sha256(self.notice.read_bytes()).hexdigest())}
+        self.enterContext(patch.object(kit, 'TRIAL_NOTICES', self.notices))
 
     def test_reproducible_allowlist_excludes_local_data(self):
         (self.program.parent / 'unexpected.dll').write_bytes(b'unrelated')
@@ -46,7 +53,9 @@ class TrialKitTest(unittest.TestCase):
         kit.pack(self.root, self.output)
         with ZipFile(self.output) as archive:
             self.assertEqual(set(archive.namelist()), {'README.md', 'ops/database/cold-backup.py', 'scripts/local-preview/trial-desktop.py',
-                             'target/desktop/manifest.json', 'target/desktop/app/zhijie-shell.exe', 'backend/lib/test.jar'})
+                             'target/desktop/manifest.json', 'target/desktop/app/zhijie-shell.exe', 'backend/lib/test.jar',
+                             'third-party/test-LICENSE.txt'})
+            self.assertEqual(archive.read('third-party/test-LICENSE.txt'), self.notice.read_bytes())
         other = self.target / 'second.zip'
         kit.pack(self.root, other)
         self.assertEqual(self.output.read_bytes(), other.read_bytes())
@@ -55,7 +64,7 @@ class TrialKitTest(unittest.TestCase):
         self.assertEqual(self.output.read_bytes(), other.read_bytes())
 
     def test_changed_input_leaves_no_kit(self):
-        for path in (self.manifest, self.backend, self.program):
+        for path in (self.manifest, self.backend, self.program, self.notice):
             original = path.read_bytes()
             with self.subTest(path=path.name):
                 path.write_bytes(original + b'changed')
@@ -63,6 +72,13 @@ class TrialKitTest(unittest.TestCase):
                     kit.pack(self.root, self.output)
                 self.assertFalse(self.output.exists())
             path.write_bytes(original)
+
+    def test_notice_rejects_wrong_dependency(self):
+        for jar, digest in [('lib/missing.jar', hashlib.sha256(b'library').hexdigest()), ('lib/test.jar', '0' * 64)]:
+            self.notices[self.notice.name] = (jar, digest, hashlib.sha256(self.notice.read_bytes()).hexdigest())
+            with self.subTest(jar=jar), self.assertRaises(ValueError):
+                kit.pack(self.root, self.output)
+            self.assertFalse(self.output.exists())
 
 
 if __name__ == '__main__':
