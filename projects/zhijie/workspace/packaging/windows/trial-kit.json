@@ -1,7 +1,7 @@
 {
   "noticeSourcesSha256": "1c4ca47956a07c11104a6194c25eaf96f80e6607e6b1a54dbb10e1dfbd9b4592",
-  "desktopManifest": "target/trial-cross-group-7f95699/manifest.json",
-  "desktopManifestSha256": "c23f20296ac376e801f8e0c7b3a92bfa22ba9cecdcacadcde9e2f5069a8644a6",
+  "desktopManifest": "target/trial-audit-edb4006/manifest.json",
+  "desktopManifestSha256": "ffa0f4ef2e4549b795ac69828de4ee04a2c0f5553cd34aa09ef2b60fa82744bd",
   "backendZip": "target/preview-stop-verified-5d3a651/preview-backend.zip",
   "backendZipSha256": "4afa37e0740e2ceca468c7162d1eb0a7f4499c30efe918f508b8a0479a15819e"
 }

@@ -2,7 +2,15 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名试用包：`target/preview-stop-verified-5d3a651/zhijie-windows-x64-trial.zip`（79,544,833 字节，SHA-256：`d88795eedde8787dd3a49d7f933a02bc183cb58f3cdd72205dc235fbc408dd52`）。解压到 D 盘全新短目录，按包内 `README.md` 启动。不要覆盖已用过的目录。
+当前 Windows x64 未签名试用包：`target/audit-kit-edb4006/zhijie-windows-x64-trial.zip`（79,544,751 字节，SHA-256：`64658fbb66b094aff4325e61c68dc4912fc82a9bb320dcdfeade03d44c151582`）。解压到 D 盘全新短目录，按包内 `README.md` 启动。不要覆盖已用过的目录。
+
+桌面来自 `edb4006`。管理员被降权后刷新或翻页，若服务端拒绝读取，页面会清除旧管理记录并说明原因；暂时限流不会清空已有页面。逐条比对新旧 ZIP 的 369 个条目，仅 `target/desktop/app/zhijie-shell.exe` 和 `target/desktop/manifest.json` 变化；后端、Helper、驱动均未变。
+
+新包同目录的 `payload.json` 记录安装包中八个产品文件的核对结果；`embedded-assets.json` 记录从 ZIP 的桌面程序提取的十项页面资源。旧版在手动刷新失权断言失败（`before.log`）；新版成品页面 181 项通过、无脚本异常（`embedded-browser.json`）。同一组成品页面连接两个 Rust 测试客户端、真实后端和独立 PostgreSQL，验证降权时关闭记录、仍可群聊及重新邀请（`embedded-social.log`，1 项通过、零跳过）。`lifecycle.log` 记录整包三次启停、登录和消息跨重启保留，以及冷备恢复后登录。上述测试没有运行安装器或原生桌面窗口，不证明跨机通话或虚拟网卡通过。
+
+### 历史整包：试用数据库停库检查
+
+前一版：`target/preview-stop-verified-5d3a651/zhijie-windows-x64-trial.zip`（79,544,833 字节，SHA-256：`d88795eedde8787dd3a49d7f933a02bc183cb58f3cdd72205dc235fbc408dd52`）。
 
 这版只改了包内 `backend/scripts/local-preview/stop.ps1` 和 `README.md`；其余 367 个条目字节不变。停止脚本遇到残留的 `postmaster.pid` 或观察到 Java 异常退出时返回失败，不删锁、不强杀。真实试用库三次启停、只读健康检查、原账号和消息跨重启保留，以及离线备份恢复后登录均已验证；日志在新包同目录的 `lifecycle.log`。没有安装软件、启动桌面、试音或改变支持矩阵。
 
