@@ -10,6 +10,8 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 
 DESKTOP_NOTICES = {
+    'WebRTC-win-x64-a545de4-LICENSE.txt': ('packaging/windows/trial-notices/WebRTC-win-x64-a545de4-LICENSE.txt',
+        'f26ccdf9dc9ca9f6dce44a170346239eb9192526e91b865a6b40ff7170b2e8af'),
     'WebView2-SDK-1.0.3800.47-LICENSE.txt': ('packaging/windows/trial-notices/WebView2-SDK-1.0.3800.47-LICENSE.txt',
         '324083bf015092054be9d5851dafa1b79cbfab3331ff983476d502839515d8bb'),
     'WebView2-SDK-1.0.3800.47-NOTICE.txt': ('packaging/windows/trial-notices/WebView2-SDK-1.0.3800.47-NOTICE.txt',

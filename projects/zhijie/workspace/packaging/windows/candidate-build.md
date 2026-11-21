@@ -2,7 +2,17 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名整包：`target/desktop-materials-fd4eeec/zhijie-windows-x64-trial.zip`（79,476,944 字节，SHA-256：`b965b616853f1c6068b297f591e0ba0f220822170c3cae9729fa317b49322647`）。相较上一包仅更新 README，在 `third-party/desktop/` 增加五份材料。桌面、Helper、Wintun、后端及所有其他既有文件未变，不需要为体验功能更换旧包。
+当前 Windows x64 未签名整包：`target/webrtc-origin-81487ad/zhijie-windows-x64-trial.zip`（79,521,354 字节，SHA-256：`ca0b8530d81aa271aa63cb8abb94a44bdf27969b24936c2b74b3b684ca395cb4`）。相较上一版只更新 README，新增 `third-party/desktop/WebRTC-win-x64-a545de4-LICENSE.txt`。整包其他文件（包括桌面、Helper 和后端）逐项字节相同。
+
+**原生库的材料来源。** Windows release 的 `webrtc-sys` 链接搜索路径指向工作区 `target/sdk/lib`；实际 `webrtc.lib` 为 89,350,204 字节，SHA-256 `3e5959b5320579814706848a0641224db22f03a374493e90cbd235948977f930`。其同目录 SDK 的 `LICENSE.md` 有 26 节，196,641 字节，SHA-256 `118329b312ed24efd1ae1a7b16c1ce51f7890d30ddc7e7075a04a9cd30c096c2`。已从 [LiveKit 对应 release](https://github.com/livekit/rust-sdks/releases/tag/webrtc-a545de4) 的 `webrtc-win-x64-release.zip` 下载响应中读到完整的 LICENSE、args.gn 和两个 ninja 文件，解压后都与本机 SDK 对应文件完全相同。总声明保留全文，只将 CRLF 规范为 LF；随包文本 SHA-256 `f26ccdf9dc9ca9f6dce44a170346239eb9192526e91b865a6b40ff7170b2e8af`。这不同于上一版仅提供的桥接和构建工具 NOTICE。
+
+上游 API 列出的完整 ZIP 为 114,348,165 字节，摘要 `862403fcb248c7d8803487e4c22b8821c6130e89100cb9c69be95ef45ff46146`。本次连接超时，仅收到前 7,699,391 字节；不能声称已独立验证整个上游 ZIP 或其中的静态库。使用的是已匹配的完整许可成员，不是将截断下载作为构建输入。
+
+**分发前仍需审查。** 从本地静态库按 COFF 对象取无重定位的完整代码段，在当前 shell 的 PE `.text` 中分别找到与 Opus 多通道封装、libaom、OpenH264、FFmpeg、libvpx 和 dav1d 对象相同的片段；对象路径、片段摘要与 EXE 偏移在同目录 `comparison.json`。这不是完整链接图，也不代表用户实际启用这些编码。GN 参数含 `rtc_use_h264=true` 和 `ffmpeg_branding="Chrome"`，发行总声明 FFmpeg 节含 GPL 文本。正式分发前须由负责人核对实际编入的源文件、构建选项、源码供应和专利条件；不得据本材料收集直接批准发布。实际试用包后端回归见 `lifecycle.log`，未运行原生桌面或安装器。
+
+### 历史整包：桌面 SDK 和桥接层声明
+
+历史整包：`target/desktop-materials-fd4eeec/zhijie-windows-x64-trial.zip`（79,476,944 字节，SHA-256：`b965b616853f1c6068b297f591e0ba0f220822170c3cae9729fa317b49322647`）。相较上一包仅更新 README，在 `third-party/desktop/` 增加五份材料。桌面、Helper、Wintun、后端及所有其他既有文件未变。
 
 - **WebView2 SDK 加载器**：锁定的 `webview2-com-sys 0.39.1` crate（SHA-256 `b3a07132775117d6065853d9d1178157b8c90e228de47129d6bce2c7edebedfb`）的 x64 静态库、DLL 和导入库均与 [Microsoft.Web.WebView2 1.0.3800.47](https://www.nuget.org/packages/Microsoft.Web.WebView2/1.0.3800.47) 的对应文件字节相同（NuGet 包 SHA-256 `56c9f26bdd07916a2d1949fb58a5c7e434dfa1173577dca879206050c4e718db`）。MSVC 绑定声明链接 `WebView2LoaderStatic.lib`，库 SHA-256 `89c6b872783b8f6c3cedbff618adb42082d455c615453ae10cfc753f1e8f25d8`。其 `loader_impl.obj` 的一段 80 字节代码与当前 shell 的 `.text` 字节相同（文件偏移 29435286，片段 SHA-256 `893feeb95d7cecdd3a08a57be43024e6923a8baac05764c1cafa4a37cb5f03bc`），这是链接配置之外的制品旁证，不是完整链接图。SDK NOTICE 字节不变，LICENSE 仅补末尾换行。不要把静态加载器与需另行安装的 WebView2 Runtime 混为一谈。
 - **WebRTC 桥接**：当前 shell 中可见 `libwebrtc` 标记；包中保留本项目固定的 Apache 2.0 正文及 `webrtc-sys 0.3.52` NOTICE，与已核对归档中的 NOTICE 字节一致。它包含补丁、桥接和构建工具声明，不替代完整 WebRTC 预编译库及其第三方编解码器的材料。
