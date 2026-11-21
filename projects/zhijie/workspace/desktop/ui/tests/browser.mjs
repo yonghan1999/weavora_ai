@@ -117,7 +117,7 @@ globalThis.__TAURI__={window:{getCurrentWindow:()=>({minimize:async()=>windowCal
 calls.push({command,p});
 if(command==='session_login'){await new Promise(r=>setTimeout(r,80));if(failLogin)throw 'SERVICE_UNAVAILABLE';return snapshot();}
 if(command==='session_logout')return {userId:null,activity:null,service:'DISCONNECTED',lastErrorCode:'LOGOUT_CLEANUP_PENDING'};
-if(command==='group_list')return [group,...(globalThis.extraGroups??[])];if(command==='room_list')return p.groupId===group.id?[room]:[];
+if(command==='group_list')return [...(globalThis.groupRemoved?[]:[group]),...(globalThis.extraGroups??[])];if(command==='room_list')return p.groupId===group.id?[room]:[];
 if(command==='activity_join'){if(globalThis.changedRoomPassword && p.password!=='updated')throw 'ROOM_PASSWORD_INVALID';activity={activityId:'a1',leaseId:'lease-room',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
 if(command==='activity_leave'){activity=null;return snapshot();}
 if(command==='voice_connect'){if(globalThis.holdVoice)await new Promise(done=>globalThis.resumeVoice=done);voice.state='FAILED';voice.failureCode='VOICE_CAPACITY_LIMITED';throw 'VOICE_CAPACITY_LIMITED';}
@@ -586,6 +586,12 @@ try {
   await check('仅重读原历史页不再次提交删除', `JSON.stringify(calls.slice(deleteStart).filter(x=>x.p.resource==='message-delete').map(x=>x.p.id))===JSON.stringify(['page-1','page-1']) && JSON.stringify(Array.from(document.querySelectorAll('[data-message-history] .message-text'),node=>node.textContent))===JSON.stringify(['历史 <0>','此消息已被删除','此消息已被删除']) && !document.querySelector('[data-message-history] [data-id="page-1"]')`);
   await click('[role=dialog] [data-action="dialog-close"].ghost');
   await check('返回最新后草稿与最新消息保持', `document.querySelector('#message-input').value==='翻页草稿' && Array.from(document.querySelectorAll('.group-chat-body .message-text')).at(-1).textContent==='历史 <102>'`);
+  await click('[data-action="delete-message"][data-id="page-102"]');
+  await check('退群前删除确认尚未提交', `document.querySelector('#dialog-title')?.textContent==='删除消息' && !messages.at(-1).deleted`);
+  await evaluate('globalThis.groupRemoved=true;emitProduct({userId:"u1"})');
+  for (let attempt = 0; attempt < 30 && await evaluate('!!document.querySelector("[role=dialog]")'); attempt++) await delay(100);
+  await check('成员被移出后自动关闭删除确认并清除旧群聊', `document.querySelector('h1')?.textContent==='玩家大厅' && !document.querySelector('[role=dialog], #message-input, .message-text') && !calls.some(call=>call.p.resource==='message-delete' && call.p.id==='page-102')`);
+  await evaluate('groupRemoved=false'); await click('[data-action="refresh"]');
   await evaluate('messages=originalMessages'); await click('[data-view="groups"]'); await click('[data-action="open-group"]');
   await fill("#message-input", "实时同步草稿");
   await evaluate('document.getElementById("message-input").focus();globalThis.noticeStart=calls.length;emitProduct({userId:"u1",messageGroupId:"another-group"})');
