@@ -71,9 +71,18 @@ class RuntimeDatabasePrivilegesIntegrationTest {
                             .hasMessage("RUNTIME_DATABASE_SYNC_GRANTS_MISSING");
                     if (permission.equals("USAGE ON SEQUENCE sync_event_sequences_sequence_seq")
                             && System.getenv("ZHIJIE_TEST_MIGRATION_JAR") != null) {
-                        assertPackagedRuntimeRejectsMissingGrant(appUrl, password);
+                        assertPackagedRuntimeRejectsMissingGrant(appUrl, password, "RUNTIME_DATABASE_SYNC_GRANTS_MISSING");
                     }
                     grants.execute("GRANT " + permission + " TO zhijie_app");
+                }
+                for (String permission : List.of("SELECT", "INSERT")) {
+                    grants.execute("REVOKE " + permission + " ON audit_logs FROM zhijie_app");
+                    assertThatThrownBy(() -> startup.migrate(runtime)).as("Missing %s on audit_logs", permission)
+                            .hasMessage("RUNTIME_DATABASE_AUDIT_GRANTS_MISSING");
+                    if (permission.equals("INSERT") && System.getenv("ZHIJIE_TEST_MIGRATION_JAR") != null) {
+                        assertPackagedRuntimeRejectsMissingGrant(appUrl, password, "RUNTIME_DATABASE_AUDIT_GRANTS_MISSING");
+                    }
+                    grants.execute("GRANT " + permission + " ON audit_logs TO zhijie_app");
                 }
             }
             try (var context = new SpringApplication(ControlPlaneApplication.class).run(
@@ -163,7 +172,7 @@ class RuntimeDatabasePrivilegesIntegrationTest {
         }
     }
 
-    private void assertPackagedRuntimeRejectsMissingGrant(String url, String password) throws Exception {
+    private void assertPackagedRuntimeRejectsMissingGrant(String url, String password, String expectedCode) throws Exception {
         var command = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
                 "-jar", System.getenv("ZHIJIE_TEST_MIGRATION_JAR"), "--spring.profiles.active=runtime",
                 "--server.port=0", "--zhijie.scheduling.enabled=false");
@@ -177,7 +186,7 @@ class RuntimeDatabasePrivilegesIntegrationTest {
                 assertThat(child.exitValue()).isNotZero();
                 String output = Files.readString(log);
                 assertThat(output.contains(password)).isFalse();
-                assertThat(output).contains("RUNTIME_DATABASE_SYNC_GRANTS_MISSING").doesNotContain("Tomcat started on port");
+                assertThat(output).contains(expectedCode).doesNotContain("Tomcat started on port");
             } finally {
                 if (child.isAlive()) child.destroyForcibly().waitFor(10, TimeUnit.SECONDS);
             }

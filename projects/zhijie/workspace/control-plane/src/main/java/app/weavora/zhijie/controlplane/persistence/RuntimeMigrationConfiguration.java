@@ -34,6 +34,14 @@ public class RuntimeMigrationConfiguration {
                 throw new IllegalStateException("RUNTIME_DATABASE_ROLE_EXCESSIVE");
             }
             flyway.validate();
+            Boolean auditReady = sql.queryForObject("""
+                    SELECT has_table_privilege(current_user, 'public.audit_logs', 'SELECT')
+                        AND has_table_privilege(current_user, 'public.audit_logs', 'INSERT')
+                    """, Boolean.class);
+            if (!Boolean.TRUE.equals(auditReady)) {
+                LOG.error("RUNTIME_DATABASE_AUDIT_GRANTS_MISSING");
+                throw new IllegalStateException("RUNTIME_DATABASE_AUDIT_GRANTS_MISSING");
+            }
             Boolean syncReady = sql.queryForObject("""
                     SELECT has_table_privilege(current_user, 'public.outbox_events', 'SELECT')
                         AND has_table_privilege(current_user, 'public.outbox_events', 'INSERT')
