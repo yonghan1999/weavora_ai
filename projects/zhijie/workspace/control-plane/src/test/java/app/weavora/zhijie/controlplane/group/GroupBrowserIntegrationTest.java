@@ -267,7 +267,10 @@ class GroupBrowserIntegrationTest {
             assertThat(sql.queryForList("SELECT status FROM owner_transfers WHERE group_id=? AND from_user_id=? AND to_user_id=?", String.class, group.id(), member, owner))
                     .containsExactly("ACCEPTED");
             var groups = context.getBean(GroupRepository.class);
-            assertThat(groups.findGroup(group.id()).orElseThrow().ownerUserId()).isEqualTo(owner);
+            var savedGroup = groups.findGroup(group.id()).orElseThrow();
+            assertThat(savedGroup.ownerUserId()).isEqualTo(owner);
+            assertThat(savedGroup.name()).isEqualTo("双端新群名");
+            assertThat(savedGroup.description()).isEqualTo("同步到已打开群聊的简介");
             assertThat(groups.findMember(group.id(), owner).orElseThrow().role()).isEqualTo(GroupRole.OWNER);
             var persisted = groups.findMember(group.id(), member).orElseThrow();
             assertThat(persisted.status()).isEqualTo(MemberStatus.REMOVED);

@@ -544,6 +544,12 @@ async function socialScenario() {
   await owner.evaluate(`document.querySelector('#message-input').value='新会话同步确认';document.querySelector('[data-form=message]').requestSubmit()`);
   await member.wait('rejoined session received a live update', `Array.from(document.querySelectorAll('.message-text')).some(node=>node.textContent==='新会话同步确认')`);
   await ownershipLifecycle(owner, member);
+  await owner.action('manage-group');
+  await owner.evaluate(`document.querySelector('[role=dialog] [name=name]').value='双端新群名';document.querySelector('[role=dialog] [name=description]').value='同步到已打开群聊的简介'`);
+  await owner.submit();
+  const updatedProfile = `document.querySelector('.group-chat-head h1')?.textContent==='双端新群名' && document.querySelector('.group-chat-head p')?.textContent==='同步到已打开群聊的简介'`;
+  await Promise.all([owner.wait('saved profile rendered', updatedProfile), member.wait('open member chat receives profile edit without reload', updatedProfile)]);
+  console.log('GROUP_PROFILE_SYNCED_TO_OPEN_MEMBER_CHAT');
   await owner.action('manage-group'); await owner.action('group-members');
   const priorRejections = memberLink.rejectedUpgrades, priorHandshakes = memberLink.cursors.length;
   memberLink.disconnect();
