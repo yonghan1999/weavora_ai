@@ -883,6 +883,8 @@ class Engine:
                 raise WorkflowError("任务不存在。")
             if command != task["test"]:
                 raise WorkflowError("执行命令必须与任务中预先登记的 test 完全一致。")
+            if unreadable := unreadable_task_fields(task):
+                raise WorkflowError(f"任务 {task_id} 说明不可读：{', '.join(unreadable)}。请先核对可信原文。")
             incomplete = [dep for dep in task.get("depends_on", []) if not any(t["id"] == dep and t["status"] == "completed" for t in data["tasks"])]
             if incomplete:
                 raise WorkflowError(f"依赖任务尚未完成：{incomplete}")

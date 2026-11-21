@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlsplit
 
-from .engine import PROJECT_ID_RE, SOURCE_ROOT, WorkflowError, read_json, sha256_file, tree_digest
+from .engine import PROJECT_ID_RE, SOURCE_ROOT, WorkflowError, read_json, sha256_file, tree_digest, unreadable_task_fields
 
 REQ_RE = re.compile(r"REQ-\d{3,}")
 
@@ -166,8 +166,10 @@ def _load_tasks(engine, project_id: str, result: GateResult) -> list[dict[str, A
     ids = [item.get("id") for item in tasks]
     if len(ids) != len(set(ids)):
         result.errors.append("任务标识重复")
-    required = ["id", "title", "requirement_ids", "depends_on", "input", "output", "acceptance", "test", "rollback", "status"]
+    required = ["id", "requirement_ids", "depends_on", "test", "status"]
     for task in tasks:
+        if unreadable := unreadable_task_fields(task):
+            result.errors.append(f"任务 {task.get('id', '?')} 说明不可读：{', '.join(unreadable)}")
         for key in required:
             if key not in task or task[key] in (None, "", []):
                 if key == "depends_on" and task.get(key) == []:

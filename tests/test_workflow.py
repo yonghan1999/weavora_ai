@@ -668,6 +668,40 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(status["state"]["stage"], "D_PLANNING")
         self.assertEqual(status["task_text_warnings"][0]["path"], "tasks/tasks.json")
 
+    def test_legacy_unreadable_task_cannot_run_or_pass_task_gates(self):
+        from unittest.mock import patch
+
+        state = self.engine.load(self.project_id)
+        state["stage"] = "D_PLANNING"
+        self.engine.save(self.project_id, state)
+        for task_id in ("TASK-001", "TASK-002"):
+            self.engine.add_task(self.project_id, {
+                "id": task_id, "title": "检查版本", "requirement_ids": ["REQ-001"], "depends_on": [],
+                "input": "解释器", "output": "版本", "acceptance": "输出版本", "test": "python --version", "rollback": "无需回退",
+            })
+        base = self.engine.project_dir(self.project_id)
+        tasks_path = base / "tasks/tasks.json"
+        tasks = json.loads(tasks_path.read_bytes())
+        tasks["tasks"][0].update(acceptance="????????", rollback="\ufffd")
+        atomic_json(tasks_path, tasks)
+        for stage in ("D_PLANNING", "E_IMPLEMENTATION"):
+            with self.subTest(stage=stage):
+                errors = check_stage(self.engine, self.project_id, stage).errors
+                self.assertRegex("\n".join(errors), r"TASK-001[^\n]*acceptance[^\n]*rollback")
+
+        state["stage"] = "E_IMPLEMENTATION"
+        self.engine.save(self.project_id, state)
+        paths = [tasks_path, base / "state.json", base / "audit.jsonl"]
+        before = [path.read_bytes() for path in paths]
+        with patch.object(self.engine, "_execute") as execute:
+            with self.assertRaisesRegex(WorkflowError, r"TASK-001.*acceptance.*rollback"):
+                self.engine.run_task(self.project_id, "TASK-001", "developer", "developer", "python --version")
+            execute.assert_not_called()
+        self.assertEqual([path.read_bytes() for path in paths], before)
+        self.assertEqual(list((base / "tests/evidence").glob("*.json")), [])
+        evidence = self.engine.run_task(self.project_id, "TASK-002", "developer", "developer", "python --version")
+        self.assertEqual(evidence["exit_code"], 0)
+
     def test_task_execution_requires_developer_and_registered_command(self):
         state = self.engine.load(self.project_id)
         state["stage"] = "D_PLANNING"

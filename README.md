@@ -77,7 +77,7 @@ python zhijie.py submit my-app --actor tech-lead --role tech_lead
 python zhijie.py add-task my-app --task-id TASK-001 --requirements REQ-001 --test "项目测试命令" --text-file "任务说明.json"
 ```
 
-`status <项目标识>` 在发现任务说明为空、含替换字符或主要由连续问号组成时，返回 `task_text_warnings`，列出任务和字段，不会改写任务和审计。已有损坏记录须从可信原文核对，不能从问号反推验收条件。
+`status <项目标识>` 在发现任务说明为空、含替换字符或主要由连续问号组成时，返回 `task_text_warnings`，列出任务和字段，不会改写任务和审计。`task-run` 不会为这类任务启动命令、消耗重试次数或生成证据；其他无依赖的正常任务仍可执行。检查任务清单的阶段门禁也会报告损坏字段，即使任务已标记完成。已有损坏记录须从可信原文核对，不能从问号反推验收条件。
 
 E 阶段真实执行命令并保存证据：
 
