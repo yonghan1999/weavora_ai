@@ -339,27 +339,49 @@ async fn full_room_all_to_all_audio() {
     let mut receivers = Vec::new();
     let mut producers = Vec::new();
     let mut frequencies = std::collections::HashMap::new();
-    for index in 0..12 {
+    let participant = std::env::var("ZHIJIE_CADENCE_PARTICIPANT")
+        .ok()
+        .map(|value| value.parse::<usize>().expect("participant index"));
+    let participants = if let Some(index) = participant {
+        assert!(index < 12);
+        for speaker in 0..12 {
+            let identity = std::env::var(format!("ZHIJIE_TEST_SPEAKER_{speaker}")).unwrap();
+            assert!(frequencies
+                .insert(identity, 300.0 + speaker as f32 * 100.0)
+                .is_none());
+        }
+        index..index + 1
+    } else {
+        0..12
+    };
+    for index in participants.clone() {
         let token = std::env::var(format!("ZHIJIE_TEST_VOICE_TOKEN_{index}"))
             .expect("control-plane member token");
         let (room, events) = Room::connect(&url, &token, RoomOptions::default())
             .await
             .expect("connect full-room participant");
         let frequency = 300.0 + index as f32 * 100.0;
-        frequencies.insert(room.local_participant().identity().to_string(), frequency);
+        let identity = room.local_participant().identity().to_string();
+        if participant.is_some() {
+            assert_eq!(frequencies.get(&identity), Some(&frequency));
+        } else {
+            frequencies.insert(identity, frequency);
+        }
         producers.push(publish_audio(&room, frequency).await);
         rooms.push(room);
         receivers.push(events);
     }
     assert_eq!(frequencies.len(), 12, "twelve distinct media identities");
-    let barrier = std::sync::Arc::new(tokio::sync::Barrier::new(133));
+    let barrier = std::sync::Arc::new(tokio::sync::Barrier::new(participants.len() * 11 + 1));
     let (clock, observation) = tokio::sync::watch::channel(None);
     let mut monitors = tokio::task::JoinSet::new();
-    for (index, mut events) in receivers.into_iter().enumerate() {
+    for ((index, mut events), room) in participants.clone().zip(receivers).zip(&rooms) {
         let barrier = barrier.clone();
         let mut observation = observation.clone();
         let mut expected = frequencies.clone();
-        expected.remove(&rooms[index].local_participant().identity().to_string());
+        assert!(expected
+            .remove(&room.local_participant().identity().to_string())
+            .is_some());
         monitors.spawn(async move {
             let mut tracks = tokio::task::JoinSet::new();
             while !expected.is_empty() {
@@ -407,15 +429,44 @@ async fn full_room_all_to_all_audio() {
     tokio::time::timeout(Duration::from_secs(20), barrier.wait())
         .await
         .expect("all 132 PCM streams ready before observation");
-    clock.send(Some(tokio::time::Instant::now())).unwrap();
-    if let Some(ready) = std::env::var_os("ZHIJIE_TEST_FULL_ROOM_READY") {
+    let start = if let Some(index) = participant {
+        println!("CADENCE_READY participant={index}");
+        let mut line = String::new();
+        std::io::stdin().read_line(&mut line).unwrap();
+        let target: u64 = line.trim().parse().expect("shared measurement start");
+        let delay = (std::time::UNIX_EPOCH + Duration::from_millis(target))
+            .duration_since(std::time::SystemTime::now())
+            .expect("missed common start");
+        assert!(delay <= Duration::from_secs(5));
+        let start = tokio::time::Instant::now() + delay;
+        tokio::time::sleep_until(start).await;
+        println!("BUSINESS_STARTED participant={index} unix_ms={target}");
+        start
+    } else {
+        tokio::time::Instant::now()
+    };
+    clock.send(Some(start)).unwrap();
+    if let Some(ready) =
+        std::env::var_os("ZHIJIE_TEST_FULL_ROOM_READY").filter(|_| participant.is_none())
+    {
         std::fs::write(ready, b"ready").expect("publish full-room readiness");
     }
     let observation_result = tokio::time::timeout(
         Duration::from_secs(windows as u64 * 15 + 15),
-        collect_observations(monitors, 12),
+        collect_observations(monitors, participants.len()),
     )
     .await;
+    if let Some(index) = participant {
+        observation_result
+            .as_ref()
+            .expect("participant observation deadline")
+            .as_ref()
+            .expect("all eleven authenticated speakers pass quality checks");
+        println!("CADENCE_MEASURED participant={index}");
+        let mut line = String::new();
+        std::io::stdin().read_line(&mut line).unwrap();
+        assert_eq!(line.trim(), "close");
+    }
     for producer in producers {
         producer.abort();
     }
@@ -425,10 +476,12 @@ async fn full_room_all_to_all_audio() {
     observation_result
         .expect("full-room observation deadline")
         .expect("every participant decodes all eleven other speakers");
-    println!(
-        "FULL_ROOM_OK participants=12 directions=132 observation_seconds={} windows={windows}",
-        windows * 15
-    );
+    if participant.is_none() {
+        println!(
+            "FULL_ROOM_OK participants=12 directions=132 observation_seconds={} windows={windows}",
+            windows * 15
+        );
+    }
 }
 
 async fn collect_observations(

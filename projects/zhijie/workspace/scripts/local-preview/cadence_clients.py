@@ -13,6 +13,11 @@ def participant_env(env, index):
 
 
 def run_clients(command, workspace, runtime, server, env, sampler_type, windows):
+    paths, start_ms = coordinate_clients(command, workspace, runtime, env, windows, server, sampler_type)
+    return combined_log(paths, start_ms, windows)
+
+
+def coordinate_clients(command, workspace, runtime, env, windows, server=None, sampler_type=None, on_start=None):
     processes, paths, resources = [], [], []
     with ExitStack() as stack:
         try:
@@ -21,16 +26,17 @@ def run_clients(command, workspace, runtime, server, env, sampler_type, windows)
                 paths.append(path)
                 output = stack.enter_context(path.open("xb"))
                 child = subprocess.Popen(command, cwd=workspace, env=participant_env(env, index), stdin=subprocess.PIPE,
-                                         stdout=output, stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW)
+                                         stdout=output, stderr=subprocess.STDOUT, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
                 processes.append(child)
                 stack.callback(child.stdin.close)
-            sampler = sampler_type({"sfu": server, **{f"client{i}": child for i, child in enumerate(processes)}})
+            sampler = sampler_type({"sfu": server, **{f"client{i}": child for i, child in enumerate(processes)}}) if sampler_type else None
 
             def wait_for(label, deadline):
                 pending = set(range(12))
                 positions = [0] * 12
                 while pending:
-                    resources.append(sampler.sample())
+                    if sampler:
+                        resources.append(sampler.sample())
                     for index in list(pending):
                         status = processes[index].poll()
                         if status is not None and (label or status != 0):
@@ -59,6 +65,9 @@ def run_clients(command, workspace, runtime, server, env, sampler_type, windows)
             wait_for("CADENCE_READY", time.monotonic() + 45)
             start_ms = time.time_ns() // 1_000_000 + 1000
             broadcast(str(start_ms))
+            if on_start:
+                time.sleep(max(0, start_ms / 1000 - time.time()))
+                on_start()
             wait_for("CADENCE_MEASURED", time.monotonic() + windows * 15 + 10)
             broadcast("close")
             wait_for(None, time.monotonic() + 15)
@@ -68,8 +77,9 @@ def run_clients(command, workspace, runtime, server, env, sampler_type, windows)
                     child.kill()
             for child in processes:
                 child.wait(timeout=5)
-            (runtime / "synthetic-resources.json").write_text(json.dumps(resources) + "\n", encoding="utf-8")
-    return combined_log(paths, start_ms, windows)
+            if sampler_type:
+                (runtime / "synthetic-resources.json").write_text(json.dumps(resources) + "\n", encoding="utf-8")
+    return paths, start_ms
 
 
 def combined_log(paths, start_ms, windows):

@@ -246,8 +246,11 @@ class VoiceSignalingIntegrationTest {
         assertThatThrownBy(() -> AuthenticatedActivities.join(context, users.get(12), room.id(), "overflow", null, "overflow"))
                 .isInstanceOf(app.weavora.zhijie.controlplane.common.ApiException.class)
                 .extracting("code").isEqualTo("CAPACITY_FULL");
-        var builder = new ProcessBuilder("cargo", "test", "--offline", "-p", "zhijie-voice", "--test",
-                "livekit_media", "full_room_all_to_all_audio", "--", "--ignored", "--exact", "--nocapture");
+        boolean isolated = "true".equals(System.getenv("ZHIJIE_TEST_ISOLATED_VOICE"));
+        var builder = isolated
+                ? new ProcessBuilder("python", "-B", "scripts/local-preview/business-voice-room.py", directory.toString())
+                : new ProcessBuilder("cargo", "test", "--offline", "-p", "zhijie-voice", "--test",
+                        "livekit_media", "full_room_all_to_all_audio", "--", "--ignored", "--exact", "--nocapture");
         builder.environment().put("ZHIJIE_TEST_VOICE_URL", entry.replace("http://", "ws://"));
         Path voiceReady = directory.resolve("full-room-ready");
         if (combined()) {
@@ -259,6 +262,8 @@ class VoiceSignalingIntegrationTest {
             String token = grants.voice(users.get(index), joins.get(index).activityId(), joins.get(index).deviceId()).voiceToken();
             originalTokens.add(token);
             builder.environment().put("ZHIJIE_TEST_VOICE_TOKEN_" + index, token);
+            if (isolated) builder.environment().put("ZHIJIE_TEST_SPEAKER_" + index,
+                    LiveKitVoiceGateway.identity(users.get(index), joins.get(index).memberGeneration()));
         }
         Path output = directory.resolve("rust-full-room-media.log");
         var process = builder.redirectErrorStream(true).redirectOutput(output.toFile()).start();
