@@ -6,7 +6,7 @@
 
 在实际试用包的 Windows PostgreSQL JAR 内只读遍历 `postgres-windows-x86_64.txz`，找到 121 个 EXE/DLL、60 个扩展控制文件（不表示 60 个扩展已启用）。同目录 `inventory.json` 记录路径、字节、SHA-256 及可读的 PE 版本资源。94 个文件自报 PostgreSQL，21 个文件的产品/版本资源可关联到 ICU、OpenSSL、curl、libiconv、gettext、LZ4、libxml2、Zstandard、wxWidgets 和 zlib。版本字段不是构建来源的独立证明。包内 `third-party/sources.json` 绑定这 21 个 DLL 的字节与补充材料，另保留 6 个没有产品名称的原生文件摘要；打包时校验嵌套归档及所列成员，不解压执行 DLL。
 
-不按名称补认 `icutu67.dll`、`libwinpthread-1.dll`、`libxslt.dll`、`testplug.dll`、`plugin_debugger.dll` 或 `system_stats.dll` 的确切来源。PostgreSQL 自报归属也不能代替扩展、内置第三方代码及源码提供义务的核查。桌面原生依赖、法律审核和正式批准不在本次结论内。
+上述 6 个文件缺少产品名称，但不等于发行来源未知。后续[数据库发行包比对](postgres-origin.md)确认：包括这 6 个 DLL 在内的 1,478 个普通文件与 EDB 17.5-1 Windows x64 原包逐文件相同，并有额外证据区分 ICU、libxslt 和调试扩展。试用包未改版。发行来源核查不能代替组件源码、许可义务、桌面原生依赖审核或正式批准。
 
 ### 历史整包：顶层 Maven 许可材料
 
