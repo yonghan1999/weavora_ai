@@ -2,7 +2,13 @@
 
 ## 当前本机试用（不安装）
 
-当前下载制品：`target/trial-kit-1ccaf96/zhijie-windows-x64-trial.zip`（93,087,811 字节，SHA-256：`7cc6b9efae4a54033472c9987063cc1324cdb90bbf918fa2a53d541d98e94cb6`）。从全新解压目录按包内 `README.md` 启动后端，再运行 `python -B "scripts/local-preview/trial-desktop.py" "target/desktop" --http-port 18829 --check-backend`；端口须与启动时一致。它直接读取回环健康端点，不发送凭据、不走代理或重定向，不创建 WebView 目录。`--check-only` 仍仅离线检查桌面文件。健康检查不识别进程身份，不替代登录或媒体验收。
+当前 Windows x64 整包：`target/trial-kit-bff9649/zhijie-windows-x64-trial.zip`（93,088,105 字节，SHA-256：`27003f7884b8a5ba4e2703281df029916ca31140d3bc89a1cec88b14370c62b1`）。核对摘要后解压到 D 盘全新短路径，按包内 `README.md` 启动，不覆盖旧包或既有数据库。相比 `1ccaf96` 的 352 个条目，仅后端 `RuntimeMigrationConfiguration.class` 变化：正式 `runtime` 配置缺少同步数据库授权时拒绝启动。桌面、Helper、依赖和 V17 迁移没有变化。
+
+`target/trial-kit-bff9649/lifecycle.log` 记录解压后的三次真实启动：首次设密登录与写消息、正常停服再启动、停库冷备恢复到独立副本再登录。三轮均核对原账号、群、房间配置、消息、设备接管及会话撤销；后端只读探测在启动前和停服后拒绝、运行中通过。冷备恢复后的服务也已正常停止。六项打包测试通过，制品逐项比较及 201 个控制面类与已测 JAR 的核对见同目录 `comparison.log`、`package-preflight.log`。这是本机试用，不代表实机音频、TUN、目标服务器容量或正式发布验收。
+
+### 历史整包 1ccaf96
+
+历史制品：`target/trial-kit-1ccaf96/zhijie-windows-x64-trial.zip`（93,087,811 字节，SHA-256：`7cc6b9efae4a54033472c9987063cc1324cdb90bbf918fa2a53d541d98e94cb6`）。从全新解压目录按包内 `README.md` 启动后端，再运行 `python -B "scripts/local-preview/trial-desktop.py" "target/desktop" --http-port 18829 --check-backend`；端口须与启动时一致。它直接读取回环健康端点，不发送凭据、不走代理或重定向，不创建 WebView 目录。`--check-only` 仍仅离线检查桌面文件。健康检查不识别进程身份，不替代登录或媒体验收。
 
 逐项比较前后两个 ZIP 的 352 个条目，只有包内说明和桌面启动脚本变化。打包及启动器 12 项测试通过；`target/trial-kit-1ccaf96/lifecycle.log` 记录该整包首次启动、停止与重启的两轮完整检查，包括密码登录、消息保留、设备接管、注销与刷新重放后的资格拒绝以及启动前/运行中/停服后的只读检查。仅启动隔离的试用后端和数据库，未运行原生桌面、安装器、Helper 或组合测试。
 

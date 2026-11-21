@@ -1,5 +1,9 @@
 # Windows 本机试用后端（离线包）
 
+当前后端：`target/trial-kit-bff9649/preview-backend.zip`（83,856,519 字节，SHA-256：`92bfa5597f11b684e6e8492eca209e71273d767d0d0bc5a6d6357f20eb75be57`）。与上一后端逐项核对 340 个条目，仅正式运行配置的同步授权检查类不同。未引入依赖或数据库迁移；实际本机整包登录、同版重启和停库冷备恢复记录见[本机试用入口](candidate-build.md)。试用配置不是正式低权限部署；后者的拒绝启动与权限恢复验证见 `docs/engineering/runtime-sync-startup.md`。
+
+## 8471c58 后端历史记录
+
 当前后端：`target/trial-kit-8471c58/preview-backend.zip`（83,855,552 字节，SHA-256：`7dc40ac0b68e3ca32cab0f7373ce11f56266997178fec0e0a3b2bb15d9c3246d`），配套整包与启动边界见[本机试用入口](candidate-build.md)。从已推送 `8471c58` 干净归档构建，V17 将活动绑定到实际登录会话；认证注销、刷新重放和其他会话失效不能保留原活动准入，普通令牌刷新不会清退活动。同设备新登录需显式接管，旧登录注销不误伤新活动。实现与源码验证见 `docs/engineering/activity-auth-session-revocation.md`，实际包验证见 `docs/engineering/windows-activity-session-revocation.md`。
 
 本轮完成整包首次启动/重启/冷备恢复，实际注销、接管及刷新重放拒绝；后端同版生命周期、两种同步认证、房间重开、日志隐私，以及 V16 旧活动升级拒绝、新版重入、原库回退和新版再次启用。旧/新版独立冷备分别核验 1,111/1,113 文件，账号、群、配置、消息及删除标记保留，两份数据不合并。升级前必须停库并备份，V17 不回填猜测旧活动归属，清退后用户显式重新加入；回退必须配套旧包及升级前原库，不让 V16 访问 V17 数据库。
