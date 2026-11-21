@@ -16,6 +16,12 @@
 
 2026-11-21 对 `cross-group-kit-7f95699` 整包中的三个 DLL 重新核对摘要、PDB 路径及标识。`icutu67.dll` 含 `icuuc67.dll` 和 `icuin67.dll` 名称；ICU `release-67-1` 的 `icu4c/source/tools/toolutil/toolutil.vcxproj` 和 `icu4c/source/tools/icuinfo/testplug.vcxproj` 分别给出对应输出。两个工具库现关联既有 `native-ICU.txt`；这不是根据文件名推断精确源码版本。`libxslt.dll` 还含 `xsltEngineVersion` 与 `xsltLibxsltVersion`。上游 `v1.1.43` 标签解析为 `71be7a32637760d769b193d95e0c745ecb86b679`，分别按标签和不可变提交读取 `Copyright`，两份 2,968 字节原文的 SHA-256 均为 `7e48e290b6bfccc2ec1b297023a1d77f2fd87417f71fbb9f50aabef40a851819`。试用包保留完整原文；不把来源交叉核对当作厂商二进制可复现证明。`plugin_debugger.dll`、`system_stats.dll`、`libwinpthread-1.dll` 仍单列，未给它们套用其他库的声明。
 
+**后三个 DLL 的归属与材料：** EDB 的 `REL-17_5-1-Win` 对应提交 `8eb581e5828f0c6985624c4b52226f313c8df00c`。其 `versions.sh` 指明 PostgreSQL 17.5；`server/build.sh` 从 EnterpriseDB 的 `pldebugger`、`system_stats` 仓库克隆或更新源码并打印提交号，但没有锁定提交。未取得构建当时打印的记录，索引不填这两个 DLL 的版本。
+
+- `plugin_debugger.dll` 中有 `pldbg_wait_for_breakpoint`。EnterpriseDB 调试器源码快照 `696619729ff7145a9f957932d7c57aeb87061e21` 的 README 换为 CRLF 后正好匹配 EDB 原包 README 的已核摘要 `618b0e…c0873`。保留这份项目说明及其指定的 Artistic 2.0 全文，不以 EDB 材料目录中仅称“Artistic License”的另一份文档替代。
+- `system_stats.dll` 中有 `pg_sys_cpu_info` 和 `system_stats/x64/Release/system_stats.pdb` 路径；同版 EDB `server/scripts/windows/compile-system_stats.ps1` 从相同 Release 目录复制 DLL 到 `pgsql/lib`。附上该上游截至发行标签提交日期可查的源码快照 `a4f2c9b089aa4c2f0b3144dc5a49f95ad5214d2b` 的 `LICENSE`，不推断其扩展版本。
+- `libwinpthread-1.dll` 中同时出现 `pthread_create` 和 `mingw-w64-libraries/winpthreads/src/{barrier,rwlock}.c` 的实际源路径。附上 mingw-w64 参考提交 `819a6ec2ea87c19814b287e21d65e0dc7f05abba` 在该子目录的完整 `COPYING`，包括 Lockless 声明；不据此将 DLL 标为 v12 或宣称已复现发行商的编译。
+
 **离线复核：** 自行准备上述两个可信 ZIP 后，从 `workspace` 运行以下命令。工具先核对外层摘要，再比对嵌套载荷所有普通文件。缺失、同名歧义、内容不同或特殊成员会失败；成功时在标准输出给出逐文件 JSON，不写入 ZIP 或创建解压副本。
 
 ```powershell

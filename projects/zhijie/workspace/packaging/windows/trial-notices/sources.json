@@ -13,6 +13,10 @@
     "mybatis-NOTICE.txt": "305d0c943c6d7bd5ebda181a54d33b0285fd04caedf0cf1264aa7428342216b0",
     "native-GPL-2.0.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
     "native-ICU.txt": "25e21013a7bc2fad735e28c5278a120e4c7f1c327c8c8b9b4df1751748cddbb2",
+    "native-Artistic-2.0.txt": "bae466ac8d7100c304fe76632ccc627203a3897d3f7166f3cce00fb9df8c2074",
+    "native-pldebugger-README.txt": "7f5b9ad7846c6b0134d1c5cb6160acab68eddd85909c94e15f454005e6d7b34a",
+    "native-system_stats.txt": "e59eced65cc8f79f1ae1e2561706484c42fa6124c125523c74d3b984dd956547",
+    "native-winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
     "native-LZ4.txt": "8b58c446121a109ccf32edc094bba3010a3d85e4ee3702950db55e4d3e87736c",
     "native-OpenSSL.txt": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
     "native-Zstandard-BSD.txt": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8",
@@ -70,6 +74,22 @@
         {
           "file": "zbin-LICENSE.txt",
           "source": "https://raw.githubusercontent.com/zonkyio/embedded-postgres-binaries/refs/tags/v17.5.0/LICENSE"
+        },
+        {
+          "file": "native-Artistic-2.0.txt",
+          "source": "https://raw.githubusercontent.com/spdx/license-list-data/8a04f0303d95c4f932210b118588c662665bd383/text/Artistic-2.0.txt"
+        },
+        {
+          "file": "native-pldebugger-README.txt",
+          "source": "https://raw.githubusercontent.com/EnterpriseDB/pldebugger/696619729ff7145a9f957932d7c57aeb87061e21/README-pldebugger.md"
+        },
+        {
+          "file": "native-system_stats.txt",
+          "source": "https://raw.githubusercontent.com/EnterpriseDB/system_stats/a4f2c9b089aa4c2f0b3144dc5a49f95ad5214d2b/LICENSE"
+        },
+        {
+          "file": "native-winpthreads.txt",
+          "source": "https://raw.githubusercontent.com/mingw-w64/mingw-w64/819a6ec2ea87c19814b287e21d65e0dc7f05abba/mingw-w64-libraries/winpthreads/COPYING"
         },
         {
           "file": "native-OpenSSL.txt",
@@ -253,22 +273,30 @@
             "documents": [
               "native-gettext.txt"
             ]
+          },
+          {
+            "product": "EnterpriseDB pldebugger",
+            "version": null,
+            "versionEvidence": "EDB installer names upstream; shipped README matches after newline normalization. SQL extension version is not a binary version.",
+            "members": {"lib/plugin_debugger.dll": "6c7a5674197d864964b008a1c94b9b08801661adadf37a485d1a1dc5d51638e1"},
+            "documents": ["native-pldebugger-README.txt", "native-Artistic-2.0.txt"]
+          },
+          {
+            "product": "EnterpriseDB system_stats",
+            "version": null,
+            "versionEvidence": "EDB build and copy paths match DLL debug path; build script does not pin a commit.",
+            "members": {"lib/system_stats.dll": "549d0913f7c2be19a5d7c2d811785bb24a56f6c4bc473172efb7c92f37752dca"},
+            "documents": ["native-system_stats.txt"]
+          },
+          {
+            "product": "mingw-w64 winpthreads",
+            "version": null,
+            "versionEvidence": "Embedded barrier.c and rwlock.c paths identify winpthreads; the notice reference is not proof of the toolchain release.",
+            "members": {"bin/libwinpthread-1.dll": "ffe2d56375bb4e8bdee9037df6befc5016ddd8871d0d85027314dd5792f8fdc9"},
+            "documents": ["native-winpthreads.txt"]
           }
         ],
-        "unidentified": [
-          {
-            "file": "lib/plugin_debugger.dll",
-            "sha256": "6c7a5674197d864964b008a1c94b9b08801661adadf37a485d1a1dc5d51638e1"
-          },
-          {
-            "file": "lib/system_stats.dll",
-            "sha256": "549d0913f7c2be19a5d7c2d811785bb24a56f6c4bc473172efb7c92f37752dca"
-          },
-          {
-            "file": "bin/libwinpthread-1.dll",
-            "sha256": "ffe2d56375bb4e8bdee9037df6befc5016ddd8871d0d85027314dd5792f8fdc9"
-          }
-        ]
+        "unidentified": []
       }
     },
     "flyway-database-postgresql-11.7.2.jar": {

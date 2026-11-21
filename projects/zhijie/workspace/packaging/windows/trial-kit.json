@@ -1,5 +1,5 @@
 {
-  "noticeSourcesSha256": "f7642562034114ec36ad497a77a89d6e61a03d3a344e9e9b412bc09e6651c57b",
+  "noticeSourcesSha256": "1c4ca47956a07c11104a6194c25eaf96f80e6607e6b1a54dbb10e1dfbd9b4592",
   "desktopManifest": "target/trial-cross-group-7f95699/manifest.json",
   "desktopManifestSha256": "c23f20296ac376e801f8e0c7b3a92bfa22ba9cecdcacadcde9e2f5069a8644a6",
   "backendZip": "target/runtime-deps-0f82702/preview-backend.zip",
