@@ -2,7 +2,13 @@
 
 ## 当前本机试用（不安装）
 
-当前 Windows x64 未签名试用包：`target/cross-group-kit-7f95699/zhijie-windows-x64-trial.zip`（79,535,489 字节，SHA-256：`69de4dc0fecb8cc356a847cdfb7a3798e0399346588c8c218a243109f859514b`）。解压到 D 盘全新短目录，按包内 `README.md` 启动，不覆盖旧数据。桌面由 `7f95699` 离线构建：在甲群房间浏览乙群时，即使乙群被解散，仍可返回甲群原房间。
+当前 Windows x64 未签名试用包：`target/native-materials-78c5cf4/zhijie-windows-x64-trial.zip`（79,536,751 字节，SHA-256：`ff10cab06690851547fd833b27cf19e189643edc98f3110c9b878a7960897e6f`）。解压到 D 盘全新短目录，按包内 `README.md` 启动。已在使用上一版的用户无需迁移：桌面、后端及所有驱动字节相同。
+
+`comparison.json` 记录旧包 364 个条目仅说明书、来源索引有改动，新包多一份 libxslt 原文。数据库嵌套载荷内的 24 个 DLL 已逐一重算摘要，比对了其引用的声明文件；仍有 3 个文件未配齐材料，不能作为正式分发批准。依据见 `postgres-origin.md`。`lifecycle.log` 记录新包在独立目录首次启动、原目录重启和冷备恢复后的登录、消息与健康检查；未启动原生桌面或安装器。
+
+### 历史整包：跨群返回房间
+
+Windows x64 未签名试用包：`target/cross-group-kit-7f95699/zhijie-windows-x64-trial.zip`（79,535,489 字节，SHA-256：`69de4dc0fecb8cc356a847cdfb7a3798e0399346588c8c218a243109f859514b`）。桌面由 `7f95699` 离线构建：在甲群房间浏览乙群时，即使乙群被解散，仍可返回甲群原房间。
 
 `comparison.json` 核对了 364 个条目，只有桌面程序及其清单变化；`embedded-assets.json` 核对从 ZIP 中的程序解出的 10 个页面资源，`embedded-browser.json` 记录 180 项页面检查通过、无脚本异常。按[成品页面核对](verify-package.md)用旧包和新包页面连接同版本控制面及独立数据库，从聊天页和管理弹窗分别验证：旧包均丢失入口，新包均能返回、保留原租约并续租。对照日志在 `target/room-ownership-82014e1/kit-group-7f95699-old-1.log`、`kit-group-7f95699-extracted-1.log`。整包 `lifecycle.log` 另行记录原目录重启、恢复至新目录后的登录和消息、设备接管、会话清理、暂停入房和健康检查。测试未启动原生桌面、安装器、真实音频或 TUN。
 
