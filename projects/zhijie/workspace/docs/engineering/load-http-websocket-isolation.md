@@ -26,6 +26,12 @@
 
 后续版本仅在原始记录中区分已证实的本机 HTTP 请求期限触发（`HTTP_DEADLINE_EXCEEDED`）和连接重置（`HTTP_CONNECTION_RESET`）。未知异常及普通主动取消仍为 `TRANSPORT_FAILED`，不写入异常原文；三者均算失败。`node "scripts/test-load-http-transport.mjs"` 覆盖真实回环请求和脱敏边界。另直接执行负载器的 `request()`，得到上述两类传输错误及 `429/RATE_LIMITED`，三次均计为失败，记录见 `target/hour-audit-d54f025/http-failure-diagnostics.log`。旧记录没有原始异常，不能回填新分类；此项修复的是可观测性，不是容量问题。
 
+### 失败 HTTP 的双端定位
+
+相比上述 `d54f025`，后续压测客户端仅对失败 HTTP 请求额外记录起始 UTC `startedAt` 和观察到的 `clientPort`。发送前取消或未观察到本机端口时端口为 `null`。结束 UTC 仍为 `at`，耗时仍用单调时钟。将端口与同机 Tomcat 访问日志第二列匹配，再限定第一列开始时间在该请求窗口内；多个匹配、无匹配或时钟跳变时都不能逐条归因。服务端状态不等于客户端已收到响应。旧的一小时记录里，20 次传输失败所在时间窗有 303 条服务端 200，没有客户端端口不能分配给具体失败或推断消息是否提交。
+
+`node "scripts/test-load-http-correlation.mjs"` 直接执行负载器的请求函数，使用并发回环请求核对实际对端端口、时间窗、复用连接、限流、重置、超时、发送前取消及日志脱敏；不改变服务端日志格式、超时、限流或验收门槛。
+
 ### 此前的连接池隔离回归
 
 开发证据位于 D 盘 `target/sync-delivery-diagnostics-cc4cc7d/`；未修改工作流受控元数据，不代替正式 F/G/H/I。

@@ -42,6 +42,8 @@ async function record(entry) {
 
 async function request(actor, operation, path, body) {
   const requestStarted = performance.now();
+  const startedAt = Date.now();
+  let clientPort = null;
   const payload = body === undefined ? undefined : JSON.stringify(body);
   measureBody("requestBodyBytes", Buffer.byteLength(payload ?? ""));
   let status = 0;
@@ -54,6 +56,7 @@ async function request(actor, operation, path, body) {
       headers: { Authorization: `Bearer ${config.accounts[actor].accessToken}`, ...(payload ? { "Content-Type": "application/json" } : {}) },
       body: payload,
       signal: AbortSignal.timeout(5000),
+      onClientPort: port => { clientPort = port; },
     });
     status = response.status;
     const text = response.text;
@@ -69,6 +72,7 @@ async function request(actor, operation, path, body) {
   totals.requestBodyBytes += Buffer.byteLength(payload ?? "");
   latencies.push(latencyMs);
   await record({ at: new Date().toISOString(), workloadElapsedMs: finished - started,
+    ...(code ? { startedAt: new Date(startedAt).toISOString(), clientPort } : {}),
     actor, operation, status, code, latencyMs, responseBodyBytes: bytes });
   return value;
 }

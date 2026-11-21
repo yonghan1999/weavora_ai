@@ -9,7 +9,7 @@ export function classifyTransportFailure(error) {
 export class LoadHttpTransport {
   #agent = new Agent({ keepAlive: true });
 
-  send(address, { method, headers, body, signal }) {
+  send(address, { method, headers, body, signal, onClientPort }) {
     return new Promise((accept, reject) => {
       const outgoing = request(address, { method, headers, signal, agent: this.#agent }, response => {
         const chunks = [];
@@ -18,6 +18,10 @@ export class LoadHttpTransport {
         response.on("end", () => accept({ status: response.statusCode, text: Buffer.concat(chunks).toString("utf8") }));
       });
       outgoing.on("error", reject);
+      if (onClientPort) outgoing.once("finish", () => {
+        const port = outgoing.socket?.localPort;
+        if (Number.isInteger(port) && port > 0 && port <= 65535) onClientPort(port);
+      });
       outgoing.end(body);
     });
   }
