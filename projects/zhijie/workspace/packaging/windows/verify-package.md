@@ -12,6 +12,8 @@ node "packaging/windows/verify-embedded-ui.mjs" "$shellFromZip" "$buildDist" "$a
 
 成功时标准输出为文件名、程序内偏移与解压后 SHA-256 的 JSON。错版或资源缺失时不创建输出目录，已有目录不覆盖。此项验证不等于原生窗口、Rust 重连行为或安装升级已在成品上实测。
 
+要验证成品页面在真实群变更事件后的行为，在工作区的测试进程中设置 `ZHIJIE_TEST_GROUP_BROWSER=true`，并把 `ZHIJIE_TEST_EXTRACTED_UI` 指向上一步提取的 `dist` 绝对路径（须位于本项目 `target` 内）。运行 `./mvnw.cmd -o -pl control-plane "-Dtest=GroupBrowserIntegrationTest#dissolvingViewedGroupKeepsOtherGroupsActiveRoom" test`。此模式跳过源码页面构建，测试控制面从指定目录提供页面，不改试用包或现有试用数据库。未指定该路径时仍构建并使用源码页面；错误路径不会回退到源码。用同一命令分别指定旧包、新包的已核对页面，比较聊天页和管理弹窗两条路径的结果。这里的原生桥接来自同提交的 Rust 测试客户端，不是启动包内 WebView 窗口。
+
 ## 核对 NSIS 产品文件
 
 需要与便携桌面配套的离线后端时，见 [Windows 本机试用后端](preview-backend.md)。

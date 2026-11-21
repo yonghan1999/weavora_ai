@@ -27,13 +27,23 @@ class GroupBrowserIntegrationTest {
     private final Path ui = workspace.resolve("desktop/ui");
 
     private Path clientExecutable;
+    private Path pageAssets = ui.resolve("dist");
 
     private void prepareClients() throws Exception {
-        var build = new ProcessBuilder("node", "scripts/build.mjs").directory(ui.toFile()).inheritIO().start();
-        try {
-            assertThat(build.waitFor(30, TimeUnit.SECONDS)).isTrue();
-            assertThat(build.exitValue()).isZero();
-        } finally { build.destroyForcibly(); }
+        String extracted = System.getenv("ZHIJIE_TEST_EXTRACTED_UI");
+        if (extracted == null) {
+            var build = new ProcessBuilder("node", "scripts/build.mjs").directory(ui.toFile()).inheritIO().start();
+            try {
+                assertThat(build.waitFor(30, TimeUnit.SECONDS)).isTrue();
+                assertThat(build.exitValue()).isZero();
+            } finally { build.destroyForcibly(); }
+        } else {
+            pageAssets = Path.of(extracted).toRealPath();
+            assertThat(pageAssets.startsWith(workspace.resolve("target").toRealPath())).isTrue();
+            assertThat(pageAssets.getFileName().toString()).isEqualTo("dist");
+            assertThat(pageAssets.resolve("index.html")).isRegularFile();
+            assertThat(pageAssets.resolve("app.js")).isRegularFile();
+        }
         var client = new ProcessBuilder("node", "tests/prepare-group-client.mjs").directory(ui.toFile())
                 .redirectError(ProcessBuilder.Redirect.INHERIT).start();
         try {
@@ -51,7 +61,7 @@ class GroupBrowserIntegrationTest {
         return (ServletWebServerApplicationContext) new SpringApplication(ControlPlaneApplication.class).run(
                 "--server.address=127.0.0.1", "--server.port=0",
                 "--zhijie.voice.enabled=false",
-                "--spring.web.resources.static-locations=" + ui.resolve("dist").toUri(),
+                "--spring.web.resources.static-locations=" + pageAssets.toUri(),
                 "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
                 "--spring.datasource.username=postgres", "--spring.datasource.password=");
     }
