@@ -20,6 +20,7 @@
     "native-gettext.txt": "3fe5361f24b7c49ba12911c08f5a33f9cb18871d95d9fb881f5b8a4793e04288",
     "native-libiconv-COPYING.LIB.txt": "56bdea73b6145ef6ac5259b3da390b981d840c24cb03b8e1cbc678de7ecfa18d",
     "native-libxml2.txt": "c99aae1afe013e50b8b3701e089222b351258043c3025b64053a233fd25b4be7",
+    "native-libxslt.txt": "7e48e290b6bfccc2ec1b297023a1d77f2fd87417f71fbb9f50aabef40a851819",
     "native-wxWidgets-LGPL.txt": "b7993225104d90ddd8024fd838faf300bea5e83d91203eab98e29512acebd69c",
     "native-wxWidgets.txt": "e8453be21aea2b7cc9a39d5b0475190bbfa0a60605b4178377590b94d9c43eae",
     "native-zlib.txt": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243",
@@ -85,6 +86,10 @@
         {
           "file": "native-ICU.txt",
           "source": "https://raw.githubusercontent.com/unicode-org/icu/refs/tags/release-67-1/icu4c/LICENSE"
+        },
+        {
+          "file": "native-libxslt.txt",
+          "source": "https://raw.githubusercontent.com/GNOME/libxslt/71be7a32637760d769b193d95e0c745ecb86b679/Copyright"
         },
         {
           "file": "native-libxml2.txt",
@@ -161,11 +166,23 @@
               "bin/icudt67.dll": "5ff9c8026344e886f280ddfa235a1e16e1bcd396e90f9ed600b6f71d9d881ae8",
               "bin/icuin67.dll": "23d5914acf071f566df19aaf404373e5c73c9910c370e728976f6202c04cf6c3",
               "bin/icuio67.dll": "1ca5221753f930de19041d546ce0f24102455621c71033d4d5cb8151762c9694",
-              "bin/icuuc67.dll": "2fb4007a1f1089a0807cc1abde5443f5c3b0865ecfd80344b6ad165f1fe53ade"
+              "bin/icuuc67.dll": "2fb4007a1f1089a0807cc1abde5443f5c3b0865ecfd80344b6ad165f1fe53ade",
+              "bin/icutu67.dll": "371c4784b5510b8e80a6b5896567b17bc70e231ea47ee8f614a7ebd3d510960f",
+              "bin/testplug.dll": "d1b10395868a004f6ae4700159ba89992a65147efaca63218cd5fb084b32303a"
             },
+            "versionEvidence": "icutu67.dll and testplug.dll: distribution header and ICU Windows projects; not individual file version resources",
             "documents": [
               "native-ICU.txt"
             ]
+          },
+          {
+            "product": "libxslt",
+            "version": "1.1.43",
+            "versionEvidence": "DLL PDB path and matching EDB distribution header; downstream patch level not established",
+            "members": {
+              "bin/libxslt.dll": "a073cb5ce97936ad57bed825378552c3c10ab15f34e7164094d5282283e3228c"
+            },
+            "documents": ["native-libxslt.txt"]
           },
           {
             "product": "libxml2",
@@ -248,20 +265,8 @@
             "sha256": "549d0913f7c2be19a5d7c2d811785bb24a56f6c4bc473172efb7c92f37752dca"
           },
           {
-            "file": "bin/icutu67.dll",
-            "sha256": "371c4784b5510b8e80a6b5896567b17bc70e231ea47ee8f614a7ebd3d510960f"
-          },
-          {
             "file": "bin/libwinpthread-1.dll",
             "sha256": "ffe2d56375bb4e8bdee9037df6befc5016ddd8871d0d85027314dd5792f8fdc9"
-          },
-          {
-            "file": "bin/libxslt.dll",
-            "sha256": "a073cb5ce97936ad57bed825378552c3c10ab15f34e7164094d5282283e3228c"
-          },
-          {
-            "file": "bin/testplug.dll",
-            "sha256": "d1b10395868a004f6ae4700159ba89992a65147efaca63218cd5fb084b32303a"
           }
         ]
       }

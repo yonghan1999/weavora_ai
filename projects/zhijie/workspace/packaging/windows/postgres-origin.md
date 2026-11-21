@@ -14,6 +14,8 @@
 
 复核用的同包旁证摘要：`xsltconfig.h` 为 `b6a73d49e1de60548dfc9cafb32cda024348478992c4b4b7bf544db2ae8a80f8`，`uvernum.h` 为 `8fcea2888d2f25ddc9d33f9ee8888129a283eace600260563273d2e739321e0a`，`README-pldebugger.md` 为 `618b0ec6b4522bd2b0704b7acbbd629f5abb7db2356148b4b2426b9a4adc0873`。
 
+2026-11-21 对 `cross-group-kit-7f95699` 整包中的三个 DLL 重新核对摘要、PDB 路径及标识。`icutu67.dll` 含 `icuuc67.dll` 和 `icuin67.dll` 名称；ICU `release-67-1` 的 `icu4c/source/tools/toolutil/toolutil.vcxproj` 和 `icu4c/source/tools/icuinfo/testplug.vcxproj` 分别给出对应输出。两个工具库现关联既有 `native-ICU.txt`；这不是根据文件名推断精确源码版本。`libxslt.dll` 还含 `xsltEngineVersion` 与 `xsltLibxsltVersion`。上游 `v1.1.43` 标签解析为 `71be7a32637760d769b193d95e0c745ecb86b679`，分别按标签和不可变提交读取 `Copyright`，两份 2,968 字节原文的 SHA-256 均为 `7e48e290b6bfccc2ec1b297023a1d77f2fd87417f71fbb9f50aabef40a851819`。试用包保留完整原文；不把来源交叉核对当作厂商二进制可复现证明。`plugin_debugger.dll`、`system_stats.dll`、`libwinpthread-1.dll` 仍单列，未给它们套用其他库的声明。
+
 **离线复核：** 自行准备上述两个可信 ZIP 后，从 `workspace` 运行以下命令。工具先核对外层摘要，再比对嵌套载荷所有普通文件。缺失、同名歧义、内容不同或特殊成员会失败；成功时在标准输出给出逐文件 JSON，不写入 ZIP 或创建解压副本。
 
 ```powershell
