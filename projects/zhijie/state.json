@@ -3,14 +3,11 @@
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "name": "织界",
-  "stage": "H_RELEASE",
+  "stage": "D_PLANNING",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-11-21T19:47:23Z",
-  "retry_counts": {
-    "E_IMPLEMENTATION": 1,
-    "F_SELF_TEST": 3
-  },
+  "updated_at": "2026-11-22T16:35:58Z",
+  "retry_counts": {},
   "max_retries": 3,
   "approvals": [
     {
@@ -2442,6 +2439,48 @@
       "reason": "进入发布准备",
       "evidence": [],
       "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "H_RELEASE",
+      "from": "in_progress",
+      "to": "awaiting_approval",
+      "at": "2026-11-21T20:06:22Z",
+      "actor": "release-manager",
+      "role": "release_manager",
+      "reason": "提交人工审批",
+      "evidence": [
+        "docs/07-test-report.md",
+        "docs/08-release.md",
+        "release.json",
+        "tests/cases.json",
+        "tests/defects.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "development_reopened",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "from_stage": "H_RELEASE",
+      "from_status": "awaiting_approval",
+      "stage": "D_PLANNING",
+      "to_status": "in_progress",
+      "at": "2026-11-22T16:35:58Z",
+      "actor": "codex",
+      "role": "workflow_operator",
+      "reason": "Windows 普通用户实测无法仅通过客户端完成房间语音和虚拟网络联机：设备列表依赖已建立的语音会话，Helper 依赖手工命令与复制文件，双端真实听辨和游戏互通缺少证据。按用户反馈撤回此次发布准备评审，返回开发规划补齐原范围并重新取证。",
+      "invalidated_approval_ids": [
+        "APR-B-2d95f3450d2e",
+        "APR-B1-0a966826ab18",
+        "APR-B2-de9ff485a1ed",
+        "APR-H-3750708bc3d5",
+        "APR-H-632ee4199bfd"
+      ],
+      "human_authorization": false
     }
   ],
   "resume_status": null,
@@ -2465,6 +2504,7 @@
     "APR-B-2d95f3450d2e",
     "APR-B1-0a966826ab18",
     "APR-B2-de9ff485a1ed",
+    "APR-H-3750708bc3d5",
     "APR-H-632ee4199bfd"
   ]
 }

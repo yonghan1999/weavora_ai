@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "version": "0.1.0",
-  "code_version": "tree-b070236aa74142612a11f05ec05279acebd693ae2edad770233808e61582982d",
+  "code_version": "tree-776ad5115025c7729893827c7719b1bbbe51b04c52c1fd58cffeac0b0f6d66f7",
   "artifacts": [
     {
       "path": "release/manifest.json",
-      "sha256": "178425ea9585766edd49f4dd7f627fc3a7797bcdeff0d3ddfab6c995cc8a070d",
-      "bytes": 1406
+      "sha256": "22f958c417d4cde1a1730d26be54f6474d89fa8df8fcdf0620b7e9257f613dbd",
+      "bytes": 3925
     },
     {
       "path": "release/support-matrix.json",
@@ -15,8 +15,8 @@
     },
     {
       "path": "release/evidence-index.json",
-      "sha256": "131ce2541ee57bcd5c52caf0b0cc2c7312d0cce4c14f98cabc913e6d87a7f328",
-      "bytes": 1692
+      "sha256": "203fa8df3edf2018a119265ce44b1bebe55e8a43e8022a1a8301676dda1927e5",
+      "bytes": 1743
     },
     {
       "path": "release/design-asset-diff.json",
@@ -24,6 +24,6 @@
       "bytes": 193
     }
   ],
-  "prepared_at": "2026-11-05T01:20:56Z",
+  "prepared_at": "2026-11-21T19:47:41Z",
   "production_deployment": "not_performed"
 }

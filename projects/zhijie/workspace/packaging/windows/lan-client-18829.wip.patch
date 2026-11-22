@@ -1,0 +1,141 @@
+--- a/projects/zhijie/workspace/client/core/src/api.rs
++++ b/projects/zhijie/workspace/client/core/src/api.rs
+@@ -58,7 +58,7 @@
+     let url = reqwest::Url::parse(base).map_err(|_| "CONTROL_PLANE_URL_INVALID")?;
+     let loopback = matches!(url.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"));
+     if url.host_str().is_none()
+-        || !(url.scheme() == "https" || url.scheme() == "http" && loopback)
++        || !(url.scheme() == "https" || url.scheme() == "http" && (loopback || (url.host_str() == Some("192.168.2.212") && url.port() == Some(18829))))
+         || !url.username().is_empty()
+         || url.password().is_some()
+         || url.query().is_some()
+--- a/projects/zhijie/workspace/desktop/shell/src/main.rs
++++ b/projects/zhijie/workspace/desktop/shell/src/main.rs
+@@ -497,7 +497,7 @@
+ fn main() {
+     let base = match std::env::var("ZHIJIE_CONTROL_PLANE_URL") {
+         Ok(value) => value,
+-        Err(std::env::VarError::NotPresent) => "http://127.0.0.1:8080".to_string(),
++        Err(std::env::VarError::NotPresent) => "http://192.168.2.212:18829".to_string(),
+         Err(std::env::VarError::NotUnicode(_)) => String::new(),
+     };
+     let client = ControlPlaneClient::new(base).unwrap_or_else(|_| {
+--- a/projects/zhijie/workspace/desktop/shell/tauri.conf.json
++++ b/projects/zhijie/workspace/desktop/shell/tauri.conf.json
+@@ -1,7 +1,7 @@
+ {
+   "$schema": "https://schema.tauri.app/config/2",
+   "productName": "织界",
+-  "identifier": "app.weavora.zhijie",
++  "identifier": "app.weavora.zhijie.lantest",
+   "version": "0.1.0",
+   "build": {
+     "frontendDist": "../ui/dist",
+--- a/projects/zhijie/workspace/network/helper/src/authority.rs
++++ b/projects/zhijie/workspace/network/helper/src/authority.rs
+@@ -131,7 +131,7 @@
+ pub(crate) fn validate_base_url(base_url: &str) -> Result<(), String> {
+     let url = reqwest::Url::parse(base_url).map_err(|_| "CONTROL_PLANE_URL_INVALID")?;
+     let loopback = matches!(url.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"));
+-    if (url.scheme() != "https" && !(url.scheme() == "http" && loopback))
++    if (url.scheme() != "https" && !(url.scheme() == "http" && (loopback || (url.host_str() == Some("192.168.2.212") && url.port() == Some(18829)))))
+         || !url.username().is_empty()
+         || url.password().is_some()
+         || url.query().is_some()
+--- a/projects/zhijie/workspace/network/helper/src/network_windows.rs
++++ b/projects/zhijie/workspace/network/helper/src/network_windows.rs
+@@ -11,6 +11,30 @@
+ };
+
+ const QUERY_FAILED: &str = "NETWORK_CONFIGURATION_UNAVAILABLE";
++
++/// Configure only the IPv4 tunnel; 1040 is below IPv6's minimum link MTU.
++pub(super) fn set_ipv4_mtu(luid: u64, mtu: u16) -> std::io::Result<()> {
++    use windows_sys::Win32::NetworkManagement::{
++        IpHelper::{GetIpInterfaceEntry, SetIpInterfaceEntry, MIB_IPINTERFACE_ROW},
++        Ndis::NET_LUID_LH,
++    };
++    let mut row = MIB_IPINTERFACE_ROW {
++        Family: AF_INET,
++        InterfaceLuid: NET_LUID_LH { Value: luid },
++        ..Default::default()
++    };
++    let code = unsafe { GetIpInterfaceEntry(&mut row) };
++    if code != 0 {
++        return Err(std::io::Error::from_raw_os_error(code as i32));
++    }
++    row.SitePrefixLength = 0;
++    row.NlMtu = u32::from(mtu);
++    let code = unsafe { SetIpInterfaceEntry(&mut row) };
++    if code != 0 {
++        return Err(std::io::Error::from_raw_os_error(code as i32));
++    }
++    Ok(())
++}
+
+ #[derive(Default)]
+ struct NetworkSnapshot {
+--- a/projects/zhijie/workspace/network/helper/src/startup.rs
++++ b/projects/zhijie/workspace/network/helper/src/startup.rs
+@@ -73,7 +73,7 @@
+             .ok()
+             .filter(|pid| *pid > 0)
+             .ok_or("ZHIJIE_HELPER_CLIENT_PID is invalid")?;
+-        let control_plane_url = control_plane_url.unwrap_or_else(|| "http://127.0.0.1:8080".into());
++        let control_plane_url = control_plane_url.unwrap_or_else(|| "http://192.168.2.212:18829".into());
+         crate::authority::validate_base_url(&control_plane_url)?;
+         let socket = socket_path(socket)?;
+         Ok(Self {
+--- a/projects/zhijie/workspace/network/helper/src/system.rs
++++ b/projects/zhijie/workspace/network/helper/src/system.rs
+@@ -114,7 +114,7 @@
+         let lease_id = request.lease_id.clone();
+         let control_plane_url = self.control_plane_url.clone().unwrap_or_else(|| {
+             std::env::var("ZHIJIE_CONTROL_PLANE_URL")
+-                .unwrap_or_else(|_| "http://127.0.0.1:8080".into())
++                .unwrap_or_else(|_| "http://192.168.2.212:18829".into())
+         });
+         let worker = std::thread::spawn(move || {
+             let runtime = match tokio::runtime::Builder::new_current_thread()
+@@ -376,14 +376,25 @@
+     configuration
+         .address(request.virtual_ipv4.as_str())
+         .netmask(network.netmask().to_string())
+-        // 兼容 QUIC 最小路径 MTU，给内层 WireGuard 与外层 QUIC 留出开销。
+-        .mtu(1040)
+         .up();
++    const TUN_IPV4_MTU: u16 = 1040;
++    #[cfg(not(windows))]
++    configuration.mtu(TUN_IPV4_MTU);
+     #[cfg(windows)]
+     let _driver_guard = configure_windows_tun(&mut configuration)?;
+     // Windows 的 destination 会创建默认网关，不能用于活动网段路由。
+-    let device =
+-        tun::create_as_async(&configuration).map_err(|_| "TUN_PERMISSION_OR_CREATE_FAILED")?;
++    let device = tun::create_as_async(&configuration).map_err(|error| {
++        eprintln!("TUN initialization: {error}");
++        "TUN_PERMISSION_OR_CREATE_FAILED"
++    })?;
++    #[cfg(windows)]
++    {
++        use tun::AbstractDeviceExt;
++        network_windows::set_ipv4_mtu(device.tun_luid(), TUN_IPV4_MTU).map_err(|error| {
++            eprintln!("TUN IPv4 MTU: {error}");
++            "TUN_PERMISSION_OR_CREATE_FAILED"
++        })?;
++    }
+     let socket = UdpSocket::bind("0.0.0.0:0")
+         .await
+         .map_err(|_| "NETWORK_SOCKET_FAILED")?;
+--- a/projects/zhijie/workspace/scripts/local-preview/start-helper.ps1
++++ b/projects/zhijie/workspace/scripts/local-preview/start-helper.ps1
+@@ -1,7 +1,7 @@
+-﻿param(
++param(
+     [Parameter(Mandatory = $true)][ValidateRange(1, 2147483647)][int]$ClientProcessId,
+     [string]$HelperExe = "",
+-    [string]$ControlPlaneUrl = "http://127.0.0.1:8080",
++    [string]$ControlPlaneUrl = "http://192.168.2.212:18829",
+     [string]$Socket = "\\.\pipe\zhijie-helper-v1",
+     [switch]$CheckOnly
+ )
