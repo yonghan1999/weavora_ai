@@ -1,6 +1,8 @@
 mod authority;
 #[cfg(windows)]
 mod install_windows;
+#[cfg(windows)]
+pub mod desktop_launch;
 pub mod ipc;
 pub mod model;
 mod router;

@@ -544,10 +544,14 @@
         "TASK-014"
       ],
       "test": "cargo test --locked -p zhijie-helper -p zhijie-shell && node scripts/test-release.mjs --contract",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261123T074745Z-3085915c.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261123T074745Z-3085915c.json",
+      "last_evidence_sha256": "5937b87ee069845e4afcc8cf024868ba2ea404c99ccd0ea72b4716ad78606448"
     }
   ]
 }

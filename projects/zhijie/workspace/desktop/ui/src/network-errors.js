@@ -1,4 +1,10 @@
 const messages = {
+  HELPER_CONSENT_DECLINED: "已取消联机授权，文字和语音仍可使用。准备好后可再次授权。",
+  HELPER_LAUNCH_FAILED: "配套辅助服务未能启动，请关闭并重新打开桌面端；若仍失败，使用机器级安装包修复。",
+  HELPER_START_TIMEOUT: "系统已接受启动请求，辅助服务尚未就绪；请稍后重试联机。",
+  HELPER_ORIGIN_MISMATCH: "当前环境与安装包的联机配置不一致，请使用测试组织者提供的配套安装包。",
+  HELPER_LAUNCH_BUSY: "正在等待系统确认，请完成已有的授权窗口。",
+  HELPER_LAUNCH_NOT_NEEDED: "联机状态已变化，请关闭此窗口并重试联机。",
   HELPER_UNAVAILABLE: "联机辅助服务未启动，请启动后单独重试联机。",
   IPC_SERVER_NOT_ALLOWED: "联机辅助服务身份不匹配，请使用与桌面配套的辅助服务后重试。",
   IPC_SERVER_IDENTITY_UNAVAILABLE: "无法验证联机辅助服务身份，请检查配套服务安装后重试。",

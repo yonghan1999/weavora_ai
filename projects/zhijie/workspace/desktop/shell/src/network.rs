@@ -11,6 +11,8 @@ use zhijie_helper::model::{HelperRequest, NetworkPath, NetworkStart, NetworkStat
 #[derive(Default)]
 pub struct NetworkManager {
     pub(super) operations: tokio::sync::Mutex<()>,
+    #[cfg(windows)]
+    pub(super) helper_prompt: tokio::sync::Mutex<()>,
     current: Mutex<Option<NetworkStart>>,
     pending_renewal: Mutex<Option<NetworkStart>>,
     status: Mutex<NetworkStatus>,
@@ -21,8 +23,51 @@ pub struct NetworkManager {
 
 impl NetworkManager {
     pub fn snapshot(&self) -> serde_json::Value {
-        serde_json::json!({"status": self.status.lock().expect("network status lock").clone(),
+        serde_json::json!({"canAuthorizeHelper": cfg!(windows), "status": self.status.lock().expect("network status lock").clone(),
             "peers": self.peers.lock().expect("network peers lock").clone()})
+    }
+
+    #[cfg(windows)]
+    pub(super) async fn authorize_helper(
+        &self,
+        activity: &str,
+        origin: &'static str,
+    ) -> Result<(), String> {
+        {
+            let status = self.status.lock().expect("network status lock");
+            if status.activity_id.as_deref() != Some(activity)
+                || status.state != NetworkState::Failed
+                || status.error_code.as_deref() != Some("HELPER_UNAVAILABLE")
+            {
+                return Err("HELPER_LAUNCH_NOT_NEEDED".into());
+            }
+        }
+        let probe = || call(request("helper.get_capabilities", None));
+        match probe().await {
+            Ok(_) => return Ok(()),
+            Err(code) if code == "HELPER_UNAVAILABLE" => {}
+            Err(code) => return Err(code),
+        }
+        let child = tauri::async_runtime::spawn_blocking(move || {
+            zhijie_helper::desktop_launch::request_consent(origin)
+        })
+        .await
+        .map_err(|_| "HELPER_LAUNCH_FAILED")??;
+        let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
+        loop {
+            if !child.running() {
+                return Err("HELPER_LAUNCH_FAILED".into());
+            }
+            match probe().await {
+                Ok(_) => return Ok(()),
+                Err(code) if code == "HELPER_UNAVAILABLE" => {}
+                Err(code) => return Err(code),
+            }
+            if tokio::time::Instant::now() >= deadline {
+                return Err("HELPER_START_TIMEOUT".into());
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+        }
     }
 
     pub async fn connect(

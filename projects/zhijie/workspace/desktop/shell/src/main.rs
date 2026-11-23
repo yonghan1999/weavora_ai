@@ -443,6 +443,52 @@ async fn network_connect(
 }
 
 #[tauri::command]
+async fn network_authorize_helper(
+    activity_id: String,
+    lease_id: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    #[cfg(not(windows))]
+    {
+        let _ = (activity_id, lease_id, state);
+        Err("HELPER_LAUNCH_UNSUPPORTED".into())
+    }
+    #[cfg(windows)]
+    {
+        // 不持有活动锁等待 UAC：此时用户仍可退出、失权或继续通话。
+        let _guard = state
+            .network
+            .helper_prompt
+            .try_lock()
+            .map_err(|_| "HELPER_LAUNCH_BUSY")?;
+        let valid_activity = || {
+            state
+                .core
+                .snapshot()
+                .activity
+                .is_some_and(|a| a.activity_id == activity_id && a.lease_id == lease_id)
+        };
+        if !valid_activity() {
+            return Err("CURRENT_GRANT_REQUIRED".into());
+        }
+        state.access_token()?;
+        if state.client.origin() != packaged_origin()
+            || std::env::var_os("ZHIJIE_HELPER_SOCKET").is_some()
+        {
+            return Err("HELPER_ORIGIN_MISMATCH".into());
+        }
+        state
+            .network
+            .authorize_helper(&activity_id, packaged_origin())
+            .await?;
+        if !valid_activity() {
+            return Err("CURRENT_GRANT_REQUIRED".into());
+        }
+        Ok(())
+    }
+}
+
+#[tauri::command]
 async fn network_snapshot(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let _network = state.network.operations.lock().await;
     let _activity = state.activity_operations.channel().await;
@@ -493,10 +539,15 @@ fn desktop_context() -> tauri::Context<tauri::Wry> {
     context
 }
 
+// 候选包由组织者指定可信 HTTPS 源；普通玩家不提供服务器、程序或命令行。
+fn packaged_origin() -> &'static str {
+    option_env!("ZHIJIE_PACKAGED_CONTROL_PLANE_ORIGIN").unwrap_or("http://127.0.0.1:8080")
+}
+
 fn main() {
     let base = match std::env::var("ZHIJIE_CONTROL_PLANE_URL") {
         Ok(value) => value,
-        Err(std::env::VarError::NotPresent) => "http://127.0.0.1:8080".to_string(),
+        Err(std::env::VarError::NotPresent) => packaged_origin().to_string(),
         Err(std::env::VarError::NotUnicode(_)) => String::new(),
     };
     let client = ControlPlaneClient::new(base).unwrap_or_else(|_| {
@@ -539,6 +590,7 @@ fn product_commands<R: tauri::Runtime>(
         audio_test_output,
         voice_snapshot,
         network_connect,
+        network_authorize_helper,
         network_snapshot
     ]
 }

@@ -51,7 +51,12 @@ test("network panel explains only the current activity's unresolved fault", () =
     state.network.status.errorCode = code;
     assert.ok(renderApp(state).includes(text), code);
   }
+  state.network.status.errorCode = "HELPER_UNAVAILABLE";
+  assert.ok(!renderApp(state).includes('data-action="authorize-helper"'));
+  state.network.canAuthorizeHelper = true;
+  assert.ok(renderApp(state).includes('data-action="authorize-helper"'));
   state.network.status.errorCode = "unknown-sensitive-detail";
+  assert.ok(!renderApp(state).includes('data-action="authorize-helper"'));
   assert.ok(!renderApp(state).includes(state.network.status.errorCode));
   state.network.status.errorCode = "NETWORK_SUBNET_CONFLICT";
   state.network.status.activityId = "old-activity";

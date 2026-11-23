@@ -31,6 +31,8 @@ test("bridge sends real versioned desktop commands without a mock fallback", asy
   assert.deepEqual(calls.at(-1), { command: "network_connect", payload: calls[3].payload });
   assert.deepEqual(calls[7].payload, { deviceId: "speaker-stable-id", output: true });
   assert.deepEqual(calls[11].payload, { resource: "group-member-role", id: "group", body: { role: "ADMIN" }, targetId: "member" });
+  await bridge.authorizeHelper("activity", "lease");
+  assert.deepEqual(calls.at(-1), {command: "network_authorize_helper", payload: {activityId: "activity", leaseId: "lease"}});
   assert.throws(() => new CoreBridge(null), /TAURI_UNAVAILABLE/);
 });
 

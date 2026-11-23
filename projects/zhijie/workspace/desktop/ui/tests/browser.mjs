@@ -124,7 +124,8 @@ if(command==='voice_connect'){if(globalThis.holdVoice)await new Promise(done=>gl
 if(command==='voice_snapshot'){if(globalThis.failVoiceRead)throw 'SERVICE_UNAVAILABLE';return structuredClone(voice);}
 if(command==='state_snapshot'){if(globalThis.failStateRead){globalThis.failedStateReads++;throw 'SERVICE_UNAVAILABLE';}return snapshot();}
 if(command==='network_connect'){if(globalThis.holdNetwork)await new Promise(done=>globalThis.resumeNetwork=done);throw 'HELPER_UNAVAILABLE';}
-if(command==='network_snapshot'){if(globalThis.failNetworkRead)throw 'SERVICE_UNAVAILABLE';return {status:{state:activity?(globalThis.networkState??'FAILED'):'DISCONNECTED',activityId:activity?.activityId},peers:[]};}
+if(command==='network_authorize_helper'){if(globalThis.declineHelper)throw 'HELPER_CONSENT_DECLINED';globalThis.helperAbsent=false;return null;}
+if(command==='network_snapshot'){if(globalThis.failNetworkRead)throw 'SERVICE_UNAVAILABLE';return {canAuthorizeHelper:true,status:{errorCode:globalThis.helperAbsent?'HELPER_UNAVAILABLE':null,state:activity?(globalThis.networkState??'FAILED'):'DISCONNECTED',activityId:activity?.activityId},peers:[]};}
 if(command==='voice_set_mute'){voice.muted=p.muted;return voice;}
 if(command==='voice_set_receive'){voice.receiveEnabled=p.enabled;return voice;}
 if(command==='voice_set_volume'){if(p.memberId){voice.memberVolumes??={};voice.memberVolumes[p.memberId]=p.volume;}else voice.masterVolume=p.volume;return structuredClone(voice);}
@@ -690,6 +691,17 @@ try {
   );
   await click('[data-action="retry-network"]');
   await check("独立重试联机不重建语音", 'calls.filter(x=>x.command==="network_connect").length===2 && calls.filter(x=>x.command==="voice_connect").length===1');
+  await evaluate('globalThis.helperAbsent=true;globalThis.declineHelper=true;globalThis.beforeAuthorization=calls.length');
+  await delay(1300);
+  await click('[data-action="authorize-helper"]');
+  await click('[data-action="dialog-close"]');
+  await check("取消授权说明不触发系统授权", '!calls.slice(beforeAuthorization).some(x=>x.command==="network_authorize_helper")');
+  await click('[data-action="authorize-helper"]');
+  await click('.modal-actions .primary');
+  await check("拒绝系统授权保留房间并允许重试", 'document.querySelector("#dialog-error").textContent.includes("已取消联机授权") && !!document.querySelector(".voice-dock")');
+  await evaluate('declineHelper=false');
+  await click('.modal-actions .primary');
+  await check("重新同意仅重连联机，不重建语音", '!document.querySelector("[role=dialog]") && calls.slice(beforeAuthorization).filter(x=>x.command==="network_connect").length===1 && !calls.slice(beforeAuthorization).some(x=>x.command==="voice_connect")');
   await shot("room-1440");
   await evaluate('globalThis.failVoiceRead=true;globalThis.networkState="CONNECTED"');
   await delay(1300);

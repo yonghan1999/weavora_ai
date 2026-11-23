@@ -71,6 +71,10 @@ pub(crate) fn control_plane_origin(base: &str) -> Result<reqwest::Url, &'static 
 }
 
 impl ControlPlaneClient {
+    pub fn origin(&self) -> &str {
+        &self.base_url
+    }
+
     pub async fn sync_cursor(&self, access_token: &str) -> Result<u64, ClientError> {
         #[derive(Deserialize)]
         struct Cursor {

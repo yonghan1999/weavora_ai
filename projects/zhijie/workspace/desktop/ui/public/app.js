@@ -870,6 +870,17 @@ const actions = {
       );
     }),
   "retry-voice": () => connectChannel("voice"),
+  "authorize-helper": () => {
+    if (!s.activity) return;
+    const {activityId, leaseId} = s.activity;
+    const current = () => s.activity?.activityId === activityId && s.activity?.leaseId === leaseId;
+    dialog("允许房间联机？", "Windows 将请求管理员确认，仅用来启动建立虚拟网卡的配套辅助服务。", "<p>桌面端仍以普通权限运行。取消不会退出房间，也不会关闭文字或语音。</p>", async () => {
+      if (!current()) { closeDialog(); return; }
+      await bridge.authorizeHelper(activityId, leaseId);
+      closeDialog();
+      if (current()) await connectChannel("network");
+    }, "继续系统授权");
+  },
   "retry-network": () => connectChannel("network"),
   "delete-message": (b) => {
     const history = b.closest("[data-message-history]") ? modalRefresh : null;

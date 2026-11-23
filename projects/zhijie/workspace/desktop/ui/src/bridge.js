@@ -67,6 +67,8 @@ export class CoreBridge {
 
   connectNetwork(activityId, leaseId) { return this.invoke("network_connect", { activityId, leaseId }); }
 
+  authorizeHelper(activityId, leaseId) { return this.invoke("network_authorize_helper", { activityId, leaseId }); }
+
   networkSnapshot() { return this.invoke("network_snapshot"); }
 
   snapshot() {
