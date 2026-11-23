@@ -474,6 +474,71 @@
       ],
       "last_evidence": "tests/evidence/EXEC-20261121T180755Z-65a33aa8.json",
       "last_evidence_sha256": "29b8d2314e9bf608acfaeaad8cc150f3c650b468d1e9a0d9d3ee327731a9e346"
+    },
+    {
+      "id": "TASK-019",
+      "title": "进房前查看本机音频设备",
+      "input": "现有原生音频适配、设置页及首次体验目标",
+      "output": "不依赖房间的输入输出设备清单和离线设置页回归",
+      "acceptance": "不启动录音、不连接房间即可枚举并展示设备，语音失败不清空清单；无设备和读取失败可区分。运行宿主枚举和桌面回归，不以枚举代替听辨。",
+      "rollback": "单独回退设备枚举入口和设置页展示，不调整通话授权。",
+      "requirement_ids": [
+        "REQ-013",
+        "REQ-023"
+      ],
+      "depends_on": [
+        "TASK-009",
+        "TASK-010"
+      ],
+      "test": "npm --prefix desktop/ui run build && npm --prefix desktop/ui test && cargo test --locked -p zhijie-voice --test platform_devices -- --ignored && cargo check --locked -p zhijie-shell",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-020",
+      "title": "进房前选择设备并本地试音",
+      "input": "本机设备清单和现有采集、播放检测",
+      "output": "本地选择、按需试音、设备拔出及权限错误恢复",
+      "acceptance": "离线可选择输入输出并主动采样和播放，进房沿用选择；未授权不采集，失败能重试；自动测试与双机听辨分别取证。",
+      "rollback": "回退本地试音和选择逻辑，保留设备清单与既有房间隔离。",
+      "requirement_ids": [
+        "REQ-012",
+        "REQ-013",
+        "REQ-017"
+      ],
+      "depends_on": [
+        "TASK-019"
+      ],
+      "test": "cargo test --locked -p zhijie-voice && npm --prefix desktop/ui test && npm --prefix desktop/ui run test:browser",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
+    },
+    {
+      "id": "TASK-021",
+      "title": "Windows 客户端图形化联机安装与恢复",
+      "input": "现有安装包、受限辅助进程和联机错误处理",
+      "output": "候选包及图形化授权、升级、拒绝与重试流程",
+      "acceptance": "普通用户无需复制驱动或执行命令，可从界面授权、拒绝和重试；拒绝不影响语音，不放宽辅助进程安全边界；真实安装升级和双机游戏另取证。",
+      "rollback": "回退安装与启动变更，保留最小权限和独立语音路径。",
+      "requirement_ids": [
+        "REQ-014",
+        "REQ-016",
+        "REQ-017",
+        "REQ-022"
+      ],
+      "depends_on": [
+        "TASK-011",
+        "TASK-014"
+      ],
+      "test": "cargo test --locked -p zhijie-helper -p zhijie-shell && node scripts/test-release.mjs --contract",
+      "status": "pending",
+      "attempts": 0,
+      "max_attempts": 3,
+      "evidence": []
     }
   ]
 }

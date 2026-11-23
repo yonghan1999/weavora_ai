@@ -3,10 +3,10 @@
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "name": "织界",
-  "stage": "D_PLANNING",
+  "stage": "E_IMPLEMENTATION",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-11-22T16:35:58Z",
+  "updated_at": "2026-11-23T06:56:39Z",
   "retry_counts": {},
   "max_retries": 3,
   "approvals": [
@@ -2480,6 +2480,36 @@
         "APR-H-3750708bc3d5",
         "APR-H-632ee4199bfd"
       ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "D_PLANNING",
+      "from": "in_progress",
+      "to": "approved",
+      "at": "2026-11-23T06:56:39Z",
+      "actor": "tech-lead",
+      "role": "tech_lead",
+      "reason": "自动质量门禁通过",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "E_IMPLEMENTATION",
+      "from": "approved",
+      "to": "in_progress",
+      "at": "2026-11-23T06:56:39Z",
+      "actor": "tech-lead",
+      "role": "tech_lead",
+      "reason": "进入编码实现",
+      "evidence": [],
       "human_authorization": false
     }
   ],

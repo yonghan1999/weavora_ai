@@ -35,8 +35,13 @@
 | TASK-016 | 容量、音质、弱网和长会话验证工具 | `node scripts/test-performance.mjs --validate-fixtures` |
 | TASK-017 | 跨平台验证入口、证据索引和资产差异报告 | `node scripts/test-compatibility.mjs --validate-matrix` |
 | TASK-018 | 验收返工。复核当前桌面 UI 构建与单测，重新执行 HTTP 容量指标审计回归 | `npm --prefix desktop/ui run build && npm --prefix desktop/ui test && python -B scripts/test-control-load-activity.py` |
+| TASK-019 | 进房前查看本机音频设备 | `npm --prefix desktop/ui run build && npm --prefix desktop/ui test && cargo test --locked -p zhijie-voice --test platform_devices -- --ignored && cargo check --locked -p zhijie-shell` |
+| TASK-020 | 进房前选择设备并本地试音 | `cargo test --locked -p zhijie-voice && npm --prefix desktop/ui test && npm --prefix desktop/ui run test:browser` |
+| TASK-021 | Windows 客户端图形化联机安装与恢复 | `cargo test --locked -p zhijie-helper -p zhijie-shell && node scripts/test-release.mjs --contract` |
 
 TASK-018 依赖 TASK-009 和 TASK-016，对应 REQ-023、REQ-025。构建、桌面单测和原始操作记录审计分别留证。后续 F/G/H 对返工后的代码树重新执行完整回归。M5 保留目标服务器 C0～C4、真实设备语音及游戏互通、三平台安装与更新等原定实测要求，按对应 AC 收集环境、版本、操作结果和原始证据后再提交验收。
+
+本轮 Windows 返工分两条路径：TASK-009/010 → TASK-019 → TASK-020；TASK-011/014 → TASK-021。未进房和语音服务故障时，先验证本机设备清单，再验证主动试音。安装和联机授权不得要求用户手工操作终端。F/G 对同一候选包按 `docs/04b-user-experience-goals.md` 实测：至少两对新用户，每对两台独立真机，完成安装与升级、随机短句双向复述、同局游戏至少 10 分钟及独立故障恢复。缺少设备、服务或操作记录则保留未验证，不提交发布审批。
 
 每个任务的输入、输出、验收标准、依赖和单独回退策略以 `tasks/tasks.json` 为准。E 阶段只能执行表中完全一致的登记命令，并保存 `tests/evidence/` 真实证据。
 
@@ -111,18 +116,18 @@ TASK-013 ───────────────────────�
 | REQ-009 | TASK-006、TASK-007 | 12/13 人、保留、暂停、密码及容量并发测试；AC-010/011/013 |
 | REQ-010 | TASK-006、TASK-008 | 活动结束保房、删除终态和撤销测试；AC-012 |
 | REQ-011 | TASK-007、TASK-013 | 原子切换、代次、60 秒恢复和迟到结果测试；AC-014～016/035/037 |
-| REQ-012 | TASK-010、TASK-016 | 语音适配测试；后续 12 人真实音频、长会话与 AC-017/034/040 |
-| REQ-013 | TASK-010、TASK-016 | 设备控制与处理测试；后续真实设备 AC-018/036/040 |
-| REQ-014 | TASK-011、TASK-012、TASK-016、TASK-017 | TUN/Relay 契约测试；后续真实 TCP/UDP、容量及 AC-020/031/034 |
+| REQ-012 | TASK-010、TASK-016、TASK-020 | 语音适配测试；后续 12 人真实音频、长会话与 AC-017/034/040 |
+| REQ-013 | TASK-010、TASK-016、TASK-019、TASK-020 | 设备控制与处理测试；后续真实设备 AC-018/036/040 |
+| REQ-014 | TASK-011、TASK-012、TASK-016、TASK-017、TASK-021 | TUN/Relay 契约测试；后续真实 TCP/UDP、容量及 AC-020/031/034 |
 | REQ-015 | TASK-007、TASK-011、TASK-012 | IP 恢复、跨房隔离、旧凭据和目标伪造测试；AC-021/022 |
-| REQ-016 | TASK-011、TASK-012 | 路由白名单、无默认代理和 Relay 隔离测试；后续 AC-023/024 实机证据 |
-| REQ-017 | TASK-008、TASK-010、TASK-013 | 双通道状态、独立故障和重试集成证据；AC-019/025 |
+| REQ-016 | TASK-011、TASK-012、TASK-021 | 路由白名单、无默认代理和 Relay 隔离测试；后续 AC-023/024 实机证据 |
+| REQ-017 | TASK-008、TASK-010、TASK-013、TASK-020、TASK-021 | 双通道状态、独立故障和重试集成证据；AC-019/025 |
 | REQ-018 | TASK-008、TASK-012、TASK-013 | 权威撤销、Relay deny、旧代次拒绝；后续 AC-026/042 实测 |
 | REQ-019 | TASK-005 | 消息历史、作者/管理员删除和 tombstone 测试；AC-027 |
 | REQ-020 | TASK-005、TASK-015 | 审计字段、只读权限和秘密扫描；AC-028 |
 | REQ-021 | TASK-005、TASK-008 | 重启持久化、群解散不可见与同步边界；AC-029 |
-| REQ-022 | TASK-014、TASK-017 | 安装更新配置与支持矩阵校验；后续 AC-030/031 实机证据 |
-| REQ-023 | TASK-008、TASK-009、TASK-013、TASK-015 | 真实状态映射、恢复、错误和诊断测试；AC-024/032/035 |
+| REQ-022 | TASK-014、TASK-017、TASK-021 | 安装更新配置与支持矩阵校验；后续 AC-030/031 实机证据 |
+| REQ-023 | TASK-008、TASK-009、TASK-013、TASK-015、TASK-019 | 真实状态映射、恢复、错误和诊断测试；AC-024/032/035 |
 | REQ-024 | TASK-002、TASK-005、TASK-011、TASK-015 | 凭据存储、脱敏、IPC 和秘密扫描；后续 AC-033 安全检查 |
 | REQ-025 | TASK-015、TASK-016 | 背压和负载工具校验；后续 C0～C4 与 AC-038/039 原始指标 |
 | REQ-026 | TASK-010、TASK-016 | 音频处理配置和 A/B 工具；后续真实设备 AC-040 听辨/弱网证据 |
