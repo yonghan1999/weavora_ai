@@ -83,7 +83,10 @@ test("进房前或语音失败时展示本机设备，与通话状态分开", ()
     const html = renderApp(s);
     assert.match(html, /麦克风 &lt;USB&gt;/);
     assert.match(html, /未发现输出设备/);
-    assert.doesNotMatch(html, /data-audio-device=/);
+    assert.match(html, /data-audio-device="input"/);
+    assert.match(html, /data-action="test-microphone"[^>]*disabled/);
+    s.voice.inputDevice = "mic";
+    assert.doesNotMatch(renderApp(s), /data-action="test-microphone"[^>]*disabled/);
     if (state === "FAILED") assert.match(html, /语音服务暂不可用/);
   }
   s.audioDevices = null;

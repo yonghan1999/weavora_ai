@@ -517,10 +517,14 @@
         "TASK-019"
       ],
       "test": "cargo test --locked -p zhijie-voice && npm --prefix desktop/ui test && npm --prefix desktop/ui run test:browser",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 1,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261123T072930Z-75e0b01d.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261123T072930Z-75e0b01d.json",
+      "last_evidence_sha256": "845caf3b5ba444b10cec3283f9b80bf87ccc1003dd010f636d7dc768eb0d7092"
     },
     {
       "id": "TASK-021",

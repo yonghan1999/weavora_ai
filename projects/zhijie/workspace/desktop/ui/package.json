@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.js",
+    "pretest:browser": "node scripts/build.mjs",
     "test:browser": "node tests/browser.mjs"
   }
 }

@@ -44,6 +44,20 @@ fn settings_can_enumerate_before_joining_a_room() {
     let devices = manager.audio_devices().expect("enumerate without a room");
     assert!(devices.inputs.iter().any(|d| !d.name.is_empty()));
     assert!(devices.outputs.iter().any(|d| !d.name.is_empty()));
+    manager
+        .select_input(&devices.inputs[0].id)
+        .expect("remember local input");
+    manager
+        .select_output(&devices.outputs[0].id)
+        .expect("remember local output");
+    assert_eq!(
+        manager.select_input("missing").unwrap_err(),
+        "AUDIO_INPUT_DEVICE_REMOVED"
+    );
+    assert_eq!(
+        manager.snapshot().input_device.as_ref(),
+        Some(&devices.inputs[0].id)
+    );
     assert_eq!(
         manager.snapshot().state,
         zhijie_voice::VoiceConnectionState::Disconnected

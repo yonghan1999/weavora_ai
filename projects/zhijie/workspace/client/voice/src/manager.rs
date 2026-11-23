@@ -23,6 +23,14 @@ pub struct VoiceManager {
     output_test_lock: tokio::sync::Mutex<()>,
 }
 
+struct LocalRecording(PlatformAudio);
+
+impl Drop for LocalRecording {
+    fn drop(&mut self) {
+        let _ = self.0.stop_recording();
+    }
+}
+
 impl VoiceManager {
     pub async fn test_output(&self) -> Result<(), String> {
         let _test_guard = self
@@ -31,9 +39,6 @@ impl VoiceManager {
             .map_err(|_| "AUDIO_TEST_BUSY")?;
         let (generation, revision, device_id, gain) = {
             let state = self.state.lock().expect("voice state lock");
-            if state.snapshot.state != VoiceConnectionState::Connected || state.session.is_none() {
-                return Err("VOICE_NOT_CONNECTED".into());
-            }
             let id = state
                 .snapshot
                 .output_device
@@ -46,31 +51,32 @@ impl VoiceManager {
                 f64::from(state.snapshot.master_volume) * 0.05,
             )
         };
+        if !self
+            .audio_devices()?
+            .outputs
+            .iter()
+            .any(|d| d.id == device_id)
+        {
+            return Err("AUDIO_OUTPUT_DEVICE_REMOVED".into());
+        }
         let test = livekit::webrtc::native::output_test::OutputTest::start(&device_id, gain)
             .ok_or("AUDIO_OUTPUT_TEST_FAILED")?;
         let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(2);
         while tokio::time::Instant::now() < deadline {
             tokio::time::sleep(std::time::Duration::from_millis(20)).await;
             let state = self.state.lock().expect("voice state lock");
-            if state.generation != generation
-                || state.output_revision != revision
-                || state.snapshot.state != VoiceConnectionState::Connected
-            {
+            if state.generation != generation || state.output_revision != revision {
                 return Err("AUDIO_TEST_SUPERSEDED".into());
             }
         }
         let state = self.state.lock().expect("voice state lock");
-        if state.generation != generation
-            || state.output_revision != revision
-            || state.snapshot.state != VoiceConnectionState::Connected
-        {
+        if state.generation != generation || state.output_revision != revision {
             return Err("AUDIO_TEST_SUPERSEDED".into());
         }
-        let session = state.session.as_ref().ok_or("VOICE_NOT_CONNECTED")?;
         if let Some(failure) = device_failure(
             &state.snapshot.output_device,
-            &session.output_devices(),
-            state.snapshot.output_failure_code.clone(),
+            &self.audio_devices()?.outputs,
+            None,
             "AUDIO_OUTPUT_DEVICE_REMOVED",
         ) {
             return Err(failure);
@@ -82,28 +88,66 @@ impl VoiceManager {
     }
 
     pub async fn test_microphone(&self) -> Result<crate::MicrophoneTestResult, String> {
-        let (generation, input_revision, track) = {
+        // 原生采集与通话共用平台设备；不能在试音清理时停掉新房间的采集。
+        let _guard = self
+            .connect_lock
+            .try_lock()
+            .map_err(|_| "AUDIO_TEST_BUSY")?;
+        let (generation, revision, selected, session_track) = {
             let state = self.state.lock().expect("voice state lock");
-            let session = state.session.as_ref().ok_or("VOICE_NOT_CONNECTED")?;
             (
                 state.generation,
                 state.input_revision,
-                session.input_test_track(),
+                state.snapshot.input_device.clone(),
+                state
+                    .session
+                    .as_ref()
+                    .map(LiveKitVoiceSession::input_test_track),
             )
         };
-        let result =
-            crate::microphone_test::measure(&track, std::time::Duration::from_secs(3)).await;
-        let state = self.state.lock().expect("voice state lock");
-        if state.generation != generation
-            || state.input_revision != input_revision
-            || state.session.is_none()
-        {
+        let mut recording = None;
+        let track = match session_track {
+            Some(track) => track,
+            None => {
+                let id = selected
+                    .as_deref()
+                    .ok_or("AUDIO_INPUT_SELECTION_REQUIRED")?;
+                crate::livekit_adapter::check_microphone_access()?;
+                let audio = PlatformAudio::new().map_err(|_| "AUDIO_DEVICE_UNAVAILABLE")?;
+                crate::livekit_adapter::set_local_input(&audio, id)?;
+                let track = LocalAudioTrack::create_audio_track(
+                    "local-microphone-test",
+                    audio.rtc_source(),
+                );
+                audio
+                    .start_recording()
+                    .map_err(|_| "AUDIO_CAPTURE_FAILED")?;
+                recording = Some(LocalRecording(audio));
+                track
+            }
+        };
+        let current = || {
+            let state = self.state.lock().expect("voice state lock");
+            state.generation == generation && state.input_revision == revision
+        };
+        let measure = crate::microphone_test::measure(&track, std::time::Duration::from_secs(3));
+        tokio::pin!(measure);
+        let result = loop {
+            tokio::select! {
+                result = &mut measure => break result,
+                _ = tokio::time::sleep(std::time::Duration::from_millis(40)) => {
+                    if !current() { return Err("AUDIO_TEST_SUPERSEDED".into()); }
+                }
+            }
+        };
+        drop(recording);
+        if !current() {
             return Err("AUDIO_TEST_SUPERSEDED".into());
         }
         if let Some(failure) = device_failure(
-            &state.snapshot.input_device,
-            &state.session.as_ref().unwrap().input_devices(),
-            state.snapshot.input_failure_code.clone(),
+            &selected,
+            &self.audio_devices()?.inputs,
+            None,
             "AUDIO_INPUT_DEVICE_REMOVED",
         ) {
             return Err(failure);
@@ -174,13 +218,11 @@ impl VoiceManager {
             if state.session.is_some() {
                 return Ok(state.snapshot.clone());
             }
-            state.snapshot.input_device = None;
-            state.snapshot.output_device = None;
             state.snapshot.input_failure_code = None;
             state.snapshot.output_failure_code = None;
             state.snapshot.clone()
         };
-        match LiveKitVoiceSession::connect(url, token, settings.processing, settings.muted).await {
+        match LiveKitVoiceSession::connect(url, token, &settings).await {
             Ok(mut session) => {
                 let events = session.take_events();
                 {
@@ -260,11 +302,15 @@ impl VoiceManager {
     pub fn select_input(&self, id: &str) -> Result<VoiceSnapshot, String> {
         let mut state = self.state.lock().expect("voice state lock");
         state.input_revision += 1;
-        let result = state
-            .session
-            .as_ref()
-            .ok_or("VOICE_NOT_CONNECTED")?
-            .select_input(id);
+        let result = if let Some(session) = &state.session {
+            session.select_input(id)
+        } else if state.snapshot.state == VoiceConnectionState::Connecting {
+            Err("AUDIO_CONNECTION_BUSY".into())
+        } else if self.audio_devices()?.inputs.iter().any(|d| d.id == id) {
+            Ok(())
+        } else {
+            Err("AUDIO_INPUT_DEVICE_REMOVED".into())
+        };
         state.snapshot.input_failure_code = result.as_ref().err().cloned();
         result?;
         state.snapshot.input_device = Some(id.to_string());
@@ -274,11 +320,15 @@ impl VoiceManager {
     pub fn select_output(&self, id: &str) -> Result<VoiceSnapshot, String> {
         let mut state = self.state.lock().expect("voice state lock");
         state.output_revision += 1;
-        let result = state
-            .session
-            .as_ref()
-            .ok_or("VOICE_NOT_CONNECTED")?
-            .select_output(id);
+        let result = if let Some(session) = &state.session {
+            session.select_output(id)
+        } else if state.snapshot.state == VoiceConnectionState::Connecting {
+            Err("AUDIO_CONNECTION_BUSY".into())
+        } else if self.audio_devices()?.outputs.iter().any(|d| d.id == id) {
+            Ok(())
+        } else {
+            Err("AUDIO_OUTPUT_DEVICE_REMOVED".into())
+        };
         state.snapshot.output_failure_code = result.as_ref().err().cloned();
         result?;
         state.snapshot.output_device = Some(id.to_string());
@@ -494,32 +544,29 @@ mod tests {
         assert_eq!(state.generation, 1);
     }
 
-    #[test]
-    fn unavailable_devices_do_not_report_success() {
-        let manager = VoiceManager::default();
-        assert_eq!(
-            manager.select_input("missing").unwrap_err(),
-            "VOICE_NOT_CONNECTED"
-        );
-        assert_eq!(
-            manager.select_output("missing").unwrap_err(),
-            "VOICE_NOT_CONNECTED"
-        );
-        assert_eq!(manager.snapshot().input_device, None);
-        assert_eq!(manager.snapshot().output_device, None);
-    }
-
     #[tokio::test]
-    async fn microphone_test_requires_current_voice_session() {
+    async fn offline_tests_require_a_selected_endpoint() {
         let manager = VoiceManager::default();
         assert_eq!(
             manager.test_microphone().await.unwrap_err(),
-            "VOICE_NOT_CONNECTED"
+            "AUDIO_INPUT_SELECTION_REQUIRED"
         );
         assert_eq!(
             manager.test_output().await.unwrap_err(),
-            "VOICE_NOT_CONNECTED"
+            "AUDIO_OUTPUT_SELECTION_REQUIRED"
         );
+    }
+
+    #[test]
+    fn connection_reservation_keeps_preferences_and_rejects_racing_edits() {
+        let manager = VoiceManager::default();
+        manager.state.lock().unwrap().snapshot.input_device = Some("mic".into());
+        manager.begin_connection();
+        assert_eq!(
+            manager.select_input("other").unwrap_err(),
+            "AUDIO_CONNECTION_BUSY"
+        );
+        assert_eq!(manager.snapshot().input_device.as_deref(), Some("mic"));
     }
 
     #[tokio::test]

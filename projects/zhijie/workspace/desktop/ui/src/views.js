@@ -36,8 +36,8 @@ export const icon = (name, size = 20) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.game}</svg>`;
 export const button = (label, action, cls = "", extra = "") =>
   `<button type="button" class="button ${cls}" data-action="${action}" ${extra}>${label}</button>`;
-const microphoneTest = (s) => `${button(s.busy ? "检测中…" : "检测麦克风（3 秒）", "test-microphone", "", s.busy || s.voice?.state !== "CONNECTED" ? "disabled" : "")}<p class="runtime-note">点击后请说话，检测仅在本机读取当前输入电平，不保存录音；通话中的静音设置保持不变。</p>`;
-const outputTest = (s) => `${button("试听输出（1.5 秒）", "test-output", "", s.busy || s.voice?.state !== "CONNECTED" || !s.voice?.outputDevice ? "disabled" : "")}<p class="runtime-note">先选择输出设备，再点击播放轻柔测试音；音量跟随总音量，仅在本机播放。请自行确认是否听到声音。</p>`;
+const microphoneTest = (s) => `${button(s.busy ? "检测中…" : "检测麦克风（3 秒）", "test-microphone", "", s.busy || s.voice?.state === "CONNECTING" || !(s.voice?.inputDevice ? s.audioDevices?.inputs.some(d => d.id === s.voice.inputDevice) : s.voice?.state === "CONNECTED" && s.audioDevices?.inputs.length) ? "disabled" : "")}<p class="runtime-note">点击后请说话，检测仅在本机读取当前输入电平，不保存录音；通话中的静音设置保持不变。</p>`;
+const outputTest = (s) => `${button("试听输出（1.5 秒）", "test-output", "", s.busy || !s.audioDevices?.outputs.some(d => d.id === s.voice?.outputDevice) ? "disabled" : "")}<p class="runtime-note">先选择输出设备，再点击播放轻柔测试音；音量跟随总音量，仅在本机播放。请自行确认是否听到声音。</p>`;
 const brand = () =>
   '<div class="brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">织界<small>WEAVORA</small></span></div>';
 const heading = (
@@ -197,19 +197,16 @@ function room(s) {
 function audioDeviceSelect(s, output = false) {
   const kind = output ? "output" : "input", label = output ? "输出设备" : "输入设备";
   const devices = s.audioDevices?.[output ? "outputs" : "inputs"] || [];
-  if (s.voice?.state !== "CONNECTED") {
-    return `<strong>${label}</strong>${devices.length ? `<ul aria-label="${label}">${devices.map(device => `<li>${e(device.name || "未命名设备")}</li>`).join("")}</ul>` : `<p>${s.audioDevices ? `未发现${label}，请检查设备后刷新。` : "尚未读取设备列表。"}</p>`}`;
-  }
   const selected = s.voice?.[output ? "outputDevice" : "inputDevice"];
   const missing = selected != null && !devices.some(device => device.id === selected);
-  const failure = s.voice?.state === "CONNECTED" && s.voice?.[output ? "outputFailureCode" : "inputFailureCode"];
-  return `<label for="audio-${kind}">${label}</label><select id="audio-${kind}" data-audio-device="${kind}" ${!devices.length || s.busy ? "disabled" : ""}><option value="" disabled ${selected == null || missing ? "selected" : ""}>${missing ? "所选设备已不可用，请重新选择" : devices.length ? "当前使用系统默认设备" : "暂无可用设备，请检查设备后刷新"}</option>${devices.map(device => `<option value="${e(device.id)}" ${device.id === selected ? "selected" : ""}>${e(device.name || "未命名设备")}</option>`).join("")}</select>${failure ? `<p role="status">${label}${failure.endsWith("DEVICE_REMOVED") ? "已不可用" : "切换失败"}，请刷新并重新选择；设备恢复后可重试。</p>` : ""}`;
+  const failure = s.voice?.[output ? "outputFailureCode" : "inputFailureCode"];
+  return `<label for="audio-${kind}">${label}</label><select id="audio-${kind}" data-audio-device="${kind}" ${!devices.length || s.busy || s.voice?.state === "CONNECTING" ? "disabled" : ""}><option value="" disabled ${selected == null || missing ? "selected" : ""}>${missing ? "所选设备已不可用，请重新选择" : devices.length ? "当前使用系统默认设备" : s.audioDevices ? `未发现${label}，请检查设备后刷新。` : "尚未读取设备列表。"}</option>${devices.map(device => `<option value="${e(device.id)}" ${device.id === selected ? "selected" : ""}>${e(device.name || "未命名设备")}</option>`).join("")}</select>${failure ? `<p role="status">${label}${failure.endsWith("DEVICE_REMOVED") ? "已不可用" : "切换失败"}，请刷新并重新选择；设备恢复后可重试。</p>` : ""}`;
 }
 function settings(s) {
   const tab = s.settingsTab;
   const body =
     tab === "voice"
-      ? `<h2>语音设置</h2><div class="settings-card"><div class="setting-row"><div>${audioDeviceSelect(s)}</div>${button(s.voice?.muted ? "取消静音" : "静音", "mute")}</div><div class="setting-row"><div>${audioDeviceSelect(s, true)}</div>${button(s.voice?.receiveEnabled === false ? "恢复接收" : "关闭接收", "receive")}</div>${button("刷新设备", "refresh-audio")}${microphoneTest(s)}${outputTest(s)}<div class="setting-row"><label for="voice-volume">总音量</label><input id="voice-volume" type="range" min="0" max="2" step="0.05" value="${s.voice?.masterVolume ?? 1}" aria-label="总音量"></div><p class="runtime-note">${s.voice?.state === "CONNECTED" ? "音频设置来自当前语音连接。" : s.voice?.state === "FAILED" ? "语音服务暂不可用；仍可查看和刷新本机设备。" : "当前仅查看本机设备，连接语音后可切换设备和试音。"}</p></div>`
+      ? `<h2>语音设置</h2><div class="settings-card"><div class="setting-row"><div>${audioDeviceSelect(s)}</div>${button(s.voice?.muted ? "取消静音" : "静音", "mute")}</div><div class="setting-row"><div>${audioDeviceSelect(s, true)}</div>${button(s.voice?.receiveEnabled === false ? "恢复接收" : "关闭接收", "receive")}</div>${button("刷新设备", "refresh-audio")}${microphoneTest(s)}${outputTest(s)}<div class="setting-row"><label for="voice-volume">总音量</label><input id="voice-volume" type="range" min="0" max="2" step="0.05" value="${s.voice?.masterVolume ?? 1}" aria-label="总音量"></div><p class="runtime-note">${s.voice?.state === "CONNECTED" ? "音频设置来自当前语音连接。" : s.voice?.state === "FAILED" ? "语音服务暂不可用；仍可选择本机设备并试音。" : "无需进房即可选择设备并试音；入房时沿用所选设备。"}</p></div>`
       : tab === "account"
         ? `<h2>账号</h2><div class="settings-card"><div class="setting-row"><div><strong>${e(s.email)}</strong><p>账号 ID：${e(s.userId)}</p></div></div>${button(`${icon("logout", 16)} 退出登录`, "logout", "danger")}</div>`
         : `<h2>帮助与支持</h2><div class="settings-card"><h3>织界 0.1.0</h3><p>语音与虚拟网络独立连接，一项异常时可单独重试。</p><p>Windows、macOS、Linux 的安装更新、真实语音和虚拟网络能力仍需实机验证。</p>${button("联机帮助", "help")}</div>`;

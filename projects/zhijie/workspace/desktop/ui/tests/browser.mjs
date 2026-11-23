@@ -828,8 +828,14 @@ try {
   await evaluate('voice.state="FAILED"');
   await delay(1200);
   await click('[data-action="refresh-audio"]');
-  await check("语音失败仍可查看本机设备，不提供无效的切换操作", '!document.getElementById("audio-input") && document.querySelector("ul[aria-label=输入设备]").textContent.includes("麦克风 <USB>")');
-  await check("语音断开时禁止检测旧设备", 'document.querySelector("[data-action=test-microphone]").disabled');
+  await check("语音失败仍可选择设备和本地试音", 'document.getElementById("audio-input").value==="mic" && !document.querySelector("[data-action=test-microphone]").disabled');
+  await evaluate('globalThis.microphoneTestError="AUDIO_PERMISSION_DENIED"');
+  await click('[data-action="test-microphone"]');
+  await delay(200);
+  await check("系统拒绝麦克风权限时给出恢复入口", 'document.body.innerText.includes("允许桌面应用访问")');
+  await evaluate('globalThis.microphoneTestError=null;voice.inputDevice="removed"');
+  await click('[data-action="refresh-audio"]');
+  await check("设备拔出后禁止检测旧设备", 'document.querySelector("[data-action=test-microphone]").disabled');
   await click('[data-action="open-room"]');
   await command("Emulation.setDeviceMetricsOverride", {
     width: 600,

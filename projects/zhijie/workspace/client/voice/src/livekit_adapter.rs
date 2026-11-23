@@ -16,19 +16,27 @@ impl LiveKitVoiceSession {
     pub(crate) fn members(&self) -> Vec<crate::model::VoiceMemberSnapshot> {
         room_members(&self.room)
     }
-    pub async fn connect(
-        url: &str,
-        token: &str,
-        processing: AudioProcessingSnapshot,
-        muted: bool,
-    ) -> Result<Self, String> {
+    pub async fn connect(url: &str, token: &str, settings: &VoiceSnapshot) -> Result<Self, String> {
         let audio = PlatformAudio::new().map_err(|_| "AUDIO_DEVICE_UNAVAILABLE".to_string())?;
-        configure_processing(&audio, processing)?;
+        check_microphone_access()?;
+        if let Some(id) = &settings.input_device {
+            set_local_input(&audio, id)?;
+        }
+        if let Some(id) = &settings.output_device {
+            let device = audio
+                .playout_devices()
+                .find(|d| d.id.as_str() == id)
+                .ok_or("AUDIO_OUTPUT_DEVICE_REMOVED")?;
+            audio
+                .set_playout_device(&device.id)
+                .map_err(|_| "AUDIO_OUTPUT_SWITCH_FAILED")?;
+        }
+        configure_processing(&audio, settings.processing.clone())?;
         let (room, events) = Room::connect(url, token, RoomOptions::default())
             .await
             .map_err(|_| "VOICE_CONNECTION_FAILED".to_string())?;
         let microphone = LocalAudioTrack::create_audio_track("microphone", audio.rtc_source());
-        if muted {
+        if settings.muted {
             microphone.mute();
         }
         if room
@@ -135,6 +143,30 @@ impl LiveKitVoiceSession {
         room_result?;
         capture_result.map_err(|_| "AUDIO_CLEANUP_FAILED".to_string())
     }
+}
+
+pub(crate) fn check_microphone_access() -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        extern "C" {
+            fn zhijie_microphone_denied() -> i32;
+        }
+        // 查询系统已知的拒绝状态；查询本身不申请录音或改变隐私设置。
+        if unsafe { zhijie_microphone_denied() } != 0 {
+            return Err("AUDIO_PERMISSION_DENIED".into());
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn set_local_input(audio: &PlatformAudio, id: &str) -> Result<(), String> {
+    let device = audio
+        .recording_devices()
+        .find(|d| d.id.as_str() == id)
+        .ok_or("AUDIO_INPUT_DEVICE_REMOVED")?;
+    audio
+        .set_recording_device(&device.id)
+        .map_err(|_| "AUDIO_INPUT_SWITCH_FAILED".into())
 }
 
 pub(crate) fn input_devices(audio: &PlatformAudio) -> Vec<AudioDeviceView> {
