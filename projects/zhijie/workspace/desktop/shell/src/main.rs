@@ -379,11 +379,10 @@ fn voice_set_volume(
 }
 
 #[tauri::command]
-fn audio_devices(state: State<'_, AppState>) -> serde_json::Value {
-    serde_json::json!({
-        "inputs": state.voice.input_devices(),
-        "outputs": state.voice.output_devices(),
-    })
+async fn audio_devices(
+    state: State<'_, AppState>,
+) -> Result<zhijie_voice::model::AudioDevices, String> {
+    state.voice.audio_devices()
 }
 
 #[tauri::command]

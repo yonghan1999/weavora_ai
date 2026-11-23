@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261123T071019Z-0dbf05ad",
+  "project_id": "zhijie",
+  "started_at": "2026-11-23T07:00:23Z",
+  "finished_at": "2026-11-23T07:10:19Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "npm --prefix desktop/ui run build && npm --prefix desktop/ui test && cargo test --locked -p zhijie-voice --test platform_devices -- --ignored && cargo check --locked -p zhijie-shell",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 1,
+  "timed_out": false,
+  "stdout": "\u0002�(u�N \u0000L\u0000i\u0000n\u0000u\u0000x\u0000 \u0000�v \u0000W\u0000i\u0000n\u0000d\u0000o\u0000w\u0000s\u0000 \u0000P[�|�~�l\tg�]�[ň�v\u0006R�S\u00020\r\u0000\n\u0000�S\u001a�Ǐ�[ň\u0005S+T�N\u000bN�\u000ef�v\u0006R�Seg㉳Qdk�\u001a�\r\u0000\n\u0000\r\u0000\n\u0000O(u\u001c w\u0000s\u0000l\u0000.\u0000e\u0000x\u0000e\u0000 \u0000-\u0000-\u0000l\u0000i\u0000s\u0000t\u0000 \u0000-\u0000-\u0000o\u0000n\u0000l\u0000i\u0000n\u0000e\u0000'\u0000 \u0000\u001d \u0017R�Q�S(u�v\u0006R�S\r\u0000\n\u0000�T \u0000\u001c w\u0000s\u0000l\u0000.\u0000e\u0000x\u0000e\u0000 \u0000-\u0000-\u0000i\u0000n\u0000s\u0000t\u0000a\u0000l\u0000l\u0000 \u0000<\u0000D\u0000i\u0000s\u0000t\u0000r\u0000o\u0000>\u0000\u001d  \u0000ۏL��[ň\u00020\r\u0000\n\u0000",
+  "stdout_truncated": false,
+  "stderr": "",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "cc64539c6b5fe242ae84ec63c539bd35dc36c4a280fc24cb976c3c7a35b4ba53",
+  "tree_digest_after": "cc64539c6b5fe242ae84ec63c539bd35dc36c4a280fc24cb976c3c7a35b4ba53",
+  "task_id": "TASK-019"
+}

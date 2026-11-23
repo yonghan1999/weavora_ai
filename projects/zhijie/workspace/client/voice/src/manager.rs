@@ -285,24 +285,13 @@ impl VoiceManager {
         Ok(state.snapshot.clone())
     }
 
-    pub fn input_devices(&self) -> Vec<AudioDeviceView> {
-        self.state
-            .lock()
-            .expect("voice state lock")
-            .session
-            .as_ref()
-            .map(LiveKitVoiceSession::input_devices)
-            .unwrap_or_default()
-    }
-
-    pub fn output_devices(&self) -> Vec<AudioDeviceView> {
-        self.state
-            .lock()
-            .expect("voice state lock")
-            .session
-            .as_ref()
-            .map(LiveKitVoiceSession::output_devices)
-            .unwrap_or_default()
+    /// 仅枚举本机端点，不创建房间、音轨或启动录音。
+    pub fn audio_devices(&self) -> Result<crate::model::AudioDevices, String> {
+        let audio = PlatformAudio::new().map_err(|_| "AUDIO_DEVICE_UNAVAILABLE".to_string())?;
+        Ok(crate::model::AudioDevices {
+            inputs: crate::livekit_adapter::input_devices(&audio),
+            outputs: crate::livekit_adapter::output_devices(&audio),
+        })
     }
 
     pub async fn disconnect(&self) -> VoiceSnapshot {

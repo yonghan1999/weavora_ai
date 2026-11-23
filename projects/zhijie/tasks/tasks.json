@@ -491,10 +491,15 @@
         "TASK-010"
       ],
       "test": "npm --prefix desktop/ui run build && npm --prefix desktop/ui test && cargo test --locked -p zhijie-voice --test platform_devices -- --ignored && cargo check --locked -p zhijie-shell",
-      "status": "pending",
-      "attempts": 0,
+      "status": "completed",
+      "attempts": 2,
       "max_attempts": 3,
-      "evidence": []
+      "evidence": [
+        "tests/evidence/EXEC-20261123T071019Z-0dbf05ad.json",
+        "tests/evidence/EXEC-20261123T071544Z-9f927c29.json"
+      ],
+      "last_evidence": "tests/evidence/EXEC-20261123T071544Z-9f927c29.json",
+      "last_evidence_sha256": "bb7991e403f64f369bdcd55ccdb16ed33b35e9e889aa12bdfb4eb781f4463f19"
     },
     {
       "id": "TASK-020",

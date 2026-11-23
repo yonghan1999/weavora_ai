@@ -6,8 +6,10 @@
   "stage": "E_IMPLEMENTATION",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-11-23T06:56:39Z",
-  "retry_counts": {},
+  "updated_at": "2026-11-23T07:17:04Z",
+  "retry_counts": {
+    "E_IMPLEMENTATION": 1
+  },
   "max_retries": 3,
   "approvals": [
     {
@@ -2509,6 +2511,38 @@
       "actor": "tech-lead",
       "role": "tech_lead",
       "reason": "进入编码实现",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-019",
+      "stage": "E_IMPLEMENTATION",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-23T07:12:26Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "任务 TASK-019 命令失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261123T071019Z-0dbf05ad.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": "TASK-019",
+      "stage": "E_IMPLEMENTATION",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-23T07:14:21Z",
+      "actor": "developer",
+      "role": "developer",
+      "reason": "第 1 次重试：首次执行时 npm 的解释器误用了 Windows 的 WSL 启动器；已在当前进程 PATH 优先使用 Git Bash，原登记命令不变。",
       "evidence": [],
       "human_authorization": false
     }

@@ -74,3 +74,18 @@ test("group chat shows delete controls for the author and current group moderato
     assert.deepEqual(controls, ["OWNER", "ADMIN"].includes(role) ? ["mine", "other"] : ["mine"], role);
   }
 });
+
+test("进房前或语音失败时展示本机设备，与通话状态分开", () => {
+  const s = { userId: "me", view: "settings", settingsTab: "voice", groups: [], rooms: [], drafts: {},
+    audioDevices: { inputs: [{id: "mic", name: "麦克风 <USB>"}], outputs: [] } };
+  for (const state of ["DISCONNECTED", "FAILED"]) {
+    s.voice = { state };
+    const html = renderApp(s);
+    assert.match(html, /麦克风 &lt;USB&gt;/);
+    assert.match(html, /未发现输出设备/);
+    assert.doesNotMatch(html, /data-audio-device=/);
+    if (state === "FAILED") assert.match(html, /语音服务暂不可用/);
+  }
+  s.audioDevices = null;
+  assert.match(renderApp(s), /尚未读取设备列表/);
+});

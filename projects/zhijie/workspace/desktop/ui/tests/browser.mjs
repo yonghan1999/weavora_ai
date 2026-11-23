@@ -128,7 +128,7 @@ if(command==='network_snapshot'){if(globalThis.failNetworkRead)throw 'SERVICE_UN
 if(command==='voice_set_mute'){voice.muted=p.muted;return voice;}
 if(command==='voice_set_receive'){voice.receiveEnabled=p.enabled;return voice;}
 if(command==='voice_set_volume'){if(p.memberId){voice.memberVolumes??={};voice.memberVolumes[p.memberId]=p.volume;}else voice.masterVolume=p.volume;return structuredClone(voice);}
-if(command==='audio_devices')return voice.state==='CONNECTED'?{inputs:globalThis.inputDevices??[{index:0,id:'mic',name:'麦克风 <USB>'}],outputs:[{index:1,id:'speaker',name:'耳机'}]}:{inputs:[],outputs:[]};
+if(command==='audio_devices')return {inputs:globalThis.inputDevices??[{index:0,id:'mic',name:'麦克风 <USB>'}],outputs:[{index:1,id:'speaker',name:'耳机'}]};
 if(command==='audio_select'){if(p.output)throw 'AUDIO_OUTPUT_SWITCH_FAILED';voice.inputDevice=p.deviceId;voice.inputFailureCode=null;return structuredClone(voice);}
 if(command==='audio_test_microphone'){await new Promise(r=>setTimeout(r,100));if(globalThis.microphoneTestError)throw globalThis.microphoneTestError;return {frames:300,samples:144000,peak:globalThis.microphoneTestSilent?0:0.5,rms:globalThis.microphoneTestSilent?0:0.1};}
 if(command==='audio_test_output'){await new Promise(r=>setTimeout(r,100));if(globalThis.outputTestError)throw globalThis.outputTestError;return null;}
@@ -828,7 +828,7 @@ try {
   await evaluate('voice.state="FAILED"');
   await delay(1200);
   await click('[data-action="refresh-audio"]');
-  await check("断开后设备选择禁用且清除旧列表", 'document.getElementById("audio-input").disabled && document.getElementById("audio-input").options.length===1');
+  await check("语音失败仍可查看本机设备，不提供无效的切换操作", '!document.getElementById("audio-input") && document.querySelector("ul[aria-label=输入设备]").textContent.includes("麦克风 <USB>")');
   await check("语音断开时禁止检测旧设备", 'document.querySelector("[data-action=test-microphone]").disabled');
   await click('[data-action="open-room"]');
   await command("Emulation.setDeviceMetricsOverride", {

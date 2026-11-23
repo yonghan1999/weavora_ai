@@ -232,6 +232,7 @@ const errors = {
   CAPACITY_FULL: "房间已满，请稍后再试。",
   ROOM_PAUSED: "房间已暂停加入，请等管理者重新开放。",
   RESOURCE_NOT_ALLOWED: "此操作尚未接入。",
+  AUDIO_DEVICE_UNAVAILABLE: "无法读取本机音频设备，请检查系统声音设置后刷新设备。",
   AUDIO_TEST_NO_FRAMES: "未收到麦克风采样，请检查录音权限和输入设备后重试。",
   AUDIO_TEST_CAPTURE_INTERRUPTED: "麦克风采集中断，请检查输入设备后重试。",
   AUDIO_TEST_SUPERSEDED: "语音连接已变化，请在当前连接重新检测。",
@@ -403,11 +404,12 @@ function navigate(view, groupId = s.groupId) {
 async function loadAudioDevices() {
   const current = epoch, userId = s.userId, leaseId = s.activity?.leaseId;
   s.audioDevices = null;
-  const [devices, voice] = await Promise.all([bridge.audioDevices(), bridge.voiceSnapshot()]);
-  if (current === epoch && s.userId === userId && s.activity?.leaseId === leaseId) {
-    s.audioDevices = devices;
-    s.voice = voice;
-  }
+  const stillCurrent = () => current === epoch && s.userId === userId && s.activity?.leaseId === leaseId;
+  const devices = await bridge.audioDevices();
+  if (!stillCurrent()) return;
+  s.audioDevices = devices;
+  const voice = await bridge.voiceSnapshot();
+  if (stillCurrent()) s.voice = voice;
 }
 async function joinRoom(id, password = null) {
   const r = s.rooms.find((r) => r.id === id);

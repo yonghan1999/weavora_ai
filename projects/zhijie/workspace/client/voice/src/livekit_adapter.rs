@@ -91,25 +91,11 @@ impl LiveKitVoiceSession {
     }
 
     pub fn input_devices(&self) -> Vec<AudioDeviceView> {
-        self.audio
-            .recording_devices()
-            .map(|device| AudioDeviceView {
-                id: device.id.as_str().to_string(),
-                name: device.name,
-                index: device.index,
-            })
-            .collect()
+        input_devices(&self.audio)
     }
 
     pub fn output_devices(&self) -> Vec<AudioDeviceView> {
-        self.audio
-            .playout_devices()
-            .map(|device| AudioDeviceView {
-                id: device.id.as_str().to_string(),
-                name: device.name,
-                index: device.index,
-            })
-            .collect()
+        output_devices(&self.audio)
     }
 
     pub fn select_input(&self, id: &str) -> Result<(), String> {
@@ -149,6 +135,28 @@ impl LiveKitVoiceSession {
         room_result?;
         capture_result.map_err(|_| "AUDIO_CLEANUP_FAILED".to_string())
     }
+}
+
+pub(crate) fn input_devices(audio: &PlatformAudio) -> Vec<AudioDeviceView> {
+    audio
+        .recording_devices()
+        .map(|device| AudioDeviceView {
+            id: device.id.as_str().to_string(),
+            name: device.name,
+            index: device.index,
+        })
+        .collect()
+}
+
+pub(crate) fn output_devices(audio: &PlatformAudio) -> Vec<AudioDeviceView> {
+    audio
+        .playout_devices()
+        .map(|device| AudioDeviceView {
+            id: device.id.as_str().to_string(),
+            name: device.name,
+            index: device.index,
+        })
+        .collect()
 }
 
 /// 从当前 SDK 房间读取媒体状态；身份仍须由上层按活动成员代次匹配。

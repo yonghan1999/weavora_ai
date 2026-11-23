@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261123T071544Z-9f927c29",
+  "project_id": "zhijie",
+  "started_at": "2026-11-23T07:14:21Z",
+  "finished_at": "2026-11-23T07:15:44Z",
+  "actor": "developer",
+  "role": "developer",
+  "command": "npm --prefix desktop/ui run build && npm --prefix desktop/ui test && cargo test --locked -p zhijie-voice --test platform_devices -- --ignored && cargo check --locked -p zhijie-shell",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "\n> @zhijie/desktop-ui@0.1.0 build\n> node scripts/build.mjs\n\nDesktop UI built into dist/.\n\n> @zhijie/desktop-ui@0.1.0 test\n> node --test tests/*.test.js\n\n✔ bridge sends real versioned desktop commands without a mock fallback (3.1742ms)\n✔ production store publishes authoritative snapshots (0.4766ms)\n✔ product notifications expose only the native event payload (2.0438ms)\n✔ platform defaults select only an available browser for that OS (1.0325ms)\n✔ an explicit browser must be usable and never silently falls back (0.8896ms)\n✔ desktop adapter exposes the versioned command protocol (1.0835ms)\n✔ only current group managers outside the paused room see its reopen action (1.5739ms)\n✔ only a manager of the idle room can start an activity, without joining it (0.5816ms)\n✔ network panel explains only the current activity's unresolved fault (1.8195ms)\n✔ group chat shows delete controls for the author and current group moderators only (1.5097ms)\n✔ 进房前或语音失败时展示本机设备，与通话状态分开 (0.8376ms)\n✔ leaving the file picker empty preserves the previous avatar (1.8738ms)\n✔ invalid and oversized files cannot be saved as avatars (2.4567ms)\n✔ group cards never load external URLs or interpolate untrusted markup as images (0.4126ms)\nℹ tests 14\nℹ suites 0\nℹ pass 14\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 168.991\n\nrunning 2 tests\ntest settings_can_enumerate_before_joining_a_room ... ok\ntest enumerate_host_devices_and_reject_missing_indices ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s\n\n",
+  "stdout_truncated": false,
+  "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.77s\n     Running tests\\platform_devices.rs (target/local-native/build\\debug\\deps\\platform_devices-c36a32ee4d7c827c.exe)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.06s\n",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "cc64539c6b5fe242ae84ec63c539bd35dc36c4a280fc24cb976c3c7a35b4ba53",
+  "tree_digest_after": "cc64539c6b5fe242ae84ec63c539bd35dc36c4a280fc24cb976c3c7a35b4ba53",
+  "task_id": "TASK-019"
+}

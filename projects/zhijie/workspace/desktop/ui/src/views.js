@@ -196,17 +196,20 @@ function room(s) {
 }
 function audioDeviceSelect(s, output = false) {
   const kind = output ? "output" : "input", label = output ? "输出设备" : "输入设备";
-  const devices = s.voice?.state === "CONNECTED" ? s.audioDevices?.[output ? "outputs" : "inputs"] || [] : [];
+  const devices = s.audioDevices?.[output ? "outputs" : "inputs"] || [];
+  if (s.voice?.state !== "CONNECTED") {
+    return `<strong>${label}</strong>${devices.length ? `<ul aria-label="${label}">${devices.map(device => `<li>${e(device.name || "未命名设备")}</li>`).join("")}</ul>` : `<p>${s.audioDevices ? `未发现${label}，请检查设备后刷新。` : "尚未读取设备列表。"}</p>`}`;
+  }
   const selected = s.voice?.[output ? "outputDevice" : "inputDevice"];
   const missing = selected != null && !devices.some(device => device.id === selected);
   const failure = s.voice?.state === "CONNECTED" && s.voice?.[output ? "outputFailureCode" : "inputFailureCode"];
-  return `<label for="audio-${kind}">${label}</label><select id="audio-${kind}" data-audio-device="${kind}" ${!devices.length || s.busy ? "disabled" : ""}><option value="" disabled ${selected == null || missing ? "selected" : ""}>${missing ? "所选设备已不可用，请重新选择" : devices.length ? "当前使用系统默认设备" : "暂无可用设备，请连接语音后刷新"}</option>${devices.map(device => `<option value="${e(device.id)}" ${device.id === selected ? "selected" : ""}>${e(device.name || "未命名设备")}</option>`).join("")}</select>${failure ? `<p role="status">${label}${failure.endsWith("DEVICE_REMOVED") ? "已不可用" : "切换失败"}，请刷新并重新选择；设备恢复后可重试。</p>` : ""}`;
+  return `<label for="audio-${kind}">${label}</label><select id="audio-${kind}" data-audio-device="${kind}" ${!devices.length || s.busy ? "disabled" : ""}><option value="" disabled ${selected == null || missing ? "selected" : ""}>${missing ? "所选设备已不可用，请重新选择" : devices.length ? "当前使用系统默认设备" : "暂无可用设备，请检查设备后刷新"}</option>${devices.map(device => `<option value="${e(device.id)}" ${device.id === selected ? "selected" : ""}>${e(device.name || "未命名设备")}</option>`).join("")}</select>${failure ? `<p role="status">${label}${failure.endsWith("DEVICE_REMOVED") ? "已不可用" : "切换失败"}，请刷新并重新选择；设备恢复后可重试。</p>` : ""}`;
 }
 function settings(s) {
   const tab = s.settingsTab;
   const body =
     tab === "voice"
-      ? `<h2>语音设置</h2><div class="settings-card"><div class="setting-row"><div>${audioDeviceSelect(s)}</div>${button(s.voice?.muted ? "取消静音" : "静音", "mute")}</div><div class="setting-row"><div>${audioDeviceSelect(s, true)}</div>${button(s.voice?.receiveEnabled === false ? "恢复接收" : "关闭接收", "receive")}</div>${button("刷新设备", "refresh-audio")}${microphoneTest(s)}${outputTest(s)}<div class="setting-row"><label for="voice-volume">总音量</label><input id="voice-volume" type="range" min="0" max="2" step="0.05" value="${s.voice?.masterVolume ?? 1}" aria-label="总音量"></div><p class="runtime-note">${s.voice?.state === "CONNECTED" ? "音频设置来自当前语音连接。" : "入房连接语音后，设备状态会在这里更新。"}</p></div>`
+      ? `<h2>语音设置</h2><div class="settings-card"><div class="setting-row"><div>${audioDeviceSelect(s)}</div>${button(s.voice?.muted ? "取消静音" : "静音", "mute")}</div><div class="setting-row"><div>${audioDeviceSelect(s, true)}</div>${button(s.voice?.receiveEnabled === false ? "恢复接收" : "关闭接收", "receive")}</div>${button("刷新设备", "refresh-audio")}${microphoneTest(s)}${outputTest(s)}<div class="setting-row"><label for="voice-volume">总音量</label><input id="voice-volume" type="range" min="0" max="2" step="0.05" value="${s.voice?.masterVolume ?? 1}" aria-label="总音量"></div><p class="runtime-note">${s.voice?.state === "CONNECTED" ? "音频设置来自当前语音连接。" : s.voice?.state === "FAILED" ? "语音服务暂不可用；仍可查看和刷新本机设备。" : "当前仅查看本机设备，连接语音后可切换设备和试音。"}</p></div>`
       : tab === "account"
         ? `<h2>账号</h2><div class="settings-card"><div class="setting-row"><div><strong>${e(s.email)}</strong><p>账号 ID：${e(s.userId)}</p></div></div>${button(`${icon("logout", 16)} 退出登录`, "logout", "danger")}</div>`
         : `<h2>帮助与支持</h2><div class="settings-card"><h3>织界 0.1.0</h3><p>语音与虚拟网络独立连接，一项异常时可单独重试。</p><p>Windows、macOS、Linux 的安装更新、真实语音和虚拟网络能力仍需实机验证。</p>${button("联机帮助", "help")}</div>`;

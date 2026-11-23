@@ -92,3 +92,9 @@ pub struct MicrophoneTestResult {
     pub peak: f64,
     pub rms: f64,
 }
+
+#[derive(Debug, Serialize)]
+pub struct AudioDevices {
+    pub inputs: Vec<AudioDeviceView>,
+    pub outputs: Vec<AudioDeviceView>,
+}

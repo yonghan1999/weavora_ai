@@ -36,3 +36,16 @@ fn enumerate_host_devices_and_reject_missing_indices() {
             .is_err());
     }
 }
+
+#[test]
+#[ignore = "requires host input and output devices"]
+fn settings_can_enumerate_before_joining_a_room() {
+    let manager = zhijie_voice::VoiceManager::default();
+    let devices = manager.audio_devices().expect("enumerate without a room");
+    assert!(devices.inputs.iter().any(|d| !d.name.is_empty()));
+    assert!(devices.outputs.iter().any(|d| !d.name.is_empty()));
+    assert_eq!(
+        manager.snapshot().state,
+        zhijie_voice::VoiceConnectionState::Disconnected
+    );
+}
