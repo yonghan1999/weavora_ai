@@ -1,4 +1,89 @@
 {
   "schema_version": 1,
-  "defects": []
+  "defects": [
+    {
+      "id": "DEF-TC-ROOM-INVITATION",
+      "case_id": "TC-ROOM-INVITATION",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-004",
+        "REQ-005",
+        "REQ-009"
+      ],
+      "status": "resolved",
+      "reproduction": "node scripts/test-e2e.mjs --room-invitation",
+      "expected": "两台客户端用私密邀请进入指定的第二间房；非成员获得普通群籍、既有管理员保持角色、未注册收件人验证后可用原邀请。核对数据库房间占位且三种场景均实际执行。",
+      "evidence": [
+        "tests/evidence/EXEC-20261124T030814Z-d63b7655.json"
+      ],
+      "fix_task_id": "FIX-TC-ROOM-INVITATION",
+      "resolved_evidence": "tests/evidence/EXEC-20261124T055216Z-a5849412.json",
+      "resolved_evidence_sha256": "3ba2106a080ae2b7d79f563b0fed71eee1658b8afac631e38229c16d90720d14",
+      "resolved_at": "2026-11-24T05:53:44Z"
+    },
+    {
+      "id": "DEF-TC-LOCAL-REGRESSION",
+      "case_id": "TC-LOCAL-REGRESSION",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005",
+        "REQ-006",
+        "REQ-007",
+        "REQ-008",
+        "REQ-009",
+        "REQ-010",
+        "REQ-011",
+        "REQ-012",
+        "REQ-013",
+        "REQ-014",
+        "REQ-015",
+        "REQ-016",
+        "REQ-017",
+        "REQ-018",
+        "REQ-019",
+        "REQ-020",
+        "REQ-021",
+        "REQ-022",
+        "REQ-023",
+        "REQ-024",
+        "REQ-025",
+        "REQ-026",
+        "REQ-027",
+        "REQ-028"
+      ],
+      "status": "resolved",
+      "reproduction": "./mvnw -q -pl control-plane -am test && cargo test --workspace && npm --prefix desktop/ui test && node scripts/test-e2e.mjs --contract && node scripts/test-release.mjs --contract && node scripts/test-performance.mjs --validate-fixtures && node scripts/test-compatibility.mjs --validate-matrix",
+      "expected": "完整本地自动化回归退出码 0；不代表未实测的外部服务、平台、音质或容量验收通过",
+      "evidence": [
+        "tests/evidence/EXEC-20261124T040659Z-7b0d6beb.json"
+      ],
+      "fix_task_id": "FIX-TC-LOCAL-REGRESSION",
+      "resolved_evidence": "tests/evidence/EXEC-20261124T054309Z-5270f4fa.json",
+      "resolved_evidence_sha256": "6467498d8f3c97c2c8af2c2b2731dafa393a0d6e2295e4a63cc457b62f251220",
+      "resolved_at": "2026-11-24T05:46:08Z"
+    },
+    {
+      "id": "DEF-TC-EXTERNAL-ROOM-LINK",
+      "case_id": "TC-EXTERNAL-ROOM-LINK",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-004",
+        "REQ-005",
+        "REQ-009"
+      ],
+      "status": "resolved",
+      "reproduction": "node scripts/test-e2e.mjs --external-room-link",
+      "expected": "从发送端分享可外部打开的链接，普通浏览器页面将邀请交给已登录的接收客户端；未确认无活动，确认一次后进入 B 而非 A，核对数据库占位和群籍。不替代安装版操作系统协议分派。",
+      "evidence": [
+        "tests/evidence/EXEC-20261124T041438Z-0fd57260.json"
+      ],
+      "fix_task_id": "FIX-TC-EXTERNAL-ROOM-LINK",
+      "resolved_evidence": "tests/evidence/EXEC-20261124T054824Z-6a40cad8.json",
+      "resolved_evidence_sha256": "843d8a11cfc6bbdbf70605336aeab75358b25a7d62aa86692128bb6545748fa2",
+      "resolved_at": "2026-11-24T05:49:50Z"
+    }
+  ]
 }

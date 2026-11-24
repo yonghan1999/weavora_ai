@@ -255,7 +255,7 @@ public class IdentityService {
         }
     }
 
-    private String normalizeEmail(String email) {
+    public static String normalizeEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_FAILED", "邮箱不能为空", false);
         }

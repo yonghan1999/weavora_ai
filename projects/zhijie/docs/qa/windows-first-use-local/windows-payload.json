@@ -1,0 +1,15 @@
+﻿{
+  "package": "织界_0.1.0_x64-setup.exe",
+  "sha256": "6e66e60565f7a80d3b2bba38fab24b142cfb782fbd1d5dcbff390badd71c369c",
+  "productFiles": {
+    "zhijie-shell.exe": "4be08f22e7ed9fd04500b28de95559427bbbf1923751c2d408546615040f0aa9",
+    "zhijie-helper.exe": "e92b6049ce61207315efd86e300370f003530684c2af2d29c04c96bb6ed9dde6",
+    "start-helper.ps1": "07c8123abadb1ac0afac3dbab709fbf0bcf75d78b79232156b32d50f5a11080d",
+    "HelperInstallPolicy.psm1": "e7a9b17b060825704355dfc9a590f1a6df39539a835581b555d1a5ddcdbd5a40",
+    "wintun.dll": "e5da8447dc2c320edc0fc52fa01885c103de8c118481f683643cacc3220dafce",
+    "WINTUN-LICENSE.txt": "183adac21e7d96c508c8fd34d394b7b6708bc81564ad1bad61ab66143a008cd2",
+    "wintun.h": "510a5984fbf73efd21a61ada60edfe05e1a38a77c8c47f6d62e0ab1cdbdd460f",
+    "wintun-source.json": "9167c55558eb089d357efc73730564e4b94c5d783a86e53777f090b988641375"
+  },
+  "scope": "payload comparison only"
+}

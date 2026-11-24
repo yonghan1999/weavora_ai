@@ -20,3 +20,11 @@ test('rejects skipped, failed, empty and duplicate suite evidence', () => {
     assert.throws(() => verifySuiteResults(`${summary(vertical)}\n${bad}`), /Incomplete or duplicate/);
   }
 });
+
+test('room invitation requires all three recipient states to execute', () => {
+  const check = output => verifySuiteResults(output, [desktop], 3);
+  check(summary(desktop, 3));
+  for (const output of [summary(desktop, 2), summary(desktop, 3, 0, 0, 1), summary(vertical, 3)]) {
+    assert.throws(() => check(output));
+  }
+});

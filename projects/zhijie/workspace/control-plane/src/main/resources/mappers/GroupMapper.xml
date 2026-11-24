@@ -95,7 +95,7 @@
         SELECT * FROM invitations WHERE group_id = #{groupId} AND invitee_id = #{inviteeId} AND status = 'PENDING'
     </select>
     <sql id="visiblePendingInvitations">
-        SELECT i.id, i.group_id, g.name AS group_name, i.inviter_id, i.invitee_id, i.created_at
+        SELECT i.id, i.group_id, g.name AS group_name, i.inviter_id, COALESCE(i.invitee_id, i.invitee_email) AS invitee_id, i.created_at
         FROM invitations i JOIN groups g ON g.id = i.group_id AND g.status = 'ACTIVE'
         WHERE i.status = 'PENDING'
     </sql>
@@ -125,8 +125,10 @@
         UPDATE invitations SET invalidated_at = #{invalidatedAt}
         WHERE group_id = #{groupId} AND invitee_id = #{inviteeId} AND status = 'ACCEPTED' AND invalidated_at IS NULL
     </update>
-    <select id="listPendingInvitationsByInviter" resultMap="GroupInvitation">
-        SELECT * FROM invitations WHERE group_id = #{groupId} AND inviter_id = #{inviterId} AND status = 'PENDING'
+    <select id="pendingInvalidatedByDeparture" resultMap="GroupInvitation">
+        SELECT * FROM invitations WHERE group_id = #{groupId} AND status = 'PENDING'
+        AND (inviter_id = #{userId} OR (target_room_id IS NOT NULL AND invitee_email =
+            (SELECT email_normalized FROM users WHERE id = #{userId})))
     </select>
     <update id="invalidateAllPendingInvitations">
         UPDATE invitations SET status = 'INVALIDATED', invalidated_at = #{invalidatedAt}

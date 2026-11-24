@@ -58,10 +58,14 @@ class GroupBrowserIntegrationTest {
     }
 
     private ServletWebServerApplicationContext start(EmbeddedPostgres postgres) {
-        return (ServletWebServerApplicationContext) new SpringApplication(ControlPlaneApplication.class).run(
+        return start(postgres, new SpringApplication(ControlPlaneApplication.class));
+    }
+
+    private ServletWebServerApplicationContext start(EmbeddedPostgres postgres, SpringApplication app) {
+        return (ServletWebServerApplicationContext) app.run(
                 "--server.address=127.0.0.1", "--server.port=0",
                 "--zhijie.voice.enabled=false",
-                "--spring.web.resources.static-locations=" + pageAssets.toUri(),
+                "--spring.web.resources.static-locations=" + pageAssets.toUri() + ",classpath:/static/",
                 "--spring.datasource.url=" + postgres.getJdbcUrl("postgres", "postgres"),
                 "--spring.datasource.username=postgres", "--spring.datasource.password=");
     }
@@ -91,6 +95,81 @@ class GroupBrowserIntegrationTest {
         } finally {
             browser.descendants().forEach(ProcessHandle::destroyForcibly);
             browser.destroyForcibly();
+        }
+    }
+
+    // 仅由当前场景显式注册；不向其他 Spring 上下文提供邮件替身。
+    static class InviteMailConfig {
+        @org.springframework.context.annotation.Bean
+        @org.springframework.context.annotation.Primary
+        InviteMailbox inviteMailbox() { return new InviteMailbox(); }
+    }
+
+    static class InviteMailbox implements EmailDispatchPort {
+        private String code;
+        public boolean isAvailable() { return true; }
+        public void sendChallenge(String email, ChallengePurpose purpose, String value) {
+            assertThat(email).isEqualTo("member@example.test");
+            assertThat(purpose).isEqualTo(ChallengePurpose.VERIFY_EMAIL);
+            code = value;
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"non-member", "admin", "new-account"})
+    @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
+    void sharedInvitationTakesTheIntendedPlayerToTheNamedRoom(String kind) throws Exception {
+        invitationJourney(kind, false);
+    }
+
+    @org.junit.jupiter.api.Test
+    @EnabledIfEnvironmentVariable(named = "ZHIJIE_TEST_GROUP_BROWSER", matches = "true")
+    void externallyOpenedRoomInvitationRequiresOnlyOneConfirmation() throws Exception {
+        invitationJourney("non-member", true);
+    }
+
+    private void invitationJourney(String kind, boolean externalLink) throws Exception {
+        prepareClients();
+        try (var postgres = EmbeddedPostgres.start(); var context = start(postgres, new SpringApplication(ControlPlaneApplication.class, InviteMailConfig.class))) {
+            var identities = context.getBean(IdentityRepository.class);
+            boolean alreadyAdmin = kind.equals("admin"), newAccount = kind.equals("new-account");
+            String password = UUID.randomUUID().toString(), owner = UUID.randomUUID().toString();
+            String hash = context.getBean(CredentialProtector.class).hashPassword(password);
+            identities.insertUser(new UserAccount(owner, "owner@example.test", AccountStatus.ACTIVE, hash, Instant.now()));
+            String email = "member@example.test";
+            if (!newAccount) identities.insertUser(new UserAccount(UUID.randomUUID().toString(), email, AccountStatus.ACTIVE, hash, Instant.now()));
+            var groups = context.getBean(GroupService.class);
+            var group = groups.createGroup(owner, "邀请定位验证", null, "");
+            var rooms = context.getBean(app.weavora.zhijie.controlplane.room.RoomService.class);
+            var first = rooms.startActivity(owner, rooms.createRoom(owner, group.id(), "A-room", "", "", null).id());
+            var second = rooms.startActivity(owner, rooms.createRoom(owner, group.id(), "B-room", "", "", null).id());
+            if (newAccount) {
+                assertThat(identities.findUserByEmail(email)).isEmpty();
+            } else if (alreadyAdmin) {
+                String guest = identities.findUserByEmail(email).orElseThrow().id();
+                groups.acceptInvitation(guest, groups.invite(owner, group.id(), guest).id());
+                groups.changeRole(owner, group.id(), guest, GroupRole.ADMIN);
+            } else {
+                assertThat(groups.listGroups(identities.findUserByEmail(email).orElseThrow().id())).isEmpty();
+            }
+            runBrowser(context, password, externalLink ? "room-link" : newAccount ? "room-invitation-new" : "room-invitation", newAccount ? () -> {
+                // 邀请已生成才注册。验证码来自测试收件端，不写入磁盘或输出。
+                assertThat(identities.findUserByEmail(email)).isEmpty();
+                var identity = context.getBean(IdentityService.class);
+                identity.register(email, password);
+                var pending = identities.findUserByEmail(email).orElseThrow();
+                assertThat(pending.status()).isEqualTo(AccountStatus.UNVERIFIED);
+                org.assertj.core.api.Assertions.assertThatThrownBy(() -> identity.login(email, password, "unverified"))
+                        .isInstanceOf(app.weavora.zhijie.controlplane.common.ApiException.class);
+                assertThat(context.getBean(GroupRepository.class).findMember(group.id(), pending.id())).isEmpty();
+                identity.verifyEmail(email, context.getBean(InviteMailbox.class).code);
+            } : null);
+            String guest = identities.findUserByEmail(email).orElseThrow().id();
+            var activities = context.getBean(ActivityRepository.class);
+            assertThat(activities.findAccountActivity(guest).orElseThrow().activityId()).isEqualTo(second.id());
+            assertThat(activities.countOccupied(first.id())).isZero();
+            assertThat(activities.countOccupied(second.id())).isEqualTo(2);
+            assertThat(context.getBean(GroupRepository.class).findMember(group.id(), guest).orElseThrow().role()).isEqualTo(alreadyAdmin ? GroupRole.ADMIN : GroupRole.MEMBER);
         }
     }
 

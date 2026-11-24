@@ -1,4 +1,5 @@
 {
+  "plugins": {"deep-link": {"desktop": {"schemes": ["zhijie"]}}},
   "bundle": {
     "targets": ["nsis"],
     "useLocalToolsDir": true,

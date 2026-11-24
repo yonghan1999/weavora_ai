@@ -1,0 +1,38 @@
+{
+  "installer_sha256": "6e66e60565f7a80d3b2bba38fab24b142cfb782fbd1d5dcbff390badd71c369c",
+  "backend_jar_sha256": "bf93bd5fa65d3356f7907523d13c05eb5d0094460efb9e56f6a4464817e1e45e",
+  "same_package_shell_sha256": "4be08f22e7ed9fd04500b28de95559427bbbf1923751c2d408546615040f0aa9",
+  "pending_link_before_registration": true,
+  "registered_and_verified_in_native_ui": true,
+  "locally_delivered_smtp_mime": true,
+  "unverified_login_denied": true,
+  "wrong_password_kept_A_B": [
+    1,
+    0
+  ],
+  "after_voluntary_leave_A_B": [
+    0,
+    0
+  ],
+  "warm_forward_exit": 0,
+  "registration_first_joined_A": true,
+  "before_occupancy_A_B": [
+    0,
+    0
+  ],
+  "after_occupancy_A_B": [
+    0,
+    1
+  ],
+  "native_room_heading": "B-first-use",
+  "native_exit": 0,
+  "automated_launch_to_join_seconds": 9.6,
+  "not_measured": [
+    "installed browser protocol dispatch",
+    "external mail provider",
+    "human timing",
+    "microphone or peer audio",
+    "game",
+    "virtual adapter"
+  ]
+}

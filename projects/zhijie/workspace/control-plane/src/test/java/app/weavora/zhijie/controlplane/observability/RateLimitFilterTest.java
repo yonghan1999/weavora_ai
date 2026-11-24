@@ -15,6 +15,23 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 class RateLimitFilterTest {
     @Test
+    void roomInviteWritesUseSeparateSensitiveBudgetsAcrossRoomIds() throws Exception {
+        var clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC);
+        var filter = new RateLimitFilter(new ObjectMapper(), clock, "", 2048, 1024);
+        var chain = mock(FilterChain.class);
+        for (int i = 0; i <= 10; i++) {
+            for (String path : new String[]{"/api/v1/rooms/r" + i + "/invitations", "/api/v1/invitations/redeem-room"}) {
+                var response = new MockHttpServletResponse();
+                filter.doFilter(new MockHttpServletRequest("POST", path), response, chain);
+                assertThat(response.getStatus()).isEqualTo(i < 10 ? 200 : 429);
+            }
+            var list = new MockHttpServletResponse();
+            filter.doFilter(new MockHttpServletRequest("GET", "/api/v1/groups/g/invitations"), list, chain);
+            assertThat(list.getStatus()).isEqualTo(200);
+        }
+    }
+
+    @Test
     void authenticatedRelayHasSeparateBoundedBudgetAndBadKeysCannotConsumeIt() throws Exception {
         var clock = Clock.fixed(Instant.parse("2026-11-17T00:00:00Z"), ZoneOffset.UTC);
         var filter = new RateLimitFilter(new ObjectMapper(), clock, "test-management-key", 100, 50);

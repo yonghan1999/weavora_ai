@@ -137,6 +137,65 @@ class GroupInvitationsIntegrationTest {
         }
     }
 
+    @Test
+    void roomCodesStayPrivateAndCannotRestoreRevokedMembership() throws Exception {
+        try (var db = EmbeddedPostgres.start(); var context = new SpringApplication(ControlPlaneApplication.class).run(
+                "--server.address=127.0.0.1", "--server.port=0", "--zhijie.scheduling.enabled=false",
+                "--spring.datasource.url=" + db.getJdbcUrl("postgres", "postgres"), "--spring.datasource.username=postgres", "--spring.datasource.password=")) {
+            var ids = context.getBean(IdentityRepository.class);
+            var groups = context.getBean(GroupService.class);
+            var rooms = context.getBean(app.weavora.zhijie.controlplane.room.RoomService.class);
+            var codes = context.getBean(RoomInvitationService.class);
+            var members = context.getBean(GroupRepository.class);
+            var sql = context.getBean(JdbcTemplate.class);
+            String passwordHash = context.getBean(CredentialProtector.class).hashPassword(UUID.randomUUID().toString());
+            for (String user : List.of("owner", "sender", "guest", "other")) {
+                ids.insertUser(new UserAccount(user, user + "@example.test", AccountStatus.ACTIVE, passwordHash, Instant.now()));
+            }
+            String group = groups.createGroup("owner", "定向邀请", null, "").id();
+            groups.acceptInvitation("sender", groups.invite("owner", group, "sender").id());
+            String room = rooms.createRoom("owner", group, "密码房", "", "", "private-room-test").id();
+            rooms.startActivity("owner", room);
+            String email = "guest@example.test";
+            String revoked = codes.issue("sender", room, email);
+            String id = groups.listGroupInvitations("owner", group, null).getFirst().id();
+            assertThat(sql.queryForObject("SELECT code_hash <> ? FROM invitations WHERE id=?", Boolean.class, revoked, id)).isTrue();
+            refused(() -> codes.redeem("other", revoked));
+            refused(() -> groups.acceptInvitation("guest", id)); // 管理列表中的标识本身不是邀请码。
+            refused(() -> groups.revokeInvitation("sender", group, id));
+            groups.revokeInvitation("owner", group, id);
+            refused(() -> codes.redeem("guest", revoked));
+            String expired = codes.issue("sender", room, email);
+            groups.leaveGroup("sender", group);
+            groups.acceptInvitation("sender", groups.invite("owner", group, "sender").id());
+            refused(() -> codes.redeem("guest", expired));
+            String code = codes.issue("sender", room, email.toUpperCase(Locale.ROOT));
+            refused(() -> codes.redeem("other", code));
+            assertThat(members.findMember(group,"other")).isEmpty();
+            assertThat(codes.redeem("guest", code)).isEqualTo(room);
+            assertThat(codes.redeem("guest", code)).isEqualTo(room);
+            assertThat(rooms.getRoomView("guest", room).passwordRequired()).isTrue();
+            assertThat(context.getBean(app.weavora.zhijie.controlplane.activity.ActivityRepository.class).findAccountActivity("guest")).isEmpty();
+            assertThat(members.findMember(group, "guest").orElseThrow().role()).isEqualTo(GroupRole.MEMBER);
+            String old = codes.issue("sender", room, email);
+            groups.removeMember("owner", group, "guest");
+            groups.acceptInvitation("guest", groups.invite("owner", group, "guest").id());
+            refused(() -> codes.redeem("guest", old));
+            refused(() -> codes.redeem("guest", code));
+            String deleted = codes.issue("sender", room, email);
+            rooms.deleteRoom("owner", room);
+            refused(() -> codes.redeem("guest", deleted));
+            String second = rooms.createRoom("owner", group, "第二间", "", "", null).id();
+            String dissolved = codes.issue("sender", second, email);
+            groups.dissolveGroup("owner", group);
+            refused(() -> codes.redeem("guest", dissolved));
+        }
+    }
+
+    private static void refused(org.assertj.core.api.ThrowableAssert.ThrowingCallable action) {
+        org.assertj.core.api.Assertions.assertThatThrownBy(action).isInstanceOf(app.weavora.zhijie.controlplane.common.ApiException.class);
+    }
+
     private static List<String> ids(JsonNode page) {
         var result = new ArrayList<String>(); page.forEach(item -> result.add(item.path("id").asText())); return result;
     }

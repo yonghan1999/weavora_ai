@@ -52,7 +52,7 @@ class ColdBackupRestoreIntegrationTest {
             cursor = history.getLast().sequence();
             events = history.stream().map(SyncEvent::eventId).toList();
             assertThat(context.getBean(JdbcTemplate.class).queryForObject(
-                    "SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class)).isEqualTo(18);
+                    "SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class)).isEqualTo(19);
         }
         // 关闭应用和 PostgreSQL 后才能复制；不读取现有试用库或其他用户目录。
         assertThat(Files.exists(source.resolve("postmaster.pid"))).as("Source database cleanly stopped").isFalse();
@@ -102,7 +102,7 @@ class ColdBackupRestoreIntegrationTest {
             assertThat(context.getBean(IdentityRepository.class).findSessionById(tokens.sessionId()).orElseThrow().generation()).isEqualTo(2);
             identity.logout(rotated.accessToken());
             assertThat(context.getBean(JdbcTemplate.class).queryForObject(
-                    "SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class)).isEqualTo(18);
+                    "SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class)).isEqualTo(19);
         }
         assertThat(hashes(source)).as("Restore exercise never changes stopped source").isEqualTo(before);
         assertThat(hashes(backup.resolve("data"))).as("Retained backup stays immutable after restore startup").isEqualTo(before);

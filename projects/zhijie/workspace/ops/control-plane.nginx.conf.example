@@ -21,5 +21,21 @@ server {
         proxy_set_header Authorization $http_authorization;
     }
 
+    # 分享页仅公开两个只读资源，不将根路径、内部管理端点或凭据转交上游。
+    location = /join/index.html {
+        limit_except GET { deny all; }
+        proxy_pass_request_headers off;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_pass http://127.0.0.1:8080/join/index.html?;
+    }
+    location = /join/invite-page.js {
+        limit_except GET { deny all; }
+        proxy_pass_request_headers off;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_pass http://127.0.0.1:8080/join/invite-page.js?;
+    }
+
     location / { return 404; }
 }

@@ -104,7 +104,7 @@ public class GroupService {
                 clock.instant(), invitation.invalidatedAt());
         repository.updateInvitation(revoked);
         record(groupId, actorId, "INVITATION", invitationId, "GROUP_INVITATION_REVOKE");
-        sync.userChanged(invitation.inviteeId());
+        if (invitation.inviteeId() != null) sync.userChanged(invitation.inviteeId());
         return revoked;
     }
 
@@ -130,7 +130,7 @@ public class GroupService {
     public GroupInvitation acceptInvitation(String actorId, String invitationId) {
         identityService.requireActive(actorId);
         GroupInvitation invitation = repository.findInvitation(invitationId).orElseThrow(this::invitationUnavailable);
-        if (!invitation.inviteeId().equals(actorId)) throw invitationUnavailable();
+        if (!actorId.equals(invitation.inviteeId())) throw invitationUnavailable();
         lockGroup(invitation.groupId());
         invitation = repository.findInvitation(invitationId).orElseThrow(this::invitationUnavailable);
         activeGroup(invitation.groupId());
@@ -143,16 +143,20 @@ public class GroupService {
         if (invitation.status() != InvitationStatus.PENDING) throw invitationUnavailable();
         requireMembership(invitation.groupId(), invitation.inviterId());
         Instant now = clock.instant();
-        if (existing == null || existing.status() != MemberStatus.ACTIVE) {
-            if (existing != null) repository.expireAcceptedInvitations(invitation.groupId(), actorId, now);
-            repository.insertMember(new GroupMember(invitation.groupId(), actorId, GroupRole.MEMBER,
-                    MemberStatus.ACTIVE, now, null));
-        }
+        ensureInvitedMembership(invitation.groupId(), actorId, existing, now);
         GroupInvitation accepted = new GroupInvitation(invitation.id(), invitation.groupId(), invitation.inviterId(),
                 actorId, InvitationStatus.ACCEPTED, invitation.createdAt(), now, invitation.revokedAt(), invitation.invalidatedAt());
         repository.updateInvitation(accepted);
         record(invitation.groupId(), actorId, "INVITATION", invitationId, "GROUP_INVITATION_ACCEPT");
         return accepted;
+    }
+
+    // 普通邀请和房间邀请码共用群籍写入规则；调用者已锁群并校验受邀身份。
+    Instant ensureInvitedMembership(String groupId, String actorId, GroupMember existing, Instant now) {
+        if (existing != null && existing.status() == MemberStatus.ACTIVE) return existing.joinedAt();
+        if (existing != null) repository.expireAcceptedInvitations(groupId, actorId, now);
+        repository.insertMember(new GroupMember(groupId, actorId, GroupRole.MEMBER, MemberStatus.ACTIVE, now, null));
+        return now;
     }
 
     @Transactional
@@ -326,7 +330,7 @@ public class GroupService {
         repository.updateMember(new GroupMember(member.groupId(), member.userId(), GroupRole.MEMBER, status, member.joinedAt(), now));
         repository.findPendingTransfer(member.groupId()).filter(transfer -> transfer.toUserId().equals(member.userId()))
                 .ifPresent(transfer -> repository.cancelPendingTransfers(member.groupId(), now));
-        for (GroupInvitation invitation : repository.listPendingInvitationsByInviter(member.groupId(), member.userId())) {
+        for (GroupInvitation invitation : repository.pendingInvalidatedByDeparture(member.groupId(), member.userId())) {
             repository.updateInvitation(new GroupInvitation(invitation.id(), invitation.groupId(), invitation.inviterId(),
                     invitation.inviteeId(), InvitationStatus.INVALIDATED, invitation.createdAt(), invitation.acceptedAt(),
                     invitation.revokedAt(), now));
@@ -348,7 +352,7 @@ public class GroupService {
         }
     }
 
-    private void record(String groupId, String actorId, String targetType, String targetId, String action) {
+    void record(String groupId, String actorId, String targetType, String targetId, String action) {
         audit.record(groupId, actorId, targetType, targetId, action, "SUCCESS", UUID.randomUUID().toString());
         sync.groupChanged(groupId, targetType.equals("GROUP_MEMBER") || action.equals("GROUP_INVITATION_ACCEPT")
                 ? "member.changed" : "group.changed");

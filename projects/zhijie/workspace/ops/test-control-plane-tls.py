@@ -96,6 +96,26 @@ async def rust_sync(probe, directory, address, login, api, group, headers):
     print('PACKAGED_RUST_TLS_SYNC_LIVE_CATCHUP_ROTATION_OK', flush=True)
 
 
+async def verify_share_routes(client, address, trust):
+    for route in ['/', '/join/', '/join/unknown.js', '/actuator/health', '/internal/observability/summary', '/ops/network-policy']:
+        async with client.get(address + route, ssl=trust) as response:
+            if response.status != 404:
+                raise AssertionError('Non-product endpoint exposed')
+    # 测实际 HTTPS 入口，不用直连 Spring 的 200 替代代理规则。
+    for name in ('index.html', 'invite-page.js'):
+        route = '/join/' + name
+        expected = (Path(__file__).resolve().parents[1] / 'control-plane/src/main/resources/static/join' / name).read_bytes()
+        async with client.get(address + route, ssl=trust, allow_redirects=False) as response:
+            if response.status != 200 or await response.read() != expected:
+                raise AssertionError('Invitation resource missing or stale at HTTPS edge')
+        async with client.head(address + route, ssl=trust, allow_redirects=False) as response:
+            if response.status != 200 or await response.read():
+                raise AssertionError('Invitation resource HEAD failed')
+        async with client.post(address + route, ssl=trust, allow_redirects=False) as response:
+            if response.status != 403:
+                raise AssertionError('Invitation resource must be read-only')
+
+
 async def exercise(directory, port, password, probe):
     address = f'https://127.0.0.1:{port}'
     trust = ssl.create_default_context(cafile=str(directory / 'cert.pem'))
@@ -105,10 +125,9 @@ async def exercise(directory, port, password, probe):
                 raise AssertionError('Untrusted test certificate accepted')
         except aiohttp.ClientConnectorCertificateError:
             pass
-        for route in ['/actuator/health', '/internal/observability/summary', '/ops/network-policy']:
-            async with client.get(address + route, ssl=trust) as response:
-                if response.status != 404:
-                    raise AssertionError('Non-product endpoint exposed')
+        await verify_share_routes(client, address, trust)
+        if password is None:
+            return
         async def api(method, path, headers=None, body=None):
             async with client.request(method, address + '/api/v1/' + path, headers=headers, json=body, ssl=trust) as response:
                 if not 200 <= response.status < 300:
@@ -134,7 +153,7 @@ async def exercise(directory, port, password, probe):
 
 
 def run(nginx, upstream, password, probe):
-    if not password or os.name != 'nt' or not 1 <= upstream <= 65535:
+    if os.name != 'nt' or not 1 <= upstream <= 65535 or password == '':
         raise ValueError('Requires a Windows preview test instance')
     with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1] / 'target', prefix='control-tls-') as scratch:
         directory = Path(scratch) / 'private'
@@ -167,14 +186,36 @@ def run(nginx, upstream, password, probe):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--nginx', required=True, type=Path)
-    parser.add_argument('--upstream-port', required=True, type=int)
+    parser.add_argument('--upstream-port', type=int, default=0)
+    parser.add_argument('--share-routes-only', action='store_true', help='隔离 HTTP 上游，只验证真实 nginx 的分享页与私有路由，不访问数据库')
     parser.add_argument('--rust-probe', type=Path)
     args = parser.parse_args()
     try:
-        password = sys.stdin.buffer.readline().decode('utf-8-sig').rstrip('\r\n')
-        run(args.nginx, args.upstream_port, password, args.rust_probe.resolve(strict=True) if args.rust_probe else None)
+        if args.share_routes_only:
+            if args.upstream_port or args.rust_probe:
+                parser.error('分享路由测试使用自己的临时上游，不接受其他上游或探针。')
+            from functools import partial
+            from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+            from threading import Thread
+            class QuietStatic(SimpleHTTPRequestHandler):
+                def log_message(self, *_):
+                    pass
+            static = Path(__file__).resolve().parents[1] / 'control-plane/src/main/resources/static'
+            with ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietStatic, directory=str(static))) as fixture:
+                thread = Thread(target=fixture.serve_forever, daemon=True)
+                thread.start()
+                try:
+                    run(args.nginx, fixture.server_port, None, None)
+                finally:
+                    fixture.shutdown()
+                    thread.join(5)
+        else:
+            if not args.upstream_port:
+                parser.error('完整验证须提供本机独立后端端口。')
+            password = sys.stdin.buffer.readline().decode('utf-8-sig').rstrip('\r\n')
+            run(args.nginx, args.upstream_port, password, args.rust_probe.resolve(strict=True) if args.rust_probe else None)
     except Exception as error:
         detail = str(error) if isinstance(error, AssertionError) else type(error).__name__
         print(f'Control TLS check failed: {detail}', flush=True)
         sys.exit(1)
-    print('PACKAGED_CONTROL_HTTPS_WSS_AND_PRIVATE_ROUTES_OK')
+    print('INVITATION_HTTPS_GET_HEAD_ONLY_AND_PRIVATE_ROUTES_OK' if args.share_routes_only else 'PACKAGED_CONTROL_HTTPS_WSS_AND_PRIVATE_ROUTES_OK')

@@ -157,8 +157,8 @@ class GroupServiceTest {
                     ? new GroupInvitation(id, groupId, invitation.inviterId(), inviteeId, invitation.status(), invitation.createdAt(),
                             invitation.acceptedAt(), invitation.revokedAt(), invalidatedAt) : invitation);
         }
-        public List<GroupInvitation> listPendingInvitationsByInviter(String groupId, String inviterId) {
-            return invitations.values().stream().filter(i -> i.groupId().equals(groupId) && i.inviterId().equals(inviterId) && i.status() == InvitationStatus.PENDING).toList();
+        public List<GroupInvitation> pendingInvalidatedByDeparture(String groupId, String userId) {
+            return invitations.values().stream().filter(i -> i.groupId().equals(groupId) && i.inviterId().equals(userId) && i.status() == InvitationStatus.PENDING).toList();
         }
         public void invalidateAllPendingInvitations(String groupId, Instant invalidatedAt) {
             invitations.values().stream().filter(i -> i.groupId().equals(groupId) && i.status() == InvitationStatus.PENDING).forEach(i ->

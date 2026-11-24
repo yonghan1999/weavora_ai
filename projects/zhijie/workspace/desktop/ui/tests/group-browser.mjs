@@ -40,8 +40,9 @@ function command(method, params = {}, sessionId) {
 }
 function installProbeBridge() {
   const replies = new Map();
-  let id = 0, listener;
+  let id = 0, listener, inviteListener;
   globalThis.deliverProbe = message => {
+    if (message.invitationReady) { inviteListener?.({payload:null}); return; }
     if (message.changed) { listener?.({ payload: message.changed }); return; }
     const reply = replies.get(message.id);
     if (!reply) return;
@@ -52,7 +53,7 @@ function installProbeBridge() {
     core: { invoke(command, args = {}) { return new Promise((resolve, reject) => {
       replies.set(++id, { resolve, reject }); globalThis.invokeProbe(JSON.stringify({ id, command, args }));
     }); } },
-    event: { listen(name, callback) { if (name === 'product-changed') listener = callback; } },
+    event: { listen(name, callback) { if (name === 'product-changed') listener = callback; if (name === 'room-invitation-ready') inviteListener = callback; } },
   };
 }
 async function page(email, clientPort = port) {
@@ -74,7 +75,7 @@ async function page(email, clientPort = port) {
     if (line.startsWith('BROWSER_PROBE ')) {
       const message = JSON.parse(line.slice('BROWSER_PROBE '.length));
       const context = contexts.get(message.id);
-      if (!message.changed && !context) throw Error('Unknown native response');
+      if (!message.changed && !message.invitationReady && !context) throw Error('Unknown native response');
       if (context) { contexts.delete(message.id); message.id = context.id; }
       void call('Runtime.evaluate', { ...(context && { contextId: context.contextId }),
         expression: `globalThis.deliverProbe?.(${JSON.stringify(message)})` }).catch(() => {});
@@ -104,7 +105,10 @@ async function page(email, clientPort = port) {
     await wait('group list loaded', select('.group-list-toolbar') + ' !== null');
   }
   await login();
-  return { action, click, wait, submit, evaluate, login, async relogin() { await call('Page.reload'); await login(); } };
+  return { action, click, wait, submit, evaluate, login, activate(url) {
+    // 测试进程私有 stdin，不向产品 WebView 新增可写邀请收件箱的 IPC。
+    client.stdin.write(JSON.stringify({testOpenRoomUrl:url})+'\n');
+  }, async relogin() { await call('Page.reload'); await login(); } };
 }
 async function friendLifecycle(owner, member, link) {
   const inboxEmpty = `document.querySelector('[role=dialog]')?.textContent.includes('暂无好友申请')`;
@@ -244,6 +248,7 @@ try {
   if (scenario === 'social') await socialScenario();
   else if (scenario === 'session-revoked') await sessionRevoked();
   else if (scenario === 'history-delete') await historyDelete();
+  else if (['room-invitation', 'room-invitation-new', 'room-link'].includes(scenario)) await roomInvitation();
   else if (scenario === 'room-channels') await roomChannels();
   else if (scenario === 'room-ownership') await roomOwnership();
   else if (scenario === 'protected-switch') await protectedRoomSwitch();
@@ -433,6 +438,8 @@ async function historyDelete() {
   await owner.action('manage-group'); await owner.action('invite-member');
   await owner.evaluate(`document.querySelector('[role=dialog] [name=email]').value='member@example.test'`);
   await owner.submit();
+  // 被移除后退回大厅；普通群邀请与大厅的定向入房码是不同入口。
+  await member.click('[data-view=groups]');
   await member.action('invitation'); await member.action('accept-invitation'); await member.submit();
   await member.wait('invitation consumed', `document.querySelector('[role=dialog]')?.textContent.includes('暂无待接受邀请')`);
   await member.action('dialog-close'); await member.click('[data-view=groups]'); await member.action('open-group');
@@ -492,6 +499,63 @@ async function roomOwnership() {
   await owner.wait('room context ready after takeover', `${ready} && !!document.querySelector('.room-stage')`);
   await owner.click('[data-tab=members]'); await owner.wait('group owner took over same room', ownRoomBadge);
   console.log('ROOM_OWNER_ASSIGN_EDIT_LEAVE_REJOIN_AND_GROUP_TAKEOVER');
+}
+
+// Exercise only the player's controls. Do not pass room IDs or grants to the recipient.
+async function roomInvitation() {
+  const owner = await page('owner@example.test');
+  await owner.click('[data-view=lobby]');
+  const names = `Array.from(document.querySelectorAll('.room-card h3'), node => node.textContent)`;
+  await owner.wait('two ordered open rooms', `${names}.join(',')==='A-room,B-room'`);
+  const target = await owner.evaluate(`Array.from(document.querySelectorAll('.room-card')).find(row => row.querySelector('h3').textContent==='B-room').querySelector('[data-action=join-room]').dataset.id`);
+  await owner.click(`[data-action=join-room][data-id="${target}"]`); await owner.submit();
+  await owner.wait('inviter is in second room', `document.querySelector('.room-heading h1')?.textContent==='B-room'`);
+  await owner.click('.empty-player button');
+  await owner.wait('invitee email field', `!!document.querySelector('[role=dialog] input[type=email]')`);
+  await owner.evaluate(`document.querySelector('[role=dialog] input[type=email]').value='member@example.test'`);
+  await owner.submit();
+  const codeField = `document.querySelector('[role=dialog] input[readonly],[role=dialog] textarea[readonly]')`;
+  await owner.wait('sender can read a private invitation for the target room', `Boolean(${codeField}?.value)`);
+  const code = await owner.evaluate(`${codeField}.value`);
+  if (scenario === 'room-link') {
+    // 真实发送端、浏览器分享页和 Rust 接收端；操作系统分派另行在安装版验证。
+    const field = `document.querySelector('[role=dialog] input[name=link][readonly]')`;
+    await owner.wait('sender offers an externally openable link', `!!${field}?.value`);
+    const shared = new URL(await owner.evaluate(`${field}.value`));
+    assert.ok(shared.origin === origin && shared.pathname === '/join/index.html' && !shared.search && shared.hash.slice(1) === code, 'link must use configured control-plane origin and private fragment');
+    const guest = await page('member@example.test');
+    const {targetId} = await command('Target.createTarget',{url:'about:blank'});
+    try {
+      const {sessionId} = await command('Target.attachToTarget',{targetId,flatten:true});
+      // 不在测试机触发 OS 的协议选择器。加载同源页面，再用没有弹窗或顶层导航权限的框架渲染真实分享页。
+      await command('Page.navigate',{url:origin+'/index.html'},sessionId);
+      await until('same-origin harness is ready', async () => (await command('Runtime.evaluate',{expression:"location.pathname==='/index.html' && !!document.body",returnByValue:true},sessionId)).result.value);
+      await command('Runtime.evaluate',{expression:`(()=>{const frame=document.createElement('iframe');frame.sandbox='allow-scripts allow-same-origin';frame.src=${JSON.stringify(shared.href)};document.body.append(frame);})()`},sessionId);
+      let activation;
+      await until('real landing page offers bounded desktop URL', async () => {
+        const result = await command('Runtime.evaluate',{expression:"document.querySelector('iframe')?.contentDocument?.querySelector('#open:not([hidden])')?.href", returnByValue:true},sessionId);
+        activation = result.result?.value;
+        return activation === 'zhijie://room/' + code;
+      });
+      await guest.activate(activation);
+      await guest.wait('signed-in receiver sees confirmation', `document.querySelector('[role=dialog] h2')?.textContent==='打开房间邀请' && !document.querySelector('input[name=code]')`);
+      assert.ok(!(await guest.evaluate(`globalThis.__TAURI__.core.invoke('state_snapshot').then(s=>s.activity)`)), 'no auto-join before consent');
+      await guest.submit();
+      await guest.wait('one confirmation enters invited B', `document.querySelector('.room-heading h1')?.textContent==='B-room' && !document.querySelector('[role=dialog]')`);
+    } finally { await command('Target.closeTarget',{targetId}); }
+    return;
+  }
+  if (scenario === 'room-invitation-new') {
+    writeFileSync(join(process.argv[2], 'ready'), '', {flag:'wx'});
+    await until('recipient verified after invitation issued', () => existsSync(join(process.argv[2], 'checked')));
+  }
+  const guest = await page('member@example.test');
+  await guest.click('[data-view=lobby]'); await guest.action('room-code');
+  const entry = `document.querySelector('[role=dialog] input:not([readonly]):not([type=hidden])')`;
+  await guest.wait('lobby invitation accepts the shared code', `!!${entry}`);
+  await guest.evaluate(`(() => {const field=${entry};field.value=${JSON.stringify(code)};field.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+  await guest.submit();
+  await guest.wait('one confirmation enters the invited room', `document.querySelector('.room-heading h1')?.textContent==='B-room' && !document.querySelector('[role=dialog]')`);
 }
 
 async function roomChannels() {

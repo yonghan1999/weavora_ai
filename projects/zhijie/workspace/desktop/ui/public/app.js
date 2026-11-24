@@ -292,6 +292,7 @@ function closeDialog() {
   root.inert = s.busy;
   dialogSubmit = null;
   if (!root.inert) restoreDialogFocus();
+  queueMicrotask(presentRoomLink);
 }
 function dialog(title, description, body, submit, label = "确认") {
   modalRefresh = null;
@@ -345,6 +346,7 @@ async function run(work, { modal = false, refreshingList = false } = {}) {
         .forEach((x) => (x.disabled = false));
     render();
     if (restoreFocus) restoreDialogFocus();
+    void presentRoomLink();
   }
 }
 const request = (resource, id = null, body = null, targetId = null) =>
@@ -352,6 +354,9 @@ const request = (resource, id = null, body = null, targetId = null) =>
     ? bridge.request(resource, id, body, targetId)
     : Promise.reject(new Error("TAURI_UNAVAILABLE"));
 function clearSession() {
+  inviteSession++;
+  heldRoomCode = null;
+  inboxDirty = true;
   resetSyncRetry();
   dirtyMessageGroup = null;
   productDirty = modalDirty = false;
@@ -700,6 +705,39 @@ async function copyCurrent(target, readText) {
     notify("剪贴板不可用，内容已选中，请手动复制。");
   }
 }
+// 仅在已登录、空闲且没有其他弹窗时提取内存里的外部邀请。取消不会核销。
+let checkingRoomLink = false, inboxDirty = true, heldRoomCode = null, inviteSession = 0;
+function roomInboxChanged() {
+  inboxDirty = true;
+  void presentRoomLink();
+}
+async function presentRoomLink() {
+  if (!bridge || checkingRoomLink || !s.userId || s.busy || modalRoot.firstChild) return;
+  const user = s.userId, session = inviteSession;
+  checkingRoomLink = true;
+  try {
+    while (inboxDirty && user === s.userId && session === inviteSession) {
+      inboxDirty = false;
+      const next = await bridge.invoke("take_room_invitation");
+      if (next && user === s.userId && session === inviteSession) heldRoomCode = next;
+    }
+    if (heldRoomCode && user === s.userId && session === inviteSession && !s.busy && !modalRoot.firstChild) {
+      const code = heldRoomCode;
+      heldRoomCode = null;
+      openRoomCode(code);
+    }
+  } catch { inboxDirty = true; } finally { checkingRoomLink = false; }
+}
+function openRoomCode(code = "") {
+  const external = !!code;
+  dialog(external ? "打开房间邀请" : "邀请码加入", "使用受邀邮箱确认后加入指定房间；若正在另一间房，成功后才会切换。",
+    (external ? "" : field("code", "房间邀请码", "text", "", 'required maxlength="43" autocomplete="off" spellcheck="false"')) +
+    field("password", "房间密码（如有）", "password", "", 'autocomplete="off"'), async data => {
+      const {roomId} = await request("redeem-room-invite", null, {code: external ? code : data.get("code").trim()});
+      await refresh();
+      await joinRoom(roomId, data.get("password") || null);
+    }, "加入房间");
+}
 const actions = {
   "copy-diagnostics": target => copyCurrent(target, () => connectionDiagnostics(s)),
   "copy-address": target => copyCurrent(target, () => s.activity?.leaseId === target.dataset.lease && roomAddresses(s).find(row => row.userId === target.dataset.peer)?.virtualIpv4),
@@ -926,6 +964,19 @@ const actions = {
       await reload();
     });
   },
+  "invite-to-room": () => {
+    const roomId = s.roomId;
+    if (!roomId || !s.activity) return;
+    dialog("邀请队友进房", "输入队友将用于验证的邮箱。无需对方先注册。", field("email", "队友邮箱", "email", "", 'required maxlength="254"'), async data => {
+      const {code, link} = await request("room-invite", roomId, {email: data.get("email").trim()});
+      dialog("分享房间邀请", "把邀请链接私发给这位队友。使用受邀邮箱登录后，打开链接即可确认加入；也可以在大厅输入邀请码。",
+        field("code", "房间邀请码", "text", code, 'readonly autocomplete="off"') + button("复制邀请码", "copy-room-code") +
+        field("link", "房间邀请链接", "text", link, 'readonly autocomplete="off"') + button("复制邀请链接", "copy-room-link"), null);
+    }, "生成邀请码");
+  },
+  "copy-room-link": target => copyCurrent(target, () => modalRoot.querySelector('input[name="link"][readonly]')?.value),
+  "copy-room-code": target => copyCurrent(target, () => modalRoot.querySelector('input[name="code"][readonly]')?.value),
+  "room-code": () => openRoomCode(),
   "invite-member": () =>
     dialog(
       "邀请队友",
@@ -1278,3 +1329,7 @@ document.addEventListener("dblclick", (event) => {
   if (event.target.closest("[data-window-drag]")) windowAction("maximize");
 });
 render();
+
+if (bridge) {
+  globalThis.__TAURI__?.event?.listen("room-invitation-ready", roomInboxChanged);
+}

@@ -13,8 +13,8 @@
     {
       "path": "desktop/shell/tauri.windows.conf.json",
       "artifactClass": "configuration",
-      "bytes": 854,
-      "sha256": "26ae61fdbd1ce69fc5ec43a107e9d010e4a87c71d59ffba86732bc586b668840"
+      "bytes": 920,
+      "sha256": "648d0a9b473becfc515a3ab9a8988ebc0ef80adcb0c62cc1674c04790b450c4a"
     },
     {
       "path": "desktop/shell/tauri.macos.conf.json",

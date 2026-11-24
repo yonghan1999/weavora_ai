@@ -26,7 +26,7 @@ public interface GroupMapper {
     Optional<GroupInvitation> findPendingInvitation(@Param("groupId") String groupId, @Param("inviteeId") String inviteeId);
     void updateInvitation(GroupInvitation invitation);
     void expireAcceptedInvitations(@Param("groupId") String groupId, @Param("inviteeId") String inviteeId, @Param("invalidatedAt") Instant invalidatedAt);
-    List<GroupInvitation> listPendingInvitationsByInviter(@Param("groupId") String groupId, @Param("inviterId") String inviterId);
+    List<GroupInvitation> pendingInvalidatedByDeparture(@Param("groupId") String groupId, @Param("userId") String userId);
     void invalidateAllPendingInvitations(@Param("groupId") String groupId, @Param("invalidatedAt") Instant invalidatedAt);
     Optional<OwnerTransfer> findPendingTransfer(String groupId);
     Optional<OwnerTransfer> findPendingTransferById(String transferId);

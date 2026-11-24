@@ -21,6 +21,7 @@ async fn product_page_client() {
     let client = zhijie_core::ControlPlaneClient::new(format!("http://127.0.0.1:{port}")).unwrap();
     let app = tauri::test::mock_builder()
         .manage(AppState::new(client))
+        .manage(crate::invitation::Inbox::default())
         .invoke_handler(crate::product_commands())
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .unwrap();
@@ -40,6 +41,11 @@ async fn product_page_client() {
     let mut calls = tokio::task::JoinSet::new();
     for line in std::io::stdin().lock().lines() {
         let request: Value = serde_json::from_str(&line.unwrap()).expect("probe JSON");
+        if let Some(url) = request["testOpenRoomUrl"].as_str() {
+            assert!(app.state::<crate::invitation::Inbox>().receive(std::iter::once(url.to_owned())), "invalid invitation activation");
+            emit(json!({"invitationReady":true}));
+            continue;
+        }
         let id = request["id"].as_u64().unwrap();
         let window = window.clone();
         while let Some(done) = calls.try_join_next() {

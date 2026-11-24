@@ -15,8 +15,8 @@
       "stage": "G_INDEPENDENT_TEST",
       "command": "./mvnw -q -pl control-plane -am test && cargo test --workspace && npm --prefix desktop/ui test && node scripts/test-e2e.mjs --contract && node scripts/test-release.mjs --contract && node scripts/test-performance.mjs --validate-fixtures && node scripts/test-compatibility.mjs --validate-matrix",
       "required": true,
-      "last_evidence": "tests/evidence/EXEC-20261121T194639Z-0df1fc38.json",
-      "last_evidence_sha256": "97addd690330a1f7907a9c1eab5405214c07425f7b0d73c66d2fe80f610871c8",
+      "last_evidence": "tests/evidence/EXEC-20261124T054309Z-5270f4fa.json",
+      "last_evidence_sha256": "6467498d8f3c97c2c8af2c2b2731dafa393a0d6e2295e4a63cc457b62f251220",
       "last_status": "passed"
     },
     {
@@ -35,6 +35,42 @@
       "required": true,
       "last_evidence": "tests/evidence/EXEC-20261124T023207Z-eaf461c1.json",
       "last_evidence_sha256": "8a691d953c744e1b57b755db74d817f2f6908df8cf618b95bcf4eab69c741d56",
+      "last_status": "passed"
+    },
+    {
+      "id": "room-invitation",
+      "stage": "G_INDEPENDENT_TEST",
+      "command": "node scripts/test-e2e.mjs --room-invitation",
+      "required": true,
+      "last_evidence": "tests/evidence/EXEC-20261124T055216Z-a5849412.json",
+      "last_evidence_sha256": "3ba2106a080ae2b7d79f563b0fed71eee1658b8afac631e38229c16d90720d14",
+      "last_status": "passed"
+    },
+    {
+      "id": "independent-first-use-browser",
+      "stage": "G_INDEPENDENT_TEST",
+      "command": "npm --prefix desktop/ui run test:browser",
+      "required": true,
+      "last_evidence": "tests/evidence/EXEC-20261124T055648Z-6fe54a93.json",
+      "last_evidence_sha256": "fac08cc96e08111cc8f75bc7b6b7399f712fa8944b66cb4419b8c067eb4bc250",
+      "last_status": "passed"
+    },
+    {
+      "id": "external-room-link",
+      "stage": "G_INDEPENDENT_TEST",
+      "command": "node scripts/test-e2e.mjs --external-room-link",
+      "required": true,
+      "last_evidence": "tests/evidence/EXEC-20261124T054824Z-6a40cad8.json",
+      "last_evidence_sha256": "843d8a11cfc6bbdbf70605336aeab75358b25a7d62aa86692128bb6545748fa2",
+      "last_status": "passed"
+    },
+    {
+      "id": "invitation-https-edge",
+      "stage": "G_INDEPENDENT_TEST",
+      "command": "python -B -X utf8 ops/test-control-plane-tls.py --share-routes-only --nginx target/voice-validation-434ecd1/tools/nginx.exe",
+      "required": true,
+      "last_evidence": "tests/evidence/EXEC-20261124T044314Z-8dff55ae.json",
+      "last_evidence_sha256": "288d651a2130803f7de83e37d24e08e277728bb6023b9013690a7281fe68e528",
       "last_status": "passed"
     }
   ]

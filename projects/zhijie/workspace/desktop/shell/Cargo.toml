@@ -16,6 +16,9 @@ base64 = "0.22.1"
 boringtun = "0.7.1"
 rand = "0.8.5"
 
+[target.'cfg(windows)'.dependencies]
+tauri-plugin-single-instance = "=2.5.5"
+
 [build-dependencies]
 tauri-build = { version = "2.4.1", features = [] }
 

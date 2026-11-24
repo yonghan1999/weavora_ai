@@ -1,0 +1,10 @@
+{
+  "sha256": "bf93bd5fa65d3356f7907523d13c05eb5d0094460efb9e56f6a4464817e1e45e",
+  "bytes": 41698411,
+  "resource_sha256": {
+    "static/join/index.html": "71d7172f51b03677030eaf57c9f811b734944c6d6c6e05462f542ed6b7de1fcd",
+    "static/join/invite-page.js": "b54f51627ac68d64643b1239cda39ef2d5a737496754a4f3da881a964f305890",
+    "db/migration/V19__private_room_invitation_codes.sql": "37ef6465dd0034e082c9ca928bc4715804b65a5da5ce15ad81d9e77469e42ad8"
+  },
+  "scope": "packaging and embedded payload; no deployment"
+}

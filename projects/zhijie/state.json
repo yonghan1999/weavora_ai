@@ -6,10 +6,11 @@
   "stage": "G_INDEPENDENT_TEST",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-11-24T03:04:05Z",
+  "updated_at": "2026-11-24T05:14:44Z",
   "retry_counts": {
     "E_IMPLEMENTATION": 1,
-    "F_SELF_TEST": 3
+    "F_SELF_TEST": 3,
+    "G_INDEPENDENT_TEST": 3
   },
   "max_retries": 3,
   "approvals": [
@@ -2853,6 +2854,102 @@
       "actor": "self-tester",
       "role": "self_tester",
       "reason": "进入独立测试与质量验收",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "G_INDEPENDENT_TEST",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-24T03:09:36Z",
+      "actor": "independent-tester",
+      "role": "test_engineer",
+      "reason": "检查 room-invitation 失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261124T030814Z-d63b7655.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "G_INDEPENDENT_TEST",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-24T03:11:18Z",
+      "actor": "independent-tester",
+      "role": "test_engineer",
+      "reason": "第 1 次重试：已由独立用例复现房间入口无法产生指定房间的私密邀请码，三种账号状态均未完成；进入受控缺陷修复与复测。",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "G_INDEPENDENT_TEST",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-24T04:10:19Z",
+      "actor": "independent-tester",
+      "role": "test_engineer",
+      "reason": "检查 independent-full-regression 失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261124T040659Z-7b0d6beb.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "G_INDEPENDENT_TEST",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-24T04:10:55Z",
+      "actor": "independent-tester",
+      "role": "test_engineer",
+      "reason": "第 2 次重试：完整回归在历史消息场景中确认成员被移除后已回大厅；测试仍从大厅找旧群邀请按钮超时。修正为走群组的群邀请入口，保留历史撤销、重新入群与角色断言，先重跑失败场景。",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "G_INDEPENDENT_TEST",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-24T04:15:59Z",
+      "actor": "independent-tester",
+      "role": "test_engineer",
+      "reason": "检查 external-room-link 失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261124T041438Z-0fd57260.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "G_INDEPENDENT_TEST",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-24T04:16:18Z",
+      "actor": "independent-tester",
+      "role": "test_engineer",
+      "reason": "第 3 次重试：独立用例已确认发送端只生成文本码而没有外部链接；开展打开分享页、现有窗口接收与一次确认的缺陷修复，并保留既有邀请码和入房资格检查。",
       "evidence": [],
       "human_authorization": false
     }

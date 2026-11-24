@@ -33,8 +33,8 @@ public class MyBatisGroupRepository implements GroupRepository {
     public void expireAcceptedInvitations(String groupId, String inviteeId, Instant invalidatedAt) {
         mapper.expireAcceptedInvitations(groupId, inviteeId, invalidatedAt);
     }
-    public List<GroupInvitation> listPendingInvitationsByInviter(String groupId, String inviterId) {
-        return mapper.listPendingInvitationsByInviter(groupId, inviterId);
+    public List<GroupInvitation> pendingInvalidatedByDeparture(String groupId, String userId) {
+        return mapper.pendingInvalidatedByDeparture(groupId, userId);
     }
     public void invalidateAllPendingInvitations(String groupId, Instant invalidatedAt) {
         mapper.invalidateAllPendingInvitations(groupId, invalidatedAt);

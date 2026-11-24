@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use tauri::Manager;
 use tauri::State;
 use zhijie_core::{AuthTokens, ClientCore, ClientError, ClientSnapshot, ControlPlaneClient};
+mod invitation;
 mod network;
 mod session;
 mod sync;
@@ -154,7 +155,7 @@ async fn product_request(
     } else {
         Some(state.access_token()?)
     };
-    state
+    let mut data = state
         .client
         .product_request(
             token.as_deref(),
@@ -163,7 +164,13 @@ async fn product_request(
             body.unwrap_or(serde_json::Value::Null),
         )
         .await
-        .map_err(error_code)
+        .map_err(error_code)?;
+    if resource == "room-invite" {
+        let code = data["code"].as_str().ok_or("INVALID_ROOM_INVITATION")?;
+        // 分享地址只来自已校验的客户端服务源；片段不会出现在 HTTP GET 中。
+        data["link"] = format!("{}/join/index.html#{code}", state.client.origin().trim_end_matches('/')).into();
+    }
+    Ok(data)
 }
 
 fn product_route(
@@ -232,6 +239,8 @@ fn product_route(
             ),
             false,
         ),
+        "room-invite" => ("POST", keyed("rooms", "/invitations")?, false),
+        "redeem-room-invite" => ("POST", "/api/v1/invitations/redeem-room".into(), false),
         "group-invite" => ("POST", keyed("groups", "/invitations")?, false),
         "invitations" => (
             "GET",
@@ -543,6 +552,11 @@ fn packaged_origin() -> &'static str {
     option_env!("ZHIJIE_PACKAGED_CONTROL_PLANE_ORIGIN").unwrap_or("http://127.0.0.1:8080")
 }
 
+#[tauri::command]
+fn take_room_invitation(inbox: State<'_, invitation::Inbox>) -> Option<String> {
+    inbox.take()
+}
+
 fn main() {
     let base = match std::env::var("ZHIJIE_CONTROL_PLANE_URL") {
         Ok(value) => value,
@@ -555,13 +569,28 @@ fn main() {
         );
         std::process::exit(1);
     });
-    tauri::Builder::default()
+    let inbox = invitation::Inbox::default();
+    #[cfg(windows)]
+    inbox.receive(std::env::args_os().skip(1).map(|s| s.to_string_lossy().into_owned()));
+    let builder = tauri::Builder::default().manage(AppState::new(client)).manage(inbox);
+    #[cfg(windows)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+        use tauri::Emitter;
+        if app.state::<invitation::Inbox>().receive(argv.into_iter().skip(1)) {
+            // 通知不携带邀请码，窗口准备好后通过 IPC 领取一次。
+            let _ = app.emit_to("main", "room-invitation-ready", ());
+        }
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.set_focus();
+        }
+    }));
+    builder
         .setup(|app| {
             tauri::async_runtime::spawn(maintain_session(app.handle().clone()));
             tauri::async_runtime::spawn(sync::maintain(app.handle().clone()));
             Ok(())
         })
-        .manage(AppState::new(client))
         .invoke_handler(product_commands())
         .run(desktop_context())
         .expect("failed to run 织界");
@@ -571,6 +600,7 @@ fn product_commands<R: tauri::Runtime>(
 ) -> impl Fn(tauri::ipc::Invoke<R>) -> bool + Send + Sync + 'static {
     tauri::generate_handler![
         session_login,
+        take_room_invitation,
         product_request,
         activity_leave,
         group_list,

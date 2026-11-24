@@ -23,7 +23,7 @@ public interface GroupRepository {
     Optional<GroupInvitation> findPendingInvitation(String groupId, String inviteeId);
     void updateInvitation(GroupInvitation invitation);
     void expireAcceptedInvitations(String groupId, String inviteeId, Instant invalidatedAt);
-    List<GroupInvitation> listPendingInvitationsByInviter(String groupId, String inviterId);
+    List<GroupInvitation> pendingInvalidatedByDeparture(String groupId, String userId);
     void invalidateAllPendingInvitations(String groupId, Instant invalidatedAt);
     Optional<OwnerTransfer> findPendingTransfer(String groupId);
     Optional<OwnerTransfer> findPendingTransferById(String transferId);

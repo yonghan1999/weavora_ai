@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EXEC-20261124T044314Z-8dff55ae",
+  "project_id": "zhijie",
+  "started_at": "2026-11-24T04:41:46Z",
+  "finished_at": "2026-11-24T04:43:14Z",
+  "actor": "independent-tester",
+  "role": "test_engineer",
+  "command": "python -B -X utf8 ops/test-control-plane-tls.py --share-routes-only --nginx target/voice-validation-434ecd1/tools/nginx.exe",
+  "cwd": "workspace",
+  "shell_mode": "bash -o pipefail -c",
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout": "INVITATION_HTTPS_GET_HEAD_ONLY_AND_PRIVATE_ROUTES_OK\r\n",
+  "stdout_truncated": false,
+  "stderr": "",
+  "stderr_truncated": false,
+  "capture_limit_bytes": 1000000,
+  "tree_digest_before": "4c4c855c7f4ba22afde5c9e01d3fa7559360264c92e35a22668263657dd55d9c",
+  "tree_digest_after": "4c4c855c7f4ba22afde5c9e01d3fa7559360264c92e35a22668263657dd55d9c",
+  "check_id": "invitation-https-edge",
+  "case_id": null
+}

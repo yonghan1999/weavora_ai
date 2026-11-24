@@ -115,6 +115,7 @@ let activity=null,voice={state:'DISCONNECTED',muted:false,receiveEnabled:true,ma
 const snapshot=()=>({userId:sessionExpired?null:'u1',activity:sessionExpired?null:activity,service:globalThis.serviceState??'CONNECTED',lastErrorCode:null});
 globalThis.__TAURI__={window:{getCurrentWindow:()=>({minimize:async()=>windowCalls.push('minimize'),toggleMaximize:async()=>windowCalls.push('maximize'),isMaximized:async()=>true,close:async()=>windowCalls.push('close'),startDragging:async()=>windowCalls.push('drag')})},core:{invoke:async(command,p={})=>{
 calls.push({command,p});
+if(command==='take_room_invitation'){const code=globalThis.pendingInvitation??null;globalThis.pendingInvitation=null;return code;}
 if(command==='session_login'){await new Promise(r=>setTimeout(r,80));if(failLogin)throw 'SERVICE_UNAVAILABLE';return snapshot();}
 if(command==='session_logout')return {userId:null,activity:null,service:'DISCONNECTED',lastErrorCode:'LOGOUT_CLEANUP_PENDING'};
 if(command==='group_list'){if(globalThis.holdGroupList)await new Promise(resolve=>globalThis.releaseGroupList=resolve);return [...(globalThis.groupRemoved?[]:[group]),...(globalThis.extraGroups??[])];}if(command==='room_list')return p.groupId===group.id?[room]:[];
@@ -155,11 +156,12 @@ if(p.resource==='messages'){if(globalThis.throttleMessages){globalThis.throttled
 if(p.resource==='message-send'){messages.push({id:'m1',authorId:'u1',body:p.body.body,createdAt:new Date().toISOString()});return messages.at(-1);}
 if(p.resource==='message-delete'){if(globalThis.failDelete)throw 'CURRENT_GRANT_REQUIRED';const message=messages.find(row=>row.id===p.id);if(!message)throw 'RESOURCE_NOT_AVAILABLE';message.deleted=true;return message;}
 if(p.resource==='friend-search')return [{userId:'u2',email:p.id}];
+if(p.resource==='room-invite')return {code:'x'.repeat(43),link:'https://example.test/join/index.html#'+'x'.repeat(43)};
 if(p.resource==='group-invite')return {id:'invite-1'};
 if(['register','verify','forgot','reset'].includes(p.resource))throw 'EMAIL_DELIVERY_UNAVAILABLE';
 return {};}
 throw 'UNEXPECTED_COMMAND';}}};
-globalThis.__TAURI__.event={listen:async(name,listener)=>{if(name==='product-changed')globalThis.emitProduct=payload=>listener({payload});return ()=>{};}};`;
+globalThis.__TAURI__.event={listen:async(name,listener)=>{if(name==='room-invitation-ready')globalThis.emitRoomInvitation=()=>listener({payload:null});if(name==='product-changed')globalThis.emitProduct=payload=>listener({payload});return ()=>{};}};`;
 try {
   let pages;
   for (let i = 0; i < 80; i++) {
@@ -249,6 +251,13 @@ try {
     "真实页面路径呈现大厅与房卡",
     'document.querySelectorAll(".room-card").length===1 && !!document.querySelector(".rail") && document.body.innerText.includes("周末远征队")',
   );
+  await click('[data-action=room-code]');
+  await evaluate("globalThis.pendingInvitation='y'.repeat(43); emitRoomInvitation()");
+  await check('外部邀请不抢占其他对话框', `document.querySelector('#dialog-title')?.textContent==='邀请码加入' && pendingInvitation!==null`);
+  await click('[data-action=dialog-close]');
+  await check('关闭原弹窗后显示外部邀请且不要求粘贴', `document.querySelector('#dialog-title')?.textContent==='打开房间邀请' && !document.querySelector('input[name=code]') && pendingInvitation===null`);
+  await click('[data-action=dialog-close]');
+  await check('取消外部邀请不核销也不入房', `!calls.some(c=>c.p.resource==='redeem-room-invite'||c.command==='activity_join')`);
   await shot("lobby-1440");
   for (const width of [900, 600]) {
     await command("Emulation.setDeviceMetricsOverride", {
@@ -705,6 +714,19 @@ try {
   await evaluate('declineHelper=false');
   await click('.modal-actions .primary');
   await check("重新同意仅重连联机，不重建语音", '!document.querySelector("[role=dialog]") && calls.slice(beforeAuthorization).filter(x=>x.command==="network_connect").length===1 && !calls.slice(beforeAuthorization).some(x=>x.command==="voice_connect")');
+  await click('[data-action="invite-to-room"]');
+  await fill('[name="email"]', 'teammate@example.test');
+  await click('.modal-actions .primary');
+  await click('[data-action="copy-room-link"]');
+  await check('分享链接与当前邀请码匹配', `lastCopied==='https://example.test/join/index.html#'+document.querySelector('input[name=code]').value`);
+  await click('[data-action="copy-room-code"]');
+  await check("复制当前只读房间邀请码", 'lastCopied==="x".repeat(43) && document.querySelector("input[name=code][readonly]").value===lastCopied');
+  await evaluate('globalThis.blockClipboard=true');
+  await click('[data-action="copy-room-code"]');
+  await check("剪贴板不可用时仅在当前邀请弹窗内选中邀请码", 'document.querySelector("[role=dialog] textarea[readonly]")?.value===lastCopied && document.activeElement.selectionEnd===43');
+  await click('[data-action="dialog-close"]');
+  await check("关闭邀请后不保留手动复制框", '!document.querySelector("textarea[readonly],input[name=code]")');
+  await evaluate('blockClipboard=false');
   await shot("room-1440");
   await evaluate('globalThis.testPeers=[{userId:"peer",virtualIpv4:"10.66.0.3"}];globalThis.failVoiceRead=true;globalThis.networkState="CONNECTED"');
   await delay(1300);
