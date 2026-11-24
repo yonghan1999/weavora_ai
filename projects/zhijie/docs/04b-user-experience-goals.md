@@ -37,4 +37,4 @@
 | 本机音频 | TASK-019、020：宿主端点枚举与选择、权限提示、设备拔出时禁止旧检测、离线试音的桌面桥接与界面回归。 | 两台设备各自真实出声、双向复述、静音与恢复；不能用峰值或已连接状态代替。 |
 | 安装与联机授权 | TASK-021：机器级 NSIS 候选包，包内 8 项产品文件与同次构建输入一致；185 项浏览器检查覆盖取消、拒绝后重试且不重建语音。工作流记录：`tests/evidence/EXEC-20261123T074745Z-3085915c.json`。 | 未运行安装器或系统提权确认；需要干净安装、从上一版升级、取消和重试、驱动故障恢复以及实际游戏互通。 |
 
-本机检查用的未签名 Windows x64 安装包位于 `workspace/target/local-native/build/release/bundle/nsis/织界_0.1.0_x64-setup.exe`，SHA-256 为 `4685c088818f089533d230356520204f71d1126e24dc7a2af5ce3683be7a8d4c`。此包默认连接回环开发服务，**不发给两台玩家电脑作为联机验收包**。组织者确定实际 HTTPS 测试源并备妥邮件、控制面、语音和联机服务后，按 `workspace/packaging/windows/candidate-build.md` 重建、重新核对哈希并以同一制品跑两对用户的完整旅程。当前没有两对首次玩家的原始操作记录，不提交发布审批。
+本机检查用的未签名 Windows x64 安装包位于 `workspace/target/local-native/build/release/bundle/nsis/织界_0.1.0_x64-setup.exe`，SHA-256 为 `ea8b21137f51b1f5a6b86b5f9606ff0353eb641e14e6b31c6fc2e93066e3ccba`。此包默认连接回环开发服务，**不发给两台玩家电脑作为联机验收包**。组织者确定实际 HTTPS 测试源并备妥邮件、控制面、语音和联机服务后，按 `workspace/packaging/windows/candidate-build.md` 重建、重新核对哈希并以同一制品跑两对用户的完整旅程。当前没有两对首次玩家的原始操作记录，不提交发布审批。

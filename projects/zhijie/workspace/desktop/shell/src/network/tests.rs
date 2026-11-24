@@ -505,3 +505,10 @@ fn malformed_peer_registration_does_not_survive_as_connected_and_stop_clears_it(
         worker.join().unwrap();
     });
 }
+
+#[test]
+fn snapshots_do_not_offer_elevation_for_another_control_plane() {
+    let manager = NetworkManager::for_origin("https://not-the-packaged-origin.invalid");
+    assert!(!manager.can_authorize_helper());
+    assert_eq!(manager.snapshot()["canAuthorizeHelper"], false);
+}

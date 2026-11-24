@@ -67,9 +67,11 @@ public enum NetworkProbeRevocation {
     private static AuthTokens request(ServletWebServerApplicationContext context, String path,
                                       Map<String, String> body, int expected) throws Exception {
         var json = context.getBean(ObjectMapper.class);
+        // 首次登录是准备步骤（冷启动 MVC 和密码校验），不计入撤销生效时间。
+        var timeout = Duration.ofSeconds(path.equals("/login") ? 10 : 2);
         try (var http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build()) {
             var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + context.getWebServer().getPort() + "/api/v1/auth" + path))
-                    .timeout(Duration.ofSeconds(2)).header("Content-Type", "application/json")
+                    .timeout(timeout).header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofByteArray(json.writeValueAsBytes(body))).build();
             var response = http.send(request, HttpResponse.BodyHandlers.ofString());
             assertThat(response.statusCode()).as("Authentication HTTP %s", path).isEqualTo(expected);

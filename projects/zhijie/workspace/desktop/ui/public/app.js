@@ -3,6 +3,8 @@ import { CoreBridge } from "./src/index.js";
 import { avatarField, readGroupAvatar } from "./src/group-avatar.js";
 import {
   renderApp,
+  connectionDiagnostics,
+  roomAddresses,
   serviceIndicator,
   messageDeleteControl,
   escapeHtml as e,
@@ -90,7 +92,7 @@ async function refreshRuntime() {
     Object.assign(s, snapshot, {voice, network});
     runtimeDirty ||= changed;
     // 不在编辑输入框或模态框时重建页面，避免丢失用户输入。
-    if (runtimeDirty && !modalRoot.firstChild && !document.activeElement?.matches("input,textarea,select")) render();
+    if (runtimeDirty && !modalRoot.firstChild && !document.activeElement?.matches("input,textarea:not([readonly]),select")) render();
   } catch {
     // 控制面续期与失权由桌面后台处理；轮询失败保留上次已知状态。
   } finally {
@@ -457,7 +459,7 @@ async function connectChannel(channel) {
     s[channel] = snapshot;
     if (channel === "network" && snapshot?.status?.activityId === activityId) s.activity.network = snapshot.status.state;
     runtimeDirty = true;
-    if (!s.busy && !modalRoot.firstChild && !document.activeElement?.matches("input,textarea,select")) render();
+    if (!s.busy && !modalRoot.firstChild && !document.activeElement?.matches("input,textarea:not([readonly]),select")) render();
   } catch (error) {
     if (current()) notify(errorText(error));
   } finally {
@@ -679,7 +681,28 @@ async function showMessageHistory(groupId, cursor, applicable = () => true) {
   modalRefresh = {reload: guard => showMessageHistory(groupId, cursor, guard)};
   return true;
 }
+async function copyCurrent(target, readText) {
+  const text = readText();
+  if (!text || !target.isConnected) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    if (target.isConnected && readText() === text) notify("已复制");
+  } catch {
+    if (!target.isConnected || readText() !== text) return;
+    const input = document.createElement("textarea");
+    input.readOnly = true;
+    input.setAttribute("aria-label", "手动复制内容");
+    input.value = text;
+    // 回退控件随当前视图重绘移除，不将旧房间地址留在全局弹窗。
+    target.parentElement.querySelector('[aria-label="手动复制内容"]')?.remove();
+    target.after(input);
+    input.focus(); input.select();
+    notify("剪贴板不可用，内容已选中，请手动复制。");
+  }
+}
 const actions = {
+  "copy-diagnostics": target => copyCurrent(target, () => connectionDiagnostics(s)),
+  "copy-address": target => copyCurrent(target, () => s.activity?.leaseId === target.dataset.lease && roomAddresses(s).find(row => row.userId === target.dataset.peer)?.virtualIpv4),
   "message-history": target => run(() => showMessageHistory(s.groupId, target.dataset.id), { modal: true }),
   "refresh-audit": target => run(() => showAudit(target.dataset.group), { modal: true, refreshingList: true }),
   "earlier-audit": target => run(() => showAudit(target.dataset.group, target.dataset.id), { modal: true, refreshingList: true }),

@@ -215,21 +215,27 @@ async function groupProfile(client, phase) {
 let memberLink;
 try {
   if (scenario === 'social') memberLink = await memberTestLink(port);
-  let endpoint;
-  await until('browser ready', () => {
+  await until('browser debugging connection ready', async () => {
+    if (browser.exitCode !== null || browser.signalCode !== null) throw Error('browser exited before debugging connection');
     try {
       const [debugPort, path] = readFileSync(join(profile, 'DevToolsActivePort'), 'utf8').trim().split(/\r?\n/);
       if (!/^\d+$/.test(debugPort) || Number(debugPort) < 1 || Number(debugPort) > 65535 ||
           !/^\/devtools\/browser\/[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(path)) return false;
-      endpoint = `ws://127.0.0.1:${debugPort}${path}`;
+      // DevToolsActivePort may exist before the first handshake can finish.
+      const candidate = new WebSocket(`ws://127.0.0.1:${debugPort}${path}`);
+      const opened = await new Promise(resolve => {
+        const timer = setTimeout(() => { resolve(false); candidate.close(); }, 1000);
+        candidate.onopen = () => { clearTimeout(timer); resolve(true); };
+        candidate.onerror = candidate.onclose = () => { clearTimeout(timer); resolve(false); };
+      });
+      if (!opened) return false;
+      socket = candidate;
       return true;
     } catch (error) {
       if (['ENOENT', 'EBUSY'].includes(error.code)) return false;
       throw error;
     }
   });
-  socket = new WebSocket(endpoint);
-  await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject; });
   socket.onmessage = ({ data }) => { const message = JSON.parse(data);
     if (message.method === 'Runtime.bindingCalled' && message.params.name === 'invokeProbe') {
       clients.get(message.sessionId).send(message.params);
@@ -504,7 +510,9 @@ async function roomChannels() {
   for (const client of [owner, member]) {
     await client.wait('both real failures are visible', `document.querySelectorAll('.room-flags [data-connection=failed]').length===2`);
     assert.equal((await native(client, 'voice_snapshot')).failureCode, 'VOICE_CAPACITY_LIMITED');
-    assert.equal((await native(client, 'network_snapshot')).status.errorCode, 'HELPER_UNAVAILABLE');
+    const unavailable = await native(client, 'network_snapshot');
+    assert.equal(unavailable.status.errorCode, 'HELPER_UNAVAILABLE');
+    assert.equal(unavailable.canAuthorizeHelper, false, 'a custom test socket cannot use the installed Helper launcher');
     await client.click('[data-tab=network]');
     await client.wait('helper failure remains explained beside retry', `document.querySelector('.network-panel')?.innerText.includes('联机辅助服务未启动') && !!document.querySelector('.network-panel [data-action=retry-network]') && !document.querySelector('.network-panel .ip-address')`);
     await client.click('[data-tab=chat]');

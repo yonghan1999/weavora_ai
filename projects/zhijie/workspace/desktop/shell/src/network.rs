@@ -13,6 +13,7 @@ pub struct NetworkManager {
     pub(super) operations: tokio::sync::Mutex<()>,
     #[cfg(windows)]
     pub(super) helper_prompt: tokio::sync::Mutex<()>,
+    packaged_origin_matches: bool,
     current: Mutex<Option<NetworkStart>>,
     pending_renewal: Mutex<Option<NetworkStart>>,
     status: Mutex<NetworkStatus>,
@@ -22,8 +23,21 @@ pub struct NetworkManager {
 }
 
 impl NetworkManager {
+    pub(super) fn for_origin(origin: &str) -> Self {
+        Self {
+            packaged_origin_matches: origin == super::packaged_origin(),
+            ..Self::default()
+        }
+    }
+
+    pub(super) fn can_authorize_helper(&self) -> bool {
+        cfg!(windows)
+            && self.packaged_origin_matches
+            && std::env::var_os("ZHIJIE_HELPER_SOCKET").is_none()
+    }
+
     pub fn snapshot(&self) -> serde_json::Value {
-        serde_json::json!({"canAuthorizeHelper": cfg!(windows), "status": self.status.lock().expect("network status lock").clone(),
+        serde_json::json!({"canAuthorizeHelper": self.can_authorize_helper(), "status": self.status.lock().expect("network status lock").clone(),
             "peers": self.peers.lock().expect("network peers lock").clone()})
     }
 

@@ -10,7 +10,7 @@ node --test tests/bridge.test.js tests/contract.test.js
 node tests/browser.mjs
 ```
 
-浏览器回归会启动独立本地 HTTP 服务与无头浏览器，输出截图到忽略目录 `.test-artifacts/`，结束后关闭服务。测试夹具只由测试进程注入，正式客户端没有模拟登录或演示数据入口。
+浏览器回归会启动独立本地 HTTP 服务与无头浏览器，输出截图到 `workspace/target/desktop-ui-browser/`（不计入产品代码摘要），结束后关闭服务。测试夹具只由测试进程注入，正式客户端没有模拟登录或演示数据入口。
 
 在 `workspace/` 执行：
 

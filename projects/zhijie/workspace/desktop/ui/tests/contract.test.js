@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { COMMAND_PROTOCOL_VERSION } from "../src/index.js";
-import { renderApp } from "../src/views.js";
+import { connectionDiagnostics, renderApp } from "../src/views.js";
 
 test("desktop adapter exposes the versioned command protocol", () => {
   assert.equal(COMMAND_PROTOCOL_VERSION, 1);
@@ -96,4 +96,25 @@ test("进房前或语音失败时展示本机设备，与通话状态分开", ()
   }
   s.audioDevices = null;
   assert.match(renderApp(s), /尚未读取设备列表/);
+});
+
+test("只有当前活动已连接时可复制自己和队友的地址，故障诊断入口与地址无关", () => {
+  const s = { userId: "viewer", view: "room", roomTab: "network", roomId: "r", groupId: "g", groups: [{id:"g"}], rooms: [{id:"r",groupId:"g"}], members: [],
+    activity: {activityId:"a", leaseId:"lease", memberGeneration:2, network:"CONNECTED", virtualIpv4:"10.1.1.2"},
+    network: {status:{activityId:"a", memberGeneration:2, state:"CONNECTED"}, peers:[{userId:"peer",virtualIpv4:"10.1.1.3"}]} };
+  assert.equal((renderApp(s).match(/data-action="copy-address"/g)||[]).length, 2);
+  s.network.status.memberGeneration = 1;
+  assert.doesNotMatch(renderApp(s), /copy-address|10\.1\.1\.[23]/);
+  s.network.status.memberGeneration = 2;
+  s.network.status.state = s.activity.network = "FAILED";
+  s.network.status.errorCode = "HELPER_UNAVAILABLE";
+  assert.doesNotMatch(renderApp(s), /copy-address|10\.1\.1\.[23]/);
+  assert.match(renderApp(s), /data-action="copy-diagnostics"/);
+});
+
+test("诊断文本不回显私有字段、未知错误或旧活动", () => {
+  const s = {service:"CONNECTED", userId:"private", voice:{state:"private", token:"private"}, activity:{activityId:"a",memberGeneration:3}, network:{status:{activityId:"a",memberGeneration:3,state:"FAILED",errorCode:"private"}, peers:[{privateKey:"private"}]}};
+  assert.equal(connectionDiagnostics(s), "织界连接诊断\n服务：已连接\n语音：状态未知\n联机：连接失败");
+  s.network.status.memberGeneration = 2;
+  assert.match(connectionDiagnostics(s), /联机：状态未知$/);
 });

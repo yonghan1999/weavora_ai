@@ -68,7 +68,7 @@ const chip = (name, value) =>
 export function serviceIndicator(s) {
   if (!s.userId) return "织界桌面端";
   return s.service === "RETRYING"
-    ? `服务暂不可用 · 自动重连中 ${button("重试", "refresh", "ghost small", 'aria-label="重试服务连接"')}`
+    ? `服务暂不可用 · 自动重连中 ${button("重试", "refresh", "ghost small", 'aria-label="重试服务连接"')} ${diagnosticButton()}`
     : `服务 · ${statusLabel(s.service)}`;
 }
 export function titlebar(s) {
@@ -170,6 +170,27 @@ function memberVoice(s, member) {
   if (media.speaking) return "正在说话";
   return media.subscribed ? "语音已连接" : "语音连接中";
 }
+const diagnosticButton = () => button("复制诊断信息", "copy-diagnostics", "ghost small");
+
+export function connectionDiagnostics(s) {
+  // 只导出枚举状态和已翻译的故障类别，不序列化快照、地址、成员、票据或原始错误。
+  const known = value => ["CONNECTED", "CONNECTING", "RETRYING", "REVOKED", "DISCONNECTED", "FAILED"].includes(value) ? statusLabel(value) : "状态未知";
+  const status = s.network?.status;
+  const current = s.activity && status && status.activityId === s.activity.activityId && status.memberGeneration === s.activity.memberGeneration;
+  const reason = current && status.state === "FAILED" ? networkErrorText(status.errorCode) : null;
+  return `织界连接诊断\n服务：${known(s.service)}\n语音：${known(s.voice?.state)}\n联机：${current ? known(status.state) : "状态未知"}${reason ? `\n联机提示：${reason}` : ""}`;
+}
+
+export function roomAddresses(s) {
+  const a = s.activity, n = s.network;
+  if (!a?.leaseId || !Number.isSafeInteger(a.memberGeneration) || a.memberGeneration < 1 || a.network !== "CONNECTED" || n?.status?.state !== "CONNECTED" || n.status.activityId !== a.activityId || n.status.memberGeneration !== a.memberGeneration) return [];
+  return [{ userId: s.userId, virtualIpv4: a.virtualIpv4 }, ...(n.peers || [])].filter(row => row && typeof row.userId === "string" && typeof row.virtualIpv4 === "string" && /^(?:0|[1-9]\d{0,2})(?:\.(?:0|[1-9]\d{0,2})){3}$/.test(row.virtualIpv4) && row.virtualIpv4.split(".").every(octet => Number(octet) <= 255));
+}
+
+function addressRows(s) {
+  return roomAddresses(s).map(({userId, virtualIpv4}) => `<div class="member-ip-row"><span>${userId === s.userId ? "我的虚拟地址" : e(userId)}</span><span class="ip-address">${e(virtualIpv4)}</span>${button("复制地址", "copy-address", "ghost small", `data-peer="${e(userId)}" data-lease="${e(s.activity.leaseId)}"`)}</div>`).join("");
+}
+
 function room(s) {
   const r = s.rooms.find((r) => r.id === s.roomId);
   if (!r || !s.activity) return lobby(s);
@@ -183,7 +204,7 @@ function room(s) {
       ? chat(s)
       : s.roomTab === "members"
         ? `<div class="network-panel">${s.members.map(member => activityMemberRow(s, r, member)).join("")}${button("刷新成员", "refresh-room-members", "ghost small")}</div>`
-        : `<div class="network-panel"><div class="network-hero">${chip("联机", s.activity.network)}<h3>${statusLabel(s.activity.network)}</h3><p>虚拟网络建立后，才能通过成员地址连接游戏。</p></div>${s.activity.network === "CONNECTED" ? `<div class="member-ip-heading"><strong>我的虚拟地址</strong></div><div class="member-ip-row"><span class="ip-address">${e(s.activity.virtualIpv4 || "暂不可用")}</span></div>${(s.network?.peers || []).map(peer => `<div class="member-ip-row"><span>${e(peer.userId)}</span><span class="ip-address">${e(peer.virtualIpv4)}</span></div>`).join("")}` : ""}<p class="runtime-note">${s.activity.network === "CONNECTED" ? "通过队友的虚拟地址连接游戏。" : "当前联机功能尚未就绪，暂时无法通过虚拟地址连接游戏。"}</p>${networkFault ? `<p class="runtime-note">${e(networkFault)}</p>` : ""}${canAuthorize ? button("授权并连接", "authorize-helper") : button("重试联机", "retry-network", "ghost small")}</div>`;
+        : `<div class="network-panel"><div class="network-hero">${chip("联机", s.activity.network)}<h3>${statusLabel(s.activity.network)}</h3><p>虚拟网络建立后，才能通过成员地址连接游戏。</p></div>${addressRows(s)}<p class="runtime-note">${s.activity.network === "CONNECTED" ? "通过队友的虚拟地址连接游戏。" : "当前联机功能尚未就绪，暂时无法通过虚拟地址连接游戏。"}</p>${networkFault ? `<p class="runtime-note">${e(networkFault)}</p>` : ""}${(networkFault || s.voice?.failureCode) ? diagnosticButton() : ""}${canAuthorize ? button("授权并连接", "authorize-helper") : button("重试联机", "retry-network", "ghost small")}</div>`;
   return `<div class="room-layout"><main class="room-stage"><div class="room-top"><div class="room-heading"><button class="back-button" data-view="lobby" aria-label="返回大厅">${icon("back", 17)}</button><div><h1>${e(r.name)}</h1><p>${e(r.gameName || "游戏房间")} · ${e(s.groups.find((g) => g.id === r.groupId)?.name)}</p></div></div><div class="room-flags">${chip("语音", s.voice?.state)}${chip("联机", s.activity.network)}${button("房间设置", "manage-room", "ghost small")}</div></div><div class="room-alert">${e(s.voice?.failureCode ? "语音服务暂不可用，可单独重试。" : "")}</div><div class="stage-heading"><div><span class="stage-label">语音房间</span><h2>队友已就位</h2></div><span>${s.members.length} / 12 人</span></div><div class="party-grid">${s.members.map((m) => `<article class="player-tile">${avatar(m.userId === s.userId ? "我" : m.userId)}<div class="player-name"><div><strong>${m.userId === s.userId ? "我" : e(m.userId)}</strong><small>${memberVoice(s, m)}</small></div>${icon("mic", 15)}</div></article>`).join("")}<article class="player-tile empty-player"><button data-action="invite-member">${icon("plus", 24)}<span>邀请队友</span></button></article></div></main><aside class="room-side"><div class="side-tabs">${[
     ["chat", "群聊"],
     ["network", "联机"],
@@ -210,7 +231,7 @@ function settings(s) {
       ? `<h2>语音设置</h2><div class="settings-card"><div class="setting-row"><div>${audioDeviceSelect(s)}</div>${button(s.voice?.muted ? "取消静音" : "静音", "mute")}</div><div class="setting-row"><div>${audioDeviceSelect(s, true)}</div>${button(s.voice?.receiveEnabled === false ? "恢复接收" : "关闭接收", "receive")}</div>${button("刷新设备", "refresh-audio")}${microphoneTest(s)}${outputTest(s)}<div class="setting-row"><label for="voice-volume">总音量</label><input id="voice-volume" type="range" min="0" max="2" step="0.05" value="${s.voice?.masterVolume ?? 1}" aria-label="总音量"></div><p class="runtime-note">${s.voice?.state === "CONNECTED" ? "音频设置来自当前语音连接。" : s.voice?.state === "FAILED" ? "语音服务暂不可用；仍可选择本机设备并试音。" : "无需进房即可选择设备并试音；入房时沿用所选设备。"}</p></div>`
       : tab === "account"
         ? `<h2>账号</h2><div class="settings-card"><div class="setting-row"><div><strong>${e(s.email)}</strong><p>账号 ID：${e(s.userId)}</p></div></div>${button(`${icon("logout", 16)} 退出登录`, "logout", "danger")}</div>`
-        : `<h2>帮助与支持</h2><div class="settings-card"><h3>织界 0.1.0</h3><p>语音与虚拟网络独立连接，一项异常时可单独重试。</p><p>Windows、macOS、Linux 的安装更新、真实语音和虚拟网络能力仍需实机验证。</p>${button("联机帮助", "help")}</div>`;
+        : `<h2>帮助与支持</h2><div class="settings-card"><h3>织界 0.1.0</h3><p>语音与虚拟网络独立连接，一项异常时可单独重试。</p><p>Windows、macOS、Linux 的安装更新、真实语音和虚拟网络能力仍需实机验证。</p>${button("联机帮助", "help")} ${diagnosticButton()}</div>`;
   return `<main class="main-scroll"><div class="center-panel">${heading("设置", "调整你的语音与账号偏好。", "", "你的偏好 / PREFERENCES")}<div class="settings-layout"><nav class="settings-menu" aria-label="设置分类">${[
     ["voice", "语音"],
     ["account", "账号"],

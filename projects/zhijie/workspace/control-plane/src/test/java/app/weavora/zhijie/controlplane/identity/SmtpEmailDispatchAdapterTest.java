@@ -32,7 +32,7 @@ class SmtpEmailDispatchAdapterTest {
         try (SmtpInbox inbox = new SmtpInbox(); EmbeddedPostgres postgres = EmbeddedPostgres.start();
              var context = start(postgres, inbox.port(), true); var client = HttpClient.newHttpClient()) {
             assertThat(context.getBeansOfType(org.springframework.boot.actuate.mail.MailHealthIndicator.class)).hasSize(1);
-            var api = new LocalApi(context, client);
+            var api = new LocalApi(context, client, inbox);
             assertThat(api.get("/actuator/health", null, 200).path("status").asText()).isEqualTo("UP");
             String email = "smtp-recipient@example.test";
             String original = "original-password-2026";
@@ -93,6 +93,22 @@ class SmtpEmailDispatchAdapterTest {
     }
 
     @Test
+    void disconnectedClientDoesNotDisableTheTestInbox() throws Exception {
+        try (var inbox = new SmtpInbox()) {
+            try (var probe = new Socket(InetAddress.getLoopbackAddress(), inbox.port())) {
+                probe.setSoTimeout(3000);
+                assertThat(new BufferedReader(new InputStreamReader(probe.getInputStream(), StandardCharsets.US_ASCII)).readLine()).startsWith("220 ");
+                // 模拟已收到欢迎消息、但未发送 QUIT 就断开的客户端。
+                probe.setSoLinger(true, 0);
+            }
+            try (var next = new Socket(InetAddress.getLoopbackAddress(), inbox.port())) {
+                next.setSoTimeout(3000);
+                assertThat(new BufferedReader(new InputStreamReader(next.getInputStream(), StandardCharsets.US_ASCII)).readLine()).startsWith("220 ");
+            }
+        }
+    }
+
+    @Test
     void missingConfigurationRemainsUnavailableAndHeaderInjectionIsRejected() {
         assertThat(new UnavailableEmailDispatchAdapter().isAvailable()).isFalse();
         assertThatThrownBy(() -> new SmtpEmailDispatchAdapter(new JavaMailSenderImpl(), "a@example.test\r\nBcc: victim"))
@@ -103,7 +119,7 @@ class SmtpEmailDispatchAdapterTest {
     void disabledMailKeepsHealthUpAndCannotRegisterAnAccount() throws Exception {
         try (var inbox = new SmtpInbox(); var postgres = EmbeddedPostgres.start();
              var context = start(postgres, inbox.port(), false); var client = HttpClient.newHttpClient()) {
-            var api = new LocalApi(context, client);
+            var api = new LocalApi(context, client, inbox);
             assertThat(api.get("/actuator/health", null, 200).path("status").asText()).isEqualTo("UP");
             String email = "disabled@example.test";
             assertThat(api.post("register", Map.of("email", email, "password", "disabled-password-test"), 503).at("/error/code").asText()).isEqualTo("EMAIL_DELIVERY_UNAVAILABLE");
@@ -113,7 +129,7 @@ class SmtpEmailDispatchAdapterTest {
         }
     }
 
-    private record LocalApi(ServletWebServerApplicationContext context, HttpClient client) {
+    private record LocalApi(ServletWebServerApplicationContext context, HttpClient client, SmtpInbox inbox) {
         private HttpRequest.Builder request(String path) {
             return HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + context.getWebServer().getPort() + path)).timeout(Duration.ofSeconds(10));
         }
@@ -132,7 +148,7 @@ class SmtpEmailDispatchAdapterTest {
 
         private JsonNode send(HttpRequest request, int status) throws Exception {
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            assertThat(response.statusCode()).as("%s %s", request.method(), request.uri().getPath()).isEqualTo(status);
+            assertThat(response.statusCode()).as("%s %s; %s", request.method(), request.uri().getPath(), inbox.diagnostics()).isEqualTo(status);
             return context.getBean(ObjectMapper.class).readTree(response.body());
         }
     }
@@ -169,8 +185,14 @@ class SmtpEmailDispatchAdapterTest {
         SmtpInbox() throws IOException {
             receiver = worker.submit(() -> {
                 while (!server.isClosed()) {
-                    try (Socket socket = server.accept()) { phases.add("ACCEPTED"); handle(socket); }
-                    catch (IOException error) { if (!server.isClosed()) { phases.add(error.getClass().getSimpleName()); throw new UncheckedIOException(error); } }
+                    Socket accepted;
+                    try { accepted = server.accept(); }
+                    catch (IOException error) {
+                        if (server.isClosed()) return;
+                        throw new UncheckedIOException(error);
+                    }
+                    try (accepted) { phases.add("ACCEPTED"); handle(accepted); }
+                    catch (IOException error) { phases.add(error.getClass().getSimpleName()); }
                 }
             });
         }
@@ -198,7 +220,8 @@ class SmtpEmailDispatchAdapterTest {
                     if (rejectDelivery) { phases.add("REJECTED"); writer.print("550 rejected\r\n"); writer.flush(); continue; }
                     writer.print("354 send message\r\n"); writer.flush();
                     var content = new StringBuilder();
-                    while ((line = reader.readLine()) != null && !line.equals(".")) {
+                    while (!".".equals(line = reader.readLine())) {
+                        if (line == null) throw new EOFException();
                         content.append(line.startsWith("..") ? line.substring(1) : line).append("\r\n");
                     }
                     messages.add(content.toString().getBytes(StandardCharsets.US_ASCII));

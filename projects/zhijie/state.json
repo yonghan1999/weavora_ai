@@ -3,12 +3,13 @@
   "workflow_id": "WF-zhijie",
   "project_id": "zhijie",
   "name": "织界",
-  "stage": "F_SELF_TEST",
+  "stage": "G_INDEPENDENT_TEST",
   "status": "in_progress",
   "created_at": "2026-10-26T02:50:01Z",
-  "updated_at": "2026-11-23T07:52:06Z",
+  "updated_at": "2026-11-24T03:04:05Z",
   "retry_counts": {
-    "E_IMPLEMENTATION": 1
+    "E_IMPLEMENTATION": 1,
+    "F_SELF_TEST": 3
   },
   "max_retries": 3,
   "approvals": [
@@ -2595,6 +2596,263 @@
       "actor": "developer",
       "role": "developer",
       "reason": "进入开发自测",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-23T07:59:58Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "检查 full-self-test 失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261123T075832Z-ca08d858.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-23T08:01:11Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "第 1 次重试：本机 cmd AutoRun 干扰 initdb，使用仓库 CleanCmd 作为当前进程 ComSpec；ActivityCoordinatorIntegrationTest 使用真实 PostgreSQL 已单独复测通过，重跑全部已登记检查。",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-23T08:34:37Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "检查 full-self-test 失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261123T083024Z-f431ad0b.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-23T08:44:48Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "第 2 次重试：修复自定义管道或测试源下仍提示不可执行的 Helper 提权；原失败双端后端浏览器用例及原生单测均已通过。保留 PostgreSQL CleanCmd，显式指定 npm 脚本解释器以真实执行前端测试。",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-23T09:27:04Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "检查 full-self-test 失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261123T092335Z-578093de.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-23T09:31:07Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "第 3 次重试：历史消息双端场景首次 CDP 握手失败；已改为有界等待实际连接，真实控制面专项 1/1 通过；截图移入 target 后 188 项浏览器检查通过。",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "in_progress",
+      "to": "blocked",
+      "at": "2026-11-23T09:52:56Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "检查 full-self-test 失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261123T095143Z-4f13fd97.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "blocked",
+      "to": "in_progress",
+      "at": "2026-11-24T00:51:53Z",
+      "actor": "han",
+      "role": "human_approver",
+      "reason": "人工确认解除阻塞；重置当前阶段重试预算",
+      "evidence": [],
+      "human_authorization": true
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-24T01:19:03Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "检查 full-self-test 失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261124T011741Z-3d22db2f.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-24T01:23:35Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "第 1 次重试：同一 Helper 测试程序连续 4 轮与 Cargo 全 workspace 专项均通过；上次 stdout 截断，原命令不变，本次保留脱敏故障断言及套件摘要用于诊断。",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-24T01:49:32Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "检查 full-self-test 失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261124T014411Z-a0c543d1.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-24T01:55:36Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "第 2 次重试：修复测试权威端错误处理已取消连接；保留满房逐包校验与原时限，新增超时阶段诊断。全 workspace 构建 Helper 专项连续三次通过。",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "in_progress",
+      "to": "awaiting_retry",
+      "at": "2026-11-24T02:25:48Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "检查 full-self-test 失败",
+      "evidence": [
+        "tests/evidence/EXEC-20261124T022301Z-90f91561.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "awaiting_retry",
+      "to": "in_progress",
+      "at": "2026-11-24T02:29:04Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "第 3 次重试：上次控制面在中继撤销测试准备阶段的本机 HTTP 登录超时，尚未进入撤销场景。仅给首次登录准备步骤独立预算，保持事务、撤销与数据面所有时限；原失败的真实中继测试两个模式均专项通过。",
+      "evidence": [],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "F_SELF_TEST",
+      "from": "in_progress",
+      "to": "approved",
+      "at": "2026-11-24T03:04:05Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "自动质量门禁通过",
+      "evidence": [
+        "tests/evidence/EXEC-20261124T025912Z-3bafebff.json",
+        "tests/evidence/EXEC-20261124T023207Z-eaf461c1.json"
+      ],
+      "human_authorization": false
+    },
+    {
+      "event": "state_transition",
+      "workflow_id": "WF-zhijie",
+      "project_id": "zhijie",
+      "task_id": null,
+      "stage": "G_INDEPENDENT_TEST",
+      "from": "approved",
+      "to": "in_progress",
+      "at": "2026-11-24T03:04:05Z",
+      "actor": "self-tester",
+      "role": "self_tester",
+      "reason": "进入独立测试与质量验收",
       "evidence": [],
       "human_authorization": false
     }

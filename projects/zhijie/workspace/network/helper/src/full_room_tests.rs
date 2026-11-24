@@ -358,6 +358,8 @@ async fn full_room(mode: &str) {
         consumed.push(reads);
         actual_paths.push(path);
     }
+    let mut stage = "handshake";
+    let mut destination_progress = None;
     let exercise = async {
         loop {
             let ready = connected.iter().all(|value| value.load(Ordering::Relaxed));
@@ -379,6 +381,7 @@ async fn full_room(mode: &str) {
             );
             tokio::time::sleep(Duration::from_millis(20)).await;
         }
+        stage = "source filter";
         for (index, input) in inputs.iter().enumerate() {
             let source = index as u8 + 1;
             let other = (index + 1) % MEMBERS + 1;
@@ -393,6 +396,11 @@ async fn full_room(mode: &str) {
             );
         }
         for (phase, count) in [(1, MEMBERS), (2, MEMBERS - 1)] {
+            stage = if phase == 1 {
+                "12-member delivery"
+            } else {
+                "11-member delivery"
+            };
             for sequence in 0..BURST {
                 for (source, input) in inputs.iter().enumerate().take(count) {
                     for destination in 0..count {
@@ -413,6 +421,7 @@ async fn full_room(mode: &str) {
             for (destination, output) in outputs.iter_mut().enumerate().take(count) {
                 let mut seen = HashSet::new();
                 for _ in 0..(count - 1) * BURST as usize {
+                    destination_progress = Some((destination + 1, seen.len()));
                     let received = output.recv().await.expect("pump output");
                     let source = received[15];
                     let sequence = received[29];
@@ -428,7 +437,9 @@ async fn full_room(mode: &str) {
                 }
             }
             println!("NETWORK_ROOM_OK mode={mode} phase={phase} members={count} directions={} packets_per_direction={BURST}", count * (count - 1));
+            destination_progress = None;
             if phase == 1 {
+                stage = "revocation";
                 // 删除一个成员后，其他十一端应继续通信，旧目标不能再次收到载荷。
                 active[MEMBERS - 1].store(false, Ordering::Relaxed);
                 if mode != "direct" {
@@ -486,6 +497,7 @@ async fn full_room(mode: &str) {
                 );
             }
         }
+        stage = "shutdown";
         let stop_count = if mode == "direct" {
             MEMBERS
         } else {
@@ -504,7 +516,7 @@ async fn full_room(mode: &str) {
     };
     let outcome = tokio::time::timeout(Duration::from_secs(25), exercise).await;
     relay.stop().await;
-    outcome.expect("full-room data pumps must deliver and clean up within deadline");
+    assert!(outcome.is_ok(), "full-room deadline: mode={mode} stage={stage} destination_and_received={destination_progress:?}");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]

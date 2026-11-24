@@ -56,6 +56,61 @@ struct PausedAuthority {
     worker: Option<JoinHandle<()>>,
 }
 
+fn read_validation(stream: &mut impl Read) -> Option<serde_json::Value> {
+    let mut bytes = Vec::new();
+    let mut buffer = [0; 2048];
+    loop {
+        let count = match stream.read(&mut buffer) {
+            Ok(0) => return None,
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    std::io::ErrorKind::ConnectionReset | std::io::ErrorKind::ConnectionAborted
+                ) =>
+            {
+                return None
+            }
+            other => other.unwrap(),
+        };
+        bytes.extend_from_slice(&buffer[..count]);
+        assert!(bytes.len() <= 8192);
+        if let Some(end) = bytes.windows(4).position(|part| part == b"\r\n\r\n") {
+            let length = String::from_utf8_lossy(&bytes[..end])
+                .lines()
+                .find_map(|line| {
+                    line.to_ascii_lowercase()
+                        .strip_prefix("content-length:")?
+                        .trim()
+                        .parse::<usize>()
+                        .ok()
+                })
+                .unwrap();
+            if bytes.len() >= end + 4 + length {
+                return Some(
+                    serde_json::from_slice::<serde_json::Value>(&bytes[end + 4..end + 4 + length])
+                        .unwrap(),
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn cancelled_validation_is_not_a_received_request() {
+    for bytes in [
+        &b""[..],
+        b"POST / HT",
+        b"POST / HTTP/1.1\r\nContent-Length: 9\r\n\r\n{",
+    ] {
+        assert!(read_validation(&mut &bytes[..]).is_none());
+    }
+    let complete = b"POST / HTTP/1.1\r\nContent-Length: 2\r\n\r\n{}";
+    assert_eq!(
+        read_validation(&mut &complete[..]),
+        Some(serde_json::json!({}))
+    );
+}
+
 impl PausedAuthority {
     fn start(request: &NetworkStart, peers: &[NetworkPeer]) -> Self {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
@@ -97,31 +152,9 @@ impl PausedAuthority {
                 stream
                     .set_write_timeout(Some(Duration::from_secs(1)))
                     .unwrap();
-                let mut bytes = Vec::new();
-                let mut buffer = [0; 2048];
-                let incoming = loop {
-                    let count = stream.read(&mut buffer).unwrap();
-                    assert!(count > 0);
-                    bytes.extend_from_slice(&buffer[..count]);
-                    assert!(bytes.len() <= 8192);
-                    if let Some(end) = bytes.windows(4).position(|part| part == b"\r\n\r\n") {
-                        let length = String::from_utf8_lossy(&bytes[..end])
-                            .lines()
-                            .find_map(|line| {
-                                line.to_ascii_lowercase()
-                                    .strip_prefix("content-length:")?
-                                    .trim()
-                                    .parse::<usize>()
-                                    .ok()
-                            })
-                            .unwrap();
-                        if bytes.len() >= end + 4 + length {
-                            break serde_json::from_slice::<serde_json::Value>(
-                                &bytes[end + 4..end + 4 + length],
-                            )
-                            .unwrap();
-                        }
-                    }
+                let Some(incoming) = read_validation(&mut stream) else {
+                    // 数据泵退出时可取消已经连接但尚未写完的权威请求。
+                    continue;
                 };
                 let (control, body) = if incoming["ticket"] == ticket {
                     (current_response.clone(), body.to_string())

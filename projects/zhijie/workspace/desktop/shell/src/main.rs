@@ -35,11 +35,12 @@ impl ActivityOperations {
 
 impl AppState {
     fn new(client: ControlPlaneClient) -> Self {
+        let network = network::NetworkManager::for_origin(client.origin());
         Self {
             client,
             core: ClientCore::default(),
             voice: zhijie_voice::VoiceManager::default(),
-            network: network::NetworkManager::default(),
+            network,
             session: Mutex::new(None),
             activity_operations: Default::default(),
         }
@@ -472,9 +473,7 @@ async fn network_authorize_helper(
             return Err("CURRENT_GRANT_REQUIRED".into());
         }
         state.access_token()?;
-        if state.client.origin() != packaged_origin()
-            || std::env::var_os("ZHIJIE_HELPER_SOCKET").is_some()
-        {
+        if !state.network.can_authorize_helper() {
             return Err("HELPER_ORIGIN_MISMATCH".into());
         }
         state

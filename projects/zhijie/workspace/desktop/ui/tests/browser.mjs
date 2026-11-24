@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { browserExecutable } from "./browser-executable.mjs";
 
 const chrome = browserExecutable();
-const output = resolve(".test-artifacts");
+const output = resolve("../../target/desktop-ui-browser");
 mkdirSync(output, { recursive: true });
 const dist = resolve("dist");
 const server = createServer((req, res) => {
@@ -118,14 +118,14 @@ calls.push({command,p});
 if(command==='session_login'){await new Promise(r=>setTimeout(r,80));if(failLogin)throw 'SERVICE_UNAVAILABLE';return snapshot();}
 if(command==='session_logout')return {userId:null,activity:null,service:'DISCONNECTED',lastErrorCode:'LOGOUT_CLEANUP_PENDING'};
 if(command==='group_list'){if(globalThis.holdGroupList)await new Promise(resolve=>globalThis.releaseGroupList=resolve);return [...(globalThis.groupRemoved?[]:[group]),...(globalThis.extraGroups??[])];}if(command==='room_list')return p.groupId===group.id?[room]:[];
-if(command==='activity_join'){if(globalThis.joinDenial)throw globalThis.joinDenial;if(globalThis.changedRoomPassword && p.password!=='updated')throw 'ROOM_PASSWORD_INVALID';activity={activityId:'a1',leaseId:'lease-room',voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
+if(command==='activity_join'){if(globalThis.joinDenial)throw globalThis.joinDenial;if(globalThis.changedRoomPassword && p.password!=='updated')throw 'ROOM_PASSWORD_INVALID';activity={activityId:'a1',leaseId:'lease-room',memberGeneration:1,voice:'DISCONNECTED',network:'DISCONNECTED',virtualIpv4:'10.66.0.2'};return snapshot();}
 if(command==='activity_leave'){activity=null;return snapshot();}
 if(command==='voice_connect'){if(globalThis.holdVoice)await new Promise(done=>globalThis.resumeVoice=done);voice.state='FAILED';voice.failureCode='VOICE_CAPACITY_LIMITED';throw 'VOICE_CAPACITY_LIMITED';}
 if(command==='voice_snapshot'){if(globalThis.failVoiceRead)throw 'SERVICE_UNAVAILABLE';return structuredClone(voice);}
 if(command==='state_snapshot'){if(globalThis.failStateRead){globalThis.failedStateReads++;throw 'SERVICE_UNAVAILABLE';}return snapshot();}
 if(command==='network_connect'){if(globalThis.holdNetwork)await new Promise(done=>globalThis.resumeNetwork=done);throw 'HELPER_UNAVAILABLE';}
 if(command==='network_authorize_helper'){if(globalThis.declineHelper)throw 'HELPER_CONSENT_DECLINED';globalThis.helperAbsent=false;return null;}
-if(command==='network_snapshot'){if(globalThis.failNetworkRead)throw 'SERVICE_UNAVAILABLE';return {canAuthorizeHelper:true,status:{errorCode:globalThis.helperAbsent?'HELPER_UNAVAILABLE':null,state:activity?(globalThis.networkState??'FAILED'):'DISCONNECTED',activityId:activity?.activityId},peers:[]};}
+if(command==='network_snapshot'){if(globalThis.failNetworkRead)throw 'SERVICE_UNAVAILABLE';return {canAuthorizeHelper:true,status:{errorCode:globalThis.helperAbsent?'HELPER_UNAVAILABLE':null,state:activity?(globalThis.networkState??'FAILED'):'DISCONNECTED',activityId:activity?.activityId,memberGeneration:activity?.memberGeneration},peers:globalThis.testPeers??[]};}
 if(command==='voice_set_mute'){voice.muted=p.muted;return voice;}
 if(command==='voice_set_receive'){voice.receiveEnabled=p.enabled;return voice;}
 if(command==='voice_set_volume'){if(p.memberId){voice.memberVolumes??={};voice.memberVolumes[p.memberId]=p.volume;}else voice.masterVolume=p.volume;return structuredClone(voice);}
@@ -693,6 +693,9 @@ try {
   await check("独立重试联机不重建语音", 'calls.filter(x=>x.command==="network_connect").length===2 && calls.filter(x=>x.command==="voice_connect").length===1');
   await evaluate('globalThis.helperAbsent=true;globalThis.declineHelper=true;globalThis.beforeAuthorization=calls.length');
   await delay(1300);
+  await evaluate(`Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{if(globalThis.blockClipboard)throw Error('denied');globalThis.lastCopied=text;}}})`);
+  await click('[data-action="copy-diagnostics"]');
+  await check("复制诊断仅包含状态和已知提示", 'lastCopied.startsWith("织界连接诊断") && lastCopied.includes("辅助服务未启动") && !lastCopied.includes("lease-room") && !lastCopied.includes("@")');
   await click('[data-action="authorize-helper"]');
   await click('[data-action="dialog-close"]');
   await check("取消授权说明不触发系统授权", '!calls.slice(beforeAuthorization).some(x=>x.command==="network_authorize_helper")');
@@ -703,12 +706,18 @@ try {
   await click('.modal-actions .primary');
   await check("重新同意仅重连联机，不重建语音", '!document.querySelector("[role=dialog]") && calls.slice(beforeAuthorization).filter(x=>x.command==="network_connect").length===1 && !calls.slice(beforeAuthorization).some(x=>x.command==="voice_connect")');
   await shot("room-1440");
-  await evaluate('globalThis.failVoiceRead=true;globalThis.networkState="CONNECTED"');
+  await evaluate('globalThis.testPeers=[{userId:"peer",virtualIpv4:"10.66.0.3"}];globalThis.failVoiceRead=true;globalThis.networkState="CONNECTED"');
   await delay(1300);
   await check('语音状态不可读不阻挡联机恢复', `document.querySelector('.room-flags').innerText.includes('语音 · 状态未知') && document.querySelector('.network-panel .ip-address')?.textContent==='10.66.0.2'`);
+  await click('[data-action="copy-address"][data-peer="peer"]');
+  await check("队友地址复制值与显示值一致", 'lastCopied==="10.66.0.3"');
+  await evaluate('globalThis.blockClipboard=true');
+  await click('[data-action="copy-address"]');
+  await check("系统拒绝写剪贴板可手动复制本人地址", 'document.querySelector("textarea[readonly]")?.value==="10.66.0.2"');
+  await evaluate('blockClipboard=false');
   await evaluate('failVoiceRead=false;globalThis.failNetworkRead=true;voice.state="CONNECTED";voice.failureCode=null');
   await delay(1300);
-  await check('联机状态不可读不阻挡语音恢复且收起旧地址', `document.querySelector('.room-flags').innerText.includes('语音 · 已连接') && document.querySelector('.room-flags').innerText.includes('联机 · 状态未知') && !document.querySelector('.network-panel .ip-address')`);
+  await check('联机状态不可读不阻挡语音恢复且收起旧地址', `document.querySelector('.room-flags').innerText.includes('语音 · 已连接') && document.querySelector('.room-flags').innerText.includes('联机 · 状态未知') && !document.querySelector('.network-panel .ip-address, .network-panel textarea[readonly]')`);
   await evaluate('failNetworkRead=false;networkState="FAILED"');
   await delay(1200);
   await check('读取恢复后联机状态由未知变为真实失败', `document.querySelector('.room-flags').innerText.includes('联机 · 连接失败') && !!document.querySelector('[data-action=retry-network]')`);
